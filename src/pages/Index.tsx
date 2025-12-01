@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, Users, BarChart3, Sparkles } from "lucide-react";
+import { MessageSquare, Users, BarChart3, Sparkles, LogOut, LayoutDashboard } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import TopicSelection from "@/components/TopicSelection";
 import SessionSetup from "@/components/SessionSetup";
 import DiscussionRoom from "@/components/DiscussionRoom";
@@ -10,6 +12,8 @@ import SessionReport from "@/components/SessionReport";
 type AppState = 'home' | 'topic-selection' | 'setup' | 'discussion' | 'report';
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [appState, setAppState] = useState<AppState>('home');
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -34,6 +38,11 @@ const Index = () => {
     setSessionId(null);
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
   if (appState === 'topic-selection') {
     return <TopicSelection onTopicSelected={handleTopicSelected} onBack={() => setAppState('home')} />;
   }
@@ -53,11 +62,31 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b-4 border-border p-6">
-        <div className="container mx-auto flex items-center gap-4">
-          <MessageSquare className="w-10 h-10" />
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight">GD CONDUCTOR</h1>
-            <p className="text-sm font-mono text-muted-foreground">AI-POWERED GROUP DISCUSSION PRACTICE</p>
+        <div className="container mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <MessageSquare className="w-10 h-10" />
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight">GD CONDUCTOR</h1>
+              <p className="text-sm font-mono text-muted-foreground">AI-POWERED GROUP DISCUSSION PRACTICE</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/dashboard")}
+              className="border-2"
+            >
+              <LayoutDashboard className="w-4 h-4 mr-2" />
+              DASHBOARD
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleSignOut}
+              className="border-2"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              SIGN OUT
+            </Button>
           </div>
         </div>
       </header>

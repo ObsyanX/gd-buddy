@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SessionSetupProps {
@@ -68,12 +69,68 @@ const PERSONA_TEMPLATES = [
     agreeability: -0.4,
     vocab_level: 'advanced',
     description: 'Challenges ideas, plays devil\'s advocate'
+  },
+  {
+    id: 'technical',
+    name: 'Karthik',
+    role: 'Software Engineer',
+    tone: 'technical',
+    verbosity: 'concise',
+    interrupt_level: 0.25,
+    agreeability: 0,
+    vocab_level: 'advanced',
+    description: 'Technical focus, practical solutions'
+  },
+  {
+    id: 'strategic',
+    name: 'Ananya',
+    role: 'Strategy Consultant',
+    tone: 'strategic',
+    verbosity: 'moderate',
+    interrupt_level: 0.35,
+    agreeability: 0.2,
+    vocab_level: 'advanced',
+    description: 'Big-picture thinking, long-term vision'
+  },
+  {
+    id: 'supportive',
+    name: 'Rahul',
+    role: 'Team Lead',
+    tone: 'supportive',
+    verbosity: 'moderate',
+    interrupt_level: 0.1,
+    agreeability: 0.6,
+    vocab_level: 'intermediate',
+    description: 'Encourages participation, builds on ideas'
+  },
+  {
+    id: 'skeptical',
+    name: 'Neha',
+    role: 'Researcher',
+    tone: 'skeptical',
+    verbosity: 'elaborate',
+    interrupt_level: 0.3,
+    agreeability: -0.3,
+    vocab_level: 'advanced',
+    description: 'Questions assumptions, evidence-based'
+  },
+  {
+    id: 'pragmatic',
+    name: 'Arjun',
+    role: 'Operations Manager',
+    tone: 'pragmatic',
+    verbosity: 'concise',
+    interrupt_level: 0.2,
+    agreeability: 0.1,
+    vocab_level: 'intermediate',
+    description: 'Focuses on feasibility and implementation'
   }
 ];
 
 const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) => {
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>(['analytical', 'diplomatic']);
   const [isCreating, setIsCreating] = useState(false);
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const togglePersona = (id: string) => {
@@ -100,6 +157,7 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
       const { data: session, error: sessionError } = await supabase
         .from('gd_sessions')
         .insert({
+          user_id: user?.id || null,
           topic: topic.title,
           topic_category: topic.category,
           topic_difficulty: topic.difficulty,
