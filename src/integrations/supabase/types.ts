@@ -282,15 +282,108 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      skill_drills: {
+        Row: {
+          ai_feedback: string | null
+          completed_at: string | null
+          created_at: string
+          drill_type: Database["public"]["Enums"]["drill_type"]
+          id: string
+          score: number | null
+          time_limit_seconds: number | null
+          topic: string
+          user_id: string | null
+          user_response: string | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          completed_at?: string | null
+          created_at?: string
+          drill_type: Database["public"]["Enums"]["drill_type"]
+          id?: string
+          score?: number | null
+          time_limit_seconds?: number | null
+          topic: string
+          user_id?: string | null
+          user_response?: string | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          completed_at?: string | null
+          created_at?: string
+          drill_type?: Database["public"]["Enums"]["drill_type"]
+          id?: string
+          score?: number | null
+          time_limit_seconds?: number | null
+          topic?: string
+          user_id?: string | null
+          user_response?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "user"
       discussion_status: "setup" | "active" | "paused" | "completed"
+      drill_type:
+        | "opening_statement"
+        | "star_response"
+        | "rebuttal"
+        | "time_boxed"
       participant_intent:
         | "agree"
         | "elaborate"
@@ -427,7 +520,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       discussion_status: ["setup", "active", "paused", "completed"],
+      drill_type: [
+        "opening_statement",
+        "star_response",
+        "rebuttal",
+        "time_boxed",
+      ],
       participant_intent: [
         "agree",
         "elaborate",
