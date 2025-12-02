@@ -1,73 +1,58 @@
-# Welcome to your Lovable project
+# 🗣️ GD-Buddy  
+### *Your AI-powered Group Discussion Practice Partner*
 
-## Project info
+<div align="center">
+  
+🌟 **Practice. Improve. Excel.**  
+🎙️ **Realistic GD Simulations**  
+🤖 **AI-Generated Participants**  
+⚡ **Instant Feedback & Performance Analysis**
 
-**URL**: https://lovable.dev/projects/13b266e8-9f14-41e9-9cd4-b5c80b56bfd7
+</div>
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🎯 What is GD-Buddy?
 
-**Use Lovable**
+**GD-Buddy** is a modern, AI-driven **Group Discussion Practice App** designed for students, job-seekers, campus-placement aspirants, and anyone preparing for **GD rounds** in interviews.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/13b266e8-9f14-41e9-9cd4-b5c80b56bfd7) and start prompting.
+It creates a **virtual panel of GD participants** — each with unique personalities, opinions, and speaking styles — allowing you to practice like a *real group discussion* anytime, anywhere.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 🌟 Key Features
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🤖 AI-Generated Participants  
+- Different personalities: *Aggressive, Logical Thinker, Peacekeeper, Data-Driven Speaker, Devil’s Advocate,* etc.  
+- Each contributes naturally with interruptions, counterpoints, and follow-ups.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 🎯 Smart GD Topics  
+- Random topic generator  
+- Categories: *Tech, Social, Ethical, Politics, Business, Abstract, HR-type topics*
 
-Follow these steps:
+### 🎙️ Voice-to-Voice Mode  
+- You speak → AI listens → Participants reply instantly  
+- Feels like a live GD simulation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 📊 Performance Analytics  
+- Fluency score  
+- Clarity score  
+- Content & structure evaluation  
+- Strengths + Areas to improve  
+- Personalized practice roadmap
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 🎭 Persona Customization  
+- Choose number of participants  
+- Select their behavior patterns  
+- Customize level of difficulty  
 
-# Step 3: Install the necessary dependencies.
-npm i
+---
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+## 🚀 Getting Started
 
-**Edit a file directly in GitHub**
+Clone the repository:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/13b266e8-9f14-41e9-9cd4-b5c80b56bfd7) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```bash
+git clone https://github.com/ObsyanX/gd-buddy.git
+cd gd-buddy
+.lovable.dev/features/custom-domain#custom-domain)
