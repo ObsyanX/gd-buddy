@@ -1,15 +1,25 @@
 import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import type { VoiceSettings } from '@/pages/Settings';
 
 export const useTextToSpeech = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [currentSpeaker, setCurrentSpeaker] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
-  const speak = async (text: string, voice: string = 'alloy') => {
+  const speak = async (text: string, speaker?: string) => {
+    // Load voice settings from localStorage
+    const savedSettings = localStorage.getItem('voiceSettings');
+    const settings: VoiceSettings = savedSettings
+      ? JSON.parse(savedSettings)
+      : { voice: 'alloy', speed: 1.0 };
+
+    const voice = settings.voice;
     try {
       setIsSpeaking(true);
+      setCurrentSpeaker(speaker || null);
 
       // Stop any currently playing audio
       if (audioRef.current) {
@@ -32,11 +42,13 @@ export const useTextToSpeech = () => {
 
       audio.onended = () => {
         setIsSpeaking(false);
+        setCurrentSpeaker(null);
         URL.revokeObjectURL(audioUrl);
       };
 
       audio.onerror = () => {
         setIsSpeaking(false);
+        setCurrentSpeaker(null);
         URL.revokeObjectURL(audioUrl);
         toast({
           title: "Audio playback failed",
@@ -45,10 +57,13 @@ export const useTextToSpeech = () => {
         });
       };
 
+      // Apply speed setting
+      audio.playbackRate = settings.speed;
       await audio.play();
     } catch (error: any) {
       console.error('Error generating speech:', error);
       setIsSpeaking(false);
+      setCurrentSpeaker(null);
       toast({
         title: "Text-to-speech failed",
         description: error.message || "Please try again",
@@ -62,11 +77,13 @@ export const useTextToSpeech = () => {
       audioRef.current.pause();
       audioRef.current = null;
       setIsSpeaking(false);
+      setCurrentSpeaker(null);
     }
   };
 
   return {
     isSpeaking,
+    currentSpeaker,
     speak,
     stop
   };
