@@ -4,9 +4,11 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Mic, Square, User, Bot, Info } from "lucide-react";
+import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
 interface DiscussionRoomProps {
   sessionId: string;
@@ -20,8 +22,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [userInput, setUserInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [feedback, setFeedback] = useState<any>(null);
+  const [autoPlayTTS, setAutoPlayTTS] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { isRecording, isProcessing: isTranscribing, startRecording, stopRecording } = useAudioRecorder();
+  const { isSpeaking, speak, stop: stopSpeaking } = useTextToSpeech();
 
   useEffect(() => {
     loadSession();
@@ -181,6 +186,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
           if (!aiMsgError && aiMsg) {
             aiMessages.push(aiMsg);
+            
+            // Auto-play TTS for first AI response if enabled
+            if (autoPlayTTS && aiMessages.length === 0) {
+              speak(response.text);
+            }
           }
         }
         setMessages(prev => [...prev, ...aiMessages]);
@@ -221,6 +231,17 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     }
   };
 
+  const handleVoiceInput = async () => {
+    if (isRecording) {
+      const transcription = await stopRecording();
+      if (transcription) {
+        setUserInput(transcription);
+      }
+    } else {
+      startRecording();
+    }
+  };
+
   if (!session) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
       <p className="text-xl font-mono">LOADING SESSION...</p>
@@ -238,14 +259,24 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               <Badge variant="outline" className="border-2">{messages.length} turns</Badge>
             </div>
           </div>
-          <Button 
-            variant="destructive" 
-            onClick={handleEndSession}
-            className="border-4 border-border"
-          >
-            <Square className="w-4 h-4 mr-2" />
-            END SESSION
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setAutoPlayTTS(!autoPlayTTS)}
+              className="border-2"
+            >
+              {autoPlayTTS ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
+              TTS {autoPlayTTS ? 'ON' : 'OFF'}
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleEndSession}
+              className="border-4 border-border"
+            >
+              <Square className="w-4 h-4 mr-2" />
+              END SESSION
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -294,16 +325,25 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
           <div className="flex gap-2">
             <Input
-              placeholder="Type your response..."
+              placeholder="Type your response or use voice input..."
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
               className="border-2 text-lg"
-              disabled={isProcessing}
+              disabled={isProcessing || isRecording || isTranscribing}
             />
+            <Button
+              onClick={handleVoiceInput}
+              disabled={isProcessing || isTranscribing}
+              variant={isRecording ? "destructive" : "outline"}
+              className="border-4 border-border"
+              size="lg"
+            >
+              {isTranscribing ? "..." : <Mic className="w-4 h-4" />}
+            </Button>
             <Button 
               onClick={handleSendMessage}
-              disabled={isProcessing || !userInput.trim()}
+              disabled={isProcessing || !userInput.trim() || isRecording || isTranscribing}
               className="border-4 border-border"
               size="lg"
             >

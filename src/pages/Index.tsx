@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, Users, BarChart3, Sparkles, LogOut, LayoutDashboard } from "lucide-react";
+import { MessageSquare, Users, BarChart3, Sparkles, LogOut, LayoutDashboard, Dumbbell, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import TopicSelection from "@/components/TopicSelection";
 import SessionSetup from "@/components/SessionSetup";
@@ -78,6 +78,22 @@ const Index = () => {
             >
               <LayoutDashboard className="w-4 h-4 mr-2" />
               DASHBOARD
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/drills")}
+              className="border-2"
+            >
+              <Dumbbell className="w-4 h-4 mr-2" />
+              DRILLS
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/profile")}
+              className="border-2"
+            >
+              <User className="w-4 h-4 mr-2" />
+              PROFILE
             </Button>
             <Button 
               variant="outline" 
