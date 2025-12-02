@@ -4,11 +4,16 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { usePracticeMode } from "@/hooks/usePracticeMode";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { AudioWaveform } from "@/components/AudioWaveform";
+import { VoiceActivityIndicator } from "@/components/VoiceActivityIndicator";
 
 interface DiscussionRoomProps {
   sessionId: string;
@@ -26,7 +31,20 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { isRecording, isProcessing: isTranscribing, startRecording, stopRecording } = useAudioRecorder();
-  const { isSpeaking, speak, stop: stopSpeaking } = useTextToSpeech();
+  const { isSpeaking, currentSpeaker, speak, stop: stopSpeaking } = useTextToSpeech();
+  const {
+    isPracticing,
+    isRecordingPractice,
+    practiceAudioUrl,
+    isPlayingPractice,
+    practiceStream,
+    startPracticeRecording,
+    stopPracticeRecording,
+    playPracticeRecording,
+    stopPracticePlayback,
+    cancelPractice,
+    acceptPractice,
+  } = usePracticeMode();
 
   useEffect(() => {
     loadSession();
@@ -189,7 +207,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             
             // Auto-play TTS for first AI response if enabled
             if (autoPlayTTS && aiMessages.length === 0) {
-              speak(response.text);
+              const participant = participants.find(p => p.id === response.participant_id);
+              speak(response.text, participant?.persona_name);
             }
           }
         }
@@ -241,6 +260,66 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       startRecording();
     }
   };
+
+  const handlePracticeAccept = async () => {
+    const audioUrl = acceptPractice();
+    if (!audioUrl) return;
+
+    // Convert audio URL to blob and then to base64
+    const response = await fetch(audioUrl);
+    const audioBlob = await response.blob();
+    
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onloadend = async () => {
+      const base64Audio = reader.result?.toString().split(',')[1];
+      
+      if (!base64Audio) return;
+
+      try {
+        const { data, error } = await supabase.functions.invoke('speech-to-text', {
+          body: { audio: base64Audio }
+        });
+
+        if (error) throw error;
+
+        setUserInput(data.text);
+        URL.revokeObjectURL(audioUrl);
+      } catch (error: any) {
+        console.error('Error transcribing practice audio:', error);
+        toast({
+          title: "Transcription failed",
+          description: error.message || "Please try again",
+          variant: "destructive",
+        });
+      }
+    };
+  };
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onMicToggle: () => {
+      if (!isPracticing && !isProcessing) {
+        if (isRecording) {
+          handleVoiceInput();
+        } else {
+          startPracticeRecording();
+        }
+      }
+    },
+    onSendMessage: () => {
+      if (!isProcessing && userInput.trim() && !isRecording && !isTranscribing && !isPracticing) {
+        handleSendMessage();
+      }
+    },
+    onStopTTS: () => {
+      if (isSpeaking) {
+        stopSpeaking();
+      } else if (isPlayingPractice) {
+        stopPracticePlayback();
+      }
+    },
+  });
 
   if (!session) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
@@ -323,32 +402,56 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             </ScrollArea>
           </Card>
 
-          <div className="flex gap-2">
-            <Input
-              placeholder="Type your response or use voice input..."
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-              className="border-2 text-lg"
-              disabled={isProcessing || isRecording || isTranscribing}
-            />
-            <Button
-              onClick={handleVoiceInput}
-              disabled={isProcessing || isTranscribing}
-              variant={isRecording ? "destructive" : "outline"}
-              className="border-4 border-border"
-              size="lg"
-            >
-              {isTranscribing ? "..." : <Mic className="w-4 h-4" />}
-            </Button>
-            <Button 
-              onClick={handleSendMessage}
-              disabled={isProcessing || !userInput.trim() || isRecording || isTranscribing}
-              className="border-4 border-border"
-              size="lg"
-            >
-              {isProcessing ? "..." : <Send className="w-4 h-4" />}
-            </Button>
+          {/* Voice Activity Indicator */}
+          <VoiceActivityIndicator isActive={isSpeaking} participantName={currentSpeaker || undefined} />
+
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type your response or use voice input..."
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+                    handleSendMessage();
+                  }
+                }}
+                className="border-2 text-lg"
+                disabled={isProcessing || isRecording || isTranscribing || isPracticing}
+              />
+              <Button
+                onClick={startPracticeRecording}
+                disabled={isProcessing || isTranscribing || isRecording || isPracticing}
+                variant="outline"
+                className="border-4 border-border"
+                size="lg"
+                title="Practice Mode (Ctrl+M)"
+              >
+                <Mic className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleVoiceInput}
+                disabled={isProcessing || isTranscribing || isPracticing}
+                variant={isRecording ? "destructive" : "outline"}
+                className="border-4 border-border"
+                size="lg"
+                title="Quick Record"
+              >
+                {isTranscribing ? "..." : <Mic className="w-4 h-4" />}
+              </Button>
+              <Button 
+                onClick={handleSendMessage}
+                disabled={isProcessing || !userInput.trim() || isRecording || isTranscribing || isPracticing}
+                className="border-4 border-border"
+                size="lg"
+                title="Send (Ctrl+Enter)"
+              >
+                {isProcessing ? "..." : <Send className="w-4 h-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground font-mono text-center">
+              TIP: Ctrl+M for practice • Ctrl+Enter to send • Esc to stop audio
+            </p>
           </div>
         </div>
 
@@ -401,6 +504,93 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           </Card>
         </div>
       </div>
+
+      {/* Practice Mode Dialog */}
+      <Dialog open={isPracticing} onOpenChange={(open) => !open && cancelPractice()}>
+        <DialogContent className="border-4 border-border">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">PRACTICE MODE</DialogTitle>
+            <DialogDescription className="font-mono">
+              Record your response and review it before sending
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <AudioWaveform isRecording={isRecordingPractice} stream={practiceStream} />
+
+            {practiceAudioUrl && (
+              <div className="flex gap-2 justify-center">
+                <Button
+                  onClick={playPracticeRecording}
+                  disabled={isPlayingPractice}
+                  variant="outline"
+                  className="border-2"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  {isPlayingPractice ? 'PLAYING...' : 'PLAY'}
+                </Button>
+                <Button
+                  onClick={stopPracticeRecording}
+                  disabled={!isRecordingPractice}
+                  variant="outline"
+                  className="border-2"
+                >
+                  <Square className="w-4 h-4 mr-2" />
+                  STOP
+                </Button>
+              </div>
+            )}
+
+            {!practiceAudioUrl && !isRecordingPractice && (
+              <p className="text-center text-muted-foreground font-mono">
+                Click RECORD to start practicing
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            {!practiceAudioUrl && !isRecordingPractice && (
+              <Button
+                onClick={startPracticeRecording}
+                className="border-4 border-border"
+              >
+                <Mic className="w-4 h-4 mr-2" />
+                RECORD
+              </Button>
+            )}
+            {practiceAudioUrl && (
+              <Button
+                onClick={() => {
+                  cancelPractice();
+                  startPracticeRecording();
+                }}
+                variant="outline"
+                className="border-2"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                RE-RECORD
+              </Button>
+            )}
+            <Button
+              onClick={cancelPractice}
+              variant="outline"
+              className="border-2"
+            >
+              <X className="w-4 h-4 mr-2" />
+              CANCEL
+            </Button>
+            {practiceAudioUrl && (
+              <Button
+                onClick={handlePracticeAccept}
+                className="border-4 border-border"
+              >
+                <Check className="w-4 h-4 mr-2" />
+                ACCEPT & TRANSCRIBE
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
