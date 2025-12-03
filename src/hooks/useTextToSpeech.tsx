@@ -6,7 +6,10 @@ import type { VoiceSettings } from '@/pages/Settings';
 export const useTextToSpeech = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentSpeaker, setCurrentSpeaker] = useState<string | null>(null);
+  const [volume, setVolume] = useState(1.0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioQueueRef = useRef<Array<{ text: string; speaker?: string }>>([]);
+  const isProcessingQueueRef = useRef(false);
   const { toast } = useToast();
 
   const speak = async (text: string, speaker?: string) => {
@@ -14,7 +17,7 @@ export const useTextToSpeech = () => {
     const savedSettings = localStorage.getItem('voiceSettings');
     const settings: VoiceSettings = savedSettings
       ? JSON.parse(savedSettings)
-      : { voice: 'alloy', speed: 1.0 };
+      : { voice: 'sarah', speed: 1.0 };
 
     const voice = settings.voice;
     try {
