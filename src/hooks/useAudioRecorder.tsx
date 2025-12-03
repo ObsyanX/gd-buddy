@@ -1,13 +1,13 @@
 import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useBrowserWhisper } from '@/hooks/useBrowserWhisper';
 
 export const useAudioRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
+  const { isTranscribing, isModelLoading, transcribeAudio } = useBrowserWhisper();
 
   const startRecording = async () => {
     try {
@@ -55,45 +55,16 @@ export const useAudioRecorder = () => {
 
       mediaRecorderRef.current.onstop = async () => {
         setIsRecording(false);
-        setIsProcessing(true);
 
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
         
-        // Convert to base64
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-          const base64Audio = reader.result?.toString().split(',')[1];
-          
-          if (!base64Audio) {
-            setIsProcessing(false);
-            resolve(null);
-            return;
-          }
-
-          try {
-            const { data, error } = await supabase.functions.invoke('speech-to-text', {
-              body: { audio: base64Audio }
-            });
-
-            if (error) throw error;
-
-            setIsProcessing(false);
-            resolve(data.text);
-          } catch (error: any) {
-            console.error('Error transcribing audio:', error);
-            toast({
-              title: "Transcription failed",
-              description: error.message || "Please try again",
-              variant: "destructive",
-            });
-            setIsProcessing(false);
-            resolve(null);
-          }
-        };
-
+        // Use browser-based Whisper for transcription
+        const transcription = await transcribeAudio(audioBlob);
+        
         // Stop all tracks
         mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+        
+        resolve(transcription);
       };
 
       mediaRecorderRef.current.stop();
@@ -102,7 +73,8 @@ export const useAudioRecorder = () => {
 
   return {
     isRecording,
-    isProcessing,
+    isProcessing: isTranscribing || isModelLoading,
+    isModelLoading,
     startRecording,
     stopRecording
   };
