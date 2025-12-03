@@ -5,15 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X } from "lucide-react";
+import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { usePracticeMode } from "@/hooks/usePracticeMode";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useBrowserWhisper } from "@/hooks/useBrowserWhisper";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { VoiceActivityIndicator } from "@/components/VoiceActivityIndicator";
+import { PracticeHistory } from "@/components/PracticeHistory";
+import { WPMDisplay, useWordCountEstimator } from "@/components/WPMDisplay";
+import { OnboardingTutorial, useOnboardingTutorial } from "@/components/OnboardingTutorial";
 
 interface DiscussionRoomProps {
   sessionId: string;
@@ -30,20 +34,29 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [autoPlayTTS, setAutoPlayTTS] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { isRecording, isProcessing: isTranscribing, startRecording, stopRecording } = useAudioRecorder();
+  const { isRecording, isProcessing: isTranscribing, isModelLoading, startRecording, stopRecording } = useAudioRecorder();
   const { isSpeaking, currentSpeaker, speak, stop: stopSpeaking } = useTextToSpeech();
+  const { transcribeFromUrl, isTranscribing: isPracticeTranscribing } = useBrowserWhisper();
+  const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial();
+  const { estimatedWordCount, updateFromAudioLevel, reset: resetWordCount } = useWordCountEstimator();
   const {
     isPracticing,
     isRecordingPractice,
     practiceAudioUrl,
     isPlayingPractice,
     practiceStream,
+    practiceHistory,
+    currentPlayingId,
+    recordingStartTime,
+    currentRecordingDuration,
     startPracticeRecording,
     stopPracticeRecording,
     playPracticeRecording,
+    playHistoryRecording,
     stopPracticePlayback,
     cancelPractice,
     acceptPractice,
+    deleteHistoryRecording,
   } = usePracticeMode();
 
   useEffect(() => {
@@ -55,6 +68,37 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  // Audio level monitoring for WPM estimation
+  useEffect(() => {
+    if (!isRecordingPractice || !practiceStream) return;
+
+    const audioContext = new AudioContext();
+    const analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaStreamSource(practiceStream);
+    source.connect(analyser);
+    
+    analyser.fftSize = 256;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    const checkLevel = () => {
+      if (!isRecordingPractice) return;
+      
+      analyser.getByteFrequencyData(dataArray);
+      const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+      const normalizedLevel = average / 255;
+      updateFromAudioLevel(normalizedLevel);
+      
+      requestAnimationFrame(checkLevel);
+    };
+    
+    checkLevel();
+    resetWordCount();
+
+    return () => {
+      audioContext.close();
+    };
+  }, [isRecordingPractice, practiceStream]);
 
   const loadSession = async () => {
     try {
@@ -206,7 +250,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             aiMessages.push(aiMsg);
             
             // Auto-play TTS for first AI response if enabled
-            if (autoPlayTTS && aiMessages.length === 0) {
+            if (autoPlayTTS && aiMessages.length === 1) {
               const participant = participants.find(p => p.id === response.participant_id);
               speak(response.text, participant?.persona_name);
             }
@@ -262,38 +306,34 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   };
 
   const handlePracticeAccept = async () => {
-    const audioUrl = acceptPractice();
+    const audioUrl = practiceAudioUrl;
     if (!audioUrl) return;
 
-    // Convert audio URL to blob and then to base64
-    const response = await fetch(audioUrl);
-    const audioBlob = await response.blob();
-    
-    const reader = new FileReader();
-    reader.readAsDataURL(audioBlob);
-    reader.onloadend = async () => {
-      const base64Audio = reader.result?.toString().split(',')[1];
+    // Calculate WPM based on estimated word count and duration
+    const wpm = currentRecordingDuration > 0 
+      ? Math.round((estimatedWordCount / currentRecordingDuration) * 60)
+      : null;
+
+    try {
+      // Use browser-based Whisper for transcription
+      const transcription = await transcribeFromUrl(audioUrl);
       
-      if (!base64Audio) return;
-
-      try {
-        const { data, error } = await supabase.functions.invoke('speech-to-text', {
-          body: { audio: base64Audio }
-        });
-
-        if (error) throw error;
-
-        setUserInput(data.text);
-        URL.revokeObjectURL(audioUrl);
-      } catch (error: any) {
-        console.error('Error transcribing practice audio:', error);
-        toast({
-          title: "Transcription failed",
-          description: error.message || "Please try again",
-          variant: "destructive",
-        });
+      // Accept practice and save to history with transcription and WPM
+      acceptPractice(transcription, wpm);
+      
+      if (transcription) {
+        setUserInput(transcription);
       }
-    };
+    } catch (error: any) {
+      console.error('Error transcribing practice audio:', error);
+      toast({
+        title: "Transcription failed",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+      // Still accept the practice even if transcription fails
+      acceptPractice(null, wpm);
+    }
   };
 
   // Keyboard shortcuts
@@ -329,6 +369,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Onboarding Tutorial */}
+      {showTutorial && (
+        <OnboardingTutorial onComplete={() => setShowTutorial(false)} />
+      )}
+
       <header className="border-b-4 border-border p-4">
         <div className="container mx-auto flex items-center justify-between">
           <div>
@@ -336,9 +381,20 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             <div className="flex gap-2 mt-1">
               <Badge variant="secondary">{session.topic_category}</Badge>
               <Badge variant="outline" className="border-2">{messages.length} turns</Badge>
+              {isModelLoading && (
+                <Badge variant="outline" className="border-2 animate-pulse">Loading AI...</Badge>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetTutorial}
+              title="Show Tutorial"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </Button>
             <Button
               variant="outline"
               onClick={() => setAutoPlayTTS(!autoPlayTTS)}
@@ -361,7 +417,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       <div className="flex-1 container mx-auto grid md:grid-cols-4 gap-4 p-4">
         <div className="md:col-span-3 space-y-4">
-          <Card className="border-4 border-border h-[calc(100vh-300px)] flex flex-col">
+          <Card className="border-4 border-border h-[calc(100vh-350px)] flex flex-col">
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
                 {messages.map((message, index) => {
@@ -502,6 +558,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               ))}
             </div>
           </Card>
+
+          {/* Practice History */}
+          <PracticeHistory 
+            recordings={practiceHistory}
+            onPlay={playHistoryRecording}
+            onDelete={deleteHistoryRecording}
+            currentlyPlaying={currentPlayingId}
+          />
         </div>
       </div>
 
@@ -517,6 +581,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
           <div className="space-y-4">
             <AudioWaveform isRecording={isRecordingPractice} stream={practiceStream} />
+            
+            {/* Real-time WPM Display */}
+            <WPMDisplay 
+              isRecording={isRecordingPractice}
+              recordingStartTime={recordingStartTime}
+              estimatedWordCount={estimatedWordCount}
+            />
 
             {practiceAudioUrl && (
               <div className="flex gap-2 justify-center">
@@ -558,7 +629,17 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                 RECORD
               </Button>
             )}
-            {practiceAudioUrl && (
+            {isRecordingPractice && (
+              <Button
+                onClick={stopPracticeRecording}
+                variant="destructive"
+                className="border-4 border-border"
+              >
+                <Square className="w-4 h-4 mr-2" />
+                STOP RECORDING
+              </Button>
+            )}
+            {practiceAudioUrl && !isRecordingPractice && (
               <Button
                 onClick={() => {
                   cancelPractice();
@@ -579,13 +660,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               <X className="w-4 h-4 mr-2" />
               CANCEL
             </Button>
-            {practiceAudioUrl && (
+            {practiceAudioUrl && !isRecordingPractice && (
               <Button
                 onClick={handlePracticeAccept}
+                disabled={isPracticeTranscribing}
                 className="border-4 border-border"
               >
                 <Check className="w-4 h-4 mr-2" />
-                ACCEPT & TRANSCRIBE
+                {isPracticeTranscribing ? 'TRANSCRIBING...' : 'ACCEPT & TRANSCRIBE'}
               </Button>
             )}
           </DialogFooter>
