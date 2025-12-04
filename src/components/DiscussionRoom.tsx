@@ -227,9 +227,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       console.log('AI Response:', aiResponse);
 
-      // Save AI responses
+      // Process AI responses one by one (sequential text + TTS)
       if (aiResponse?.participant_responses) {
-        const aiMessages = [];
         for (const response of aiResponse.participant_responses) {
           const { data: aiMsg, error: aiMsgError } = await supabase
             .from('gd_messages')
@@ -247,17 +246,21 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             .single();
 
           if (!aiMsgError && aiMsg) {
-            aiMessages.push(aiMsg);
+            // Add message to UI first
+            setMessages(prev => [...prev, aiMsg]);
             
-            // Auto-play TTS for first AI response if enabled
-            if (autoPlayTTS && aiMessages.length === 1) {
+            // Play TTS and wait for it to finish before next participant
+            if (autoPlayTTS) {
               const participant = participants.find(p => p.id === response.participant_id);
-              // Pass the participant's voice_name for distinct voices
-              speak(response.text, participant?.persona_name, participant?.voice_name);
+              try {
+                await speak(response.text, participant?.persona_name, participant?.voice_name);
+              } catch (e) {
+                // Continue even if TTS fails
+                console.error('TTS error:', e);
+              }
             }
           }
         }
-        setMessages(prev => [...prev, ...aiMessages]);
       }
 
       // Update feedback
