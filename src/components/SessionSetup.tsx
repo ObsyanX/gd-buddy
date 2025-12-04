@@ -24,7 +24,8 @@ const PERSONA_TEMPLATES = [
     interrupt_level: 0.2,
     agreeability: 0.1,
     vocab_level: 'advanced',
-    description: 'Fact-driven, uses statistics and logic'
+    description: 'Fact-driven, uses statistics and logic',
+    voice_name: 'roger' // Male voice
   },
   {
     id: 'diplomatic',
@@ -35,7 +36,8 @@ const PERSONA_TEMPLATES = [
     interrupt_level: 0.15,
     agreeability: 0.5,
     vocab_level: 'intermediate',
-    description: 'Seeks consensus, empathetic'
+    description: 'Seeks consensus, empathetic',
+    voice_name: 'sarah' // Female voice
   },
   {
     id: 'assertive',
@@ -46,7 +48,8 @@ const PERSONA_TEMPLATES = [
     interrupt_level: 0.5,
     agreeability: -0.2,
     vocab_level: 'advanced',
-    description: 'Direct, confident, decisive'
+    description: 'Direct, confident, decisive',
+    voice_name: 'george' // Male voice
   },
   {
     id: 'creative',
@@ -57,7 +60,8 @@ const PERSONA_TEMPLATES = [
     interrupt_level: 0.3,
     agreeability: 0.3,
     vocab_level: 'intermediate',
-    description: 'Innovative, brings unique perspectives'
+    description: 'Innovative, brings unique perspectives',
+    voice_name: 'aria' // Female voice
   },
   {
     id: 'devil-advocate',
@@ -68,7 +72,8 @@ const PERSONA_TEMPLATES = [
     interrupt_level: 0.4,
     agreeability: -0.4,
     vocab_level: 'advanced',
-    description: 'Challenges ideas, plays devil\'s advocate'
+    description: 'Challenges ideas, plays devil\'s advocate',
+    voice_name: 'daniel' // Male voice
   },
   {
     id: 'technical',
@@ -79,7 +84,8 @@ const PERSONA_TEMPLATES = [
     interrupt_level: 0.25,
     agreeability: 0,
     vocab_level: 'advanced',
-    description: 'Technical focus, practical solutions'
+    description: 'Technical focus, practical solutions',
+    voice_name: 'brian' // Male voice
   },
   {
     id: 'strategic',
@@ -90,7 +96,8 @@ const PERSONA_TEMPLATES = [
     interrupt_level: 0.35,
     agreeability: 0.2,
     vocab_level: 'advanced',
-    description: 'Big-picture thinking, long-term vision'
+    description: 'Big-picture thinking, long-term vision',
+    voice_name: 'charlotte' // Female voice
   },
   {
     id: 'supportive',
@@ -101,7 +108,8 @@ const PERSONA_TEMPLATES = [
     interrupt_level: 0.1,
     agreeability: 0.6,
     vocab_level: 'intermediate',
-    description: 'Encourages participation, builds on ideas'
+    description: 'Encourages participation, builds on ideas',
+    voice_name: 'callum' // Male voice
   },
   {
     id: 'skeptical',
@@ -112,7 +120,8 @@ const PERSONA_TEMPLATES = [
     interrupt_level: 0.3,
     agreeability: -0.3,
     vocab_level: 'advanced',
-    description: 'Questions assumptions, evidence-based'
+    description: 'Questions assumptions, evidence-based',
+    voice_name: 'jessica' // Female voice
   },
   {
     id: 'pragmatic',
@@ -123,7 +132,8 @@ const PERSONA_TEMPLATES = [
     interrupt_level: 0.2,
     agreeability: 0.1,
     vocab_level: 'intermediate',
-    description: 'Focuses on feasibility and implementation'
+    description: 'Focuses on feasibility and implementation',
+    voice_name: 'chris' // Male voice
   }
 ];
 
@@ -184,7 +194,7 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
 
       if (userError) throw userError;
 
-      // Create AI participants
+      // Create AI participants with their assigned voices
       const aiParticipants = selectedPersonas.map((personaId, index) => {
         const persona = PERSONA_TEMPLATES.find(p => p.id === personaId)!;
         return {
@@ -197,7 +207,8 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
           persona_verbosity: persona.verbosity,
           persona_interrupt_level: persona.interrupt_level,
           persona_agreeability: persona.agreeability,
-          persona_vocab_level: persona.vocab_level
+          persona_vocab_level: persona.vocab_level,
+          voice_name: persona.voice_name // Assign gender-appropriate voice
         };
       });
 

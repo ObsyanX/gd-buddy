@@ -6,13 +6,11 @@ import type { VoiceSettings } from '@/pages/Settings';
 export const useTextToSpeech = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentSpeaker, setCurrentSpeaker] = useState<string | null>(null);
-  const [volume, setVolume] = useState(1.0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioQueueRef = useRef<Array<{ text: string; speaker?: string }>>([]);
-  const isProcessingQueueRef = useRef(false);
   const { toast } = useToast();
 
-  const speak = async (text: string, speaker?: string, participantVoice?: string) => {
+  // Returns a promise that resolves when audio finishes playing
+  const speak = async (text: string, speaker?: string, participantVoice?: string): Promise<void> => {
     // Load voice settings from localStorage
     const savedSettings = localStorage.getItem('voiceSettings');
     const settings: VoiceSettings = savedSettings
@@ -21,59 +19,65 @@ export const useTextToSpeech = () => {
 
     // Use participant's voice if provided, otherwise fall back to user settings
     const voice = participantVoice || settings.voice;
-    try {
-      setIsSpeaking(true);
-      setCurrentSpeaker(speaker || null);
 
-      // Stop any currently playing audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+    return new Promise(async (resolve, reject) => {
+      try {
+        setIsSpeaking(true);
+        setCurrentSpeaker(speaker || null);
 
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text, voice }
-      });
+        // Stop any currently playing audio
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
 
-      if (error) throw error;
+        const { data, error } = await supabase.functions.invoke('text-to-speech', {
+          body: { text, voice }
+        });
 
-      // Convert base64 to audio and play
-      const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
+        if (error) throw error;
 
-      audio.onended = () => {
+        // Convert base64 to audio and play
+        const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        const audio = new Audio(audioUrl);
+        audioRef.current = audio;
+
+        audio.onended = () => {
+          setIsSpeaking(false);
+          setCurrentSpeaker(null);
+          URL.revokeObjectURL(audioUrl);
+          resolve();
+        };
+
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          setCurrentSpeaker(null);
+          URL.revokeObjectURL(audioUrl);
+          toast({
+            title: "Audio playback failed",
+            description: "Could not play the audio",
+            variant: "destructive",
+          });
+          reject(new Error('Audio playback failed'));
+        };
+
+        // Apply speed setting
+        audio.playbackRate = settings.speed;
+        await audio.play();
+      } catch (error: any) {
+        console.error('Error generating speech:', error);
         setIsSpeaking(false);
         setCurrentSpeaker(null);
-        URL.revokeObjectURL(audioUrl);
-      };
-
-      audio.onerror = () => {
-        setIsSpeaking(false);
-        setCurrentSpeaker(null);
-        URL.revokeObjectURL(audioUrl);
         toast({
-          title: "Audio playback failed",
-          description: "Could not play the audio",
+          title: "Text-to-speech failed",
+          description: error.message || "Please try again",
           variant: "destructive",
         });
-      };
-
-      // Apply speed setting
-      audio.playbackRate = settings.speed;
-      await audio.play();
-    } catch (error: any) {
-      console.error('Error generating speech:', error);
-      setIsSpeaking(false);
-      setCurrentSpeaker(null);
-      toast({
-        title: "Text-to-speech failed",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      });
-    }
+        reject(error);
+      }
+    });
   };
 
   const stop = () => {
