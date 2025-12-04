@@ -12,14 +12,15 @@ export const useTextToSpeech = () => {
   const isProcessingQueueRef = useRef(false);
   const { toast } = useToast();
 
-  const speak = async (text: string, speaker?: string) => {
+  const speak = async (text: string, speaker?: string, participantVoice?: string) => {
     // Load voice settings from localStorage
     const savedSettings = localStorage.getItem('voiceSettings');
     const settings: VoiceSettings = savedSettings
       ? JSON.parse(savedSettings)
       : { voice: 'sarah', speed: 1.0 };
 
-    const voice = settings.voice;
+    // Use participant's voice if provided, otherwise fall back to user settings
+    const voice = participantVoice || settings.voice;
     try {
       setIsSpeaking(true);
       setCurrentSpeaker(speaker || null);
