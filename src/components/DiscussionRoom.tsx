@@ -252,7 +252,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             // Auto-play TTS for first AI response if enabled
             if (autoPlayTTS && aiMessages.length === 1) {
               const participant = participants.find(p => p.id === response.participant_id);
-              speak(response.text, participant?.persona_name);
+              // Pass the participant's voice_name for distinct voices
+              speak(response.text, participant?.persona_name, participant?.voice_name);
             }
           }
         }
