@@ -37,15 +37,42 @@ const VOICE_MAP: Record<string, string> = {
   'bill': 'pqHfZKP75CvOlQylNhV4',
 };
 
+// Helper to call ElevenLabs API with a specific key
+async function callElevenLabs(apiKey: string, text: string, voiceId: string): Promise<Response> {
+  return await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'audio/mpeg',
+      'Content-Type': 'application/json',
+      'xi-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      text: text,
+      model_id: 'eleven_turbo_v2_5',
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75,
+        style: 0.0,
+        use_speaker_boost: true,
+      },
+    }),
+  });
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
-    if (!ELEVENLABS_API_KEY) {
-      throw new Error('ELEVENLABS_API_KEY is not configured');
+    // Get both API keys for failover
+    const apiKeys = [
+      Deno.env.get('ELEVENLABS_API_KEY'),
+      Deno.env.get('ELEVENLABS_API_KEY_1'),
+    ].filter(Boolean) as string[];
+
+    if (apiKeys.length === 0) {
+      throw new Error('No ElevenLabs API keys configured');
     }
 
     const { text, voice } = await req.json();
@@ -59,30 +86,34 @@ serve(async (req) => {
 
     console.log(`Generating speech with ElevenLabs for: "${text.substring(0, 50)}..." with voice: ${voice || 'sarah'} (${voiceId})`);
 
-    // Use ElevenLabs API
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'audio/mpeg',
-        'Content-Type': 'application/json',
-        'xi-api-key': ELEVENLABS_API_KEY,
-      },
-      body: JSON.stringify({
-        text: text,
-        model_id: 'eleven_turbo_v2_5',
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: 0.0,
-          use_speaker_boost: true,
-        },
-      }),
-    });
+    let response: Response | null = null;
+    let lastError: string = '';
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ElevenLabs API error:', response.status, errorText);
-      throw new Error(`ElevenLabs API error: ${errorText}`);
+    // Try each API key until one works
+    for (let i = 0; i < apiKeys.length; i++) {
+      const apiKey = apiKeys[i];
+      console.log(`Trying ElevenLabs API key ${i + 1} of ${apiKeys.length}`);
+      
+      try {
+        response = await callElevenLabs(apiKey, text, voiceId);
+        
+        if (response.ok) {
+          console.log(`Success with API key ${i + 1}`);
+          break;
+        } else {
+          lastError = await response.text();
+          console.warn(`API key ${i + 1} failed:`, response.status, lastError);
+          response = null;
+        }
+      } catch (fetchError) {
+        console.warn(`API key ${i + 1} fetch error:`, fetchError);
+        lastError = fetchError instanceof Error ? fetchError.message : 'Fetch failed';
+        response = null;
+      }
+    }
+
+    if (!response || !response.ok) {
+      throw new Error(`All ElevenLabs API keys failed. Last error: ${lastError}`);
     }
 
     // Convert audio buffer to base64 in chunks to avoid stack overflow
