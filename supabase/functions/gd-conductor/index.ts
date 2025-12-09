@@ -86,6 +86,32 @@ RULES:
       `${turn.who}: ${turn.text}`
     ).join('\n');
 
+    // Build metrics context for post-session report
+    const metricsContext = request_type === 'post_session_report' && metrics_so_far ? `
+ACTUAL PERFORMANCE METRICS (calculated from real session data):
+- Words Per Minute: ${metrics_so_far.words_per_min || 0}
+- Total Words Spoken: ${metrics_so_far.total_words || 0}
+- Filler Word Count: ${metrics_so_far.filler_count || 0}
+- Filler Rate: ${((metrics_so_far.fillerRate || 0) * 100).toFixed(1)}%
+- Session Duration: ${(metrics_so_far.sessionDurationMinutes || 0).toFixed(1)} minutes
+- User Contributions: ${metrics_so_far.userMessageCount || 0} messages
+- Total Messages: ${metrics_so_far.totalMessageCount || 0}
+- Participation Rate: ${((metrics_so_far.participationRate || 0) * 100).toFixed(0)}%
+- Avg Words/Response: ${metrics_so_far.avgResponseLength || 0}
+- Avg Response Time: ${(metrics_so_far.avgResponseTime || 0).toFixed(1)}s
+- Vocabulary Diversity: ${metrics_so_far.uniqueWords || 0} unique words
+- Calculated Scores: Fluency=${metrics_so_far.fluency_score || 0}, Content=${metrics_so_far.content_score || 0}, Structure=${metrics_so_far.structure_score || 0}, Voice=${metrics_so_far.voice_score || 0}
+
+BENCHMARKS:
+- Ideal WPM: 120-180 (target: 150)
+- Filler Rate Target: <3%
+- Ideal Words/Response: 40-100 (target: 60)
+- Participation Target: 15-35%` : '';
+
+    const benchmarksInfo = body.benchmarks ? `
+INDUSTRY BENCHMARKS PROVIDED:
+${JSON.stringify(body.benchmarks, null, 2)}` : '';
+
     const userMessage = `Topic: ${topic}
 Category: ${topic_meta.category || 'General'}
 Difficulty: ${topic_meta.difficulty || 'Medium'}
@@ -97,12 +123,21 @@ Recent conversation:
 ${conversationContext || 'No previous turns'}
 
 Latest user utterance: "${latest_user_utterance}"
+${metricsContext}
+${benchmarksInfo}
 
 Request: ${request_type}
 
 ${request_type === 'generate_responses' ? 'Generate AI participant responses now.' : ''}
 ${request_type === 'invigilator_update' ? 'Provide invigilator feedback based on metrics.' : ''}
-${request_type === 'post_session_report' ? 'Generate complete post-session analysis with scores, strengths, weaknesses, and improvement drills.' : ''}`;
+${request_type === 'post_session_report' ? `Generate a detailed post-session analysis using the ACTUAL METRICS provided above. 
+Your response MUST include:
+1. "strengths": Array of 3-5 specific strengths based on the real metrics (e.g., if WPM is in ideal range, mention that)
+2. "weaknesses": Array of 2-4 specific areas needing improvement based on the real metrics
+3. "drills": Array of 2-3 improvement exercises, each with "title" and "description"
+4. "overall_feedback": A 2-3 sentence summary referencing the actual performance numbers
+
+IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statistics. Use the real data provided.` : ''}`;
 
     // Call Lovable AI
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
