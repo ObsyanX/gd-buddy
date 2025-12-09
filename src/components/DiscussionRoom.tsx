@@ -8,11 +8,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { usePracticeMode } from "@/hooks/usePracticeMode";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { useBrowserWhisper } from "@/hooks/useBrowserWhisper";
+import { useStreamingTranscription } from "@/hooks/useStreamingTranscription";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { VoiceActivityIndicator } from "@/components/VoiceActivityIndicator";
 import { PracticeHistory } from "@/components/PracticeHistory";
@@ -34,9 +33,21 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [autoPlayTTS, setAutoPlayTTS] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { isRecording, isProcessing: isTranscribing, isModelLoading, startRecording, stopRecording } = useAudioRecorder();
+  
+  // Streaming transcription for real-time voice input (like Google Keyboard)
+  const { 
+    isListening, 
+    isSupported: isSpeechSupported, 
+    displayText: streamingText,
+    startListening, 
+    stopListening 
+  } = useStreamingTranscription({
+    context: session?.topic,
+    onInterimResult: (text) => setUserInput(text),
+    onFinalResult: (text) => setUserInput(text),
+  });
+  
   const { isSpeaking, currentSpeaker, speak, stop: stopSpeaking } = useTextToSpeech();
-  const { transcribeFromUrl, isTranscribing: isPracticeTranscribing } = useBrowserWhisper();
   const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial();
   const { estimatedWordCount, updateFromAudioLevel, reset: resetWordCount } = useWordCountEstimator();
   const {
@@ -298,14 +309,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     }
   };
 
-  const handleVoiceInput = async () => {
-    if (isRecording) {
-      const transcription = await stopRecording();
-      if (transcription) {
-        setUserInput(transcription);
-      }
+  const handleVoiceInput = () => {
+    if (isListening) {
+      stopListening();
     } else {
-      startRecording();
+      startListening();
     }
   };
 
@@ -318,33 +326,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       ? Math.round((estimatedWordCount / currentRecordingDuration) * 60)
       : null;
 
-    try {
-      // Use browser-based Whisper for transcription
-      const transcription = await transcribeFromUrl(audioUrl);
-      
-      // Accept practice and save to history with transcription and WPM
-      acceptPractice(transcription, wpm);
-      
-      if (transcription) {
-        setUserInput(transcription);
-      }
-    } catch (error: any) {
-      console.error('Error transcribing practice audio:', error);
-      toast({
-        title: "Transcription failed",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      });
-      // Still accept the practice even if transcription fails
-      acceptPractice(null, wpm);
-    }
+    // Accept practice with WPM - transcription already in input from streaming
+    acceptPractice(userInput || null, wpm);
   };
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
     onMicToggle: () => {
       if (!isPracticing && !isProcessing) {
-        if (isRecording) {
+        if (isListening) {
           handleVoiceInput();
         } else {
           startPracticeRecording();
@@ -352,7 +342,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       }
     },
     onSendMessage: () => {
-      if (!isProcessing && userInput.trim() && !isRecording && !isTranscribing && !isPracticing) {
+      if (!isProcessing && userInput.trim() && !isListening && !isPracticing) {
         handleSendMessage();
       }
     },
@@ -385,8 +375,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             <div className="flex gap-2 mt-1">
               <Badge variant="secondary">{session.topic_category}</Badge>
               <Badge variant="outline" className="border-2">{messages.length} turns</Badge>
-              {isModelLoading && (
-                <Badge variant="outline" className="border-2 animate-pulse">Loading AI...</Badge>
+              {isListening && (
+                <Badge variant="outline" className="border-2 animate-pulse bg-destructive/20">🎤 Listening...</Badge>
               )}
             </div>
           </div>
@@ -477,11 +467,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                   }
                 }}
                 className="border-2 text-lg"
-                disabled={isProcessing || isRecording || isTranscribing || isPracticing}
+                disabled={isProcessing || isListening || isPracticing}
               />
               <Button
                 onClick={startPracticeRecording}
-                disabled={isProcessing || isTranscribing || isRecording || isPracticing}
+                disabled={isProcessing || isListening || isPracticing}
                 variant="outline"
                 className="border-4 border-border"
                 size="lg"
@@ -491,17 +481,17 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               </Button>
               <Button
                 onClick={handleVoiceInput}
-                disabled={isProcessing || isTranscribing || isPracticing}
-                variant={isRecording ? "destructive" : "outline"}
-                className="border-4 border-border"
+                disabled={isProcessing || isPracticing}
+                variant={isListening ? "destructive" : "outline"}
+                className={`border-4 border-border ${isListening ? 'animate-pulse' : ''}`}
                 size="lg"
-                title="Quick Record"
+                title="Voice Input - Real-time (Click to toggle)"
               >
-                {isTranscribing ? "..." : <Mic className="w-4 h-4" />}
+                {isListening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </Button>
               <Button 
                 onClick={handleSendMessage}
-                disabled={isProcessing || !userInput.trim() || isRecording || isTranscribing || isPracticing}
+                disabled={isProcessing || !userInput.trim() || isListening || isPracticing}
                 className="border-4 border-border"
                 size="lg"
                 title="Send (Ctrl+Enter)"
@@ -667,11 +657,10 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             {practiceAudioUrl && !isRecordingPractice && (
               <Button
                 onClick={handlePracticeAccept}
-                disabled={isPracticeTranscribing}
                 className="border-4 border-border"
               >
                 <Check className="w-4 h-4 mr-2" />
-                {isPracticeTranscribing ? 'TRANSCRIBING...' : 'ACCEPT & TRANSCRIBE'}
+                ACCEPT
               </Button>
             )}
           </DialogFooter>
