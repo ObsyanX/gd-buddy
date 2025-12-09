@@ -216,8 +216,14 @@ const Dashboard = () => {
               <div className="space-y-3">
                 {sessions.map((session: any) => {
                   const metrics = session.gd_metrics?.[0];
-                  const avgScore = metrics 
-                    ? Math.round((metrics.fluency_score + metrics.content_score + metrics.structure_score + metrics.voice_score) / 4)
+                  const scores = metrics ? [
+                    metrics.fluency_score, 
+                    metrics.content_score, 
+                    metrics.structure_score, 
+                    metrics.voice_score
+                  ].filter((s): s is number => s !== null && s !== undefined) : [];
+                  const avgScore = scores.length > 0 
+                    ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
                     : 0;
                   
                   return (
