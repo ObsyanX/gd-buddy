@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { pipeline } from '@huggingface/transformers';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 let whisperPipeline: any = null;
 let pipelineLoading = false;
@@ -18,21 +19,22 @@ export const useBrowserWhisper = () => {
     setIsModelLoading(true);
 
     try {
-      console.log('Loading Whisper model in browser...');
+      // Use multilingual Whisper model for better language support
+      console.log('Loading multilingual Whisper model in browser...');
       whisperPipeline = await pipeline(
         'automatic-speech-recognition',
-        'onnx-community/whisper-tiny.en',
+        'onnx-community/whisper-small',
         { device: 'webgpu' }
       );
       setModelLoaded(true);
-      console.log('Whisper model loaded successfully');
+      console.log('Whisper model loaded successfully with WebGPU');
       return whisperPipeline;
     } catch (error) {
       console.error('WebGPU not available, falling back to CPU...');
       try {
         whisperPipeline = await pipeline(
           'automatic-speech-recognition',
-          'onnx-community/whisper-tiny.en'
+          'onnx-community/whisper-small'
         );
         setModelLoaded(true);
         console.log('Whisper model loaded on CPU');
@@ -52,7 +54,28 @@ export const useBrowserWhisper = () => {
     }
   }, [toast]);
 
-  const transcribeAudio = useCallback(async (audioBlob: Blob): Promise<string | null> => {
+  // AI correction for transcription
+  const correctTranscription = useCallback(async (rawText: string, context?: string): Promise<string> => {
+    if (!rawText || rawText.trim().length === 0) return rawText;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('transcription-correction', {
+        body: { rawTranscription: rawText, context }
+      });
+
+      if (error) {
+        console.error('Transcription correction error:', error);
+        return rawText; // Return original on error
+      }
+
+      return data?.correctedText || rawText;
+    } catch (err) {
+      console.error('Failed to correct transcription:', err);
+      return rawText;
+    }
+  }, []);
+
+  const transcribeAudio = useCallback(async (audioBlob: Blob, context?: string): Promise<string | null> => {
     setIsTranscribing(true);
 
     try {
@@ -71,11 +94,20 @@ export const useBrowserWhisper = () => {
       // Get audio data as float32 array
       const audioData = audioBuffer.getChannelData(0);
 
-      console.log('Transcribing audio...');
-      const result = await model(audioData);
-      console.log('Transcription result:', result);
+      console.log('Transcribing audio with multilingual support...');
+      const result = await model(audioData, {
+        language: 'en', // Primary language but model handles code-switching
+        task: 'transcribe',
+      });
+      
+      const rawText = result.text || '';
+      console.log('Raw transcription:', rawText);
 
-      return result.text || null;
+      // Apply AI correction for better accuracy
+      const correctedText = await correctTranscription(rawText, context);
+      console.log('Corrected transcription:', correctedText);
+
+      return correctedText || null;
     } catch (error: any) {
       console.error('Transcription error:', error);
       toast({
@@ -87,9 +119,9 @@ export const useBrowserWhisper = () => {
     } finally {
       setIsTranscribing(false);
     }
-  }, [loadModel, toast]);
+  }, [loadModel, correctTranscription, toast]);
 
-  const transcribeFromUrl = useCallback(async (audioUrl: string): Promise<string | null> => {
+  const transcribeFromUrl = useCallback(async (audioUrl: string, context?: string): Promise<string | null> => {
     setIsTranscribing(true);
 
     try {
@@ -108,11 +140,20 @@ export const useBrowserWhisper = () => {
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
       const audioData = audioBuffer.getChannelData(0);
 
-      console.log('Transcribing audio from URL...');
-      const result = await model(audioData);
-      console.log('Transcription result:', result);
+      console.log('Transcribing audio from URL with multilingual support...');
+      const result = await model(audioData, {
+        language: 'en',
+        task: 'transcribe',
+      });
+      
+      const rawText = result.text || '';
+      console.log('Raw transcription:', rawText);
 
-      return result.text || null;
+      // Apply AI correction
+      const correctedText = await correctTranscription(rawText, context);
+      console.log('Corrected transcription:', correctedText);
+
+      return correctedText || null;
     } catch (error: any) {
       console.error('Transcription error:', error);
       toast({
@@ -124,7 +165,7 @@ export const useBrowserWhisper = () => {
     } finally {
       setIsTranscribing(false);
     }
-  }, [loadModel, toast]);
+  }, [loadModel, correctTranscription, toast]);
 
   return {
     isTranscribing,
