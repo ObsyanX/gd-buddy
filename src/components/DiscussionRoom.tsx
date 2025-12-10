@@ -106,6 +106,44 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     loadSession();
   }, [sessionId]);
 
+  // Realtime subscription for multiplayer message sync
+  useEffect(() => {
+    if (!session?.is_multiplayer) return;
+
+    const channel = supabase
+      .channel(`gd_messages_${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'gd_messages',
+          filter: `session_id=eq.${sessionId}`
+        },
+        async (payload) => {
+          // Fetch the complete message with participant info
+          const { data: newMessage } = await supabase
+            .from('gd_messages')
+            .select('*, gd_participants(*)')
+            .eq('id', payload.new.id)
+            .single();
+
+          if (newMessage) {
+            setMessages(prev => {
+              // Avoid duplicates
+              if (prev.find(m => m.id === newMessage.id)) return prev;
+              return [...prev, newMessage];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, session?.is_multiplayer]);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });

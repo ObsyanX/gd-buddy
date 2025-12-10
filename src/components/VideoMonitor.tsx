@@ -111,7 +111,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
   const startCamera = async () => {
     try {
       // Load models first
-      await loadModels();
+      const modelsReady = await loadModels();
       
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -124,11 +124,19 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await new Promise<void>((resolve) => {
+        
+        // Wait for video to be fully ready to play
+        await new Promise<void>((resolve, reject) => {
           if (videoRef.current) {
-            videoRef.current.onloadedmetadata = () => resolve();
+            videoRef.current.onloadedmetadata = () => {
+              videoRef.current?.play().then(() => resolve()).catch(reject);
+            };
+            videoRef.current.onerror = () => reject(new Error('Video failed to load'));
           }
         });
+        
+        // Additional wait to ensure video is actually playing frames
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
       setIsCameraOn(true);
@@ -136,7 +144,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       
       toast({
         title: "Camera enabled",
-        description: "Face detection is now active",
+        description: modelsReady ? "Face detection is now active" : "Using basic analysis",
       });
       
       // Start analysis loop
@@ -171,7 +179,8 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+    // Check video is ready and has valid dimensions
+    if (video.readyState !== video.HAVE_ENOUGH_DATA || video.videoWidth === 0 || video.videoHeight === 0) {
       animationRef.current = requestAnimationFrame(() => {
         setTimeout(analyzeFrame, 100);
       });
@@ -181,11 +190,11 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
     accumulatedRef.current.totalFrames++;
 
     try {
-      // Detect face with landmarks and expressions
+      // Detect face with landmarks and expressions - use lower threshold for better detection
       const detection = await faceapi
         .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
-          inputSize: 320,
-          scoreThreshold: 0.5
+          inputSize: 416,
+          scoreThreshold: 0.3
         }))
         .withFaceLandmarks()
         .withFaceExpressions();
