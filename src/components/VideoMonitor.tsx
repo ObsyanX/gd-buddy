@@ -3,8 +3,9 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Camera, Eye, User, AlertTriangle, CheckCircle, X } from 'lucide-react';
+import { Camera, Eye, User, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import * as faceapi from 'face-api.js';
 
 interface VideoMonitorProps {
   isActive: boolean;
@@ -20,6 +21,7 @@ export interface VideoMetrics {
   expressionScore: number;
   overallScore: number;
   tips: string[];
+  faceDetected: boolean;
 }
 
 // Accumulated metrics for session report
@@ -28,7 +30,11 @@ export interface AccumulatedVideoMetrics {
   eyeContactScores: number[];
   expressionScores: number[];
   tips: Set<string>;
+  totalFrames: number;
+  facesDetected: number;
 }
+
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
 
 const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -38,34 +44,75 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
   
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [metrics, setMetrics] = useState<VideoMetrics>({
     posture: 'good',
-    postureScore: 85,
+    postureScore: 0,
     eyeContact: 'maintained',
-    eyeContactScore: 80,
-    facialExpression: 'confident',
-    expressionScore: 75,
-    overallScore: 80,
-    tips: []
+    eyeContactScore: 0,
+    facialExpression: 'neutral',
+    expressionScore: 0,
+    overallScore: 0,
+    tips: [],
+    faceDetected: false
   });
   const [isMinimized, setIsMinimized] = useState(false);
   
   const { toast } = useToast();
 
-  // Face detection tracking variables
-  const facePositionHistoryRef = useRef<{ x: number; y: number; width: number; height: number }[]>([]);
-  const headMovementRef = useRef<number>(0);
+  // Face tracking history
+  const faceHistoryRef = useRef<{
+    centerX: number;
+    centerY: number;
+    width: number;
+    height: number;
+    jawAngle: number;
+    eyeOpenRatio: number;
+  }[]>([]);
 
   // Accumulated metrics for session
   const accumulatedRef = useRef<AccumulatedVideoMetrics>({
     postureScores: [],
     eyeContactScores: [],
     expressionScores: [],
-    tips: new Set()
+    tips: new Set(),
+    totalFrames: 0,
+    facesDetected: 0
   });
+
+  // Load face-api.js models
+  const loadModels = async () => {
+    if (modelsLoaded) return true;
+    
+    setIsLoadingModels(true);
+    try {
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
+      ]);
+      setModelsLoaded(true);
+      console.log('Face-api models loaded successfully');
+      return true;
+    } catch (error) {
+      console.error('Error loading face-api models:', error);
+      toast({
+        title: "Model loading failed",
+        description: "Could not load face detection models. Using fallback analysis.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
 
   const startCamera = async () => {
     try {
+      // Load models first
+      await loadModels();
+      
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 640 },
@@ -77,6 +124,11 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        await new Promise<void>((resolve) => {
+          if (videoRef.current) {
+            videoRef.current.onloadedmetadata = () => resolve();
+          }
+        });
       }
       
       setIsCameraOn(true);
@@ -84,7 +136,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       
       toast({
         title: "Camera enabled",
-        description: "Video monitoring is now active",
+        description: "Face detection is now active",
       });
       
       // Start analysis loop
@@ -112,132 +164,150 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
     setIsCameraOn(false);
   };
 
-  // Enhanced face/posture analysis using canvas pixel analysis
-  const analyzeFrame = useCallback(() => {
+  // Analyze frame with face-api.js
+  const analyzeFrame = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current || !isCameraOn) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
     
-    if (!ctx || video.readyState !== video.HAVE_ENOUGH_DATA) {
-      animationRef.current = requestAnimationFrame(analyzeFrame);
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      animationRef.current = requestAnimationFrame(() => {
+        setTimeout(analyzeFrame, 100);
+      });
       return;
     }
 
-    // Draw video frame to canvas for analysis
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
+    accumulatedRef.current.totalFrames++;
 
-    // Get image data for analysis
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
+    try {
+      // Detect face with landmarks and expressions
+      const detection = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
+          inputSize: 320,
+          scoreThreshold: 0.5
+        }))
+        .withFaceLandmarks()
+        .withFaceExpressions();
 
-    // Enhanced face detection using skin color detection
-    let skinPixelCount = 0;
-    let centerX = 0;
-    let centerY = 0;
-    let minX = canvas.width, maxX = 0, minY = canvas.height, maxY = 0;
+      // Set up canvas dimensions
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      
+      if (detection && ctx) {
+        accumulatedRef.current.facesDetected++;
+        
+        // Draw face detection overlay on canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw detection box (mirrored)
+        const box = detection.detection.box;
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(canvas.width - box.x - box.width, box.y, box.width, box.height);
+        
+        // Draw key landmarks
+        const landmarks = detection.landmarks;
+        const leftEye = landmarks.getLeftEye();
+        const rightEye = landmarks.getRightEye();
+        const nose = landmarks.getNose();
+        const jaw = landmarks.getJawOutline();
+        
+        ctx.fillStyle = '#22c55e';
+        [...leftEye, ...rightEye].forEach(point => {
+          ctx.beginPath();
+          ctx.arc(canvas.width - point.x, point.y, 2, 0, Math.PI * 2);
+          ctx.fill();
+        });
 
-    for (let y = 0; y < canvas.height; y += 4) {
-      for (let x = 0; x < canvas.width; x += 4) {
-        const i = (y * canvas.width + x) * 4;
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-
-        // Improved skin color detection (works for various skin tones)
-        const isSkin = (
-          r > 95 && g > 40 && b > 20 &&
-          r > g && r > b &&
-          Math.abs(r - g) > 15 &&
-          r - g > 15 && r - b > 15
-        ) || (
-          // Additional skin tone detection for darker skin
-          r > 60 && g > 40 && b > 30 &&
-          r > g && g > b &&
-          r - b > 10
-        );
-
-        if (isSkin) {
-          skinPixelCount++;
-          centerX += x;
-          centerY += y;
-          minX = Math.min(minX, x);
-          maxX = Math.max(maxX, x);
-          minY = Math.min(minY, y);
-          maxY = Math.max(maxY, y);
-        }
+        // Calculate metrics from face data
+        const newMetrics = calculateMetricsFromFace(detection, canvas.width, canvas.height);
+        
+        // Accumulate metrics
+        accumulatedRef.current.postureScores.push(newMetrics.postureScore);
+        accumulatedRef.current.eyeContactScores.push(newMetrics.eyeContactScore);
+        accumulatedRef.current.expressionScores.push(newMetrics.expressionScore);
+        newMetrics.tips.forEach(tip => accumulatedRef.current.tips.add(tip));
+        
+        setMetrics(newMetrics);
+        onMetricsUpdate?.(newMetrics);
+      } else {
+        // No face detected
+        const noFaceMetrics: VideoMetrics = {
+          posture: 'poor',
+          postureScore: 0,
+          eyeContact: 'avoiding',
+          eyeContactScore: 0,
+          facialExpression: 'nervous',
+          expressionScore: 0,
+          overallScore: 0,
+          tips: ['Face not detected - ensure you are visible in frame', 'Check lighting and camera angle'],
+          faceDetected: false
+        };
+        setMetrics(noFaceMetrics);
+        onMetricsUpdate?.(noFaceMetrics);
       }
+    } catch (error) {
+      console.error('Face detection error:', error);
     }
 
-    if (skinPixelCount > 100) {
-      centerX /= skinPixelCount;
-      centerY /= skinPixelCount;
-      const faceWidth = maxX - minX;
-      const faceHeight = maxY - minY;
-
-      // Track face position history
-      facePositionHistoryRef.current.push({ 
-        x: centerX, 
-        y: centerY, 
-        width: faceWidth,
-        height: faceHeight 
-      });
-      if (facePositionHistoryRef.current.length > 30) {
-        facePositionHistoryRef.current.shift();
-      }
-
-      // Calculate metrics based on face position analysis
-      const newMetrics = calculateMetrics(centerX, centerY, faceWidth, faceHeight, canvas.width, canvas.height);
-      
-      // Accumulate metrics for session report
-      accumulatedRef.current.postureScores.push(newMetrics.postureScore);
-      accumulatedRef.current.eyeContactScores.push(newMetrics.eyeContactScore);
-      accumulatedRef.current.expressionScores.push(newMetrics.expressionScore);
-      newMetrics.tips.forEach(tip => accumulatedRef.current.tips.add(tip));
-      
-      setMetrics(newMetrics);
-      onMetricsUpdate?.(newMetrics);
-    } else {
-      // No face detected
-      const noFaceMetrics: VideoMetrics = {
-        posture: 'poor',
-        postureScore: 30,
-        eyeContact: 'avoiding',
-        eyeContactScore: 20,
-        facialExpression: 'nervous',
-        expressionScore: 30,
-        overallScore: 27,
-        tips: ['Face not detected - ensure you are visible in frame']
-      };
-      setMetrics(noFaceMetrics);
-      onMetricsUpdate?.(noFaceMetrics);
-    }
-
-    // Analyze at ~10 FPS for performance
+    // Continue analysis at ~8 FPS for performance
     setTimeout(() => {
       animationRef.current = requestAnimationFrame(analyzeFrame);
-    }, 100);
+    }, 125);
   }, [isCameraOn, onMetricsUpdate]);
 
-  const calculateMetrics = (
-    faceX: number, 
-    faceY: number, 
-    faceWidth: number,
-    faceHeight: number,
-    canvasWidth: number, 
+  const calculateMetricsFromFace = (
+    detection: faceapi.WithFaceExpressions<faceapi.WithFaceLandmarks<{ detection: faceapi.FaceDetection }, faceapi.FaceLandmarks68>>,
+    canvasWidth: number,
     canvasHeight: number
   ): VideoMetrics => {
-    const history = facePositionHistoryRef.current;
+    const box = detection.detection.box;
+    const landmarks = detection.landmarks;
+    const expressions = detection.expressions;
     const tips: string[] = [];
+
+    // Get face center
+    const faceCenterX = box.x + box.width / 2;
+    const faceCenterY = box.y + box.height / 2;
+
+    // Get eye landmarks for gaze estimation
+    const leftEye = landmarks.getLeftEye();
+    const rightEye = landmarks.getRightEye();
+    const nose = landmarks.getNose();
+    const jaw = landmarks.getJawOutline();
+
+    // Calculate eye openness (vertical distance / horizontal distance)
+    const leftEyeHeight = Math.abs(leftEye[1].y - leftEye[5].y);
+    const leftEyeWidth = Math.abs(leftEye[0].x - leftEye[3].x);
+    const rightEyeHeight = Math.abs(rightEye[1].y - rightEye[5].y);
+    const rightEyeWidth = Math.abs(rightEye[0].x - rightEye[3].x);
+    const eyeOpenRatio = ((leftEyeHeight / leftEyeWidth) + (rightEyeHeight / rightEyeWidth)) / 2;
+
+    // Calculate head tilt using jaw landmarks
+    const jawLeft = jaw[0];
+    const jawRight = jaw[16];
+    const jawAngle = Math.atan2(jawRight.y - jawLeft.y, jawRight.x - jawLeft.x) * (180 / Math.PI);
+
+    // Track face position history
+    faceHistoryRef.current.push({
+      centerX: faceCenterX,
+      centerY: faceCenterY,
+      width: box.width,
+      height: box.height,
+      jawAngle,
+      eyeOpenRatio
+    });
+    if (faceHistoryRef.current.length > 30) {
+      faceHistoryRef.current.shift();
+    }
 
     // ===== POSTURE ANALYSIS =====
     let postureScore = 100;
     
     // Check horizontal centering
-    const centerXRatio = faceX / canvasWidth;
+    const centerXRatio = faceCenterX / canvasWidth;
     if (Math.abs(centerXRatio - 0.5) > 0.25) {
       postureScore -= 30;
       tips.push('Center yourself in the frame');
@@ -245,39 +315,38 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       postureScore -= 15;
     }
     
-    // Check vertical position (face should be in upper-middle)
-    const centerYRatio = faceY / canvasHeight;
-    if (centerYRatio < 0.15 || centerYRatio > 0.6) {
+    // Check vertical position
+    const centerYRatio = faceCenterY / canvasHeight;
+    if (centerYRatio < 0.15 || centerYRatio > 0.65) {
       postureScore -= 25;
-      tips.push('Adjust your camera angle');
-    } else if (centerYRatio < 0.2 || centerYRatio > 0.5) {
+      tips.push('Adjust camera height for better framing');
+    } else if (centerYRatio < 0.2 || centerYRatio > 0.55) {
       postureScore -= 10;
     }
 
-    // Check for head movement (stability)
-    if (history.length > 10) {
-      const recentPositions = history.slice(-10);
-      let movement = 0;
-      for (let i = 1; i < recentPositions.length; i++) {
-        movement += Math.abs(recentPositions[i].x - recentPositions[i-1].x);
-        movement += Math.abs(recentPositions[i].y - recentPositions[i-1].y);
-      }
-      headMovementRef.current = movement / 10;
-      
-      if (headMovementRef.current > 20) {
-        postureScore -= 20;
-        tips.push('Try to keep your head steady');
-      } else if (headMovementRef.current > 12) {
-        postureScore -= 10;
-      }
+    // Check head tilt
+    if (Math.abs(jawAngle) > 15) {
+      postureScore -= 20;
+      tips.push('Keep your head straight');
+    } else if (Math.abs(jawAngle) > 8) {
+      postureScore -= 10;
     }
 
-    // Check face aspect ratio for head tilt
-    if (faceWidth > 0 && faceHeight > 0) {
-      const aspectRatio = faceWidth / faceHeight;
-      if (aspectRatio > 1.5 || aspectRatio < 0.6) {
-        postureScore -= 15;
-        tips.push('Keep your head straight');
+    // Check for head stability
+    if (faceHistoryRef.current.length > 10) {
+      const recent = faceHistoryRef.current.slice(-10);
+      let movement = 0;
+      for (let i = 1; i < recent.length; i++) {
+        movement += Math.abs(recent[i].centerX - recent[i-1].centerX);
+        movement += Math.abs(recent[i].centerY - recent[i-1].centerY);
+      }
+      const avgMovement = movement / 10;
+      
+      if (avgMovement > 15) {
+        postureScore -= 20;
+        tips.push('Try to keep your head steady');
+      } else if (avgMovement > 8) {
+        postureScore -= 10;
       }
     }
 
@@ -288,26 +357,33 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
     // ===== EYE CONTACT ANALYSIS =====
     let eyeContactScore = 100;
     
-    // Face centered = likely looking at camera
-    const eyeCenterDeviation = Math.abs(centerXRatio - 0.5);
-    if (eyeCenterDeviation > 0.2) {
+    // Eye openness check (closed eyes = not looking at camera)
+    if (eyeOpenRatio < 0.15) {
       eyeContactScore -= 40;
-      tips.push('Look directly at the camera');
-    } else if (eyeCenterDeviation > 0.1) {
+      tips.push('Keep your eyes open and look at the camera');
+    } else if (eyeOpenRatio < 0.2) {
       eyeContactScore -= 20;
-    }
-    
-    // Steady gaze = consistent position
-    if (headMovementRef.current > 15) {
-      eyeContactScore -= 20;
-    } else if (headMovementRef.current > 10) {
-      eyeContactScore -= 10;
     }
 
-    // Check vertical gaze (looking up or down)
-    const verticalDeviation = Math.abs(centerYRatio - 0.35);
-    if (verticalDeviation > 0.2) {
+    // Face direction (centered = likely looking at camera)
+    if (Math.abs(centerXRatio - 0.5) > 0.2) {
+      eyeContactScore -= 30;
+      tips.push('Look directly at the camera');
+    } else if (Math.abs(centerXRatio - 0.5) > 0.1) {
       eyeContactScore -= 15;
+    }
+
+    // Check for consistent gaze
+    if (faceHistoryRef.current.length > 10) {
+      const recentAngles = faceHistoryRef.current.slice(-10).map(f => f.jawAngle);
+      const angleVariance = recentAngles.reduce((acc, a) => {
+        const avg = recentAngles.reduce((s, v) => s + v, 0) / recentAngles.length;
+        return acc + Math.pow(a - avg, 2);
+      }, 0) / recentAngles.length;
+      
+      if (angleVariance > 50) {
+        eyeContactScore -= 15;
+      }
     }
 
     eyeContactScore = Math.max(0, Math.min(100, eyeContactScore));
@@ -318,34 +394,44 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
     let expressionScore = 100;
     let facialExpression: 'confident' | 'neutral' | 'nervous' = 'confident';
     
-    // Check face size (too small = too far, too big = too close)
-    const faceSizeRatio = faceWidth / canvasWidth;
-    if (faceSizeRatio < 0.15) {
-      expressionScore -= 20;
-      tips.push('Move closer to the camera');
-    } else if (faceSizeRatio > 0.5) {
-      expressionScore -= 15;
-      tips.push('Move back a little');
-    }
+    // Get dominant expression
+    const expressionEntries = Object.entries(expressions) as [string, number][];
+    const sortedExpressions = expressionEntries.sort((a, b) => b[1] - a[1]);
+    const dominantExpression = sortedExpressions[0];
     
-    // Nervous = lots of movement
-    if (headMovementRef.current > 25) {
-      expressionScore -= 30;
+    // Evaluate expression
+    const neutralScore = expressions.neutral || 0;
+    const happyScore = expressions.happy || 0;
+    const sadScore = expressions.sad || 0;
+    const angryScore = expressions.angry || 0;
+    const fearfulScore = expressions.fearful || 0;
+    const disgustedScore = expressions.disgusted || 0;
+    const surprisedScore = expressions.surprised || 0;
+
+    // Confidence indicators
+    if (happyScore > 0.3 || (neutralScore > 0.5 && happyScore > 0.1)) {
+      expressionScore = 90 + Math.round(happyScore * 10);
+      facialExpression = 'confident';
+    } else if (neutralScore > 0.6) {
+      expressionScore = 75;
+      facialExpression = 'neutral';
+    } else if (fearfulScore > 0.2 || sadScore > 0.3 || angryScore > 0.2) {
+      expressionScore = 50 - Math.round((fearfulScore + sadScore) * 20);
       facialExpression = 'nervous';
-    } else if (headMovementRef.current > 15) {
-      expressionScore -= 15;
+      tips.push('Try to relax and maintain a confident expression');
+    } else {
+      expressionScore = 70;
       facialExpression = 'neutral';
     }
 
-    // Check for consistent face size (nervousness indicator)
-    if (history.length > 10) {
-      const recentWidths = history.slice(-10).map(h => h.width);
-      const avgWidth = recentWidths.reduce((a, b) => a + b, 0) / recentWidths.length;
-      const widthVariance = recentWidths.reduce((acc, w) => acc + Math.pow(w - avgWidth, 2), 0) / recentWidths.length;
-      if (Math.sqrt(widthVariance) > 20) {
-        expressionScore -= 10;
-        facialExpression = facialExpression === 'confident' ? 'neutral' : facialExpression;
-      }
+    // Face size check
+    const faceSizeRatio = box.width / canvasWidth;
+    if (faceSizeRatio < 0.15) {
+      expressionScore -= 15;
+      tips.push('Move closer to the camera');
+    } else if (faceSizeRatio > 0.5) {
+      expressionScore -= 10;
+      tips.push('Move back slightly from the camera');
     }
 
     expressionScore = Math.max(0, Math.min(100, expressionScore));
@@ -361,7 +447,8 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       facialExpression,
       expressionScore: Math.round(expressionScore),
       overallScore,
-      tips: tips.slice(0, 3) // Limit to 3 tips
+      tips: tips.slice(0, 3),
+      faceDetected: true
     };
   };
 
@@ -369,7 +456,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
     }
-    animationRef.current = requestAnimationFrame(analyzeFrame);
+    analyzeFrame();
   };
 
   // Get accumulated session metrics
@@ -381,7 +468,8 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       avgPostureScore: avg(acc.postureScores),
       avgEyeContactScore: avg(acc.eyeContactScores),
       avgExpressionScore: avg(acc.expressionScores),
-      tips: Array.from(acc.tips)
+      tips: Array.from(acc.tips),
+      faceDetectionRate: acc.totalFrames > 0 ? Math.round((acc.facesDetected / acc.totalFrames) * 100) : 0
     };
   }, []);
 
@@ -392,17 +480,6 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       delete (window as any).__getVideoSessionMetrics;
     };
   }, [getSessionMetrics]);
-
-  useEffect(() => {
-    if (isCameraOn) {
-      startAnalysis();
-    }
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [isCameraOn, analyzeFrame]);
 
   useEffect(() => {
     return () => {
@@ -416,6 +493,12 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
     return 'text-destructive';
   };
 
+  const getScoreBg = (score: number) => {
+    if (score >= 70) return 'bg-green-500';
+    if (score >= 50) return 'bg-yellow-500';
+    return 'bg-destructive';
+  };
+
   if (!isActive) return null;
 
   return (
@@ -424,6 +507,11 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
         <h3 className="font-bold text-sm flex items-center gap-2">
           <Camera className="w-4 h-4" />
           VIDEO MONITOR
+          {isCameraOn && metrics.faceDetected && (
+            <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500">
+              LIVE
+            </Badge>
+          )}
         </h3>
         <div className="flex gap-1">
           <Button
@@ -452,15 +540,25 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
           {!isCameraOn ? (
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground font-mono">
-                Enable camera to track posture, eye contact, and expressions in real-time.
+                Enable camera for real-time face detection and analysis.
               </p>
               <Button
                 onClick={startCamera}
                 className="w-full border-2"
                 variant="outline"
+                disabled={isLoadingModels}
               >
-                <Camera className="w-4 h-4 mr-2" />
-                Enable Camera
+                {isLoadingModels ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Loading AI Models...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4 mr-2" />
+                    Enable Camera
+                  </>
+                )}
               </Button>
               {hasPermission === false && (
                 <p className="text-xs text-destructive">
@@ -470,90 +568,90 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Video preview */}
+              {/* Video preview with overlay */}
               <div className="relative aspect-video bg-muted rounded overflow-hidden">
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-cover mirror"
+                  className="w-full h-full object-cover"
                   style={{ transform: 'scaleX(-1)' }}
                 />
-                <canvas ref={canvasRef} className="hidden" />
+                {/* Canvas overlay for face detection visualization */}
+                <canvas 
+                  ref={canvasRef} 
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  style={{ transform: 'scaleX(-1)' }}
+                />
                 
                 {/* Overall score overlay */}
                 <div className="absolute top-2 right-2">
                   <Badge 
-                    className={`${
-                      metrics.overallScore >= 70 ? 'bg-green-500' : 
-                      metrics.overallScore >= 50 ? 'bg-yellow-500' : 'bg-destructive'
-                    } text-white`}
+                    className={`${getScoreBg(metrics.overallScore)} text-white`}
                   >
-                    {metrics.overallScore}%
+                    {metrics.faceDetected ? `${metrics.overallScore}%` : 'No Face'}
                   </Badge>
                 </div>
+
+                {/* Face detection indicator */}
+                {!metrics.faceDetected && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+                    <div className="text-center p-4">
+                      <User className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm font-bold">No face detected</p>
+                      <p className="text-xs text-muted-foreground">Position yourself in frame</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Metrics */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1">
-                    <User className="w-3 h-3" />
-                    Posture
-                  </span>
-                  <span className={getScoreColor(metrics.postureScore)}>
-                    {metrics.postureScore}%
-                  </span>
+              {metrics.faceDetected && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      Posture
+                    </span>
+                    <span className={`font-bold ${getScoreColor(metrics.postureScore)}`}>
+                      {metrics.postureScore}%
+                    </span>
+                  </div>
+                  <Progress value={metrics.postureScore} className="h-1.5" />
+                  
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1">
+                      <Eye className="w-3 h-3" />
+                      Eye Contact
+                    </span>
+                    <span className={`font-bold ${getScoreColor(metrics.eyeContactScore)}`}>
+                      {metrics.eyeContactScore}%
+                    </span>
+                  </div>
+                  <Progress value={metrics.eyeContactScore} className="h-1.5" />
+                  
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1">
+                      😊 Expression
+                    </span>
+                    <span className={`font-bold ${getScoreColor(metrics.expressionScore)}`}>
+                      {metrics.expressionScore}%
+                    </span>
+                  </div>
+                  <Progress value={metrics.expressionScore} className="h-1.5" />
                 </div>
-                <Progress 
-                  value={metrics.postureScore} 
-                  className="h-1.5"
-                />
-
-                <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    Eye Contact
-                  </span>
-                  <span className={getScoreColor(metrics.eyeContactScore)}>
-                    {metrics.eyeContactScore}%
-                  </span>
-                </div>
-                <Progress 
-                  value={metrics.eyeContactScore} 
-                  className="h-1.5"
-                />
-
-                <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1">
-                    {metrics.facialExpression === 'confident' ? 
-                      <CheckCircle className="w-3 h-3" /> : 
-                      <AlertTriangle className="w-3 h-3" />}
-                    Expression
-                  </span>
-                  <span className={getScoreColor(metrics.expressionScore)}>
-                    {metrics.facialExpression}
-                  </span>
-                </div>
-                <Progress 
-                  value={metrics.expressionScore} 
-                  className="h-1.5"
-                />
-              </div>
+              )}
 
               {/* Tips */}
               {metrics.tips.length > 0 && (
-                <div className="pt-2 border-t border-border">
-                  <p className="text-xs font-bold mb-1">Tips:</p>
-                  <ul className="text-xs text-muted-foreground space-y-1">
-                    {metrics.tips.map((tip, i) => (
-                      <li key={i} className="flex items-start gap-1">
-                        <span>•</span>
-                        <span>{tip}</span>
-                      </li>
-                    ))}
-                  </ul>
+                <div className="text-xs space-y-1 pt-2 border-t border-border">
+                  {metrics.tips.map((tip, i) => (
+                    <div key={i} className="flex items-start gap-1 text-muted-foreground">
+                      <span>•</span>
+                      <span>{tip}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
