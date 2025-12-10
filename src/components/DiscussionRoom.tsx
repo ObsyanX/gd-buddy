@@ -18,6 +18,7 @@ import { PracticeHistory } from "@/components/PracticeHistory";
 import { WPMDisplay, useWordCountEstimator } from "@/components/WPMDisplay";
 import { OnboardingTutorial, useOnboardingTutorial } from "@/components/OnboardingTutorial";
 import VideoMonitor, { VideoMetrics } from "@/components/VideoMonitor";
+import { AppSettings } from "@/pages/Settings";
 
 interface DiscussionRoomProps {
   sessionId: string;
@@ -34,9 +35,20 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [autoPlayTTS, setAutoPlayTTS] = useState(true);
   const [hasSentFirstMessage, setHasSentFirstMessage] = useState(false);
   const [autoMicEnabled, setAutoMicEnabled] = useState(false);
+  const [autoMicSetting, setAutoMicSetting] = useState(true);
+  const [videoMetricsRef, setVideoMetricsRef] = useState<VideoMetrics | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pendingSendRef = useRef(false);
   const { toast } = useToast();
+  
+  // Load auto-mic setting from localStorage
+  useEffect(() => {
+    const savedAppSettings = localStorage.getItem('appSettings');
+    if (savedAppSettings) {
+      const parsed = JSON.parse(savedAppSettings) as AppSettings;
+      setAutoMicSetting(parsed.autoMicEnabled ?? true);
+    }
+  }, []);
   
   // Streaming transcription for real-time voice input (like Google Keyboard)
   const { 
@@ -206,10 +218,12 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       setUserInput("");
       clearTranscription();
       
-      // Mark first message sent and enable auto-mic for subsequent turns
+      // Mark first message sent and enable auto-mic for subsequent turns (if setting allows)
       if (!hasSentFirstMessage) {
         setHasSentFirstMessage(true);
-        setAutoMicEnabled(true);
+        if (autoMicSetting) {
+          setAutoMicEnabled(true);
+        }
       }
 
       // Get AI responses
@@ -308,8 +322,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         setFeedback(aiResponse.invigilator_signals);
       }
 
-      // Auto-reopen mic after AI responses complete (if enabled)
-      if (autoMicEnabled && isSpeechSupported) {
+      // Auto-reopen mic after AI responses complete (if enabled and setting allows)
+      if (autoMicEnabled && autoMicSetting && isSpeechSupported) {
         setTimeout(() => {
           startListening();
         }, 500);
@@ -344,6 +358,27 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   const handleEndSession = async () => {
     try {
+      // Get video metrics if available
+      const getVideoMetrics = (window as any).__getVideoSessionMetrics;
+      let videoSessionMetrics = null;
+      if (getVideoMetrics) {
+        videoSessionMetrics = getVideoMetrics();
+      }
+
+      // Save video metrics to database
+      if (videoSessionMetrics && (videoSessionMetrics.avgPostureScore || videoSessionMetrics.avgEyeContactScore)) {
+        await supabase
+          .from('gd_metrics')
+          .upsert({
+            session_id: sessionId,
+            posture_score: videoSessionMetrics.avgPostureScore,
+            eye_contact_score: videoSessionMetrics.avgEyeContactScore,
+            expression_score: videoSessionMetrics.avgExpressionScore,
+            video_tips: videoSessionMetrics.tips,
+            updated_at: new Date().toISOString()
+          });
+      }
+
       await supabase
         .from('gd_sessions')
         .update({ status: 'completed', end_time: new Date().toISOString() })
@@ -379,6 +414,10 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
     // Accept practice with WPM - transcription already in input from streaming
     acceptPractice(userInput || null, wpm);
+  };
+
+  const handleVideoMetricsUpdate = (metrics: VideoMetrics) => {
+    setVideoMetricsRef(metrics);
   };
 
   // Keyboard shortcuts
@@ -435,8 +474,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                   AI Correcting...
                 </Badge>
               )}
-              {autoMicEnabled && (
+              {autoMicEnabled && autoMicSetting && (
                 <Badge variant="outline" className="border-2 bg-accent/20">Auto-mic ON</Badge>
+              )}
+              {session.is_multiplayer && (
+                <Badge variant="default" className="border-2">Multiplayer</Badge>
               )}
             </div>
           </div>
@@ -625,10 +667,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           {/* Video Monitor */}
           <VideoMonitor 
             isActive={true}
-            onMetricsUpdate={(metrics) => {
-              // Could integrate video metrics into session feedback
-              console.log('Video metrics:', metrics);
-            }}
+            onMetricsUpdate={handleVideoMetricsUpdate}
           />
 
           {/* Practice History */}
