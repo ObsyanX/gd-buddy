@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic } from "lucide-react";
+import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic, Eye, User, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -35,6 +35,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [detailedReport, setDetailedReport] = useState<any>(null);
   const [calculatedStats, setCalculatedStats] = useState<any>(null);
+  const [videoMetrics, setVideoMetrics] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,6 +64,16 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
 
       setSession(sessionData);
       setMessages(messagesData || []);
+
+      // Load video metrics if available
+      if (metricsData?.posture_score || metricsData?.eye_contact_score) {
+        setVideoMetrics({
+          postureScore: metricsData.posture_score,
+          eyeContactScore: metricsData.eye_contact_score,
+          expressionScore: metricsData.expression_score,
+          tips: metricsData.video_tips || []
+        });
+      }
 
       // Calculate real metrics from session data
       const realMetrics = calculateRealMetrics(sessionData, messagesData || []);
@@ -486,6 +497,73 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             </div>
           </Card>
         </div>
+
+        {/* Video Metrics Section */}
+        {videoMetrics && (
+          <Card className="p-6 border-4 border-border space-y-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <Camera className="w-6 h-6" />
+              VIDEO ANALYSIS
+            </h3>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Posture
+                  </span>
+                  <span className="font-bold font-mono">{videoMetrics.postureScore}%</span>
+                </div>
+                <Progress value={videoMetrics.postureScore} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  Body positioning and steadiness
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    Eye Contact
+                  </span>
+                  <span className="font-bold font-mono">{videoMetrics.eyeContactScore}%</span>
+                </div>
+                <Progress value={videoMetrics.eyeContactScore} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  Looking at the camera/audience
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Expression
+                  </span>
+                  <span className="font-bold font-mono">{videoMetrics.expressionScore}%</span>
+                </div>
+                <Progress value={videoMetrics.expressionScore} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  Confidence and composure
+                </p>
+              </div>
+            </div>
+
+            {videoMetrics.tips && videoMetrics.tips.length > 0 && (
+              <div className="pt-4 border-t border-border">
+                <p className="text-sm font-bold mb-2">Video Tips:</p>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  {videoMetrics.tips.slice(0, 5).map((tip: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span>•</span>
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Card>
+        )}
 
         {/* Benchmark Comparison */}
         <Card className="p-6 border-4 border-border space-y-4">

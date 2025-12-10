@@ -122,14 +122,18 @@ export type Database = {
           clarity_issues: Json | null
           content_score: number | null
           created_at: string
+          expression_score: number | null
+          eye_contact_score: number | null
           filler_count: number | null
           fluency_score: number | null
           id: string
+          posture_score: number | null
           session_id: string
           star_analysis: Json | null
           structure_score: number | null
           total_words: number | null
           updated_at: string
+          video_tips: Json | null
           voice_score: number | null
           words_per_min: number | null
         }
@@ -138,14 +142,18 @@ export type Database = {
           clarity_issues?: Json | null
           content_score?: number | null
           created_at?: string
+          expression_score?: number | null
+          eye_contact_score?: number | null
           filler_count?: number | null
           fluency_score?: number | null
           id?: string
+          posture_score?: number | null
           session_id: string
           star_analysis?: Json | null
           structure_score?: number | null
           total_words?: number | null
           updated_at?: string
+          video_tips?: Json | null
           voice_score?: number | null
           words_per_min?: number | null
         }
@@ -154,14 +162,18 @@ export type Database = {
           clarity_issues?: Json | null
           content_score?: number | null
           created_at?: string
+          expression_score?: number | null
+          eye_contact_score?: number | null
           filler_count?: number | null
           fluency_score?: number | null
           id?: string
+          posture_score?: number | null
           session_id?: string
           star_analysis?: Json | null
           structure_score?: number | null
           total_words?: number | null
           updated_at?: string
+          video_tips?: Json | null
           voice_score?: number | null
           words_per_min?: number | null
         }
@@ -188,6 +200,7 @@ export type Database = {
           persona_tone: string | null
           persona_verbosity: string | null
           persona_vocab_level: string | null
+          real_user_id: string | null
           session_id: string
           voice_name: string | null
           voice_pitch_pct: number | null
@@ -206,6 +219,7 @@ export type Database = {
           persona_tone?: string | null
           persona_verbosity?: string | null
           persona_vocab_level?: string | null
+          real_user_id?: string | null
           session_id: string
           voice_name?: string | null
           voice_pitch_pct?: number | null
@@ -224,6 +238,7 @@ export type Database = {
           persona_tone?: string | null
           persona_verbosity?: string | null
           persona_vocab_level?: string | null
+          real_user_id?: string | null
           session_id?: string
           voice_name?: string | null
           voice_pitch_pct?: number | null
@@ -244,7 +259,10 @@ export type Database = {
         Row: {
           created_at: string
           end_time: string | null
+          host_user_id: string | null
           id: string
+          is_multiplayer: boolean | null
+          room_code: string | null
           start_time: string | null
           status: Database["public"]["Enums"]["discussion_status"]
           topic: string
@@ -257,7 +275,10 @@ export type Database = {
         Insert: {
           created_at?: string
           end_time?: string | null
+          host_user_id?: string | null
           id?: string
+          is_multiplayer?: boolean | null
+          room_code?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["discussion_status"]
           topic: string
@@ -270,7 +291,10 @@ export type Database = {
         Update: {
           created_at?: string
           end_time?: string | null
+          host_user_id?: string | null
           id?: string
+          is_multiplayer?: boolean | null
+          room_code?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["discussion_status"]
           topic?: string

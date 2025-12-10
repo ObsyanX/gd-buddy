@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,8 +8,9 @@ import TopicSelection from "@/components/TopicSelection";
 import SessionSetup from "@/components/SessionSetup";
 import DiscussionRoom from "@/components/DiscussionRoom";
 import SessionReport from "@/components/SessionReport";
+import MultiplayerLobby from "@/components/MultiplayerLobby";
 
-type AppState = 'home' | 'topic-selection' | 'setup' | 'discussion' | 'report';
+type AppState = 'home' | 'topic-selection' | 'setup' | 'discussion' | 'report' | 'multiplayer-lobby';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -57,6 +58,10 @@ const Index = () => {
 
   if (appState === 'report' && sessionId) {
     return <SessionReport sessionId={sessionId} onStartNew={handleStartNew} />;
+  }
+
+  if (appState === 'multiplayer-lobby') {
+    return <MultiplayerLobby onSessionJoined={handleSessionCreated} onBack={() => setAppState('home')} />;
   }
 
   return (
@@ -150,13 +155,22 @@ const Index = () => {
             </Card>
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-4 flex-wrap">
             <Button 
               size="lg" 
               className="text-xl px-12 py-8 border-4 border-border shadow-md hover:shadow-lg"
               onClick={handleStartNew}
             >
-              START PRACTICE SESSION
+              START SOLO SESSION
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="text-xl px-12 py-8 border-4 border-border shadow-md hover:shadow-lg"
+              onClick={() => setAppState('multiplayer-lobby')}
+            >
+              <Users className="w-6 h-6 mr-2" />
+              MULTIPLAYER MODE
             </Button>
           </div>
 
@@ -181,6 +195,17 @@ const Index = () => {
               </li>
             </ol>
           </div>
+
+          <Card className="p-6 border-4 border-primary/50 bg-primary/5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Users className="w-6 h-6" />
+              <h3 className="text-xl font-bold">NEW: MULTIPLAYER MODE</h3>
+            </div>
+            <p className="text-muted-foreground">
+              Practice with friends in real-time! Create a room, share the code, and discuss together with AI participants. 
+              Perfect for group interview preparation or collaborative practice sessions.
+            </p>
+          </Card>
         </div>
       </main>
 

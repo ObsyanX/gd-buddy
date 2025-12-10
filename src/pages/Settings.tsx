@@ -5,7 +5,8 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { ArrowLeft, Volume2, Keyboard, Play } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { ArrowLeft, Volume2, Keyboard, Play, Mic } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -36,30 +37,47 @@ export interface VoiceSettings {
   speed: number;
 }
 
+export interface AppSettings {
+  autoMicEnabled: boolean;
+}
+
 const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [voice, setVoice] = useState('sarah');
   const [speed, setSpeed] = useState(1.0);
   const [isTesting, setIsTesting] = useState(false);
+  const [autoMicEnabled, setAutoMicEnabled] = useState(true);
 
   useEffect(() => {
-    // Load settings from localStorage
-    const savedSettings = localStorage.getItem('voiceSettings');
-    if (savedSettings) {
-      const parsed = JSON.parse(savedSettings) as VoiceSettings;
+    // Load voice settings from localStorage
+    const savedVoiceSettings = localStorage.getItem('voiceSettings');
+    if (savedVoiceSettings) {
+      const parsed = JSON.parse(savedVoiceSettings) as VoiceSettings;
       setVoice(parsed.voice);
       setSpeed(parsed.speed);
+    }
+    
+    // Load app settings from localStorage
+    const savedAppSettings = localStorage.getItem('appSettings');
+    if (savedAppSettings) {
+      const parsed = JSON.parse(savedAppSettings) as AppSettings;
+      setAutoMicEnabled(parsed.autoMicEnabled ?? true);
     }
   }, []);
 
   const handleSave = () => {
-    const settings: VoiceSettings = { voice, speed };
-    localStorage.setItem('voiceSettings', JSON.stringify(settings));
+    // Save voice settings
+    const voiceSettings: VoiceSettings = { voice, speed };
+    localStorage.setItem('voiceSettings', JSON.stringify(voiceSettings));
+    
+    // Save app settings
+    const appSettings: AppSettings = { autoMicEnabled };
+    localStorage.setItem('appSettings', JSON.stringify(appSettings));
     
     toast({
       title: "Settings saved",
-      description: "Your voice preferences have been updated",
+      description: "Your preferences have been updated",
     });
   };
 
@@ -185,15 +203,50 @@ const Settings = () => {
                 <Play className="w-4 h-4 mr-2" />
                 {isTesting ? 'PLAYING...' : 'TEST VOICE'}
               </Button>
-              <Button
-                onClick={handleSave}
-                className="flex-1 border-4 border-border"
-                size="lg"
-              >
-                SAVE PREFERENCES
-              </Button>
             </div>
           </Card>
+
+          {/* Microphone Settings */}
+          <Card className="p-6 border-4 border-border space-y-6">
+            <div className="flex items-center gap-2">
+              <Mic className="w-6 h-6" />
+              <h2 className="text-2xl font-bold">MICROPHONE SETTINGS</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="autoMic" className="text-base">Auto-reopen Microphone</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Automatically enable the microphone after AI responses complete
+                  </p>
+                </div>
+                <Switch
+                  id="autoMic"
+                  checked={autoMicEnabled}
+                  onCheckedChange={setAutoMicEnabled}
+                />
+              </div>
+              
+              <div className="p-4 border-2 border-border rounded bg-muted/50">
+                <p className="text-sm text-muted-foreground font-mono">
+                  {autoMicEnabled 
+                    ? "✓ Mic will auto-open after the first message for continuous conversation flow"
+                    : "✗ You'll need to manually click the mic button for each response"
+                  }
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Save Button */}
+          <Button
+            onClick={handleSave}
+            className="w-full border-4 border-border"
+            size="lg"
+          >
+            SAVE ALL PREFERENCES
+          </Button>
 
           {/* Keyboard Shortcuts */}
           <Card className="p-6 border-4 border-border space-y-4">
