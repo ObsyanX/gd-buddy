@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Copy, Check, ArrowLeft, Loader2 } from "lucide-react";
+import { Users, Copy, Check, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,10 +30,46 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
   const [isJoining, setIsJoining] = useState(false);
   const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showTopicSelection, setShowTopicSelection] = useState(false);
+  const [topicMode, setTopicMode] = useState<'generate' | 'custom'>('generate');
+  const [customTopic, setCustomTopic] = useState("");
+  const [generatedTopics, setGeneratedTopics] = useState<any[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const handleCreateRoom = async () => {
+  const handleGenerateTopics = async () => {
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('gd-topics', {
+        body: {
+          audience: 'engineering students',
+          tone: 'formal',
+          difficulty: 'medium',
+          count: 6
+        }
+      });
+
+      if (error) throw error;
+
+      setGeneratedTopics(data.topics || []);
+      toast({
+        title: "Topics generated",
+        description: "Choose one to start your multiplayer session",
+      });
+    } catch (error: any) {
+      console.error('Error generating topics:', error);
+      toast({
+        title: "Failed to generate topics",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const createRoomWithTopic = async (topic: { title: string; category?: string; difficulty?: string; tags?: string[] }) => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -47,13 +83,16 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
     try {
       const roomCode = generateRoomCode();
       
-      // Create multiplayer session
+      // Create multiplayer session with topic
       const { data: session, error } = await supabase
         .from('gd_sessions')
         .insert({
           user_id: user.id,
           host_user_id: user.id,
-          topic: 'Multiplayer Discussion (Topic TBD)',
+          topic: topic.title,
+          topic_category: topic.category || 'Custom',
+          topic_difficulty: topic.difficulty || 'medium',
+          topic_tags: topic.tags || [],
           is_multiplayer: true,
           room_code: roomCode,
           status: 'setup'
@@ -98,6 +137,32 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const handleCreateRoom = () => {
+    setShowTopicSelection(true);
+  };
+
+  const handleTopicSelected = (topic: any) => {
+    createRoomWithTopic(topic);
+  };
+
+  const handleCustomTopicSubmit = () => {
+    if (!customTopic.trim()) {
+      toast({
+        title: "Topic required",
+        description: "Please enter a discussion topic",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createRoomWithTopic({
+      title: customTopic,
+      category: 'Custom',
+      difficulty: 'medium',
+      tags: []
+    });
   };
 
   const handleJoinRoom = async () => {
@@ -199,6 +264,137 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
     }
   };
 
+  // Topic Selection View
+  if (showTopicSelection && !createdRoomCode) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="container mx-auto max-w-4xl space-y-6">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => setShowTopicSelection(false)} className="border-2">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <h1 className="text-4xl font-bold">SELECT TOPIC</h1>
+              <p className="text-muted-foreground font-mono">Choose a topic for your multiplayer session</p>
+            </div>
+          </div>
+
+          <Tabs value={topicMode} onValueChange={(v) => setTopicMode(v as 'generate' | 'custom')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 border-2 border-border">
+              <TabsTrigger value="generate" className="font-bold">AI GENERATED</TabsTrigger>
+              <TabsTrigger value="custom" className="font-bold">CUSTOM TOPIC</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="generate" className="space-y-6 mt-4">
+              {generatedTopics.length === 0 ? (
+                <Card className="p-12 border-4 border-border text-center space-y-4">
+                  <Sparkles className="w-16 h-16 mx-auto text-muted-foreground" />
+                  <h3 className="text-2xl font-bold">GENERATE TOPICS</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Let AI create engaging discussion topics for your multiplayer session
+                  </p>
+                  <Button 
+                    size="lg" 
+                    onClick={handleGenerateTopics}
+                    disabled={isGenerating}
+                    className="border-4 border-border shadow-md"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        GENERATING...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        GENERATE TOPICS
+                      </>
+                    )}
+                  </Button>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm font-mono text-muted-foreground">
+                      {generatedTopics.length} topics generated
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleGenerateTopics}
+                      disabled={isGenerating}
+                      className="border-2"
+                    >
+                      {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : "REGENERATE"}
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-4">
+                    {generatedTopics.map((topic, index) => (
+                      <Card 
+                        key={index} 
+                        className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => handleTopicSelected(topic)}
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between gap-4">
+                            <h3 className="text-xl font-bold flex-1">{topic.title}</h3>
+                            <Badge variant="outline" className="border-2">
+                              {topic.difficulty}
+                            </Badge>
+                          </div>
+                          <div className="flex gap-2 flex-wrap">
+                            <Badge variant="secondary">{topic.category}</Badge>
+                            {topic.tags?.slice(0, 3).map((tag: string, i: number) => (
+                              <Badge key={i} variant="outline">{tag}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="custom" className="space-y-4 mt-4">
+              <Card className="p-8 border-4 border-border space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold">ENTER YOUR TOPIC</Label>
+                  <Input
+                    placeholder="e.g., Impact of AI on employment in the next decade"
+                    value={customTopic}
+                    onChange={(e) => setCustomTopic(e.target.value)}
+                    className="border-2 text-lg"
+                    onKeyDown={(e) => e.key === 'Enter' && handleCustomTopicSubmit()}
+                  />
+                  <p className="text-xs text-muted-foreground font-mono">
+                    Enter a clear, debate-worthy topic for group discussion
+                  </p>
+                </div>
+                <Button 
+                  size="lg" 
+                  onClick={handleCustomTopicSubmit}
+                  disabled={isCreating}
+                  className="w-full border-4 border-border shadow-md"
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      CREATING ROOM...
+                    </>
+                  ) : (
+                    'CREATE ROOM WITH THIS TOPIC'
+                  )}
+                </Button>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="container mx-auto max-w-2xl space-y-6">
@@ -259,10 +455,10 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
                   <div className="p-4 border-2 border-border rounded space-y-2">
                     <h3 className="font-bold text-sm">HOW IT WORKS</h3>
                     <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• Choose a topic (AI-generated or custom)</li>
                       <li>• You'll get a 6-character room code</li>
                       <li>• Share the code with your friends</li>
-                      <li>• Everyone joins and selects AI participants</li>
-                      <li>• Discuss together in real-time!</li>
+                      <li>• Everyone joins and discusses in real-time!</li>
                     </ul>
                   </div>
                 </div>
@@ -279,7 +475,7 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
                       CREATING...
                     </>
                   ) : (
-                    'CREATE ROOM'
+                    'SELECT TOPIC & CREATE ROOM'
                   )}
                 </Button>
               </Card>
