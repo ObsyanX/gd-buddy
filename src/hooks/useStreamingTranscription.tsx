@@ -4,20 +4,35 @@ import { supabase } from '@/integrations/supabase/client';
 interface UseStreamingTranscriptionOptions {
   onInterimResult?: (text: string) => void;
   onFinalResult?: (text: string) => void;
+  onCorrectionStart?: () => void;
+  onCorrectionEnd?: () => void;
   context?: string;
   enableAICorrection?: boolean;
+  autoSend?: boolean;
+  onAutoSend?: (text: string) => void;
 }
 
 export const useStreamingTranscription = (options: UseStreamingTranscriptionOptions = {}) => {
-  const { onInterimResult, onFinalResult, context, enableAICorrection = true } = options;
+  const { 
+    onInterimResult, 
+    onFinalResult, 
+    onCorrectionStart,
+    onCorrectionEnd,
+    context, 
+    enableAICorrection = true,
+    autoSend = false,
+    onAutoSend
+  } = options;
   
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
   const [finalText, setFinalText] = useState('');
   const [isSupported, setIsSupported] = useState(true);
+  const [isCorrecting, setIsCorrecting] = useState(false);
   
   const recognitionRef = useRef<any>(null);
   const finalTextRef = useRef('');
+  const hasSpokenRef = useRef(false);
 
   // Check browser support
   useEffect(() => {
@@ -33,6 +48,9 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
     if (!rawText || rawText.trim().length === 0 || !enableAICorrection) return rawText;
 
     try {
+      setIsCorrecting(true);
+      onCorrectionStart?.();
+      
       const { data, error } = await supabase.functions.invoke('transcription-correction', {
         body: { rawTranscription: rawText, context }
       });
@@ -46,8 +64,11 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
     } catch (err) {
       console.error('Failed to correct transcription:', err);
       return rawText;
+    } finally {
+      setIsCorrecting(false);
+      onCorrectionEnd?.();
     }
-  }, [context, enableAICorrection]);
+  }, [context, enableAICorrection, onCorrectionStart, onCorrectionEnd]);
 
   const startListening = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -74,6 +95,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
       finalTextRef.current = '';
       setFinalText('');
       setInterimText('');
+      hasSpokenRef.current = false;
       console.log('Speech recognition started');
     };
 
@@ -86,8 +108,12 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
         
         if (event.results[i].isFinal) {
           final += transcript + ' ';
+          hasSpokenRef.current = true;
         } else {
           interim += transcript;
+          if (transcript.trim()) {
+            hasSpokenRef.current = true;
+          }
         }
       }
 
@@ -122,13 +148,18 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
         const corrected = await correctTranscription(finalTextRef.current.trim());
         setFinalText(corrected);
         onFinalResult?.(corrected);
+        
+        // Auto-send if enabled and there's text
+        if (autoSend && corrected.trim()) {
+          onAutoSend?.(corrected);
+        }
       }
       
       console.log('Speech recognition ended');
     };
 
     recognition.start();
-  }, [onInterimResult, onFinalResult, correctTranscription]);
+  }, [onInterimResult, onFinalResult, correctTranscription, autoSend, onAutoSend]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
@@ -145,17 +176,30 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
     }
   }, [isListening, startListening, stopListening]);
 
+  // Clear the transcription state
+  const clearTranscription = useCallback(() => {
+    finalTextRef.current = '';
+    setFinalText('');
+    setInterimText('');
+  }, []);
+
+  // Check if user has spoken during this session
+  const hasSpoken = hasSpokenRef.current;
+
   // Get current display text (final + interim)
   const displayText = finalText + interimText;
 
   return {
     isListening,
     isSupported,
+    isCorrecting,
     interimText,
     finalText,
     displayText,
+    hasSpoken,
     startListening,
     stopListening,
     toggleListening,
+    clearTranscription,
   };
 };

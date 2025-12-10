@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle } from "lucide-react";
+import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
@@ -17,6 +17,7 @@ import { VoiceActivityIndicator } from "@/components/VoiceActivityIndicator";
 import { PracticeHistory } from "@/components/PracticeHistory";
 import { WPMDisplay, useWordCountEstimator } from "@/components/WPMDisplay";
 import { OnboardingTutorial, useOnboardingTutorial } from "@/components/OnboardingTutorial";
+import VideoMonitor, { VideoMetrics } from "@/components/VideoMonitor";
 
 interface DiscussionRoomProps {
   sessionId: string;
@@ -31,20 +32,39 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [feedback, setFeedback] = useState<any>(null);
   const [autoPlayTTS, setAutoPlayTTS] = useState(true);
+  const [hasSentFirstMessage, setHasSentFirstMessage] = useState(false);
+  const [autoMicEnabled, setAutoMicEnabled] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pendingSendRef = useRef(false);
   const { toast } = useToast();
   
   // Streaming transcription for real-time voice input (like Google Keyboard)
   const { 
     isListening, 
     isSupported: isSpeechSupported, 
+    isCorrecting,
     displayText: streamingText,
     startListening, 
-    stopListening 
+    stopListening,
+    clearTranscription
   } = useStreamingTranscription({
     context: session?.topic,
     onInterimResult: (text) => setUserInput(text),
-    onFinalResult: (text) => setUserInput(text),
+    onFinalResult: (text) => {
+      setUserInput(text);
+      // If pending send, trigger it after correction completes
+      if (pendingSendRef.current && text.trim()) {
+        pendingSendRef.current = false;
+        // Small delay to ensure state is updated
+        setTimeout(() => handleSendMessageDirect(text), 100);
+      }
+    },
+    onCorrectionStart: () => {
+      // Visual feedback handled by isCorrecting state
+    },
+    onCorrectionEnd: () => {
+      // Correction complete
+    },
   });
   
   const { isSpeaking, currentSpeaker, speak, stop: stopSpeaking } = useTextToSpeech();
@@ -158,11 +178,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!userInput.trim() || isProcessing) return;
+  // Direct send with specific text (used for auto-send after voice)
+  const handleSendMessageDirect = async (textToSend: string) => {
+    if (!textToSend.trim() || isProcessing) return;
 
     setIsProcessing(true);
     const userParticipant = participants.find(p => p.is_user);
+    const messageText = textToSend.trim();
 
     try {
       // Save user message
@@ -171,7 +193,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         .insert({
           session_id: sessionId,
           participant_id: userParticipant.id,
-          text: userInput,
+          text: messageText,
           intent: null,
           interruption: false
         })
@@ -182,6 +204,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       setMessages(prev => [...prev, userMessage]);
       setUserInput("");
+      clearTranscription();
+      
+      // Mark first message sent and enable auto-mic for subsequent turns
+      if (!hasSentFirstMessage) {
+        setHasSentFirstMessage(true);
+        setAutoMicEnabled(true);
+      }
 
       // Get AI responses
       const conversationHistory = messages.map(m => ({
@@ -221,7 +250,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             order_index: p.order_index
           })),
           conversation_history: conversationHistory,
-          latest_user_utterance: userInput,
+          latest_user_utterance: messageText,
           config: {
             max_reply_words: 40,
             interruption_mode: 'light',
@@ -279,6 +308,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         setFeedback(aiResponse.invigilator_signals);
       }
 
+      // Auto-reopen mic after AI responses complete (if enabled)
+      if (autoMicEnabled && isSpeechSupported) {
+        setTimeout(() => {
+          startListening();
+        }, 500);
+      }
+
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
@@ -288,6 +324,21 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       });
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    await handleSendMessageDirect(userInput);
+  };
+
+  // Handle send button click - stop listening and send
+  const handleSendWithVoice = () => {
+    if (isListening) {
+      // Stop listening and mark for auto-send after correction
+      pendingSendRef.current = true;
+      stopListening();
+    } else if (userInput.trim()) {
+      handleSendMessage();
     }
   };
 
@@ -378,6 +429,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               {isListening && (
                 <Badge variant="outline" className="border-2 animate-pulse bg-destructive/20">🎤 Listening...</Badge>
               )}
+              {isCorrecting && (
+                <Badge variant="outline" className="border-2 animate-pulse bg-primary/20">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  AI Correcting...
+                </Badge>
+              )}
+              {autoMicEnabled && (
+                <Badge variant="outline" className="border-2 bg-accent/20">Auto-mic ON</Badge>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
@@ -456,18 +516,27 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           <VoiceActivityIndicator isActive={isSpeaking} participantName={currentSpeaker || undefined} />
 
           <div className="space-y-2">
+            {/* AI Correction Indicator */}
+            {isCorrecting && (
+              <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="font-mono">Applying AI correction...</span>
+              </div>
+            )}
+            
             <div className="flex gap-2">
               <Input
-                placeholder="Type your response or use voice input..."
+                placeholder={isListening ? "Speaking..." : "Type your response or use voice input..."}
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !isListening) {
                     handleSendMessage();
                   }
                 }}
-                className="border-2 text-lg"
-                disabled={isProcessing || isListening || isPracticing}
+                className={`border-2 text-lg ${isListening ? 'border-destructive bg-destructive/5' : ''}`}
+                disabled={isProcessing || isPracticing}
+                readOnly={isListening}
               />
               <Button
                 onClick={startPracticeRecording}
@@ -481,7 +550,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               </Button>
               <Button
                 onClick={handleVoiceInput}
-                disabled={isProcessing || isPracticing}
+                disabled={isProcessing || isPracticing || isCorrecting}
                 variant={isListening ? "destructive" : "outline"}
                 className={`border-4 border-border ${isListening ? 'animate-pulse' : ''}`}
                 size="lg"
@@ -490,13 +559,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                 {isListening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </Button>
               <Button 
-                onClick={handleSendMessage}
-                disabled={isProcessing || !userInput.trim() || isListening || isPracticing}
+                onClick={handleSendWithVoice}
+                disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting}
                 className="border-4 border-border"
                 size="lg"
-                title="Send (Ctrl+Enter)"
+                title={isListening ? "Stop & Send" : "Send (Ctrl+Enter)"}
               >
-                {isProcessing ? "..." : <Send className="w-4 h-4" />}
+                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground font-mono text-center">
@@ -552,6 +621,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               ))}
             </div>
           </Card>
+
+          {/* Video Monitor */}
+          <VideoMonitor 
+            isActive={true}
+            onMetricsUpdate={(metrics) => {
+              // Could integrate video metrics into session feedback
+              console.log('Video metrics:', metrics);
+            }}
+          />
 
           {/* Practice History */}
           <PracticeHistory 
