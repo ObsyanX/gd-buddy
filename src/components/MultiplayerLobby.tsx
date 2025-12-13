@@ -4,8 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Copy, Check, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { Users, Copy, Check, ArrowLeft, Loader2, Sparkles, Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +25,69 @@ const generateRoomCode = () => {
   return code;
 };
 
+const PERSONA_TEMPLATES = [
+  {
+    id: 'analytical',
+    name: 'Aditya',
+    role: 'Data Analyst',
+    tone: 'analytical',
+    verbosity: 'moderate',
+    interrupt_level: 0.2,
+    agreeability: 0.1,
+    vocab_level: 'advanced',
+    description: 'Fact-driven, uses statistics',
+    voice_name: 'roger'
+  },
+  {
+    id: 'diplomatic',
+    name: 'Priya',
+    role: 'HR Manager',
+    tone: 'diplomatic',
+    verbosity: 'moderate',
+    interrupt_level: 0.15,
+    agreeability: 0.5,
+    vocab_level: 'intermediate',
+    description: 'Seeks consensus, empathetic',
+    voice_name: 'sarah'
+  },
+  {
+    id: 'assertive',
+    name: 'Rohan',
+    role: 'Business Lead',
+    tone: 'assertive',
+    verbosity: 'concise',
+    interrupt_level: 0.5,
+    agreeability: -0.2,
+    vocab_level: 'advanced',
+    description: 'Direct, confident, decisive',
+    voice_name: 'george'
+  },
+  {
+    id: 'creative',
+    name: 'Meera',
+    role: 'Designer',
+    tone: 'enthusiastic',
+    verbosity: 'elaborate',
+    interrupt_level: 0.3,
+    agreeability: 0.3,
+    vocab_level: 'intermediate',
+    description: 'Innovative perspectives',
+    voice_name: 'aria'
+  },
+  {
+    id: 'devil-advocate',
+    name: 'Vikram',
+    role: 'Legal Counsel',
+    tone: 'critical',
+    verbosity: 'moderate',
+    interrupt_level: 0.4,
+    agreeability: -0.4,
+    vocab_level: 'advanced',
+    description: 'Challenges ideas',
+    voice_name: 'daniel'
+  }
+];
+
 const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) => {
   const [joinCode, setJoinCode] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -31,10 +95,13 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
   const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showTopicSelection, setShowTopicSelection] = useState(false);
+  const [showAISelection, setShowAISelection] = useState(false);
   const [topicMode, setTopicMode] = useState<'generate' | 'custom'>('generate');
   const [customTopic, setCustomTopic] = useState("");
   const [generatedTopics, setGeneratedTopics] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<any>(null);
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>(['analytical', 'diplomatic']);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -69,11 +136,51 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
     }
   };
 
-  const createRoomWithTopic = async (topic: { title: string; category?: string; difficulty?: string; tags?: string[] }) => {
+  const togglePersona = (id: string) => {
+    setSelectedPersonas(prev => 
+      prev.includes(id) 
+        ? prev.filter(p => p !== id)
+        : prev.length < 3 ? [...prev, id] : prev
+    );
+  };
+
+  const handleTopicSelected = (topic: any) => {
+    setSelectedTopic(topic);
+    setShowAISelection(true);
+  };
+
+  const handleCustomTopicSubmit = () => {
+    if (!customTopic.trim()) {
+      toast({
+        title: "Topic required",
+        description: "Please enter a discussion topic",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    handleTopicSelected({
+      title: customTopic,
+      category: 'Custom',
+      difficulty: 'medium',
+      tags: []
+    });
+  };
+
+  const createRoomWithSettings = async () => {
     if (!user) {
       toast({
         title: "Authentication required",
         description: "Please sign in to create a multiplayer room",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedTopic) {
+      toast({
+        title: "Topic required",
+        description: "Please select a topic first",
         variant: "destructive",
       });
       return;
@@ -89,10 +196,10 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
         .insert({
           user_id: user.id,
           host_user_id: user.id,
-          topic: topic.title,
-          topic_category: topic.category || 'Custom',
-          topic_difficulty: topic.difficulty || 'medium',
-          topic_tags: topic.tags || [],
+          topic: selectedTopic.title,
+          topic_category: selectedTopic.category || 'Custom',
+          topic_difficulty: selectedTopic.difficulty || 'medium',
+          topic_tags: selectedTopic.tags || [],
           is_multiplayer: true,
           room_code: roomCode,
           status: 'setup'
@@ -117,6 +224,41 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
         });
 
       if (participantError) throw participantError;
+
+      // Create AI participants if selected
+      if (selectedPersonas.length > 0) {
+        const aiParticipants = selectedPersonas.map((personaId, index) => {
+          const persona = PERSONA_TEMPLATES.find(p => p.id === personaId)!;
+          return {
+            session_id: session.id,
+            is_user: false,
+            order_index: 100 + index, // High index for AI participants
+            persona_name: persona.name,
+            persona_role: persona.role,
+            persona_tone: persona.tone,
+            persona_verbosity: persona.verbosity,
+            persona_interrupt_level: persona.interrupt_level,
+            persona_agreeability: persona.agreeability,
+            persona_vocab_level: persona.vocab_level,
+            voice_name: persona.voice_name
+          };
+        });
+
+        const { error: aiError } = await supabase
+          .from('gd_participants')
+          .insert(aiParticipants);
+
+        if (aiError) throw aiError;
+      }
+
+      // Initialize metrics
+      await supabase
+        .from('gd_metrics')
+        .insert({
+          session_id: session.id,
+          filler_count: 0,
+          total_words: 0
+        });
 
       setCreatedRoomCode(roomCode);
       
@@ -143,28 +285,6 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
     setShowTopicSelection(true);
   };
 
-  const handleTopicSelected = (topic: any) => {
-    createRoomWithTopic(topic);
-  };
-
-  const handleCustomTopicSubmit = () => {
-    if (!customTopic.trim()) {
-      toast({
-        title: "Topic required",
-        description: "Please enter a discussion topic",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createRoomWithTopic({
-      title: customTopic,
-      category: 'Custom',
-      difficulty: 'medium',
-      tags: []
-    });
-  };
-
   const handleJoinRoom = async () => {
     if (!joinCode.trim()) {
       toast({
@@ -186,17 +306,28 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
 
     setIsJoining(true);
     try {
-      // Find session by room code
-      const { data: session, error: sessionError } = await supabase
+      const normalizedCode = joinCode.toUpperCase().trim();
+      console.log('Searching for room with code:', normalizedCode);
+      
+      // Find session by room code - use RPC or direct query with proper handling
+      const { data: sessions, error: sessionError } = await supabase
         .from('gd_sessions')
         .select('*')
-        .eq('room_code', joinCode.toUpperCase().trim())
-        .eq('is_multiplayer', true)
-        .single();
+        .eq('room_code', normalizedCode)
+        .eq('is_multiplayer', true);
 
-      if (sessionError || !session) {
+      console.log('Session search result:', sessions, sessionError);
+
+      if (sessionError) {
+        console.error('Session query error:', sessionError);
+        throw new Error('Could not search for room. Please try again.');
+      }
+
+      if (!sessions || sessions.length === 0) {
         throw new Error('Room not found. Check the code and try again.');
       }
+
+      const session = sessions[0];
 
       if (session.status === 'completed') {
         throw new Error('This session has already ended.');
@@ -211,16 +342,19 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
         .maybeSingle();
 
       if (existingParticipant) {
-        // Already joined, just go to session
+        console.log('Already joined, navigating to session');
         onSessionJoined(session.id);
         return;
       }
 
       // Get current participant count for order_index
-      const { count } = await supabase
+      const { data: participants } = await supabase
         .from('gd_participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('session_id', session.id);
+        .select('*')
+        .eq('session_id', session.id)
+        .eq('is_user', true);
+
+      const humanCount = participants?.length || 1;
 
       // Add as participant
       const { error: participantError } = await supabase
@@ -229,14 +363,17 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
           session_id: session.id,
           is_user: true,
           real_user_id: user.id,
-          order_index: count || 1,
-          persona_name: `Player ${(count || 0) + 1}`,
+          order_index: humanCount,
+          persona_name: user.email?.split('@')[0] || `Player ${humanCount + 1}`,
           persona_tone: 'neutral',
           persona_verbosity: 'moderate',
           persona_vocab_level: 'intermediate'
         });
 
-      if (participantError) throw participantError;
+      if (participantError) {
+        console.error('Participant insert error:', participantError);
+        throw new Error('Could not join room. Please try again.');
+      }
 
       toast({
         title: "Joined room!",
@@ -263,6 +400,116 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  // AI Selection View
+  if (showAISelection) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="container mx-auto max-w-4xl space-y-6">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => setShowAISelection(false)} className="border-2">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <h1 className="text-4xl font-bold">ADD AI PARTICIPANTS</h1>
+              <p className="text-muted-foreground font-mono">Optional: Add AI participants to join the discussion</p>
+            </div>
+          </div>
+
+          <Card className="p-6 border-4 border-border">
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-muted-foreground">SELECTED TOPIC</label>
+              <h2 className="text-xl font-bold">{selectedTopic?.title}</h2>
+              <div className="flex gap-2">
+                <Badge variant="secondary">{selectedTopic?.category}</Badge>
+                <Badge variant="outline">{selectedTopic?.difficulty}</Badge>
+              </div>
+            </div>
+          </Card>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <Bot className="w-5 h-5" />
+                  AI PARTICIPANTS (Optional)
+                </h3>
+                <p className="text-sm text-muted-foreground font-mono">
+                  Select 0-3 AI participants • Selected: {selectedPersonas.length}/3
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setSelectedPersonas([])}
+                className="border-2"
+              >
+                Clear All
+              </Button>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-3">
+              {PERSONA_TEMPLATES.map((persona) => {
+                const isSelected = selectedPersonas.includes(persona.id);
+                return (
+                  <Card
+                    key={persona.id}
+                    className={`p-4 border-4 cursor-pointer transition-all ${
+                      isSelected 
+                        ? 'border-primary bg-secondary' 
+                        : 'border-border hover:shadow-md'
+                    }`}
+                    onClick={() => togglePersona(persona.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox 
+                        checked={isSelected}
+                        className="mt-1 border-2"
+                      />
+                      <div className="flex-1 space-y-1">
+                        <h4 className="font-bold">{persona.name}</h4>
+                        <p className="text-xs text-muted-foreground">{persona.role}</p>
+                        <p className="text-xs">{persona.description}</p>
+                        <Badge variant="outline" className="text-xs">{persona.tone}</Badge>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAISelection(false)}
+              className="border-2"
+            >
+              BACK
+            </Button>
+            <Button
+              size="lg"
+              onClick={createRoomWithSettings}
+              disabled={isCreating}
+              className="border-4 border-border shadow-md"
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  CREATING ROOM...
+                </>
+              ) : (
+                <>
+                  <Users className="w-4 h-4 mr-2" />
+                  CREATE ROOM {selectedPersonas.length > 0 ? `(+ ${selectedPersonas.length} AI)` : ''}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Topic Selection View
   if (showTopicSelection && !createdRoomCode) {
@@ -375,17 +622,10 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
                 <Button 
                   size="lg" 
                   onClick={handleCustomTopicSubmit}
-                  disabled={isCreating}
+                  disabled={!customTopic.trim()}
                   className="w-full border-4 border-border shadow-md"
                 >
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      CREATING ROOM...
-                    </>
-                  ) : (
-                    'CREATE ROOM WITH THIS TOPIC'
-                  )}
+                  CONTINUE WITH THIS TOPIC
                 </Button>
               </Card>
             </TabsContent>
@@ -456,6 +696,7 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
                     <h3 className="font-bold text-sm">HOW IT WORKS</h3>
                     <ul className="text-sm text-muted-foreground space-y-1">
                       <li>• Choose a topic (AI-generated or custom)</li>
+                      <li>• Optionally add AI participants</li>
                       <li>• You'll get a 6-character room code</li>
                       <li>• Share the code with your friends</li>
                       <li>• Everyone joins and discusses in real-time!</li>
@@ -485,7 +726,7 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
               <Card className="p-6 border-4 border-border space-y-6">
                 <div className="text-center space-y-2">
                   <Users className="w-12 h-12 mx-auto" />
-                  <h2 className="text-xl font-bold">JOIN EXISTING ROOM</h2>
+                  <h2 className="text-xl font-bold">JOIN A ROOM</h2>
                   <p className="text-sm text-muted-foreground">
                     Enter the room code shared by your friend
                   </p>
@@ -493,13 +734,12 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="roomCode">ROOM CODE</Label>
+                    <Label className="text-sm font-bold">ROOM CODE</Label>
                     <Input
-                      id="roomCode"
                       placeholder="Enter 6-character code"
                       value={joinCode}
                       onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                      className="text-center text-2xl font-mono tracking-widest border-4"
+                      className="border-2 text-center text-2xl font-mono tracking-widest uppercase"
                       maxLength={6}
                     />
                   </div>
@@ -524,12 +764,6 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
             </TabsContent>
           </Tabs>
         )}
-
-        <div className="text-center text-sm text-muted-foreground font-mono">
-          <Badge variant="outline" className="border-2">
-            Multiplayer sessions sync in real-time
-          </Badge>
-        </div>
       </div>
     </div>
   );

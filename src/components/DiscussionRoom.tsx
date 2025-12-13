@@ -18,6 +18,8 @@ import { PracticeHistory } from "@/components/PracticeHistory";
 import { WPMDisplay, useWordCountEstimator } from "@/components/WPMDisplay";
 import { OnboardingTutorial, useOnboardingTutorial } from "@/components/OnboardingTutorial";
 import VideoMonitor, { VideoMetrics } from "@/components/VideoMonitor";
+import ParticipantPresence from "@/components/ParticipantPresence";
+import { useMultiplayerPresence } from "@/hooks/useMultiplayerPresence";
 import { AppSettings } from "@/pages/Settings";
 
 interface DiscussionRoomProps {
@@ -82,6 +84,12 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const { isSpeaking, currentSpeaker, speak, stop: stopSpeaking } = useTextToSpeech();
   const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial();
   const { estimatedWordCount, updateFromAudioLevel, reset: resetWordCount } = useWordCountEstimator();
+  
+  // Multiplayer presence
+  const { presenceState, typingParticipants, setTyping } = useMultiplayerPresence({
+    sessionId,
+    enabled: session?.is_multiplayer ?? false,
+  });
   const {
     isPracticing,
     isRecordingPractice,
@@ -689,17 +697,12 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
           <Card className="p-4 border-4 border-border">
             <h3 className="font-bold text-sm mb-3">PARTICIPANTS</h3>
-            <div className="space-y-2">
-              {participants.map((p) => (
-                <div key={p.id} className="flex items-center gap-2 text-sm">
-                  {p.is_user ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-                  <span className="font-bold">{p.persona_name}</span>
-                  {!p.is_user && (
-                    <Badge variant="outline" className="text-xs">{p.persona_tone}</Badge>
-                  )}
-                </div>
-              ))}
-            </div>
+            <ParticipantPresence
+              participants={participants}
+              presenceState={presenceState}
+              typingParticipants={typingParticipants}
+              isMultiplayer={session?.is_multiplayer ?? false}
+            />
           </Card>
 
           {/* Video Monitor */}
