@@ -21,15 +21,27 @@ const ResetPassword = () => {
   const [isResetComplete, setIsResetComplete] = useState(false);
 
   useEffect(() => {
+    // Supabase recovery links contain access_token and type=recovery in the hash
+    // The access_token is automatically processed by Supabase client
     const hash = window.location.hash;
-    if (!hash.includes("type=recovery")) {
-      toast({
-        title: "Invalid link",
-        description: "This password reset link is invalid or has expired.",
-        variant: "destructive",
-      });
-      setTimeout(() => navigate("/auth"), 3000);
-    }
+    const params = new URLSearchParams(hash.substring(1));
+    const type = params.get("type");
+    const accessToken = params.get("access_token");
+    
+    // Only show error if we're on this page without valid recovery params
+    // Give Supabase client time to process the token
+    const timer = setTimeout(() => {
+      if (!hash || (!accessToken && type !== "recovery")) {
+        toast({
+          title: "Invalid link",
+          description: "This password reset link is invalid or has expired.",
+          variant: "destructive",
+        });
+        setTimeout(() => navigate("/auth"), 3000);
+      }
+    }, 1000);
+    
+    return () => clearTimeout(timer);
   }, [navigate, toast]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
