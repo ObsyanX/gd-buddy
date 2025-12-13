@@ -118,6 +118,17 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   // Track which messages we've already processed for TTS to avoid duplicates
   const processedMessagesRef = useRef<Set<string>>(new Set());
   
+  // Get current user ID for multiplayer identification
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
+  
   // Realtime subscription for multiplayer message sync
   useEffect(() => {
     if (!session?.is_multiplayer) return;
@@ -158,11 +169,12 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           if (newMessage) {
             console.log('[Multiplayer] Fetched message with participant:', newMessage);
             
-            // Check if this message was sent by the current user's participant
-            const userParticipant = participants.find(p => p.is_user);
-            const isOwnMessage = newMessage.participant_id === userParticipant?.id;
+            // Check if this message was sent by the current authenticated user
+            // Use real_user_id to properly identify messages in multiplayer (multiple humans)
+            const messageParticipant = newMessage.gd_participants;
+            const isOwnMessage = messageParticipant?.real_user_id === currentUserId;
             
-            console.log('[Multiplayer] User participant:', userParticipant?.id, 'Message from:', newMessage.participant_id, 'Is own:', isOwnMessage);
+            console.log('[Multiplayer] Current user:', currentUserId, 'Message from real_user_id:', messageParticipant?.real_user_id, 'Is own:', isOwnMessage);
             
             // Mark as processed
             processedMessagesRef.current.add(newMessage.id);
@@ -175,12 +187,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
             // Play TTS for messages from other participants (not our own messages)
             // This includes messages from other human players AND AI participants triggered by them
-            if (!isOwnMessage && autoPlayTTS && newMessage.gd_participants) {
-              const participant = newMessage.gd_participants;
-              console.log('[Multiplayer TTS] Playing message from:', participant.persona_name, 'Voice:', participant.voice_name);
+            if (!isOwnMessage && autoPlayTTS && messageParticipant) {
+              console.log('[Multiplayer TTS] Playing message from:', messageParticipant.persona_name, 'Voice:', messageParticipant.voice_name);
               try {
-                await speak(newMessage.text, participant.persona_name, participant.voice_name);
-                console.log('[Multiplayer TTS] Finished speaking message from:', participant.persona_name);
+                await speak(newMessage.text, messageParticipant.persona_name, messageParticipant.voice_name);
+                console.log('[Multiplayer TTS] Finished speaking message from:', messageParticipant.persona_name);
               } catch (e) {
                 console.error('[Multiplayer TTS] Error:', e);
               }
@@ -196,7 +207,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       console.log('[Multiplayer] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, [sessionId, session?.is_multiplayer, participants, autoPlayTTS, speak]);
+  }, [sessionId, session?.is_multiplayer, currentUserId, autoPlayTTS, speak]);
 
   useEffect(() => {
     if (scrollRef.current) {
