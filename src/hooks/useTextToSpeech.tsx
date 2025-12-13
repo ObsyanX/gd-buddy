@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { invokeWithAuth } from '@/lib/supabase-auth';
 import type { VoiceSettings } from '@/pages/Settings';
@@ -9,8 +9,39 @@ export const useTextToSpeech = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
+  // Browser speech synthesis fallback
+  const speakWithBrowserTTS = useCallback((text: string, speaker?: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!('speechSynthesis' in window)) {
+        reject(new Error('Browser speech synthesis not supported'));
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        setCurrentSpeaker(null);
+        resolve();
+      };
+
+      utterance.onerror = (event) => {
+        setIsSpeaking(false);
+        setCurrentSpeaker(null);
+        reject(new Error(`Speech synthesis error: ${event.error}`));
+      };
+
+      setIsSpeaking(true);
+      setCurrentSpeaker(speaker || null);
+      window.speechSynthesis.speak(utterance);
+    });
+  }, []);
+
   // Returns a promise that resolves when audio finishes playing
-  const speak = async (text: string, speaker?: string, participantVoice?: string): Promise<void> => {
+  const speak = useCallback(async (text: string, speaker?: string, participantVoice?: string): Promise<void> => {
     // Load voice settings from localStorage
     const savedSettings = localStorage.getItem('voiceSettings');
     const settings: VoiceSettings = savedSettings
@@ -31,11 +62,26 @@ export const useTextToSpeech = () => {
           audioRef.current = null;
         }
 
+        // Also stop any browser TTS that might be playing
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+
         const { data, error } = await invokeWithAuth('text-to-speech', {
           body: { text, voice }
         });
 
-        if (error) throw error;
+        if (error) {
+          console.warn('ElevenLabs TTS failed, falling back to browser TTS:', error);
+          // Fallback to browser TTS
+          try {
+            await speakWithBrowserTTS(text, speaker);
+            resolve();
+            return;
+          } catch (browserError) {
+            throw browserError;
+          }
+        }
 
         // Convert base64 to audio and play
         const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
@@ -51,16 +97,24 @@ export const useTextToSpeech = () => {
           resolve();
         };
 
-        audio.onerror = () => {
+        audio.onerror = async () => {
           setIsSpeaking(false);
           setCurrentSpeaker(null);
           URL.revokeObjectURL(audioUrl);
-          toast({
-            title: "Audio playback failed",
-            description: "Could not play the audio",
-            variant: "destructive",
-          });
-          reject(new Error('Audio playback failed'));
+          
+          // Fallback to browser TTS on audio error
+          console.warn('Audio playback failed, falling back to browser TTS');
+          try {
+            await speakWithBrowserTTS(text, speaker);
+            resolve();
+          } catch (browserError) {
+            toast({
+              title: "Audio playback failed",
+              description: "Could not play the audio",
+              variant: "destructive",
+            });
+            reject(new Error('Audio playback failed'));
+          }
         };
 
         // Apply speed setting
@@ -68,26 +122,38 @@ export const useTextToSpeech = () => {
         await audio.play();
       } catch (error: any) {
         console.error('Error generating speech:', error);
-        setIsSpeaking(false);
-        setCurrentSpeaker(null);
-        toast({
-          title: "Text-to-speech failed",
-          description: error.message || "Please try again",
-          variant: "destructive",
-        });
-        reject(error);
+        
+        // Try browser TTS as final fallback
+        try {
+          await speakWithBrowserTTS(text, speaker);
+          resolve();
+          return;
+        } catch (browserError) {
+          setIsSpeaking(false);
+          setCurrentSpeaker(null);
+          toast({
+            title: "Text-to-speech failed",
+            description: "Please try again",
+            variant: "destructive",
+          });
+          reject(error);
+        }
       }
     });
-  };
+  }, [speakWithBrowserTTS, toast]);
 
-  const stop = () => {
+  const stop = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
-      setIsSpeaking(false);
-      setCurrentSpeaker(null);
     }
-  };
+    // Also stop browser TTS
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+    setCurrentSpeaker(null);
+  }, []);
 
   return {
     isSpeaking,
