@@ -41,6 +41,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
   const streamRef = useRef<MediaStream | null>(null);
   const animationRef = useRef<number | null>(null);
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isCameraOnRef = useRef(false); // Ref for immediate access in async callbacks
   
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -59,6 +60,11 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
     faceDetected: false
   });
   const [isMinimized, setIsMinimized] = useState(false);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    isCameraOnRef.current = isCameraOn;
+  }, [isCameraOn]);
   
   const { toast } = useToast();
 
@@ -152,6 +158,8 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
         });
       }
       
+      // Set ref immediately (before state) to avoid race condition with analyzeFrame
+      isCameraOnRef.current = true;
       setIsCameraOn(true);
       setHasPermission(true);
       
@@ -174,6 +182,9 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
   };
 
   const stopCamera = () => {
+    // Set ref immediately to stop any running analysis loops
+    isCameraOnRef.current = false;
+    
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -291,8 +302,9 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
   }, []);
 
   const analyzeFrame = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || !isCameraOn) {
-      console.log('Analysis stopped - camera off or refs missing');
+    // Use ref for immediate value check (avoids stale closure issues)
+    if (!videoRef.current || !canvasRef.current || !isCameraOnRef.current) {
+      console.log('Analysis stopped - camera off or refs missing, isCameraOn:', isCameraOnRef.current);
       return;
     }
 
