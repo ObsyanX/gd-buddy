@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic, Eye, User, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithAuth } from "@/lib/supabase-auth";
 
 interface SessionReportProps {
   sessionId: string;
@@ -316,7 +317,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         .select('*')
         .eq('session_id', sessionId);
 
-      const { data: aiReport } = await supabase.functions.invoke('gd-conductor', {
+      const { data: aiReport } = await invokeWithAuth('gd-conductor', {
         body: {
           session_id: sessionId,
           topic: sessionData.topic,

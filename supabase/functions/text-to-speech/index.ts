@@ -1,9 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const inputSchema = z.object({
+  text: z.string().min(1, 'Text required').max(5000, 'Text too long (max 5000 chars)'),
+  voice: z.string().max(50).optional(),
+});
 
 // ElevenLabs voice mapping
 const VOICE_MAP: Record<string, string> = {
@@ -75,14 +82,22 @@ serve(async (req) => {
       throw new Error('No ElevenLabs API keys configured');
     }
 
-    const { text, voice } = await req.json();
-
-    if (!text) {
-      throw new Error('Text is required');
+    // Validate input
+    const rawBody = await req.json();
+    const parseResult = inputSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('Input validation failed:', parseResult.error.issues);
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: parseResult.error.issues }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
+    const { text, voice } = parseResult.data;
+
     // Get voice ID from mapping or use Sarah as default
-    const voiceId = VOICE_MAP[voice?.toLowerCase()] || VOICE_MAP['sarah'];
+    const voiceId = VOICE_MAP[voice?.toLowerCase() || ''] || VOICE_MAP['sarah'];
 
     console.log(`Generating speech with ElevenLabs for: "${text.substring(0, 50)}..." with voice: ${voice || 'sarah'} (${voiceId})`);
 

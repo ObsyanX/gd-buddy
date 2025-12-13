@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeWithAuth } from '@/lib/supabase-auth';
 import type { VoiceSettings } from '@/pages/Settings';
 
 export const useTextToSpeech = () => {
@@ -31,7 +31,7 @@ export const useTextToSpeech = () => {
           audioRef.current = null;
         }
 
-        const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        const { data, error } = await invokeWithAuth('text-to-speech', {
           body: { text, voice }
         });
 

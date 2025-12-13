@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithAuth } from "@/lib/supabase-auth";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { usePracticeMode } from "@/hooks/usePracticeMode";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -280,7 +281,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         end_ts: m.end_ts
       }));
 
-      const { data: aiResponse, error: aiError } = await supabase.functions.invoke('gd-conductor', {
+      const { data: aiResponse, error: aiError } = await invokeWithAuth('gd-conductor', {
         body: {
           session_id: sessionId,
           topic: session.topic,

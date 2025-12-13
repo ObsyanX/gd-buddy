@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Volume2, Keyboard, Play, Mic } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithAuth } from '@/lib/supabase-auth';
 
 const VOICE_OPTIONS = [
   { value: 'sarah', label: 'Sarah', description: 'Clear female voice' },
@@ -84,7 +85,7 @@ const Settings = () => {
   const handleTestVoice = async () => {
     setIsTesting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+      const { data, error } = await invokeWithAuth('text-to-speech', {
         body: { 
           text: "Hello! This is a test of the selected voice. How does it sound?",
           voice: voice 

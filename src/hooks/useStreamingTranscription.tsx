@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeWithAuth } from '@/lib/supabase-auth';
 
 interface UseStreamingTranscriptionOptions {
   onInterimResult?: (text: string) => void;
@@ -51,7 +51,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
       setIsCorrecting(true);
       onCorrectionStart?.();
       
-      const { data, error } = await supabase.functions.invoke('transcription-correction', {
+      const { data, error } = await invokeWithAuth('transcription-correction', {
         body: { rawTranscription: rawText, context }
       });
 

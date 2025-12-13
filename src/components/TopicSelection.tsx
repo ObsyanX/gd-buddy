@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeWithAuth } from "@/lib/supabase-auth";
 
 interface TopicSelectionProps {
   onTopicSelected: (topic: any) => void;
@@ -22,7 +22,7 @@ const TopicSelection = ({ onTopicSelected, onBack }: TopicSelectionProps) => {
   const handleGenerateTopics = async () => {
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('gd-topics', {
+      const { data, error } = await invokeWithAuth('gd-topics', {
         body: {
           audience: 'engineering students',
           tone: 'formal',

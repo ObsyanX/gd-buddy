@@ -1,10 +1,16 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema - base64 encoded audio ~10MB max
+const inputSchema = z.object({
+  audio: z.string().min(1, 'Audio data required').max(14000000, 'Audio too large (max ~10MB)'),
+});
 
 function processBase64Chunks(base64String: string, chunkSize = 32768) {
   const chunks: Uint8Array[] = [];
@@ -46,11 +52,19 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY is not configured');
     }
 
-    const { audio } = await req.json();
+    // Validate input
+    const rawBody = await req.json();
+    const parseResult = inputSchema.safeParse(rawBody);
     
-    if (!audio) {
-      throw new Error('No audio data provided');
+    if (!parseResult.success) {
+      console.error('Input validation failed:', parseResult.error.issues);
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: parseResult.error.issues }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const { audio } = parseResult.data;
 
     console.log('Processing audio transcription...');
 

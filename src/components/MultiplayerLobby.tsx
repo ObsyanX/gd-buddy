@@ -10,6 +10,7 @@ import { Users, Copy, Check, ArrowLeft, Loader2, Sparkles, Bot } from "lucide-re
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithAuth } from "@/lib/supabase-auth";
 
 interface MultiplayerLobbyProps {
   onSessionJoined: (sessionId: string) => void;
@@ -108,7 +109,7 @@ const MultiplayerLobby = ({ onSessionJoined, onBack }: MultiplayerLobbyProps) =>
   const handleGenerateTopics = async () => {
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('gd-topics', {
+      const { data, error } = await invokeWithAuth('gd-topics', {
         body: {
           audience: 'engineering students',
           tone: 'formal',

@@ -1,9 +1,28 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const inputSchema = z.object({
+  session_id: z.string().uuid().optional(),
+  topic: z.string().max(500).optional(),
+  topic_meta: z.object({
+    category: z.string().max(100).optional(),
+    difficulty: z.string().max(50).optional(),
+    tags: z.array(z.string().max(50)).max(10).optional(),
+  }).optional(),
+  participants: z.array(z.any()).max(20, 'Too many participants').optional(),
+  conversation_history: z.array(z.any()).max(100, 'Too many conversation turns').optional(),
+  latest_user_utterance: z.string().max(2000).optional(),
+  metrics_so_far: z.any().optional(),
+  benchmarks: z.any().optional(),
+  config: z.any().optional(),
+  request: z.enum(['generate_responses', 'invigilator_update', 'post_session_report', 'topic_suggestions']).optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -16,7 +35,19 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const body = await req.json();
+    // Validate input
+    const rawBody = await req.json();
+    const parseResult = inputSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('Input validation failed:', parseResult.error.issues);
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: parseResult.error.issues }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const body = parseResult.data;
     const { 
       session_id, 
       topic, 

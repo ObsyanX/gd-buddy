@@ -1,9 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const inputSchema = z.object({
+  rawTranscription: z.string().max(5000, 'Transcription too long (max 5000 chars)'),
+  context: z.string().max(500).optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -16,7 +23,19 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const { rawTranscription, context } = await req.json();
+    // Validate input
+    const rawBody = await req.json();
+    const parseResult = inputSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('Input validation failed:', parseResult.error.issues);
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: parseResult.error.issues }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { rawTranscription, context } = parseResult.data;
 
     if (!rawTranscription || rawTranscription.trim().length === 0) {
       return new Response(
