@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { MessageSquare, Loader2 } from "lucide-react";
+import { MessageSquare, Loader2, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Invalid email address");
@@ -15,7 +15,7 @@ const passwordSchema = z.string().min(6, "Password must be at least 6 characters
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,6 +27,10 @@ const Auth = () => {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupDisplayName, setSignupDisplayName] = useState("");
+
+  // Forgot password form
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +88,7 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate inputs
     try {
       emailSchema.parse(signupEmail);
@@ -104,7 +108,7 @@ const Auth = () => {
     setIsLoading(true);
     try {
       const { error } = await signUp(signupEmail, signupPassword, signupDisplayName);
-      
+
       if (error) {
         if (error.message.includes("already registered")) {
           toast({
@@ -140,6 +144,50 @@ const Auth = () => {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      emailSchema.parse(resetEmail);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.issues[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await resetPassword(resetEmail);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to send reset email",
+          variant: "destructive",
+        });
+      } else {
+        setResetSent(true);
+        toast({
+          title: "Reset link sent!",
+          description: "Check your email for the password reset link.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b-4 border-border p-6">
@@ -155,9 +203,10 @@ const Auth = () => {
       <main className="flex-1 container mx-auto py-12 px-6 flex items-center justify-center">
         <Card className="w-full max-w-md p-8 border-4 border-border">
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 border-2">
+            <TabsList className="grid w-full grid-cols-3 border-2">
               <TabsTrigger value="login">LOGIN</TabsTrigger>
               <TabsTrigger value="signup">SIGN UP</TabsTrigger>
+              <TabsTrigger value="reset">FORGOT</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="space-y-4 mt-6">
@@ -186,8 +235,8 @@ const Auth = () => {
                     required
                   />
                 </div>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full border-4 border-border shadow-md"
                   disabled={isLoading}
                 >
@@ -259,6 +308,59 @@ const Auth = () => {
                   )}
                 </Button>
               </form>
+            </TabsContent>
+
+            <TabsContent value="reset" className="space-y-4 mt-6">
+              {resetSent ? (
+                <div className="space-y-4 text-center py-6">
+                  <p className="text-lg font-bold">CHECK YOUR EMAIL</p>
+                  <p className="text-sm text-muted-foreground">
+                    We've sent a password reset link to <strong>{resetEmail}</strong>. Click the link in your email to set a new password.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setResetSent(false);
+                      setResetEmail("");
+                    }}
+                    variant="outline"
+                    className="w-full border-2"
+                  >
+                    SEND ANOTHER EMAIL
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Enter your email address and we'll send you a link to reset your password.
+                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">EMAIL</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="border-2"
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full border-4 border-border shadow-md"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        SENDING...
+                      </>
+                    ) : (
+                      "SEND RESET LINK"
+                    )}
+                  </Button>
+                </form>
+              )}
             </TabsContent>
           </Tabs>
         </Card>
