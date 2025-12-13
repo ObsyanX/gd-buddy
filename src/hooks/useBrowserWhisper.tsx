@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { pipeline } from '@huggingface/transformers';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeWithAuth } from '@/lib/supabase-auth';
 
 let whisperPipeline: any = null;
 let pipelineLoading = false;
@@ -59,7 +59,7 @@ export const useBrowserWhisper = () => {
     if (!rawText || rawText.trim().length === 0) return rawText;
 
     try {
-      const { data, error } = await supabase.functions.invoke('transcription-correction', {
+      const { data, error } = await invokeWithAuth('transcription-correction', {
         body: { rawTranscription: rawText, context }
       });
 

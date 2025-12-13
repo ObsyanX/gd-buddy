@@ -9,6 +9,7 @@ import { ArrowLeft, Target, Clock, Mic, Send, Loader2, CheckCircle2, XCircle } f
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithAuth } from "@/lib/supabase-auth";
 
 interface DrillType {
   id: string;
@@ -89,7 +90,7 @@ const SkillDrills = () => {
     setIsProcessing(true);
     try {
       // Get AI feedback
-      const { data: feedbackData, error: feedbackError } = await supabase.functions.invoke('drill-feedback', {
+      const { data: feedbackData, error: feedbackError } = await invokeWithAuth('drill-feedback', {
         body: {
           drill_type: selectedDrill.id,
           topic,

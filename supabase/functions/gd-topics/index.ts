@@ -1,9 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const inputSchema = z.object({
+  audience: z.string().max(100).optional().default('general'),
+  tone: z.string().max(50).optional().default('formal'),
+  difficulty: z.string().max(50).optional().default('medium'),
+  count: z.number().min(1).max(50).optional().default(8),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -16,7 +25,19 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const { audience = 'general', tone = 'formal', difficulty = 'medium', count = 8 } = await req.json();
+    // Validate input
+    const rawBody = await req.json();
+    const parseResult = inputSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('Input validation failed:', parseResult.error.issues);
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: parseResult.error.issues }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { audience, tone, difficulty, count } = parseResult.data;
 
     console.log(`Generating ${count} topics for ${audience}, ${difficulty} difficulty, ${tone} tone`);
 

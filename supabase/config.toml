@@ -1,19 +1,19 @@
 project_id = "vbffikdzwqovwttfdhex"
 
 [functions.gd-conductor]
-verify_jwt = false
+verify_jwt = true
 
 [functions.gd-topics]
-verify_jwt = false
+verify_jwt = true
 
 [functions.speech-to-text]
-verify_jwt = false
+verify_jwt = true
 
 [functions.text-to-speech]
-verify_jwt = false
+verify_jwt = true
 
 [functions.drill-feedback]
-verify_jwt = false
+verify_jwt = true
 
 [functions.transcription-correction]
-verify_jwt = false
+verify_jwt = true
