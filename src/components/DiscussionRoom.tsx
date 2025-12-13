@@ -115,9 +115,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     loadSession();
   }, [sessionId]);
 
+  // Track which messages we've already processed for TTS to avoid duplicates
+  const processedMessagesRef = useRef<Set<string>>(new Set());
+  
   // Realtime subscription for multiplayer message sync
   useEffect(() => {
     if (!session?.is_multiplayer) return;
+
+    console.log('[Multiplayer] Setting up realtime subscription for session:', sessionId);
 
     const channel = supabase
       .channel(`gd_messages_${sessionId}`)
@@ -130,39 +135,65 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           filter: `session_id=eq.${sessionId}`
         },
         async (payload) => {
+          console.log('[Multiplayer] Received new message via realtime:', payload.new);
+          
+          // Skip if we've already processed this message
+          if (processedMessagesRef.current.has(payload.new.id)) {
+            console.log('[Multiplayer] Message already processed, skipping:', payload.new.id);
+            return;
+          }
+
           // Fetch the complete message with participant info
-          const { data: newMessage } = await supabase
+          const { data: newMessage, error: fetchError } = await supabase
             .from('gd_messages')
             .select('*, gd_participants(*)')
             .eq('id', payload.new.id)
             .single();
 
+          if (fetchError) {
+            console.error('[Multiplayer] Error fetching message details:', fetchError);
+            return;
+          }
+
           if (newMessage) {
-            // Check if this message was sent by the current user (avoid duplicate handling)
+            console.log('[Multiplayer] Fetched message with participant:', newMessage);
+            
+            // Check if this message was sent by the current user's participant
             const userParticipant = participants.find(p => p.is_user);
             const isOwnMessage = newMessage.participant_id === userParticipant?.id;
             
+            console.log('[Multiplayer] User participant:', userParticipant?.id, 'Message from:', newMessage.participant_id, 'Is own:', isOwnMessage);
+            
+            // Mark as processed
+            processedMessagesRef.current.add(newMessage.id);
+            
             setMessages(prev => {
-              // Avoid duplicates
+              // Avoid duplicates in state
               if (prev.find(m => m.id === newMessage.id)) return prev;
               return [...prev, newMessage];
             });
 
             // Play TTS for messages from other participants (not our own messages)
+            // This includes messages from other human players AND AI participants triggered by them
             if (!isOwnMessage && autoPlayTTS && newMessage.gd_participants) {
               const participant = newMessage.gd_participants;
+              console.log('[Multiplayer TTS] Playing message from:', participant.persona_name, 'Voice:', participant.voice_name);
               try {
                 await speak(newMessage.text, participant.persona_name, participant.voice_name);
+                console.log('[Multiplayer TTS] Finished speaking message from:', participant.persona_name);
               } catch (e) {
-                console.error('TTS error for multiplayer message:', e);
+                console.error('[Multiplayer TTS] Error:', e);
               }
             }
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[Multiplayer] Subscription status:', status);
+      });
 
     return () => {
+      console.log('[Multiplayer] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [sessionId, session?.is_multiplayer, participants, autoPlayTTS, speak]);
