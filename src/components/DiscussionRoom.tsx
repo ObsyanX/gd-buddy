@@ -138,11 +138,25 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             .single();
 
           if (newMessage) {
+            // Check if this message was sent by the current user (avoid duplicate handling)
+            const userParticipant = participants.find(p => p.is_user);
+            const isOwnMessage = newMessage.participant_id === userParticipant?.id;
+            
             setMessages(prev => {
               // Avoid duplicates
               if (prev.find(m => m.id === newMessage.id)) return prev;
               return [...prev, newMessage];
             });
+
+            // Play TTS for messages from other participants (not our own messages)
+            if (!isOwnMessage && autoPlayTTS && newMessage.gd_participants) {
+              const participant = newMessage.gd_participants;
+              try {
+                await speak(newMessage.text, participant.persona_name, participant.voice_name);
+              } catch (e) {
+                console.error('TTS error for multiplayer message:', e);
+              }
+            }
           }
         }
       )
@@ -151,7 +165,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [sessionId, session?.is_multiplayer]);
+  }, [sessionId, session?.is_multiplayer, participants, autoPlayTTS, speak]);
 
   useEffect(() => {
     if (scrollRef.current) {
