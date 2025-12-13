@@ -579,21 +579,27 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               <div className="space-y-4">
                 {messages.map((message, index) => {
                   const isUser = message.gd_participants?.is_user;
+                  const isCurrentlySpeaking = isSpeaking && currentSpeaker === message.gd_participants?.persona_name;
                   return (
                     <div 
                       key={index}
                       className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
                     >
                       {!isUser && (
-                        <div className="w-8 h-8 rounded border-2 border-border flex items-center justify-center flex-shrink-0 mt-1">
-                          <Bot className="w-4 h-4" />
+                        <div className={`w-8 h-8 rounded border-2 flex items-center justify-center flex-shrink-0 mt-1 ${isCurrentlySpeaking ? 'border-primary bg-primary/20 animate-pulse' : 'border-border'}`}>
+                          {isCurrentlySpeaking ? (
+                            <Volume2 className="w-4 h-4 text-primary animate-pulse" />
+                          ) : (
+                            <Bot className="w-4 h-4" />
+                          )}
                         </div>
                       )}
                       <div className={`max-w-[80%] space-y-1 ${isUser ? 'text-right' : ''}`}>
-                        <p className="text-xs font-bold text-muted-foreground">
+                        <p className={`text-xs font-bold ${isCurrentlySpeaking ? 'text-primary' : 'text-muted-foreground'}`}>
                           {message.gd_participants?.persona_name}
+                          {isCurrentlySpeaking && <span className="ml-2 animate-pulse">🔊 Speaking...</span>}
                         </p>
-                        <div className={`p-4 border-2 ${isUser ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border'}`}>
+                        <div className={`p-4 border-2 ${isUser ? 'bg-primary text-primary-foreground border-primary' : isCurrentlySpeaking ? 'bg-primary/10 border-primary' : 'bg-card border-border'}`}>
                           <p className="text-sm">{message.text}</p>
                         </div>
                         {message.intent && (
