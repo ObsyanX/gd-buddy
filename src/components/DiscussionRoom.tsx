@@ -335,7 +335,10 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     if (!textToSend.trim() || isProcessing) return;
 
     setIsProcessing(true);
-    const userParticipant = participants.find(p => p.is_user);
+    // Find the participant that matches the current authenticated user
+    // In multiplayer, multiple participants have is_user=true, so match by real_user_id
+    const userParticipant = participants.find(p => p.is_user && p.real_user_id === currentUserId) 
+      || participants.find(p => p.is_user); // Fallback for solo mode
     const messageText = textToSend.trim();
 
     try {
@@ -676,6 +679,17 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                 {messages.map((message, index) => {
                   // Determine if this message is from the current authenticated user
                   const messageParticipant = message.gd_participants;
+                  
+                  // Debug logging for message attribution
+                  if (index === messages.length - 1) {
+                    console.log('[Message Attribution]', {
+                      messageId: message.id,
+                      participantName: messageParticipant?.persona_name,
+                      participantRealUserId: messageParticipant?.real_user_id,
+                      currentUserId,
+                      isUser: messageParticipant?.is_user,
+                    });
+                  }
                   
                   // Check message ownership: compare real_user_id with current user
                   // This works for both solo and multiplayer modes
