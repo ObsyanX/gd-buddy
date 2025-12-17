@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle, Loader2, Sparkles } from "lucide-react";
+import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle, Loader2, Sparkles, SkipForward } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
@@ -577,9 +577,17 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                   AI Correcting...
                 </Badge>
               )}
-              {autoMicEnabled && autoMicSetting && (
-                <Badge variant="outline" className="border-2 bg-accent/20">Auto-mic ON</Badge>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAutoMicEnabled(!autoMicEnabled)}
+                className={`border-2 text-xs ${autoMicEnabled && autoMicSetting ? 'bg-accent/20' : ''}`}
+                disabled={!autoMicSetting}
+                title={autoMicSetting ? "Toggle auto-mic after first message" : "Enable auto-mic in Settings"}
+              >
+                <Mic className="w-3 h-3 mr-1" />
+                Auto-mic {autoMicEnabled && autoMicSetting ? 'ON' : 'OFF'}
+              </Button>
               {session.is_multiplayer && (
                 <Badge variant="default" className="border-2">Multiplayer</Badge>
               )}
@@ -717,6 +725,16 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                 title={isListening ? "Stop & Send" : "Send (Ctrl+Enter)"}
               >
                 {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+              <Button 
+                onClick={() => handleSendMessageDirect("[Skipped turn]")}
+                disabled={isProcessing || isPracticing}
+                variant="outline"
+                className="border-2"
+                size="lg"
+                title="Skip your turn"
+              >
+                <SkipForward className="w-4 h-4" />
               </Button>
             </div>
             <p className="text-xs text-muted-foreground font-mono text-center">
