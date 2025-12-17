@@ -668,13 +668,16 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               <div className="space-y-4">
                 {messages.map((message, index) => {
                   // In multiplayer: check if this message is from the CURRENT authenticated user
+                  // by comparing real_user_id with currentUserId
                   // In solo: just use is_user flag
                   const messageParticipant = message.gd_participants;
                   const isFromCurrentUser = session?.is_multiplayer 
-                    ? messageParticipant?.real_user_id === currentUserId
+                    ? (messageParticipant?.real_user_id && currentUserId && messageParticipant.real_user_id === currentUserId)
                     : messageParticipant?.is_user;
                   const isCurrentlySpeaking = isSpeaking && currentSpeaker === messageParticipant?.persona_name;
+                  // In multiplayer, AI = not is_user; other humans have is_user=true but different real_user_id
                   const isAI = !messageParticipant?.is_user;
+                  const isOtherHuman = session?.is_multiplayer && messageParticipant?.is_user && !isFromCurrentUser;
                   
                   return (
                     <div 
@@ -695,6 +698,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                       <div className={`max-w-[80%] space-y-1 ${isFromCurrentUser ? 'text-right' : ''}`}>
                         <p className={`text-xs font-bold ${isCurrentlySpeaking ? 'text-primary' : 'text-muted-foreground'}`}>
                           {isFromCurrentUser ? 'You' : messageParticipant?.persona_name}
+                          {isOtherHuman && <span className="ml-1 text-muted-foreground">(Player)</span>}
                           {isCurrentlySpeaking && <span className="ml-2 animate-pulse">🔊 Speaking...</span>}
                         </p>
                         <div className={`p-4 border-2 ${isFromCurrentUser ? 'bg-primary text-primary-foreground border-primary' : isCurrentlySpeaking ? 'bg-primary/10 border-primary' : 'bg-card border-border'}`}>
