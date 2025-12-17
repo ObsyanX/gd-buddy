@@ -366,6 +366,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         setHasSentFirstMessage(true);
       }
 
+      // Wait for human participant's speech to finish before AI responds
+      // This ensures proper sync in multiplayer where TTS plays the human message
+      const humanSpeechDelay = session?.is_multiplayer ? 7000 : 2000; // 7 seconds for multiplayer, 2 for solo
+      console.log(`[AI Response Delay] Waiting ${humanSpeechDelay}ms for human speech to complete...`);
+      await new Promise(resolve => setTimeout(resolve, humanSpeechDelay));
+      console.log('[AI Response Delay] Proceeding with AI response generation');
+
       // Get AI responses
       const conversationHistory = messages.map(m => ({
         who: m.gd_participants?.persona_name || 'Unknown',
