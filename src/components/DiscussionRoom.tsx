@@ -231,6 +231,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               try {
                 await speak(newMessage.text, messageParticipant.persona_name, messageParticipant.voice_name);
                 console.log('[Multiplayer TTS] Finished speaking message from:', messageParticipant.persona_name);
+                
+                // If this was a human participant's message (is_user=true), add delay before AI responds
+                // This ensures the receiving client waits for human speech to finish before AI TTS plays
+                if (messageParticipant.is_user) {
+                  const speechDelay = Math.min(Math.max(newMessage.text.length * 80, 2000), 10000);
+                  console.log(`[Multiplayer TTS] Human participant message - adding ${speechDelay}ms buffer for speech sync`);
+                  await new Promise(resolve => setTimeout(resolve, speechDelay));
+                }
               } catch (e) {
                 console.error('[Multiplayer TTS] Error:', e);
               }
