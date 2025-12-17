@@ -189,7 +189,8 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
           persona_name: 'You',
           persona_tone: 'neutral',
           persona_verbosity: 'moderate',
-          persona_vocab_level: 'intermediate'
+          persona_vocab_level: 'intermediate',
+          real_user_id: user?.id
         });
 
       if (userError) throw userError;
