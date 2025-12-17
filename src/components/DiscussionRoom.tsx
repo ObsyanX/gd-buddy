@@ -667,17 +667,20 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
                 {messages.map((message, index) => {
-                  // In multiplayer: check if this message is from the CURRENT authenticated user
-                  // by comparing real_user_id with currentUserId
-                  // In solo: just use is_user flag
+                  // Determine if this message is from the current authenticated user
                   const messageParticipant = message.gd_participants;
-                  const isFromCurrentUser = session?.is_multiplayer 
-                    ? (messageParticipant?.real_user_id && currentUserId && messageParticipant.real_user_id === currentUserId)
-                    : messageParticipant?.is_user;
+                  
+                  // Check message ownership: compare real_user_id with current user
+                  // This works for both solo and multiplayer modes
+                  const isFromCurrentUser = messageParticipant?.is_user && 
+                    messageParticipant?.real_user_id && 
+                    currentUserId && 
+                    messageParticipant.real_user_id === currentUserId;
+                  
                   const isCurrentlySpeaking = isSpeaking && currentSpeaker === messageParticipant?.persona_name;
-                  // In multiplayer, AI = not is_user; other humans have is_user=true but different real_user_id
                   const isAI = !messageParticipant?.is_user;
-                  const isOtherHuman = session?.is_multiplayer && messageParticipant?.is_user && !isFromCurrentUser;
+                  // Other human = is_user true but NOT from current authenticated user
+                  const isOtherHuman = messageParticipant?.is_user && !isFromCurrentUser;
                   
                   return (
                     <div 

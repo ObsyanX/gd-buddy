@@ -100,36 +100,36 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
     };
 
     recognition.onresult = (event: any) => {
-      let interim = '';
-      let final = '';
+      // Build full transcript from all results to avoid duplication
+      let fullFinal = '';
+      let latestInterim = '';
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      // Iterate through ALL results to build the complete transcript
+      for (let i = 0; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         
         if (event.results[i].isFinal) {
-          final += transcript + ' ';
+          fullFinal += transcript + ' ';
           hasSpokenRef.current = true;
         } else {
-          interim += transcript;
+          // Only take the latest interim result (not accumulated)
+          latestInterim = transcript;
           if (transcript.trim()) {
             hasSpokenRef.current = true;
           }
         }
       }
 
-      // Update interim text immediately (like Google Keyboard)
-      if (interim) {
-        setInterimText(interim);
-        onInterimResult?.(finalTextRef.current + interim);
-      }
+      // Update final text reference with complete final transcript
+      finalTextRef.current = fullFinal;
+      setFinalText(fullFinal);
 
-      // Accumulate final text
-      if (final) {
-        finalTextRef.current += final;
-        setFinalText(finalTextRef.current);
-        setInterimText('');
-        onInterimResult?.(finalTextRef.current);
-      }
+      // Update interim text with only the latest non-final segment
+      setInterimText(latestInterim);
+      
+      // Callback with complete text (final + current interim)
+      const displayText = (fullFinal + latestInterim).trim();
+      onInterimResult?.(displayText);
     };
 
     recognition.onerror = (event: any) => {
