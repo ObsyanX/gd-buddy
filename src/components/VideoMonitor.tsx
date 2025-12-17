@@ -143,15 +143,21 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
           video.onerror = () => reject(new Error('Video failed to load'));
         });
         
-        // Wait for video to actually have frames
+        // Wait for video to actually have frames (with timeout)
         await new Promise<void>((resolve) => {
+          let attempts = 0;
+          const maxAttempts = 50; // 5 seconds max wait
           const checkReady = () => {
+            attempts++;
             const video = videoRef.current;
             if (video && video.readyState >= video.HAVE_CURRENT_DATA && video.videoWidth > 0) {
               console.log('Video ready with dimensions:', video.videoWidth, video.videoHeight);
               resolve();
+            } else if (attempts >= maxAttempts) {
+              console.log('Video ready check timed out, proceeding anyway');
+              resolve(); // Continue even if not fully ready
             } else {
-              requestAnimationFrame(checkReady);
+              setTimeout(checkReady, 100);
             }
           };
           checkReady();
@@ -673,7 +679,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="relative aspect-video bg-muted rounded overflow-hidden">
+              <div className="relative aspect-video bg-black rounded overflow-hidden min-h-[120px]">
                 <video
                   ref={videoRef}
                   autoPlay
@@ -688,21 +694,30 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
                   style={{ transform: 'scaleX(-1)' }}
                 />
                 
+                {/* Status badges - top corners */}
+                <div className="absolute top-2 left-2">
+                  {!metrics.faceDetected && (
+                    <Badge variant="outline" className="text-[10px] bg-background/80 border-destructive/50 text-destructive">
+                      <User className="w-3 h-3 mr-1" />
+                      No Face
+                    </Badge>
+                  )}
+                </div>
+                
                 <div className="absolute top-2 right-2">
                   <Badge 
-                    className={`${getScoreBg(metrics.overallScore)} text-white`}
+                    className={`${getScoreBg(metrics.overallScore)} text-white text-xs`}
                   >
-                    {metrics.faceDetected ? `${metrics.overallScore}%` : 'No Face'}
+                    {metrics.faceDetected ? `${metrics.overallScore}%` : '--'}
                   </Badge>
                 </div>
 
+                {/* Subtle hint at bottom when no face - doesn't block video */}
                 {!metrics.faceDetected && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-                    <div className="text-center p-4">
-                      <User className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm font-bold">Looking for face...</p>
-                      <p className="text-xs text-muted-foreground">Ensure good lighting and face the camera</p>
-                    </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-2">
+                    <p className="text-[10px] text-muted-foreground text-center">
+                      Position your face in frame • Ensure good lighting
+                    </p>
                   </div>
                 )}
               </div>
