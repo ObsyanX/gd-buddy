@@ -706,9 +706,10 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         </div>
       </header>
 
-      <div className="flex-1 container mx-auto grid md:grid-cols-4 gap-4 p-4">
-        <div className="md:col-span-3 space-y-4">
-          <Card className="border-4 border-border h-[calc(100vh-350px)] flex flex-col">
+      <div className="flex-1 container mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 overflow-hidden">
+        {/* Main Chat Area */}
+        <div className="lg:col-span-8 xl:col-span-9 space-y-4 min-w-0">
+          <Card className="border-4 border-border h-[calc(100vh-350px)] min-h-[400px] flex flex-col">
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
                 {messages.map((message, index) => {
@@ -876,41 +877,64 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           </div>
         </div>
 
-        <div className="space-y-4">
+        {/* Right Sidebar */}
+        <div className="lg:col-span-4 xl:col-span-3 space-y-3 overflow-y-auto max-h-[calc(100vh-180px)] pr-1">
+          {/* Live Feedback Card */}
           <Card className="p-4 border-4 border-border">
             <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
               <Info className="w-4 h-4" />
               LIVE FEEDBACK
             </h3>
             {feedback ? (
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground">Fluency</p>
-                  <p className="font-bold text-lg">{feedback.fluency_score || 0}/100</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">WPM</p>
-                  <p className="font-bold">{Math.round(feedback.wpm || 0)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Fillers</p>
-                  <p className="font-bold">{feedback.filler_count || 0}</p>
+              <div className="space-y-3">
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Fluency</p>
+                    <p className="font-bold text-lg tabular-nums">{feedback.fluency_score || 0}<span className="text-xs text-muted-foreground">/100</span></p>
+                  </div>
+                  <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">WPM</p>
+                    <p className="font-bold text-lg tabular-nums">{Math.round(feedback.wpm || 0)}</p>
+                  </div>
+                  <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Fillers</p>
+                    <p className="font-bold text-lg tabular-nums">{feedback.filler_count || 0}</p>
+                  </div>
                 </div>
                 {feedback.live_hint && (
-                  <div className="pt-2 border-t-2 border-border">
-                    <p className="text-xs font-mono">{feedback.live_hint}</p>
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs font-mono text-muted-foreground leading-relaxed">{feedback.live_hint}</p>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground font-mono">
-                Feedback will appear as you participate
-              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
+                  <p className="text-[10px] text-muted-foreground uppercase">Fluency</p>
+                  <p className="font-bold text-lg text-muted-foreground">--</p>
+                </div>
+                <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
+                  <p className="text-[10px] text-muted-foreground uppercase">WPM</p>
+                  <p className="font-bold text-lg text-muted-foreground">--</p>
+                </div>
+                <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
+                  <p className="text-[10px] text-muted-foreground uppercase">Fillers</p>
+                  <p className="font-bold text-lg text-muted-foreground">--</p>
+                </div>
+              </div>
             )}
           </Card>
 
+          {/* Participants Card */}
           <Card className="p-4 border-4 border-border">
-            <h3 className="font-bold text-sm mb-3">PARTICIPANTS</h3>
+            <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+              <User className="w-4 h-4" />
+              PARTICIPANTS
+              <Badge variant="secondary" className="ml-auto text-xs">
+                {participants.length}
+              </Badge>
+            </h3>
             <ParticipantPresence
               participants={participants}
               presenceState={presenceState}
