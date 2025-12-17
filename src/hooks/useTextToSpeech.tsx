@@ -7,6 +7,7 @@ export const useTextToSpeech = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentSpeaker, setCurrentSpeaker] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const elevenLabsSuccessRef = useRef(false); // Track if ElevenLabs succeeded
   const { toast } = useToast();
 
   // Browser speech synthesis fallback
@@ -52,6 +53,9 @@ export const useTextToSpeech = () => {
     const voice = participantVoice || settings.voice;
 
     return new Promise(async (resolve, reject) => {
+      // Reset the success flag at the start
+      elevenLabsSuccessRef.current = false;
+      
       try {
         setIsSpeaking(true);
         setCurrentSpeaker(speaker || null);
@@ -73,7 +77,7 @@ export const useTextToSpeech = () => {
 
         if (error) {
           console.warn('ElevenLabs TTS failed, falling back to browser TTS:', error);
-          // Fallback to browser TTS
+          // Fallback to browser TTS only if ElevenLabs didn't succeed
           try {
             await speakWithBrowserTTS(text, speaker);
             resolve();
@@ -83,12 +87,20 @@ export const useTextToSpeech = () => {
           }
         }
 
+        // Mark ElevenLabs as successful - no browser fallback needed
+        elevenLabsSuccessRef.current = true;
+
         // Convert base64 to audio and play
         const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
         const audioUrl = URL.createObjectURL(audioBlob);
         
         const audio = new Audio(audioUrl);
         audioRef.current = audio;
+        
+        // Cancel browser TTS again right before playing to be safe
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
 
         audio.onended = () => {
           setIsSpeaking(false);
@@ -102,17 +114,23 @@ export const useTextToSpeech = () => {
           setCurrentSpeaker(null);
           URL.revokeObjectURL(audioUrl);
           
-          // Fallback to browser TTS on audio error
-          console.warn('Audio playback failed, falling back to browser TTS');
-          try {
-            await speakWithBrowserTTS(text, speaker);
-            resolve();
-          } catch (browserError) {
-            toast({
-              title: "Audio playback failed",
-              description: "Could not play the audio",
-              variant: "destructive",
-            });
+          // Only fallback to browser TTS if ElevenLabs audio failed to play
+          // and we haven't already started browser TTS
+          if (elevenLabsSuccessRef.current) {
+            console.warn('Audio playback failed, falling back to browser TTS');
+            elevenLabsSuccessRef.current = false; // Reset before fallback
+            try {
+              await speakWithBrowserTTS(text, speaker);
+              resolve();
+            } catch (browserError) {
+              toast({
+                title: "Audio playback failed",
+                description: "Could not play the audio",
+                variant: "destructive",
+              });
+              reject(new Error('Audio playback failed'));
+            }
+          } else {
             reject(new Error('Audio playback failed'));
           }
         };
