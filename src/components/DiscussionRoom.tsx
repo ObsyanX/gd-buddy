@@ -44,12 +44,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const pendingSendRef = useRef(false);
   const { toast } = useToast();
   
-  // Load auto-mic setting from localStorage
+  // Load auto-mic setting from localStorage and initialize autoMicEnabled
   useEffect(() => {
     const savedAppSettings = localStorage.getItem('appSettings');
     if (savedAppSettings) {
       const parsed = JSON.parse(savedAppSettings) as AppSettings;
-      setAutoMicSetting(parsed.autoMicEnabled ?? true);
+      const setting = parsed.autoMicEnabled ?? true;
+      setAutoMicSetting(setting);
+      setAutoMicEnabled(setting); // Initialize from user preference
     }
   }, []);
   
@@ -321,12 +323,9 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       setUserInput("");
       clearTranscription();
       
-      // Mark first message sent and enable auto-mic for subsequent turns (if setting allows)
+      // Mark first message sent
       if (!hasSentFirstMessage) {
         setHasSentFirstMessage(true);
-        if (autoMicSetting) {
-          setAutoMicEnabled(true);
-        }
       }
 
       // Get AI responses
