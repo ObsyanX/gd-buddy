@@ -42,6 +42,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [videoMetricsRef, setVideoMetricsRef] = useState<VideoMetrics | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pendingSendRef = useRef(false);
+  const skipWaitRef = useRef<(() => void) | null>(null);
+  const [isWaitingForSpeech, setIsWaitingForSpeech] = useState(false);
   const { toast } = useToast();
   
   // Load auto-mic setting from localStorage and initialize autoMicEnabled
@@ -373,7 +375,22 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       const charDelay = messageText.length * 80; // ~80ms per character for TTS playback
       const humanSpeechDelay = Math.min(Math.max(baseDelay + charDelay, 2000), 15000);
       console.log(`[AI Response Delay] Message length: ${messageText.length} chars, waiting ${humanSpeechDelay}ms for speech to complete...`);
-      await new Promise(resolve => setTimeout(resolve, humanSpeechDelay));
+      
+      setIsWaitingForSpeech(true);
+      await new Promise<void>(resolve => {
+        const timeoutId = setTimeout(() => {
+          skipWaitRef.current = null;
+          resolve();
+        }, humanSpeechDelay);
+        
+        // Allow skipping the wait
+        skipWaitRef.current = () => {
+          clearTimeout(timeoutId);
+          skipWaitRef.current = null;
+          resolve();
+        };
+      });
+      setIsWaitingForSpeech(false);
       console.log('[AI Response Delay] Proceeding with AI response generation');
 
       // Get AI responses
@@ -759,6 +776,28 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
           {/* Voice Activity Indicator */}
           <VoiceActivityIndicator isActive={isSpeaking} participantName={currentSpeaker || undefined} />
+
+          {/* Waiting for Speech Indicator with Skip Button */}
+          {isWaitingForSpeech && (
+            <div className="flex items-center justify-center gap-3 py-2 px-4 bg-muted/50 rounded-lg border border-border">
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Waiting for speech to complete...</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (skipWaitRef.current) {
+                    skipWaitRef.current();
+                    console.log('[AI Response Delay] Skipped by user');
+                  }
+                }}
+                className="h-7 px-2 text-xs"
+              >
+                <SkipForward className="w-3 h-3 mr-1" />
+                Skip
+              </Button>
+            </div>
+          )}
 
           <div className="space-y-2">
             {/* AI Correction Indicator */}
