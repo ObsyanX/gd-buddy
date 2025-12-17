@@ -628,7 +628,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                 Auto-mic {autoMicEnabled && autoMicSetting ? 'ON' : 'OFF'}
               </Button>
               {session.is_multiplayer && (
-                <Badge variant="default" className="border-2">Multiplayer</Badge>
+                <>
+                  <Badge variant="default" className="border-2">Multiplayer</Badge>
+                  {session.room_code && (
+                    <Badge variant="outline" className="border-2 font-mono">
+                      🔑 Room: {session.room_code}
+                    </Badge>
+                  )}
+                </>
               )}
             </div>
           </div>
