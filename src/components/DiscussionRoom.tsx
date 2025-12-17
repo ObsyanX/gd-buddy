@@ -460,6 +460,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   const handleEndSession = async () => {
     try {
+      // Stop all ongoing audio/speech activities
+      stopSpeaking();
+      stopListening();
+      cancelPractice();
+      
       // Get video metrics if available
       const getVideoMetrics = (window as any).__getVideoSessionMetrics;
       let videoSessionMetrics = null;
