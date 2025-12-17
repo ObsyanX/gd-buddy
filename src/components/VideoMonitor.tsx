@@ -595,7 +595,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
   if (!isActive) return null;
 
   return (
-    <Card className={`border-4 border-border transition-all ${isMinimized ? 'p-2' : 'p-4'}`}>
+    <Card className={`border-4 border-border transition-all ${isMinimized ? 'p-3' : 'p-4'}`}>
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-bold text-sm flex items-center gap-2">
           <Camera className="w-4 h-4" />
@@ -642,14 +642,15 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       {!isMinimized && (
         <>
           {!isCameraOn ? (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground font-mono">
-                Enable camera for real-time face detection and mesh overlay.
+            <div className="text-center py-4 px-2 bg-muted/20 rounded-lg border border-dashed border-border">
+              <p className="text-xs text-muted-foreground font-mono leading-relaxed mb-3">
+                Enable camera for real-time face detection and posture analysis.
               </p>
               <Button
                 onClick={startCamera}
                 className="w-full border-2"
                 variant="outline"
+                size="sm"
                 disabled={isLoadingModels}
               >
                 {isLoadingModels ? (

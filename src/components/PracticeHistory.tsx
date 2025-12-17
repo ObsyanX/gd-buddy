@@ -29,13 +29,15 @@ export const PracticeHistory = ({
   if (recordings.length === 0) {
     return (
       <Card className="p-4 border-4 border-border">
-        <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+        <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
           <Clock className="w-4 h-4" />
           PRACTICE HISTORY
         </h3>
-        <p className="text-sm text-muted-foreground font-mono">
-          No practice recordings yet. Start practicing to see your history here!
-        </p>
+        <div className="text-center py-4 px-2 bg-muted/20 rounded-lg border border-dashed border-border">
+          <p className="text-xs text-muted-foreground font-mono leading-relaxed">
+            No recordings yet. Use Practice Mode to record and review your responses.
+          </p>
+        </div>
       </Card>
     );
   }
@@ -44,10 +46,13 @@ export const PracticeHistory = ({
     <Card className="p-4 border-4 border-border">
       <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
         <Clock className="w-4 h-4" />
-        PRACTICE HISTORY ({recordings.length})
+        PRACTICE HISTORY
+        <Badge variant="secondary" className="ml-auto text-xs">
+          {recordings.length}
+        </Badge>
       </h3>
-      <ScrollArea className="h-[200px]">
-        <div className="space-y-2">
+      <ScrollArea className="h-[180px]">
+        <div className="space-y-2 pr-2">
           {recordings.map((recording, index) => (
             <div
               key={recording.id}
