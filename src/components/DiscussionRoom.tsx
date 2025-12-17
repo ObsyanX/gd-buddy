@@ -131,6 +131,41 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     getCurrentUser();
   }, []);
   
+  // Realtime subscription for multiplayer participants sync (update when new participants join)
+  useEffect(() => {
+    if (!session?.is_multiplayer) return;
+
+    console.log('[Multiplayer] Setting up realtime subscription for participants:', sessionId);
+
+    const participantsChannel = supabase
+      .channel(`gd_participants_${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'gd_participants',
+          filter: `session_id=eq.${sessionId}`
+        },
+        async (payload) => {
+          console.log('[Multiplayer] New participant joined:', payload.new);
+          // Add the new participant to the list
+          setParticipants(prev => {
+            if (prev.find(p => p.id === payload.new.id)) return prev;
+            return [...prev, payload.new].sort((a, b) => a.order_index - b.order_index);
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[Multiplayer] Participants subscription status:', status);
+      });
+
+    return () => {
+      console.log('[Multiplayer] Cleaning up participants subscription');
+      supabase.removeChannel(participantsChannel);
+    };
+  }, [sessionId, session?.is_multiplayer]);
+
   // Realtime subscription for multiplayer message sync
   useEffect(() => {
     if (!session?.is_multiplayer) return;
@@ -632,28 +667,37 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
                 {messages.map((message, index) => {
-                  const isUser = message.gd_participants?.is_user;
-                  const isCurrentlySpeaking = isSpeaking && currentSpeaker === message.gd_participants?.persona_name;
+                  // In multiplayer: check if this message is from the CURRENT authenticated user
+                  // In solo: just use is_user flag
+                  const messageParticipant = message.gd_participants;
+                  const isFromCurrentUser = session?.is_multiplayer 
+                    ? messageParticipant?.real_user_id === currentUserId
+                    : messageParticipant?.is_user;
+                  const isCurrentlySpeaking = isSpeaking && currentSpeaker === messageParticipant?.persona_name;
+                  const isAI = !messageParticipant?.is_user;
+                  
                   return (
                     <div 
                       key={index}
-                      className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
+                      className={`flex gap-3 ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
                     >
-                      {!isUser && (
+                      {!isFromCurrentUser && (
                         <div className={`w-8 h-8 rounded border-2 flex items-center justify-center flex-shrink-0 mt-1 ${isCurrentlySpeaking ? 'border-primary bg-primary/20 animate-pulse' : 'border-border'}`}>
                           {isCurrentlySpeaking ? (
                             <Volume2 className="w-4 h-4 text-primary animate-pulse" />
-                          ) : (
+                          ) : isAI ? (
                             <Bot className="w-4 h-4" />
+                          ) : (
+                            <User className="w-4 h-4" />
                           )}
                         </div>
                       )}
-                      <div className={`max-w-[80%] space-y-1 ${isUser ? 'text-right' : ''}`}>
+                      <div className={`max-w-[80%] space-y-1 ${isFromCurrentUser ? 'text-right' : ''}`}>
                         <p className={`text-xs font-bold ${isCurrentlySpeaking ? 'text-primary' : 'text-muted-foreground'}`}>
-                          {message.gd_participants?.persona_name}
+                          {isFromCurrentUser ? 'You' : messageParticipant?.persona_name}
                           {isCurrentlySpeaking && <span className="ml-2 animate-pulse">🔊 Speaking...</span>}
                         </p>
-                        <div className={`p-4 border-2 ${isUser ? 'bg-primary text-primary-foreground border-primary' : isCurrentlySpeaking ? 'bg-primary/10 border-primary' : 'bg-card border-border'}`}>
+                        <div className={`p-4 border-2 ${isFromCurrentUser ? 'bg-primary text-primary-foreground border-primary' : isCurrentlySpeaking ? 'bg-primary/10 border-primary' : 'bg-card border-border'}`}>
                           <p className="text-sm">{message.text}</p>
                         </div>
                         {message.intent && (
@@ -662,7 +706,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                           </Badge>
                         )}
                       </div>
-                      {isUser && (
+                      {isFromCurrentUser && (
                         <div className="w-8 h-8 rounded border-2 border-border flex items-center justify-center flex-shrink-0 mt-1">
                           <User className="w-4 h-4" />
                         </div>
