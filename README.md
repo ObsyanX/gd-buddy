@@ -6,7 +6,7 @@
 🌟 **Practice. Improve. Excel.**  
 🎙️ **Realistic GD Simulations**  
 🤖 **AI-Generated Participants**  
-⚡ **Instant Feedback & Performance Analysis**
+⚡ **Instant Feedback & Performance Analysis**   
 🎯 **Website - https://gdbuddy.lovable.app**
 </div>
 
