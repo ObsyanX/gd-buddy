@@ -44,6 +44,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
   const isCameraOnRef = useRef(false); // Ref for immediate access in async callbacks
   
   const [isCameraOn, setIsCameraOn] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -116,6 +117,8 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
 
   const startCamera = async () => {
     setIsInitializingCamera(true);
+    setIsVideoReady(false);
+    
     try {
       const modelsReady = await loadModels();
       if (!modelsReady) {
@@ -133,40 +136,58 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       });
       
       streamRef.current = stream;
+      
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        const video = videoRef.current;
         
+        // Clear any previous source
+        video.srcObject = null;
+        
+        // Set new stream
+        video.srcObject = stream;
+        
+        // Wait for video to be ready to play
         await new Promise<void>((resolve, reject) => {
-          const video = videoRef.current!;
-          video.onloadedmetadata = () => {
-            console.log('Video metadata loaded:', video.videoWidth, video.videoHeight);
-            video.play().then(() => {
-              console.log('Video playing');
-              resolve();
-            }).catch(reject);
+          const handleCanPlay = () => {
+            console.log('Video can play, dimensions:', video.videoWidth, video.videoHeight);
+            video.removeEventListener('canplay', handleCanPlay);
+            video.removeEventListener('error', handleError);
+            resolve();
           };
-          video.onerror = () => reject(new Error('Video failed to load'));
+          
+          const handleError = (e: Event) => {
+            console.error('Video error:', e);
+            video.removeEventListener('canplay', handleCanPlay);
+            video.removeEventListener('error', handleError);
+            reject(new Error('Video failed to load'));
+          };
+          
+          video.addEventListener('canplay', handleCanPlay);
+          video.addEventListener('error', handleError);
+          
+          // Try to play
+          video.play().catch(err => {
+            console.log('Initial play attempt failed, waiting for canplay event:', err);
+          });
+          
+          // Timeout fallback
+          setTimeout(() => {
+            video.removeEventListener('canplay', handleCanPlay);
+            video.removeEventListener('error', handleError);
+            if (video.srcObject) {
+              console.log('Timeout reached, forcing resolution');
+              resolve();
+            }
+          }, 3000);
         });
         
-        // Wait for video to actually have frames (with timeout)
-        await new Promise<void>((resolve) => {
-          let attempts = 0;
-          const maxAttempts = 50; // 5 seconds max wait
-          const checkReady = () => {
-            attempts++;
-            const video = videoRef.current;
-            if (video && video.readyState >= video.HAVE_CURRENT_DATA && video.videoWidth > 0) {
-              console.log('Video ready with dimensions:', video.videoWidth, video.videoHeight);
-              resolve();
-            } else if (attempts >= maxAttempts) {
-              console.log('Video ready check timed out, proceeding anyway');
-              resolve(); // Continue even if not fully ready
-            } else {
-              setTimeout(checkReady, 100);
-            }
-          };
-          checkReady();
-        });
+        // Ensure video is playing
+        if (video.paused) {
+          await video.play();
+        }
+        
+        console.log('Video playing, final dimensions:', video.videoWidth, video.videoHeight);
+        setIsVideoReady(true);
       }
       
       // Set ref immediately (before state) to avoid race condition with analyzeFrame
@@ -180,12 +201,13 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
         description: "Face detection is now active",
       });
       
-      // Start analysis after a short delay
-      setTimeout(startAnalysis, 500);
+      // Start analysis after video is ready
+      setTimeout(startAnalysis, 300);
     } catch (error: any) {
       console.error('Camera access error:', error);
       setHasPermission(false);
       setIsInitializingCamera(false);
+      setIsVideoReady(false);
       toast({
         title: "Camera access denied",
         description: "Please enable camera permissions to use video monitoring",
@@ -202,6 +224,9 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
@@ -211,6 +236,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       analysisTimeoutRef.current = null;
     }
     setIsCameraOn(false);
+    setIsVideoReady(false);
   };
 
   const drawFaceMesh = useCallback((
@@ -698,8 +724,10 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-cover"
-                  style={{ transform: 'scaleX(-1)' }}
+                  width={640}
+                  height={480}
+                  className="w-full h-full object-cover block"
+                  style={{ transform: 'scaleX(-1)', backgroundColor: 'black' }}
                 />
                 <canvas 
                   ref={canvasRef} 
@@ -707,31 +735,45 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
                   style={{ transform: 'scaleX(-1)' }}
                 />
                 
-                {/* Status badges - top corners */}
-                <div className="absolute top-1 sm:top-2 left-1 sm:left-2">
-                  {!metrics.faceDetected && (
-                    <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-background/80 border-destructive/50 text-destructive px-1.5 py-0.5">
-                      <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-                      No Face
-                    </Badge>
-                  )}
-                </div>
-                
-                <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
-                  <Badge 
-                    className={`${getScoreBg(metrics.overallScore)} text-white text-[9px] sm:text-xs px-1.5 py-0.5`}
-                  >
-                    {metrics.faceDetected ? `${metrics.overallScore}%` : '--'}
-                  </Badge>
-                </div>
-
-                {/* Subtle hint at bottom when no face - doesn't block video */}
-                {!metrics.faceDetected && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-1.5 sm:p-2">
-                    <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center">
-                      Position your face in frame • Ensure good lighting
-                    </p>
+                {/* Loading overlay while video initializes */}
+                {!isVideoReady && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                    <div className="text-center">
+                      <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground">Starting video...</p>
+                    </div>
                   </div>
+                )}
+                
+                {/* Status badges - top corners */}
+                {isVideoReady && (
+                  <>
+                    <div className="absolute top-1 sm:top-2 left-1 sm:left-2">
+                      {!metrics.faceDetected && (
+                        <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-background/80 border-destructive/50 text-destructive px-1.5 py-0.5">
+                          <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+                          No Face
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
+                      <Badge 
+                        className={`${getScoreBg(metrics.overallScore)} text-white text-[9px] sm:text-xs px-1.5 py-0.5`}
+                      >
+                        {metrics.faceDetected ? `${metrics.overallScore}%` : '--'}
+                      </Badge>
+                    </div>
+
+                    {/* Subtle hint at bottom when no face - doesn't block video */}
+                    {!metrics.faceDetected && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-1.5 sm:p-2">
+                        <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center">
+                          Position your face in frame • Ensure good lighting
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
