@@ -463,7 +463,7 @@ const MultiplayerLobby = ({
                   <p className="text-muted-foreground max-w-md mx-auto">
                     Let AI create engaging discussion topics for your multiplayer session
                   </p>
-                  <Button size="lg" onClick={handleGenerateTopics} disabled={isGenerating} className="border-4 border-border shadow-md">
+                  <Button size="lg" onClick={handleGenerateTopics} disabled={isGenerating} className="border-4 border-border shadow-md text-center">
                     {isGenerating ? <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         GENERATING...
@@ -557,7 +557,7 @@ const MultiplayerLobby = ({
             </TabsList>
             
             <TabsContent value="create" className="mt-4">
-              <Card className="p-6 border-4 border-border space-y-6">
+              <Card className="p-0 border-4 border-border space-y-6">
                 <div className="text-center space-y-2">
                   <Users className="w-12 h-12 mx-auto" />
                   <h2 className="text-xl font-bold">CREATE A NEW ROOM</h2>
