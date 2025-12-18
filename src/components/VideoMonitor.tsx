@@ -12,6 +12,7 @@ import * as faceapi from 'face-api.js';
 interface VideoMonitorProps {
   isActive: boolean;
   sessionId?: string;
+  isUserMicActive?: boolean; // Track if user mic is active (not AI speaking)
   onMetricsUpdate?: (metrics: VideoMetrics) => void;
   onAudioMetricsUpdate?: (metrics: AudioMetrics) => void;
 }
@@ -39,7 +40,7 @@ export interface AccumulatedVideoMetrics {
 
 const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
 
-const VideoMonitor = ({ isActive, sessionId, onMetricsUpdate, onAudioMetricsUpdate }: VideoMonitorProps) => {
+const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsUpdate, onAudioMetricsUpdate }: VideoMonitorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -890,13 +891,13 @@ const VideoMonitor = ({ isActive, sessionId, onMetricsUpdate, onAudioMetricsUpda
                 </div>
               )}
 
-              {/* Audio Metrics */}
-              {isAudioActive && (
+              {/* Audio Metrics - Only show when user mic is active (not during AI speech) */}
+              {isAudioActive && isUserMicActive && (
                 <div className="space-y-2 pt-2 border-t border-border">
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1">
-                      <Mic className={`w-3 h-3 ${audioMetrics.isSpeaking ? 'text-green-500' : 'text-muted-foreground'}`} />
-                      Voice
+                      <Mic className={`w-3 h-3 ${audioMetrics.isSpeaking ? 'text-green-500 animate-pulse' : 'text-muted-foreground'}`} />
+                      Your Voice
                     </span>
                     <Badge variant={audioMetrics.isSpeaking ? "default" : "outline"} className="text-[10px] px-1.5 py-0">
                       {audioMetrics.isSpeaking ? 'Speaking' : 'Silent'}
