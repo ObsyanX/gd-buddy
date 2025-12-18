@@ -1027,6 +1027,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           {/* Video Monitor */}
           <VideoMonitor 
             isActive={true}
+            sessionId={session?.id}
             onMetricsUpdate={handleVideoMetricsUpdate}
           />
 
