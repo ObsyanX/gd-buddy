@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle, Loader2, Sparkles, SkipForward } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle, Loader2, Sparkles, SkipForward, Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
@@ -638,70 +639,147 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         <OnboardingTutorial onComplete={() => setShowTutorial(false)} />
       )}
 
-      <header className="border-b-4 border-border p-4">
-        <div className="container mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{session.topic}</h1>
-            <div className="flex gap-2 mt-1">
-              <Badge variant="secondary">{session.topic_category}</Badge>
-              <Badge variant="outline" className="border-2">{messages.length} turns</Badge>
+      <header className="border-b-4 border-border p-2 sm:p-4">
+        <div className="container mx-auto">
+          {/* Mobile Header */}
+          <div className="flex items-center justify-between gap-2 md:hidden">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-bold truncate">{session.topic}</h1>
+              <div className="flex gap-1 mt-1 flex-wrap">
+                <Badge variant="secondary" className="text-[10px]">{session.topic_category}</Badge>
+                <Badge variant="outline" className="border text-[10px]">{messages.length} turns</Badge>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
               {isListening && (
-                <Badge variant="outline" className="border-2 animate-pulse bg-destructive/20">🎤 Listening...</Badge>
+                <Badge variant="outline" className="border animate-pulse bg-destructive/20 text-[10px] px-1.5">🎤</Badge>
               )}
-              {isCorrecting && (
-                <Badge variant="outline" className="border-2 animate-pulse bg-primary/20">
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  AI Correcting...
-                </Badge>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setAutoMicEnabled(!autoMicEnabled)}
-                className={`border-2 text-xs ${autoMicEnabled && autoMicSetting ? 'bg-accent/20' : ''}`}
-                disabled={!autoMicSetting}
-                title={autoMicSetting ? "Toggle auto-mic after first message" : "Enable auto-mic in Settings"}
-              >
-                <Mic className="w-3 h-3 mr-1" />
-                Auto-mic {autoMicEnabled && autoMicSetting ? 'ON' : 'OFF'}
-              </Button>
-              {session.is_multiplayer && (
-                <>
-                  <Badge variant="default" className="border-2">Multiplayer</Badge>
-                  {session.room_code && (
-                    <Badge variant="outline" className="border-2 font-mono">
-                      🔑 Room: {session.room_code}
-                    </Badge>
-                  )}
-                </>
-              )}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="border-2 h-8 w-8 p-0">
+                    <Menu className="w-4 h-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[280px] sm:w-[320px]">
+                  <SheetHeader>
+                    <SheetTitle>Session Controls</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-col gap-3 mt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAutoMicEnabled(!autoMicEnabled)}
+                      className={`border-2 justify-start ${autoMicEnabled && autoMicSetting ? 'bg-accent/20' : ''}`}
+                      disabled={!autoMicSetting}
+                    >
+                      <Mic className="w-4 h-4 mr-2" />
+                      Auto-mic {autoMicEnabled && autoMicSetting ? 'ON' : 'OFF'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAutoPlayTTS(!autoPlayTTS)}
+                      className="border-2 justify-start"
+                    >
+                      {autoPlayTTS ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
+                      TTS {autoPlayTTS ? 'ON' : 'OFF'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetTutorial}
+                      className="justify-start"
+                    >
+                      <HelpCircle className="w-4 h-4 mr-2" />
+                      Show Tutorial
+                    </Button>
+                    {session.is_multiplayer && session.room_code && (
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Room Code</p>
+                        <p className="font-mono font-bold">🔑 {session.room_code}</p>
+                      </div>
+                    )}
+                    <div className="border-t pt-3 mt-2">
+                      <Button 
+                        variant="destructive" 
+                        onClick={handleEndSession}
+                        className="w-full border-4 border-border"
+                      >
+                        <Square className="w-4 h-4 mr-2" />
+                        END SESSION
+                      </Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetTutorial}
-              title="Show Tutorial"
-            >
-              <HelpCircle className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setAutoPlayTTS(!autoPlayTTS)}
-              className="border-2"
-            >
-              {autoPlayTTS ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
-              TTS {autoPlayTTS ? 'ON' : 'OFF'}
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleEndSession}
-              className="border-4 border-border"
-            >
-              <Square className="w-4 h-4 mr-2" />
-              END SESSION
-            </Button>
+
+          {/* Desktop Header */}
+          <div className="hidden md:flex items-center justify-between">
+            <div>
+              <h1 className="text-xl lg:text-2xl font-bold">{session.topic}</h1>
+              <div className="flex gap-2 mt-1 flex-wrap">
+                <Badge variant="secondary">{session.topic_category}</Badge>
+                <Badge variant="outline" className="border-2">{messages.length} turns</Badge>
+                {isListening && (
+                  <Badge variant="outline" className="border-2 animate-pulse bg-destructive/20">🎤 Listening...</Badge>
+                )}
+                {isCorrecting && (
+                  <Badge variant="outline" className="border-2 animate-pulse bg-primary/20">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    AI Correcting...
+                  </Badge>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAutoMicEnabled(!autoMicEnabled)}
+                  className={`border-2 text-xs ${autoMicEnabled && autoMicSetting ? 'bg-accent/20' : ''}`}
+                  disabled={!autoMicSetting}
+                  title={autoMicSetting ? "Toggle auto-mic after first message" : "Enable auto-mic in Settings"}
+                >
+                  <Mic className="w-3 h-3 mr-1" />
+                  Auto-mic {autoMicEnabled && autoMicSetting ? 'ON' : 'OFF'}
+                </Button>
+                {session.is_multiplayer && (
+                  <>
+                    <Badge variant="default" className="border-2">Multiplayer</Badge>
+                    {session.room_code && (
+                      <Badge variant="outline" className="border-2 font-mono">
+                        🔑 Room: {session.room_code}
+                      </Badge>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetTutorial}
+                title="Show Tutorial"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setAutoPlayTTS(!autoPlayTTS)}
+                className="border-2"
+              >
+                {autoPlayTTS ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
+                TTS {autoPlayTTS ? 'ON' : 'OFF'}
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleEndSession}
+                className="border-4 border-border"
+              >
+                <Square className="w-4 h-4 mr-2" />
+                END SESSION
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -813,13 +891,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             {isCorrecting && (
               <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="font-mono">Applying AI correction...</span>
+                <span className="font-mono text-xs sm:text-sm">Applying AI correction...</span>
               </div>
             )}
             
-            <div className="flex gap-2">
+            {/* Input Area - Responsive */}
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
-                placeholder={isListening ? "Speaking..." : "Type your response or use voice input..."}
+                placeholder={isListening ? "Speaking..." : "Type or use voice..."}
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -827,51 +906,53 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                     handleSendMessage();
                   }
                 }}
-                className={`border-2 text-lg ${isListening ? 'border-destructive bg-destructive/5' : ''}`}
+                className={`border-2 text-base sm:text-lg flex-1 ${isListening ? 'border-destructive bg-destructive/5' : ''}`}
                 disabled={isProcessing || isPracticing}
                 readOnly={isListening}
               />
-              <Button
-                onClick={startPracticeRecording}
-                disabled={isProcessing || isListening || isPracticing}
-                variant="outline"
-                className="border-4 border-border"
-                size="lg"
-                title="Practice Mode (Ctrl+M)"
-              >
-                <Mic className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={handleVoiceInput}
-                disabled={isProcessing || isPracticing || isCorrecting}
-                variant={isListening ? "destructive" : "outline"}
-                className={`border-4 border-border ${isListening ? 'animate-pulse' : ''}`}
-                size="lg"
-                title="Voice Input - Real-time (Click to toggle)"
-              >
-                {isListening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              </Button>
-              <Button 
-                onClick={handleSendWithVoice}
-                disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting}
-                className="border-4 border-border"
-                size="lg"
-                title={isListening ? "Stop & Send" : "Send (Ctrl+Enter)"}
-              >
-                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </Button>
-              <Button 
-                onClick={() => handleSendMessageDirect("[Skipped turn]")}
-                disabled={isProcessing || isPracticing}
-                variant="outline"
-                className="border-2"
-                size="lg"
-                title="Skip your turn"
-              >
-                <SkipForward className="w-4 h-4" />
-              </Button>
+              <div className="flex gap-1.5 sm:gap-2 justify-end">
+                <Button
+                  onClick={startPracticeRecording}
+                  disabled={isProcessing || isListening || isPracticing}
+                  variant="outline"
+                  className="border-2 sm:border-4 border-border h-10 w-10 sm:h-11 sm:w-auto p-0 sm:px-4"
+                  size="lg"
+                  title="Practice Mode (Ctrl+M)"
+                >
+                  <Mic className="w-4 h-4" />
+                </Button>
+                <Button
+                  onClick={handleVoiceInput}
+                  disabled={isProcessing || isPracticing || isCorrecting}
+                  variant={isListening ? "destructive" : "outline"}
+                  className={`border-2 sm:border-4 border-border h-10 w-10 sm:h-11 sm:w-auto p-0 sm:px-4 ${isListening ? 'animate-pulse' : ''}`}
+                  size="lg"
+                  title="Voice Input - Real-time (Click to toggle)"
+                >
+                  {isListening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </Button>
+                <Button 
+                  onClick={handleSendWithVoice}
+                  disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting}
+                  className="border-2 sm:border-4 border-border h-10 w-10 sm:h-11 sm:w-auto p-0 sm:px-4"
+                  size="lg"
+                  title={isListening ? "Stop & Send" : "Send (Ctrl+Enter)"}
+                >
+                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </Button>
+                <Button 
+                  onClick={() => handleSendMessageDirect("[Skipped turn]")}
+                  disabled={isProcessing || isPracticing}
+                  variant="outline"
+                  className="border-2 h-10 w-10 sm:h-11 sm:w-auto p-0 sm:px-4 hidden sm:flex"
+                  size="lg"
+                  title="Skip your turn"
+                >
+                  <SkipForward className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground font-mono text-center">
+            <p className="text-[10px] sm:text-xs text-muted-foreground font-mono text-center hidden sm:block">
               TIP: Ctrl+M for practice • Ctrl+Enter to send • Esc to stop audio
             </p>
           </div>
