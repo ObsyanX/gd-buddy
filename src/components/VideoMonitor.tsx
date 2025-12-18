@@ -3,13 +3,17 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Camera, Eye, User, X, Loader2 } from 'lucide-react';
+import { Camera, Eye, User, X, Loader2, Mic, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAudioAnalysis, AudioMetrics } from '@/hooks/useAudioAnalysis';
+import { supabase } from '@/integrations/supabase/client';
 import * as faceapi from 'face-api.js';
 
 interface VideoMonitorProps {
   isActive: boolean;
+  sessionId?: string;
   onMetricsUpdate?: (metrics: VideoMetrics) => void;
+  onAudioMetricsUpdate?: (metrics: AudioMetrics) => void;
 }
 
 export interface VideoMetrics {
@@ -35,13 +39,14 @@ export interface AccumulatedVideoMetrics {
 
 const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
 
-const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
+const VideoMonitor = ({ isActive, sessionId, onMetricsUpdate, onAudioMetricsUpdate }: VideoMonitorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationRef = useRef<number | null>(null);
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isCameraOnRef = useRef(false); // Ref for immediate access in async callbacks
+  const saveMetricsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isCameraOnRef = useRef(false);
   
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
@@ -62,6 +67,18 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
     faceDetected: false
   });
   const [isMinimized, setIsMinimized] = useState(false);
+  
+  // Audio analysis
+  const { 
+    isActive: isAudioActive, 
+    metrics: audioMetrics, 
+    startAnalysis: startAudioAnalysis, 
+    stopAnalysis: stopAudioAnalysis,
+    getSessionMetrics: getAudioSessionMetrics 
+  } = useAudioAnalysis({
+    onSpeakingChange: (speaking) => console.log('Speaking:', speaking),
+    onMetricsUpdate: onAudioMetricsUpdate,
+  });
   
   // Keep ref in sync with state
   useEffect(() => {
@@ -126,13 +143,14 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
         return;
       }
       
-      console.log('Requesting camera access...');
+      console.log('Requesting camera and mic access...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 640 },
           height: { ideal: 480 },
           facingMode: 'user'
-        }
+        },
+        audio: true // Also request audio for analysis
       });
       
       streamRef.current = stream;
@@ -143,7 +161,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
         // Clear any previous source
         video.srcObject = null;
         
-        // Set new stream
+        // Set new stream (only video track for display, audio muted in video element)
         video.srcObject = stream;
         
         // Wait for video to be ready to play
@@ -190,6 +208,9 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
         setIsVideoReady(true);
       }
       
+      // Start audio analysis with the same stream
+      startAudioAnalysis(stream);
+      
       // Set ref immediately (before state) to avoid race condition with analyzeFrame
       isCameraOnRef.current = true;
       setIsCameraOn(true);
@@ -197,8 +218,8 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       setIsInitializingCamera(false);
       
       toast({
-        title: "Camera enabled",
-        description: "Face detection is now active",
+        title: "Camera & Mic enabled",
+        description: "Face detection and audio analysis active",
       });
       
       // Start analysis after video is ready
@@ -210,7 +231,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       setIsVideoReady(false);
       toast({
         title: "Camera access denied",
-        description: "Please enable camera permissions to use video monitoring",
+        description: "Please enable camera and microphone permissions",
         variant: "destructive",
       });
     }
@@ -219,6 +240,14 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
   const stopCamera = () => {
     // Set ref immediately to stop any running analysis loops
     isCameraOnRef.current = false;
+    
+    // Stop audio analysis
+    stopAudioAnalysis();
+    
+    // Save final metrics before stopping
+    if (sessionId) {
+      saveMetricsToDatabase();
+    }
     
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
@@ -595,6 +624,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
 
   const getSessionMetrics = useCallback(() => {
     const acc = accumulatedRef.current;
+    const audioSession = getAudioSessionMetrics();
     const avg = (arr: number[]) => arr.length > 0 ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
     
     return {
@@ -602,22 +632,69 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       avgEyeContactScore: avg(acc.eyeContactScores),
       avgExpressionScore: avg(acc.expressionScores),
       tips: Array.from(acc.tips),
-      faceDetectionRate: acc.totalFrames > 0 ? Math.round((acc.facesDetected / acc.totalFrames) * 100) : 0
+      faceDetectionRate: acc.totalFrames > 0 ? Math.round((acc.facesDetected / acc.totalFrames) * 100) : 0,
+      audio: audioSession,
     };
-  }, []);
+  }, [getAudioSessionMetrics]);
+
+  // Save metrics to database periodically
+  const saveMetricsToDatabase = useCallback(async () => {
+    if (!sessionId) return;
+    
+    const videoMetrics = getSessionMetrics();
+    const audioSession = getAudioSessionMetrics();
+    
+    try {
+      const { error } = await supabase.functions.invoke('video-analysis', {
+        body: {
+          session_id: sessionId,
+          posture_score: videoMetrics.avgPostureScore,
+          eye_contact_score: videoMetrics.avgEyeContactScore,
+          expression_score: videoMetrics.avgExpressionScore,
+          video_tips: videoMetrics.tips,
+          voice_score: Math.round(audioSession.speakingRatio * 100),
+          avg_pause_s: audioSession.avgPauseLength,
+        },
+      });
+      
+      if (error) {
+        console.error('Failed to save video metrics:', error);
+      } else {
+        console.log('Video metrics saved successfully');
+      }
+    } catch (err) {
+      console.error('Error saving video metrics:', err);
+    }
+  }, [sessionId, getSessionMetrics, getAudioSessionMetrics]);
+
+  // Auto-save metrics every 30 seconds
+  useEffect(() => {
+    if (isCameraOn && sessionId) {
+      saveMetricsTimeoutRef.current = setInterval(saveMetricsToDatabase, 30000);
+    }
+    return () => {
+      if (saveMetricsTimeoutRef.current) {
+        clearInterval(saveMetricsTimeoutRef.current);
+        saveMetricsTimeoutRef.current = null;
+      }
+    };
+  }, [isCameraOn, sessionId, saveMetricsToDatabase]);
 
   useEffect(() => {
     (window as any).__getVideoSessionMetrics = getSessionMetrics;
+    (window as any).__saveVideoMetrics = saveMetricsToDatabase;
     return () => {
       delete (window as any).__getVideoSessionMetrics;
+      delete (window as any).__saveVideoMetrics;
     };
-  }, [getSessionMetrics]);
+  }, [getSessionMetrics, saveMetricsToDatabase]);
 
   useEffect(() => {
     return () => {
       stopCamera();
+      stopAudioAnalysis();
     };
-  }, []);
+  }, [stopAudioAnalysis]);
 
   const getScoreColor = (score: number) => {
     if (score >= 70) return 'text-green-500';
@@ -810,6 +887,29 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
                     </span>
                   </div>
                   <Progress value={metrics.expressionScore} className="h-1.5" />
+                </div>
+              )}
+
+              {/* Audio Metrics */}
+              {isAudioActive && (
+                <div className="space-y-2 pt-2 border-t border-border">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1">
+                      <Mic className={`w-3 h-3 ${audioMetrics.isSpeaking ? 'text-green-500' : 'text-muted-foreground'}`} />
+                      Voice
+                    </span>
+                    <Badge variant={audioMetrics.isSpeaking ? "default" : "outline"} className="text-[10px] px-1.5 py-0">
+                      {audioMetrics.isSpeaking ? 'Speaking' : 'Silent'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Volume2 className="w-3 h-3 text-muted-foreground" />
+                    <Progress value={audioMetrics.volume * 100} className="h-1.5 flex-1" />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span>Pauses: {audioMetrics.pauseCount}</span>
+                    <span>Speaking: {Math.round(audioMetrics.totalSpeakingTime)}s</span>
+                  </div>
                 </div>
               )}
 
