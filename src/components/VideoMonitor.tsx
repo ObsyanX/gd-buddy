@@ -47,6 +47,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [isInitializingCamera, setIsInitializingCamera] = useState(false);
   const [showFaceMesh, setShowFaceMesh] = useState(true);
   const [metrics, setMetrics] = useState<VideoMetrics>({
     posture: 'good',
@@ -114,9 +115,13 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
   };
 
   const startCamera = async () => {
+    setIsInitializingCamera(true);
     try {
       const modelsReady = await loadModels();
-      if (!modelsReady) return;
+      if (!modelsReady) {
+        setIsInitializingCamera(false);
+        return;
+      }
       
       console.log('Requesting camera access...');
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -168,6 +173,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
       isCameraOnRef.current = true;
       setIsCameraOn(true);
       setHasPermission(true);
+      setIsInitializingCamera(false);
       
       toast({
         title: "Camera enabled",
@@ -179,6 +185,7 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
     } catch (error: any) {
       console.error('Camera access error:', error);
       setHasPermission(false);
+      setIsInitializingCamera(false);
       toast({
         title: "Camera access denied",
         description: "Please enable camera permissions to use video monitoring",
@@ -677,9 +684,15 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
                 </p>
               )}
             </div>
+          ) : isInitializingCamera ? (
+            <div className="flex flex-col items-center justify-center py-8 px-4 bg-muted/20 rounded-lg border border-dashed border-border">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
+              <p className="text-sm font-medium">Initializing Camera...</p>
+              <p className="text-xs text-muted-foreground mt-1">Loading AI models and starting video</p>
+            </div>
           ) : (
             <div className="space-y-3">
-              <div className="relative aspect-video bg-black rounded overflow-hidden min-h-[120px]">
+              <div className="relative aspect-video bg-black rounded overflow-hidden min-h-[100px] sm:min-h-[120px]">
                 <video
                   ref={videoRef}
                   autoPlay
@@ -695,18 +708,18 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
                 />
                 
                 {/* Status badges - top corners */}
-                <div className="absolute top-2 left-2">
+                <div className="absolute top-1 sm:top-2 left-1 sm:left-2">
                   {!metrics.faceDetected && (
-                    <Badge variant="outline" className="text-[10px] bg-background/80 border-destructive/50 text-destructive">
-                      <User className="w-3 h-3 mr-1" />
+                    <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-background/80 border-destructive/50 text-destructive px-1.5 py-0.5">
+                      <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                       No Face
                     </Badge>
                   )}
                 </div>
                 
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
                   <Badge 
-                    className={`${getScoreBg(metrics.overallScore)} text-white text-xs`}
+                    className={`${getScoreBg(metrics.overallScore)} text-white text-[9px] sm:text-xs px-1.5 py-0.5`}
                   >
                     {metrics.faceDetected ? `${metrics.overallScore}%` : '--'}
                   </Badge>
@@ -714,8 +727,8 @@ const VideoMonitor = ({ isActive, onMetricsUpdate }: VideoMonitorProps) => {
 
                 {/* Subtle hint at bottom when no face - doesn't block video */}
                 {!metrics.faceDetected && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-2">
-                    <p className="text-[10px] text-muted-foreground text-center">
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-1.5 sm:p-2">
+                    <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center">
                       Position your face in frame • Ensure good lighting
                     </p>
                   </div>
