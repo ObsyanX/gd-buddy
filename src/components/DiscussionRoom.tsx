@@ -1028,6 +1028,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           <VideoMonitor 
             isActive={true}
             sessionId={session?.id}
+            isUserMicActive={isListening && !isSpeaking}
             onMetricsUpdate={handleVideoMetricsUpdate}
           />
 

@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic, Eye, User, Camera } from "lucide-react";
+import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic, Eye, User, Camera, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area } from 'recharts';
 
 interface SessionReportProps {
   sessionId: string;
@@ -37,6 +38,12 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   const [detailedReport, setDetailedReport] = useState<any>(null);
   const [calculatedStats, setCalculatedStats] = useState<any>(null);
   const [videoMetrics, setVideoMetrics] = useState<any>(null);
+  const [chartData, setChartData] = useState<{
+    timeline: any[];
+    performance: any[];
+    fillersByType: any[];
+    comparison: any[];
+  }>({ timeline: [], performance: [], fillersByType: [], comparison: [] });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -79,6 +86,9 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       // Calculate real metrics from session data
       const realMetrics = calculateRealMetrics(sessionData, messagesData || []);
       setCalculatedStats(realMetrics);
+      
+      // Generate chart data
+      generateChartData(messagesData || [], realMetrics, metricsData);
       
       // Generate detailed report with real data
       generateDetailedReport(sessionData, messagesData || [], realMetrics);
@@ -301,6 +311,100 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     }
 
     return Math.min(100, Math.max(30, score));
+  };
+
+  const generateChartData = (messagesData: any[], realMetrics: any, metricsData: any) => {
+    // Timeline data - message distribution over time
+    const userMessages = messagesData.filter(m => m.gd_participants?.is_user);
+    const aiMessages = messagesData.filter(m => !m.gd_participants?.is_user);
+    
+    // Create timeline buckets
+    const timelineData: any[] = [];
+    if (messagesData.length > 1) {
+      const firstTime = new Date(messagesData[0]?.start_ts).getTime();
+      const lastTime = new Date(messagesData[messagesData.length - 1]?.start_ts).getTime();
+      const duration = lastTime - firstTime;
+      const bucketCount = Math.min(10, messagesData.length);
+      const bucketSize = duration / bucketCount;
+      
+      for (let i = 0; i < bucketCount; i++) {
+        const bucketStart = firstTime + (i * bucketSize);
+        const bucketEnd = bucketStart + bucketSize;
+        
+        const userMsgs = userMessages.filter(m => {
+          const t = new Date(m.start_ts).getTime();
+          return t >= bucketStart && t < bucketEnd;
+        });
+        const aiMsgs = aiMessages.filter(m => {
+          const t = new Date(m.start_ts).getTime();
+          return t >= bucketStart && t < bucketEnd;
+        });
+        
+        const userWords = userMsgs.reduce((acc, m) => acc + (m.text?.split(/\s+/).length || 0), 0);
+        const aiWords = aiMsgs.reduce((acc, m) => acc + (m.text?.split(/\s+/).length || 0), 0);
+        
+        timelineData.push({
+          time: `${i + 1}`,
+          userWords,
+          aiWords,
+          userMessages: userMsgs.length,
+          aiMessages: aiMsgs.length,
+        });
+      }
+    }
+
+    // Performance radar data
+    const performanceData = [
+      { metric: 'Fluency', score: realMetrics.fluency_score || 0, fullMark: 100 },
+      { metric: 'Content', score: realMetrics.content_score || 0, fullMark: 100 },
+      { metric: 'Structure', score: realMetrics.structure_score || 0, fullMark: 100 },
+      { metric: 'Voice', score: realMetrics.voice_score || 0, fullMark: 100 },
+      { metric: 'Posture', score: metricsData?.posture_score || 0, fullMark: 100 },
+      { metric: 'Eye Contact', score: metricsData?.eye_contact_score || 0, fullMark: 100 },
+    ];
+
+    // Filler words by type
+    const allUserText = userMessages.map(m => m.text?.toLowerCase() || '').join(' ');
+    const fillersByType: any[] = [];
+    FILLER_WORDS.forEach(filler => {
+      const regex = new RegExp(`\\b${filler}\\b`, 'gi');
+      const matches = allUserText.match(regex);
+      if (matches && matches.length > 0) {
+        fillersByType.push({ word: filler, count: matches.length });
+      }
+    });
+    fillersByType.sort((a, b) => b.count - a.count);
+
+    // Benchmark comparison data
+    const comparisonData = [
+      { 
+        metric: 'WPM', 
+        yours: realMetrics.words_per_min || 0, 
+        ideal: BENCHMARKS.wpm.ideal,
+        min: BENCHMARKS.wpm.min,
+        max: BENCHMARKS.wpm.max 
+      },
+      { 
+        metric: 'Words/Response', 
+        yours: realMetrics.avgResponseLength || 0, 
+        ideal: BENCHMARKS.avgResponseLength.ideal,
+        min: BENCHMARKS.avgResponseLength.min,
+        max: BENCHMARKS.avgResponseLength.max 
+      },
+      { 
+        metric: 'Response Time (s)', 
+        yours: realMetrics.avgResponseTime || 0, 
+        ideal: BENCHMARKS.responseTime.ideal,
+        max: BENCHMARKS.responseTime.max 
+      },
+    ];
+
+    setChartData({
+      timeline: timelineData,
+      performance: performanceData,
+      fillersByType: fillersByType.slice(0, 8),
+      comparison: comparisonData,
+    });
   };
 
   const generateDetailedReport = async (sessionData: any, messagesData: any[], realMetrics: any) => {
@@ -565,6 +669,146 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             )}
           </Card>
         )}
+
+        {/* Performance Charts Section */}
+        <Card className="p-6 border-4 border-border space-y-6">
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <BarChart3 className="w-6 h-6" />
+            PERFORMANCE ANALYTICS
+          </h3>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Performance Radar */}
+            <div className="space-y-2">
+              <h4 className="font-bold text-sm">Overall Performance</h4>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={chartData.performance}>
+                    <PolarGrid stroke="hsl(var(--border))" />
+                    <PolarAngleAxis 
+                      dataKey="metric" 
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                    />
+                    <PolarRadiusAxis 
+                      angle={30} 
+                      domain={[0, 100]} 
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                    />
+                    <Radar
+                      name="Score"
+                      dataKey="score"
+                      stroke="hsl(var(--primary))"
+                      fill="hsl(var(--primary))"
+                      fillOpacity={0.3}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Filler Words Chart */}
+            {chartData.fillersByType.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-bold text-sm">Filler Words Breakdown</h4>
+                <div className="h-[250px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData.fillersByType} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                      <YAxis 
+                        dataKey="word" 
+                        type="category" 
+                        width={60}
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '2px solid hsl(var(--border))',
+                          borderRadius: '4px'
+                        }}
+                      />
+                      <Bar dataKey="count" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Timeline Chart */}
+          {chartData.timeline.length > 0 && (
+            <div className="space-y-2 pt-4 border-t border-border">
+              <h4 className="font-bold text-sm">Discussion Timeline (Words Over Time)</h4>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData.timeline}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="time" 
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                      label={{ value: 'Time Period', position: 'insideBottomRight', offset: -5, fontSize: 10 }}
+                    />
+                    <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '2px solid hsl(var(--border))',
+                        borderRadius: '4px'
+                      }}
+                    />
+                    <Legend />
+                    <Area 
+                      type="monotone" 
+                      dataKey="userWords" 
+                      name="Your Words"
+                      stroke="hsl(var(--primary))" 
+                      fill="hsl(var(--primary))"
+                      fillOpacity={0.3}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="aiWords" 
+                      name="AI Words"
+                      stroke="hsl(var(--muted-foreground))" 
+                      fill="hsl(var(--muted-foreground))"
+                      fillOpacity={0.2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Benchmark Comparison Chart */}
+          <div className="space-y-2 pt-4 border-t border-border">
+            <h4 className="font-bold text-sm">Your Metrics vs Professional Benchmarks</h4>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData.comparison} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                  <YAxis 
+                    dataKey="metric" 
+                    type="category"
+                    width={100}
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '2px solid hsl(var(--border))',
+                      borderRadius: '4px'
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="yours" name="Your Score" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="ideal" name="Ideal" fill="hsl(var(--muted-foreground))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </Card>
 
         {/* Benchmark Comparison */}
         <Card className="p-6 border-4 border-border space-y-4">
