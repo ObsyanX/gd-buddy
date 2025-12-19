@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   MessageSquare, LogOut, User, TrendingUp, Target, 
-  Clock, Award, Play, ChevronRight 
+  Clock, Award, Play, ChevronRight, BarChart3 
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import SessionHistoryComparison from "@/components/SessionHistoryComparison";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -202,92 +204,112 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="p-6 border-4 border-border space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold">RECENT SESSIONS</h3>
-              <TrendingUp className="w-5 h-5 text-muted-foreground" />
-            </div>
-            {sessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground font-mono py-4 text-center">
-                No sessions yet. Start practicing!
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {sessions.map((session: any) => {
-                  const metrics = session.gd_metrics?.[0];
-                  const scores = metrics ? [
-                    metrics.fluency_score, 
-                    metrics.content_score, 
-                    metrics.structure_score, 
-                    metrics.voice_score
-                  ].filter((s): s is number => s !== null && s !== undefined) : [];
-                  const avgScore = scores.length > 0 
-                    ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-                    : 0;
-                  
-                  return (
-                    <div key={session.id} className="p-4 border-2 border-border hover:shadow-sm transition-shadow">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-bold text-sm line-clamp-1">{session.topic}</h4>
-                          <div className="flex gap-2 mt-1">
-                            <Badge variant="secondary" className="text-xs">{session.topic_category}</Badge>
-                            <Badge variant="outline" className="text-xs">{session.status}</Badge>
+        {/* Tabbed Content - Recent Activity & History Comparison */}
+        <Tabs defaultValue="recent" className="w-full">
+          <TabsList className="border-2 mb-6">
+            <TabsTrigger value="recent" className="gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Recent Activity
+            </TabsTrigger>
+            <TabsTrigger value="history" className="gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Performance History
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="recent">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="p-6 border-4 border-border space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold">RECENT SESSIONS</h3>
+                  <TrendingUp className="w-5 h-5 text-muted-foreground" />
+                </div>
+                {sessions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground font-mono py-4 text-center">
+                    No sessions yet. Start practicing!
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {sessions.map((session: any) => {
+                      const metrics = session.gd_metrics?.[0];
+                      const scores = metrics ? [
+                        metrics.fluency_score, 
+                        metrics.content_score, 
+                        metrics.structure_score, 
+                        metrics.voice_score
+                      ].filter((s): s is number => s !== null && s !== undefined) : [];
+                      const avgScore = scores.length > 0 
+                        ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+                        : 0;
+                      
+                      return (
+                        <div key={session.id} className="p-4 border-2 border-border hover:shadow-sm transition-shadow">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-bold text-sm line-clamp-1">{session.topic}</h4>
+                              <div className="flex gap-2 mt-1">
+                                <Badge variant="secondary" className="text-xs">{session.topic_category}</Badge>
+                                <Badge variant="outline" className="text-xs">{session.status}</Badge>
+                              </div>
+                            </div>
+                            {avgScore > 0 && (
+                              <div className="text-right">
+                                <p className="text-2xl font-bold">{avgScore}%</p>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        {avgScore > 0 && (
-                          <div className="text-right">
-                            <p className="text-2xl font-bold">{avgScore}%</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
 
-          <Card className="p-6 border-4 border-border space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold">RECENT DRILLS</h3>
-              <Target className="w-5 h-5 text-muted-foreground" />
-            </div>
-            {drills.length === 0 ? (
-              <p className="text-sm text-muted-foreground font-mono py-4 text-center">
-                No drills completed yet. Try skill drills!
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {drills.map((drill: any) => (
-                  <div key={drill.id} className="p-4 border-2 border-border hover:shadow-sm transition-shadow">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-sm line-clamp-1">{drill.topic}</h4>
-                        <div className="flex gap-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {drill.drill_type.replace('_', ' ')}
-                          </Badge>
-                          {drill.time_limit_seconds && (
-                            <Badge variant="outline" className="text-xs">
-                              {drill.time_limit_seconds}s
-                            </Badge>
+              <Card className="p-6 border-4 border-border space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold">RECENT DRILLS</h3>
+                  <Target className="w-5 h-5 text-muted-foreground" />
+                </div>
+                {drills.length === 0 ? (
+                  <p className="text-sm text-muted-foreground font-mono py-4 text-center">
+                    No drills completed yet. Try skill drills!
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {drills.map((drill: any) => (
+                      <div key={drill.id} className="p-4 border-2 border-border hover:shadow-sm transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-sm line-clamp-1">{drill.topic}</h4>
+                            <div className="flex gap-2 mt-1">
+                              <Badge variant="secondary" className="text-xs">
+                                {drill.drill_type.replace('_', ' ')}
+                              </Badge>
+                              {drill.time_limit_seconds && (
+                                <Badge variant="outline" className="text-xs">
+                                  {drill.time_limit_seconds}s
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          {drill.score && (
+                            <div className="text-right">
+                              <p className="text-2xl font-bold">{drill.score}%</p>
+                            </div>
                           )}
                         </div>
                       </div>
-                      {drill.score && (
-                        <div className="text-right">
-                          <p className="text-2xl font-bold">{drill.score}%</p>
-                        </div>
-                      )}
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
+                )}
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history">
+            <SessionHistoryComparison />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
