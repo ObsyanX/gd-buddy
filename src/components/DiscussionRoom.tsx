@@ -21,6 +21,7 @@ import { WPMDisplay, useWordCountEstimator } from "@/components/WPMDisplay";
 import { OnboardingTutorial, useOnboardingTutorial } from "@/components/OnboardingTutorial";
 import VideoMonitor, { VideoMetrics } from "@/components/VideoMonitor";
 import ParticipantPresence from "@/components/ParticipantPresence";
+import VoiceMetricsPanel from "@/components/VoiceMetricsPanel";
 import { useMultiplayerPresence } from "@/hooks/useMultiplayerPresence";
 import { AppSettings } from "@/pages/Settings";
 
@@ -1023,6 +1024,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               isMultiplayer={session?.is_multiplayer ?? false}
             />
           </Card>
+
+          {/* Voice Metrics Panel - Real-time filler word detection */}
+          <VoiceMetricsPanel
+            isUserSpeaking={isListening && !isSpeaking}
+            currentTranscript={userInput}
+            sessionStartTime={session?.start_time ? new Date(session.start_time).getTime() : undefined}
+          />
 
           {/* Video Monitor */}
           <VideoMonitor 
