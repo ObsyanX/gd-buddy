@@ -198,8 +198,8 @@ const TopicSelection = ({
                       <Sparkles className="w-4 h-4" />
                       GENERATE {selectedCategory.name.toUpperCase()}
                     </>}
-                </Button> : <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                </Button> : <div className="flex flex-col items-center gap-3">
+                  <div className="flex items-center justify-between w-full max-w-md">
                     <p className="text-sm font-medium text-muted-foreground">
                       Select a topic to begin:
                     </p>
@@ -208,7 +208,7 @@ const TopicSelection = ({
                       Regenerate
                     </Button>
                   </div>
-                  {generatedTopics.map((topic, index) => <Card key={index} className="p-4 border-2 cursor-pointer hover:border-primary hover:bg-accent/50 transition-all" onClick={() => onTopicSelected(topic)}>
+                  {generatedTopics.map((topic, index) => <Card key={index} className="p-4 border-2 cursor-pointer hover:border-primary hover:bg-accent/50 transition-all w-full max-w-md" onClick={() => onTopicSelected(topic)}>
                       <h3 className="font-bold mb-2">{topic.title}</h3>
                       <div className="flex flex-wrap gap-1">
                         {topic.tags?.map((tag: string, idx: number) => <span key={idx} className="text-xs bg-secondary px-2 py-0.5 rounded">
