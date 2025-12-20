@@ -6,12 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Sparkles, Loader2, FileText, Lightbulb, Scale, Briefcase, Newspaper, MessageSquare, Heart, ChevronLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { invokeWithAuth } from "@/lib/supabase-auth";
-
 interface TopicSelectionProps {
   onTopicSelected: (topic: any) => void;
   onBack: () => void;
 }
-
 interface Category {
   id: string;
   name: string;
@@ -20,121 +18,110 @@ interface Category {
   examples: string[];
   tip: string;
 }
-
-const TOPIC_CATEGORIES: Category[] = [
-  {
-    id: "factual",
-    name: "Factual Topics",
-    icon: <FileText className="w-5 h-5" />,
-    description: "Based on facts, data, or real events. Tests awareness and knowledge.",
-    examples: ["Impact of AI on jobs", "Climate change and global warming", "Digital India initiative"],
-    tip: "Requires current affairs and basic statistics"
-  },
-  {
-    id: "conceptual",
-    name: "Conceptual / Abstract",
-    icon: <Lightbulb className="w-5 h-5" />,
-    description: "Based on ideas or concepts. Tests thinking and interpretation.",
-    examples: ["Success comes before happiness", "Hard work vs smart work", "Freedom comes with responsibility"],
-    tip: "No right or wrong answer; focus on logic and clarity"
-  },
-  {
-    id: "controversial",
-    name: "Controversial Topics",
-    icon: <Scale className="w-5 h-5" />,
-    description: "Strong arguments on both sides. Tests emotional control and reasoning.",
-    examples: ["Reservation system in India", "Social media: boon or bane", "Should capital punishment be abolished?"],
-    tip: "Important to stay calm and respectful"
-  },
-  {
-    id: "case-study",
-    name: "Case Study-Based",
-    icon: <Briefcase className="w-5 h-5" />,
-    description: "Real-life situations requiring solutions. Tests problem-solving and leadership.",
-    examples: ["Company facing losses due to poor management", "Ethical dilemma in workplace", "Handling a data privacy breach"],
-    tip: "Tests problem-solving, teamwork, and leadership"
-  },
-  {
-    id: "current-affairs",
-    name: "Current Affairs",
-    icon: <Newspaper className="w-5 h-5" />,
-    description: "Related to recent national or international events.",
-    examples: ["India's role in global politics", "Cryptocurrency regulations", "Start-up culture in India"],
-    tip: "Requires regular news reading"
-  },
-  {
-    id: "opinion",
-    name: "Opinion-Based",
-    icon: <MessageSquare className="w-5 h-5" />,
-    description: "Participants must express personal viewpoints.",
-    examples: ["Is engineering still a good career?", "Should exams be removed?", "Is technology making humans lazy?"],
-    tip: "Tests confidence and communication"
-  },
-  {
-    id: "ethical",
-    name: "Ethical Topics",
-    icon: <Heart className="w-5 h-5" />,
-    description: "Focus on moral values and ethics.",
-    examples: ["Ethics in artificial intelligence", "Corporate social responsibility", "Is whistleblowing justified?"],
-    tip: "Evaluates integrity and judgment"
-  }
-];
-
-const TopicSelection = ({ onTopicSelected, onBack }: TopicSelectionProps) => {
-  const { toast } = useToast();
+const TOPIC_CATEGORIES: Category[] = [{
+  id: "factual",
+  name: "Factual Topics",
+  icon: <FileText className="w-5 h-5" />,
+  description: "Based on facts, data, or real events. Tests awareness and knowledge.",
+  examples: ["Impact of AI on jobs", "Climate change and global warming", "Digital India initiative"],
+  tip: "Requires current affairs and basic statistics"
+}, {
+  id: "conceptual",
+  name: "Conceptual / Abstract",
+  icon: <Lightbulb className="w-5 h-5" />,
+  description: "Based on ideas or concepts. Tests thinking and interpretation.",
+  examples: ["Success comes before happiness", "Hard work vs smart work", "Freedom comes with responsibility"],
+  tip: "No right or wrong answer; focus on logic and clarity"
+}, {
+  id: "controversial",
+  name: "Controversial Topics",
+  icon: <Scale className="w-5 h-5" />,
+  description: "Strong arguments on both sides. Tests emotional control and reasoning.",
+  examples: ["Reservation system in India", "Social media: boon or bane", "Should capital punishment be abolished?"],
+  tip: "Important to stay calm and respectful"
+}, {
+  id: "case-study",
+  name: "Case Study-Based",
+  icon: <Briefcase className="w-5 h-5" />,
+  description: "Real-life situations requiring solutions. Tests problem-solving and leadership.",
+  examples: ["Company facing losses due to poor management", "Ethical dilemma in workplace", "Handling a data privacy breach"],
+  tip: "Tests problem-solving, teamwork, and leadership"
+}, {
+  id: "current-affairs",
+  name: "Current Affairs",
+  icon: <Newspaper className="w-5 h-5" />,
+  description: "Related to recent national or international events.",
+  examples: ["India's role in global politics", "Cryptocurrency regulations", "Start-up culture in India"],
+  tip: "Requires regular news reading"
+}, {
+  id: "opinion",
+  name: "Opinion-Based",
+  icon: <MessageSquare className="w-5 h-5" />,
+  description: "Participants must express personal viewpoints.",
+  examples: ["Is engineering still a good career?", "Should exams be removed?", "Is technology making humans lazy?"],
+  tip: "Tests confidence and communication"
+}, {
+  id: "ethical",
+  name: "Ethical Topics",
+  icon: <Heart className="w-5 h-5" />,
+  description: "Focus on moral values and ethics.",
+  examples: ["Ethics in artificial intelligence", "Corporate social responsibility", "Is whistleblowing justified?"],
+  tip: "Evaluates integrity and judgment"
+}];
+const TopicSelection = ({
+  onTopicSelected,
+  onBack
+}: TopicSelectionProps) => {
+  const {
+    toast
+  } = useToast();
   const [customTopic, setCustomTopic] = useState("");
   const [generatedTopics, setGeneratedTopics] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-
   const handleGenerateTopics = async () => {
     if (!selectedCategory) {
       toast({
         title: "Select a category",
         description: "Please select a topic category first",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setIsLoading(true);
     try {
       const response = await invokeWithAuth('gd-topics', {
-        body: { 
+        body: {
           count: 6,
           category: selectedCategory.id
         }
       });
-
       if (response.error) throw new Error(typeof response.error === 'string' ? response.error : 'Unknown error');
-      
       setGeneratedTopics(response.data?.topics || []);
       toast({
         title: "Topics Generated",
-        description: `Generated ${response.data?.topics?.length || 0} ${selectedCategory.name.toLowerCase()}`,
+        description: `Generated ${response.data?.topics?.length || 0} ${selectedCategory.name.toLowerCase()}`
       });
     } catch (error) {
       console.error('Failed to generate topics:', error);
       toast({
         title: "Generation Failed",
         description: "Could not generate topics. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
-
   const handleCustomTopicSubmit = () => {
     if (!customTopic.trim()) {
       toast({
         title: "Empty Topic",
         description: "Please enter a topic to discuss",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     onTopicSelected({
       title: customTopic,
       category: "Custom",
@@ -143,19 +130,15 @@ const TopicSelection = ({ onTopicSelected, onBack }: TopicSelectionProps) => {
       tags: ["custom"]
     });
   };
-
   const handleCategorySelect = (category: Category) => {
     setSelectedCategory(category);
     setGeneratedTopics([]);
   };
-
   const handleBackToCategories = () => {
     setSelectedCategory(null);
     setGeneratedTopics([]);
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" onClick={onBack} className="border-2">
           <ArrowLeft className="w-4 h-4" />
@@ -170,19 +153,14 @@ const TopicSelection = ({ onTopicSelected, onBack }: TopicSelectionProps) => {
         </TabsList>
 
         <TabsContent value="ai" className="space-y-4 mt-4">
-          {!selectedCategory ? (
-            // Category Selection View
-            <div className="space-y-4">
+          {!selectedCategory ?
+        // Category Selection View
+        <div className="space-y-4">
               <p className="text-sm text-muted-foreground font-medium">
                 Choose a category to generate discussion topics:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
-                {TOPIC_CATEGORIES.map((category) => (
-                  <Card
-                    key={category.id}
-                    className="p-4 border-2 cursor-pointer hover:border-primary hover:bg-accent/50 transition-all w-full aspect-square flex flex-col"
-                    onClick={() => handleCategorySelect(category)}
-                  >
+                {TOPIC_CATEGORIES.map(category => <Card key={category.id} onClick={() => handleCategorySelect(category)} className="p-4 cursor-pointer hover:border-primary hover:bg-accent/50 transition-all w-full aspect-square flex-col flex items-center justify-center border-4 border-solid rounded-xl shadow-md px-px">
                     <div className="flex flex-col items-center text-center h-full justify-between">
                       <div className="p-2 rounded-lg bg-primary/10 text-primary mb-1">
                         {category.icon}
@@ -191,29 +169,20 @@ const TopicSelection = ({ onTopicSelected, onBack }: TopicSelectionProps) => {
                         <h3 className="font-bold text-sm">{category.name}</h3>
                         <p className="text-xs text-muted-foreground line-clamp-2">{category.description}</p>
                         <div className="flex flex-wrap justify-center gap-1 mt-auto">
-                          {category.examples.slice(0, 1).map((example, idx) => (
-                            <span key={idx} className="text-xs bg-secondary px-2 py-0.5 rounded line-clamp-1">
+                          {category.examples.slice(0, 1).map((example, idx) => <span key={idx} className="text-xs bg-secondary px-2 py-0.5 rounded line-clamp-1">
                               {example}
-                            </span>
-                          ))}
+                            </span>)}
                         </div>
                         <p className="text-xs text-primary/80">✓ {category.tip}</p>
                       </div>
                     </div>
-                  </Card>
-                ))}
+                  </Card>)}
               </div>
-            </div>
-          ) : (
-            // Topics Generation View
-            <div className="space-y-4">
+            </div> :
+        // Topics Generation View
+        <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBackToCategories}
-                  className="gap-1"
-                >
+                <Button variant="ghost" size="sm" onClick={handleBackToCategories} className="gap-1">
                   <ChevronLeft className="w-4 h-4" />
                   Change
                 </Button>
@@ -223,84 +192,45 @@ const TopicSelection = ({ onTopicSelected, onBack }: TopicSelectionProps) => {
                 </div>
               </div>
 
-              {generatedTopics.length === 0 ? (
-                <Button
-                  onClick={handleGenerateTopics}
-                  disabled={isLoading}
-                  className="w-full border-2 font-bold gap-2"
-                  size="lg"
-                >
-                  {isLoading ? (
-                    <>
+              {generatedTopics.length === 0 ? <Button onClick={handleGenerateTopics} disabled={isLoading} className="w-full border-2 font-bold gap-2" size="lg">
+                  {isLoading ? <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       GENERATING...
-                    </>
-                  ) : (
-                    <>
+                    </> : <>
                       <Sparkles className="w-4 h-4" />
                       GENERATE {selectedCategory.name.toUpperCase()}
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <div className="space-y-3">
+                    </>}
+                </Button> : <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-muted-foreground">
                       Select a topic to begin:
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleGenerateTopics}
-                      disabled={isLoading}
-                      className="gap-1"
-                    >
+                    <Button variant="outline" size="sm" onClick={handleGenerateTopics} disabled={isLoading} className="gap-1">
                       {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                       Regenerate
                     </Button>
                   </div>
-                  {generatedTopics.map((topic, index) => (
-                    <Card
-                      key={index}
-                      className="p-4 border-2 cursor-pointer hover:border-primary hover:bg-accent/50 transition-all"
-                      onClick={() => onTopicSelected(topic)}
-                    >
+                  {generatedTopics.map((topic, index) => <Card key={index} className="p-4 border-2 cursor-pointer hover:border-primary hover:bg-accent/50 transition-all" onClick={() => onTopicSelected(topic)}>
                       <h3 className="font-bold mb-2">{topic.title}</h3>
                       <div className="flex flex-wrap gap-1">
-                        {topic.tags?.map((tag: string, idx: number) => (
-                          <span key={idx} className="text-xs bg-secondary px-2 py-0.5 rounded">
+                        {topic.tags?.map((tag: string, idx: number) => <span key={idx} className="text-xs bg-secondary px-2 py-0.5 rounded">
                             {tag}
-                          </span>
-                        ))}
+                          </span>)}
                       </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                    </Card>)}
+                </div>}
+            </div>}
         </TabsContent>
 
         <TabsContent value="custom" className="space-y-4 mt-4">
           <div className="space-y-3">
-            <Input
-              placeholder="Enter your discussion topic..."
-              value={customTopic}
-              onChange={(e) => setCustomTopic(e.target.value)}
-              className="border-2"
-            />
-            <Button
-              onClick={handleCustomTopicSubmit}
-              className="w-full border-2 font-bold"
-              disabled={!customTopic.trim()}
-            >
+            <Input placeholder="Enter your discussion topic..." value={customTopic} onChange={e => setCustomTopic(e.target.value)} className="border-2" />
+            <Button onClick={handleCustomTopicSubmit} className="w-full border-2 font-bold" disabled={!customTopic.trim()}>
               START WITH THIS TOPIC
             </Button>
           </div>
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>;
 };
-
 export default TopicSelection;
