@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,12 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Copy, Check, ArrowLeft, Loader2, Sparkles, Bot } from "lucide-react";
+import { Users, Copy, Check, ArrowLeft, Loader2, Sparkles, Bot, Lightbulb } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
-import { PERSONA_TEMPLATES } from "@/config/personas";
+import { 
+  PERSONA_TEMPLATES, 
+  TOPIC_CATEGORY_INFO,
+  detectTopicCategory,
+  getRecommendedPersonaIds
+} from "@/config/personas";
+
+type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended';
 
 interface MultiplayerLobbyProps {
   onSessionJoined: (sessionId: string) => void;
@@ -43,13 +50,52 @@ const MultiplayerLobby = ({
   const [generatedTopics, setGeneratedTopics] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
-  const [selectedPersonas, setSelectedPersonas] = useState<string[]>(['aditya', 'priya']);
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('recommended');
   const {
     user
   } = useAuth();
   const {
     toast
   } = useToast();
+
+  // Detect topic category and get recommendations
+  const detectedCategory = useMemo(() => {
+    if (!selectedTopic) return null;
+    return detectTopicCategory(selectedTopic.title, selectedTopic.category);
+  }, [selectedTopic]);
+
+  const recommendedIds = useMemo(() => {
+    if (!detectedCategory) return [];
+    return getRecommendedPersonaIds(detectedCategory);
+  }, [detectedCategory]);
+
+  // Update selected personas when topic changes
+  useEffect(() => {
+    if (recommendedIds.length > 0) {
+      setSelectedPersonas(recommendedIds.slice(0, 3));
+    } else {
+      setSelectedPersonas(['aditya', 'priya']);
+    }
+  }, [recommendedIds]);
+
+  // Filter personas based on category
+  const filteredPersonas = useMemo(() => {
+    switch (categoryFilter) {
+      case 'core':
+        return PERSONA_TEMPLATES.filter(p => p.category === 'core');
+      case 'extended':
+        return PERSONA_TEMPLATES.filter(p => p.category === 'extended');
+      case 'recommended':
+        if (recommendedIds.length > 0) {
+          return PERSONA_TEMPLATES.filter(p => recommendedIds.includes(p.id));
+        }
+        return PERSONA_TEMPLATES.slice(0, 6);
+      default:
+        return PERSONA_TEMPLATES;
+    }
+  }, [categoryFilter, recommendedIds]);
+
   const handleGenerateTopics = async () => {
     setIsGenerating(true);
     try {
@@ -81,9 +127,21 @@ const MultiplayerLobby = ({
       setIsGenerating(false);
     }
   };
+
   const togglePersona = (id: string) => {
     setSelectedPersonas(prev => prev.includes(id) ? prev.filter(p => p !== id) : prev.length < 3 ? [...prev, id] : prev);
   };
+
+  const applyRecommendation = () => {
+    if (recommendedIds.length > 0) {
+      setSelectedPersonas(recommendedIds.slice(0, 3));
+      toast({
+        title: "Recommended team applied",
+        description: `Selected ${Math.min(recommendedIds.length, 3)} optimal participants`,
+      });
+    }
+  };
+
   const handleTopicSelected = (topic: any) => {
     setSelectedTopic(topic);
     setShowAISelection(true);
@@ -332,8 +390,41 @@ const MultiplayerLobby = ({
             </div>
           </Card>
 
+          {/* Recommended Combination Panel */}
+          {detectedCategory && (
+            <Card className="p-4 border-4 border-primary/30 bg-primary/5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Lightbulb className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm flex items-center gap-2">
+                      RECOMMENDED FOR {TOPIC_CATEGORY_INFO[detectedCategory].label.toUpperCase()}
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Best participants: {recommendedIds.slice(0, 3).map(id => {
+                        const p = PERSONA_TEMPLATES.find(persona => persona.id === id);
+                        return p?.name;
+                      }).filter(Boolean).join(', ')}
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={applyRecommendation}
+                  className="border-2 shrink-0"
+                >
+                  <Sparkles className="w-4 h-4 mr-1" />
+                  Apply
+                </Button>
+              </div>
+            </Card>
+          )}
+
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h3 className="text-xl font-bold flex items-center gap-2">
                   <Bot className="w-5 h-5" />
@@ -343,19 +434,35 @@ const MultiplayerLobby = ({
                   Select 0-3 AI participants • Selected: {selectedPersonas.length}/3
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setSelectedPersonas([])} className="border-2">
-                Clear All
-              </Button>
+              <div className="flex gap-2">
+                <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
+                  <TabsList className="border-2 border-border">
+                    {detectedCategory && (
+                      <TabsTrigger value="recommended" className="text-xs">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Best
+                      </TabsTrigger>
+                    )}
+                    <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+                    <TabsTrigger value="core" className="text-xs">Core</TabsTrigger>
+                    <TabsTrigger value="extended" className="text-xs">Extended</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <Button variant="outline" size="sm" onClick={() => setSelectedPersonas([])} className="border-2">
+                  Clear
+                </Button>
+              </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-3">
-              {PERSONA_TEMPLATES.map(persona => {
+              {filteredPersonas.map(persona => {
               const isSelected = selectedPersonas.includes(persona.id);
-              return <Card key={persona.id} className={`p-4 border-4 cursor-pointer transition-all ${isSelected ? 'border-primary bg-secondary' : 'border-border hover:shadow-md'}`} onClick={() => togglePersona(persona.id)}>
+              const isRecommended = recommendedIds.includes(persona.id);
+              return <Card key={persona.id} className={`p-4 border-4 cursor-pointer transition-all ${isSelected ? 'border-primary bg-secondary' : isRecommended && categoryFilter !== 'recommended' ? 'border-primary/30 hover:shadow-md' : 'border-border hover:shadow-md'}`} onClick={() => togglePersona(persona.id)}>
                     <div className="flex items-start gap-3">
                       <Checkbox checked={isSelected} className="mt-1 border-2" />
                       <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="font-bold">{persona.name}</h4>
                           <Badge 
                             variant={persona.category === 'core' ? 'default' : 'secondary'} 
@@ -363,6 +470,12 @@ const MultiplayerLobby = ({
                           >
                             {persona.category}
                           </Badge>
+                          {isRecommended && categoryFilter !== 'recommended' && (
+                            <Badge variant="outline" className="text-xs border-primary text-primary">
+                              <Sparkles className="w-2 h-2 mr-1" />
+                              best
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground">{persona.role}</p>
                         <p className="text-xs text-muted-foreground italic">{persona.corePerspective}</p>
