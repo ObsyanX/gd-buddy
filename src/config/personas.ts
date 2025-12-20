@@ -315,6 +315,9 @@ export const TOPIC_COMBINATIONS = {
   'environment': ['ritika', 'sneha', 'arjun', 'rohan', 'pooja', 'vikram'],
   'case-study': ['dev', 'kabir', 'vikram', 'priya', 'rohan', 'rahul'],
   'abstract': ['meera', 'aman', 'neha', 'ishita', 'ananya', 'rahul'],
+  'opinion': ['vikram', 'pooja', 'neha', 'kabir', 'ishita', 'rahul'],
+  'ethical': ['pooja', 'vikram', 'suresh', 'ishita', 'priya', 'neha'],
+  'controversial': ['vikram', 'pooja', 'kabir', 'neha', 'rohan', 'ananya'],
 };
 
 // Get personas by category
@@ -336,6 +339,24 @@ export const getRecommendedPersonaIds = (topicCategory: keyof typeof TOPIC_COMBI
 export const detectTopicCategory = (topicText: string, category?: string): keyof typeof TOPIC_COMBINATIONS | null => {
   const text = `${topicText} ${category || ''}`.toLowerCase();
   
+  // Opinion-Based Topics (check first as it's a common category name)
+  if (text.match(/\b(opinion|debate|agree|disagree|controversial|polariz|divisive|contentious)\b/) || 
+      category?.toLowerCase().includes('opinion')) {
+    return 'opinion';
+  }
+  
+  // Ethical & Moral Topics
+  if (text.match(/\b(ethic|moral|right|wrong|should|ought|dilemma|fairness|integrity|virtue|vice)\b/) ||
+      category?.toLowerCase().includes('ethical')) {
+    return 'ethical';
+  }
+  
+  // Controversial Topics
+  if (text.match(/\b(controversy|banned|illegal|legalize|prohibition|censorship|freedom|restrict)\b/) ||
+      category?.toLowerCase().includes('controversial')) {
+    return 'controversial';
+  }
+  
   // Technology & AI
   if (text.match(/\b(ai|artificial intelligence|technology|tech|software|digital|cyber|machine learning|automation|robot|internet|data|algorithm)\b/)) {
     return 'technology';
@@ -346,8 +367,8 @@ export const detectTopicCategory = (topicText: string, category?: string): keyof
     return 'business';
   }
   
-  // Social & Ethical
-  if (text.match(/\b(social|society|ethics|moral|media|culture|rights|justice|equality|discrimination|privacy|regulation)\b/)) {
+  // Social Topics
+  if (text.match(/\b(social|society|media|culture|rights|justice|equality|discrimination|privacy|regulation|community)\b/)) {
     return 'social';
   }
   
@@ -383,4 +404,7 @@ export const TOPIC_CATEGORY_INFO: Record<keyof typeof TOPIC_COMBINATIONS, { labe
   'environment': { label: 'Environmental', description: 'Climate, sustainability topics' },
   'case-study': { label: 'Case Study', description: 'Crisis handling, problem-solving' },
   'abstract': { label: 'Abstract', description: 'Conceptual, philosophical topics' },
+  'opinion': { label: 'Opinion-Based', description: 'Debates, agree/disagree topics' },
+  'ethical': { label: 'Ethical', description: 'Moral dilemmas, right vs wrong' },
+  'controversial': { label: 'Controversial', description: 'Polarizing, divisive topics' },
 };
