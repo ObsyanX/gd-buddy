@@ -190,7 +190,8 @@ const TopicSelection = ({
                 </div>
               </div>
 
-              {generatedTopics.length === 0 ? <Button onClick={handleGenerateTopics} disabled={isLoading} className="w-full max-w-[90%] md:max-w-[80%] lg:max-w-[75%] mx-auto border-2 font-bold gap-2" size="lg">
+              {generatedTopics.length === 0 ? <div className="flex justify-center w-full">
+                <Button onClick={handleGenerateTopics} disabled={isLoading} className="w-full max-w-[90%] md:max-w-[80%] lg:max-w-[75%] border-2 font-bold gap-2" size="lg">
                   {isLoading ? <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       GENERATING...
@@ -198,7 +199,8 @@ const TopicSelection = ({
                       <Sparkles className="w-4 h-4" />
                       GENERATE {selectedCategory.name.toUpperCase()}
                     </>}
-                </Button> : <div className="flex flex-col items-center gap-3">
+                </Button>
+              </div> : <div className="flex flex-col items-center gap-3">
                   <div className="flex items-center justify-between w-full max-w-md">
                     <p className="text-sm font-medium text-muted-foreground">
                       Select a topic to begin:
