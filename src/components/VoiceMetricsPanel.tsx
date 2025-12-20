@@ -44,25 +44,34 @@ const VoiceMetricsPanel = ({
     fillersByType: {},
   });
   
-  const allTranscriptsRef = useRef<string[]>([]);
   const speakingStartRef = useRef<number | null>(null);
   const totalSpeakingTimeRef = useRef(0);
-  const lastProcessedRef = useRef('');
+  const lastTranscriptRef = useRef('');
+  const allUserWordsRef = useRef<string[]>([]); // Accumulate all words across session
 
-  // Process new transcript text
+  // Process new transcript text - accumulate words across session
   const processTranscript = useCallback((text: string) => {
-    if (!text || text === lastProcessedRef.current) return;
+    if (!text) return;
     
-    const newText = text.replace(lastProcessedRef.current, '').trim();
-    if (!newText) return;
+    // Only process if we have new content different from last
+    if (text === lastTranscriptRef.current) return;
     
-    lastProcessedRef.current = text;
-    allTranscriptsRef.current.push(newText);
+    // If text is shorter than last (input was cleared/sent), 
+    // add the previous complete text to accumulated words
+    if (text.length < lastTranscriptRef.current.length && lastTranscriptRef.current.trim()) {
+      const previousWords = lastTranscriptRef.current.toLowerCase().trim().split(/\s+/).filter(w => w.length > 0);
+      allUserWordsRef.current.push(...previousWords);
+    }
     
-    // Analyze all accumulated text
-    const allText = allTranscriptsRef.current.join(' ').toLowerCase();
-    const words = allText.split(/\s+/).filter(Boolean);
-    const totalWords = words.length;
+    lastTranscriptRef.current = text;
+    
+    // Current input words + all accumulated words
+    const currentWords = text.toLowerCase().trim().split(/\s+/).filter(w => w.length > 0);
+    const allWords = [...allUserWordsRef.current, ...currentWords];
+    const totalWords = allWords.length;
+    
+    // Join all text for filler analysis
+    const allText = allWords.join(' ');
     
     // Count filler words by type
     const fillersByType: Record<string, number> = {};
@@ -79,16 +88,17 @@ const VoiceMetricsPanel = ({
     
     // Calculate speaking time
     const now = Date.now();
+    let currentSpeakingTime = totalSpeakingTimeRef.current;
+    
     if (isUserSpeaking && speakingStartRef.current) {
-      totalSpeakingTimeRef.current += (now - speakingStartRef.current) / 1000;
-      speakingStartRef.current = now;
+      currentSpeakingTime += (now - speakingStartRef.current) / 1000;
     }
     
-    const speakingTimeSeconds = totalSpeakingTimeRef.current;
+    const speakingTimeSeconds = Math.max(currentSpeakingTime, 1);
     const speakingTimeMinutes = speakingTimeSeconds / 60;
     
-    // Calculate WPM
-    const estimatedWpm = speakingTimeMinutes > 0.1 
+    // Calculate WPM - only if we have meaningful speaking time (at least 5 seconds)
+    const estimatedWpm = speakingTimeSeconds >= 5
       ? Math.round(totalWords / speakingTimeMinutes)
       : 0;
     
@@ -100,7 +110,7 @@ const VoiceMetricsPanel = ({
       fillerCount,
       fillerRate,
       estimatedWpm,
-      speakingTimeSeconds,
+      speakingTimeSeconds: currentSpeakingTime,
       fillersByType,
     });
   }, [isUserSpeaking]);
