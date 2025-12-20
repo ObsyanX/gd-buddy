@@ -12,7 +12,7 @@ export interface PersonaTemplate {
   vocab_level: 'beginner' | 'intermediate' | 'advanced';
   description: string;
   voice_name: string;
-  category: 'core' | 'extended';
+  category: 'core' | 'extended' | 'custom';
 }
 
 // Core Team Members
