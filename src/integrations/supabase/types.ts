@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      custom_personas: {
+        Row: {
+          agreeability: number | null
+          core_perspective: string
+          created_at: string
+          description: string | null
+          id: string
+          interrupt_level: number | null
+          name: string
+          role: string
+          tone: string
+          updated_at: string
+          user_id: string
+          verbosity: string
+          vocab_level: string
+          voice_name: string | null
+        }
+        Insert: {
+          agreeability?: number | null
+          core_perspective: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          interrupt_level?: number | null
+          name: string
+          role: string
+          tone?: string
+          updated_at?: string
+          user_id: string
+          verbosity?: string
+          vocab_level?: string
+          voice_name?: string | null
+        }
+        Update: {
+          agreeability?: number | null
+          core_perspective?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          interrupt_level?: number | null
+          name?: string
+          role?: string
+          tone?: string
+          updated_at?: string
+          user_id?: string
+          verbosity?: string
+          vocab_level?: string
+          voice_name?: string | null
+        }
+        Relationships: []
+      }
       gd_feedback: {
         Row: {
           created_at: string

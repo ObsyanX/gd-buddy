@@ -1,20 +1,21 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, Sparkles, Lightbulb } from "lucide-react";
+import { ArrowLeft, Users, Sparkles, Lightbulb, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   PERSONA_TEMPLATES, 
-  TOPIC_COMBINATIONS, 
   TOPIC_CATEGORY_INFO,
   detectTopicCategory,
-  getRecommendedPersonaIds
+  getRecommendedPersonaIds,
+  PersonaTemplate
 } from "@/config/personas";
+import CustomPersonaForm from "./CustomPersonaForm";
 
 interface SessionSetupProps {
   topic: any;
@@ -22,14 +23,51 @@ interface SessionSetupProps {
   onBack: () => void;
 }
 
-type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended';
+interface CustomPersona {
+  id: string;
+  name: string;
+  role: string;
+  core_perspective: string;
+  tone: string;
+  verbosity: string;
+  vocab_level: string;
+  description: string | null;
+  interrupt_level: number;
+  agreeability: number;
+  voice_name: string;
+}
+
+type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
 
 const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) => {
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
+  const [selectedCustomPersonas, setSelectedCustomPersonas] = useState<string[]>([]);
+  const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('recommended');
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Fetch custom personas
+  const fetchCustomPersonas = useCallback(async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('custom_personas')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching custom personas:', error);
+      return;
+    }
+    
+    setCustomPersonas(data || []);
+  }, [user]);
+
+  useEffect(() => {
+    fetchCustomPersonas();
+  }, [fetchCustomPersonas]);
 
   // Detect topic category and get recommendations
   const detectedCategory = useMemo(() => {
@@ -50,29 +88,92 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
     }
   }, [recommendedIds]);
 
+  // Combined persona list for display
+  const allPersonas = useMemo(() => {
+    const customAsTemplates: PersonaTemplate[] = customPersonas.map(cp => ({
+      id: `custom-${cp.id}`,
+      name: cp.name,
+      role: cp.role,
+      corePerspective: cp.core_perspective,
+      tone: cp.tone,
+      verbosity: cp.verbosity as 'concise' | 'moderate' | 'elaborate',
+      interrupt_level: cp.interrupt_level,
+      agreeability: cp.agreeability,
+      vocab_level: cp.vocab_level as 'beginner' | 'intermediate' | 'advanced',
+      description: cp.description || '',
+      voice_name: cp.voice_name,
+      category: 'custom' as const
+    }));
+    return [...PERSONA_TEMPLATES, ...customAsTemplates];
+  }, [customPersonas]);
+
   // Filter personas based on category
   const filteredPersonas = useMemo(() => {
     switch (categoryFilter) {
       case 'core':
-        return PERSONA_TEMPLATES.filter(p => p.category === 'core');
+        return allPersonas.filter(p => p.category === 'core');
       case 'extended':
-        return PERSONA_TEMPLATES.filter(p => p.category === 'extended');
+        return allPersonas.filter(p => p.category === 'extended');
+      case 'custom':
+        return allPersonas.filter(p => p.category === 'custom');
       case 'recommended':
         if (recommendedIds.length > 0) {
-          return PERSONA_TEMPLATES.filter(p => recommendedIds.includes(p.id));
+          return allPersonas.filter(p => recommendedIds.includes(p.id));
         }
-        return PERSONA_TEMPLATES;
+        return allPersonas.filter(p => p.category !== 'custom');
       default:
-        return PERSONA_TEMPLATES;
+        return allPersonas;
     }
-  }, [categoryFilter, recommendedIds]);
+  }, [categoryFilter, recommendedIds, allPersonas]);
+
+  const totalSelected = selectedPersonas.length + selectedCustomPersonas.length;
 
   const togglePersona = (id: string) => {
-    setSelectedPersonas(prev => 
-      prev.includes(id) 
-        ? prev.filter(p => p !== id)
-        : prev.length < 5 ? [...prev, id] : prev
-    );
+    if (id.startsWith('custom-')) {
+      setSelectedCustomPersonas(prev => 
+        prev.includes(id) 
+          ? prev.filter(p => p !== id)
+          : totalSelected < 5 ? [...prev, id] : prev
+      );
+    } else {
+      setSelectedPersonas(prev => 
+        prev.includes(id) 
+          ? prev.filter(p => p !== id)
+          : totalSelected < 5 ? [...prev, id] : prev
+      );
+    }
+  };
+
+  const isSelected = (id: string) => {
+    return id.startsWith('custom-') 
+      ? selectedCustomPersonas.includes(id)
+      : selectedPersonas.includes(id);
+  };
+
+  const handleDeleteCustomPersona = async (personaId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const actualId = personaId.replace('custom-', '');
+    
+    const { error } = await supabase
+      .from('custom_personas')
+      .delete()
+      .eq('id', actualId);
+    
+    if (error) {
+      toast({
+        title: "Failed to delete",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSelectedCustomPersonas(prev => prev.filter(id => id !== personaId));
+    fetchCustomPersonas();
+    toast({
+      title: "Participant deleted",
+      description: "Custom AI participant has been removed",
+    });
   };
 
   const applyRecommendation = () => {
@@ -86,7 +187,7 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
   };
 
   const handleCreateSession = async () => {
-    if (selectedPersonas.length === 0) {
+    if (totalSelected === 0) {
       toast({
         title: "Select participants",
         description: "Choose at least one AI participant",
@@ -129,8 +230,8 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
 
       if (userError) throw userError;
 
-      // Create AI participants with their assigned voices
-      const aiParticipants = selectedPersonas.map((personaId, index) => {
+      // Create AI participants from default templates
+      const defaultAiParticipants = selectedPersonas.map((personaId, index) => {
         const persona = PERSONA_TEMPLATES.find(p => p.id === personaId)!;
         return {
           session_id: session.id,
@@ -147,11 +248,34 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
         };
       });
 
-      const { error: participantsError } = await supabase
-        .from('gd_participants')
-        .insert(aiParticipants);
+      // Create AI participants from custom personas
+      const customAiParticipants = selectedCustomPersonas.map((personaId, index) => {
+        const actualId = personaId.replace('custom-', '');
+        const persona = customPersonas.find(p => p.id === actualId)!;
+        return {
+          session_id: session.id,
+          is_user: false,
+          order_index: selectedPersonas.length + index + 1,
+          persona_name: persona.name,
+          persona_role: persona.role,
+          persona_tone: persona.tone,
+          persona_verbosity: persona.verbosity,
+          persona_interrupt_level: persona.interrupt_level,
+          persona_agreeability: persona.agreeability,
+          persona_vocab_level: persona.vocab_level,
+          voice_name: persona.voice_name
+        };
+      });
 
-      if (participantsError) throw participantsError;
+      const allAiParticipants = [...defaultAiParticipants, ...customAiParticipants];
+
+      if (allAiParticipants.length > 0) {
+        const { error: participantsError } = await supabase
+          .from('gd_participants')
+          .insert(allAiParticipants);
+
+        if (participantsError) throw participantsError;
+      }
 
       // Initialize metrics
       const { error: metricsError } = await supabase
@@ -253,35 +377,46 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
                 SELECT AI PARTICIPANTS
               </h3>
               <p className="text-sm text-muted-foreground font-mono">
-                Choose 1-5 AI participants • Selected: {selectedPersonas.length}/5
+                Choose 1-5 AI participants • Selected: {totalSelected}/5
               </p>
             </div>
 
-            {/* Category Filter Tabs */}
-            <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
-              <TabsList className="border-2 border-border">
-                {detectedCategory && (
-                  <TabsTrigger value="recommended" className="text-xs">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    Recommended
-                  </TabsTrigger>
-                )}
-                <TabsTrigger value="all" className="text-xs">All ({PERSONA_TEMPLATES.length})</TabsTrigger>
-                <TabsTrigger value="core" className="text-xs">Core (10)</TabsTrigger>
-                <TabsTrigger value="extended" className="text-xs">Extended (10)</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex gap-2 flex-wrap items-center">
+              {/* Create Custom AI Button */}
+              {user && <CustomPersonaForm onPersonaCreated={fetchCustomPersonas} />}
+
+              {/* Category Filter Tabs */}
+              <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
+                <TabsList className="border-2 border-border">
+                  {detectedCategory && (
+                    <TabsTrigger value="recommended" className="text-xs">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Best
+                    </TabsTrigger>
+                  )}
+                  <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+                  <TabsTrigger value="core" className="text-xs">Core</TabsTrigger>
+                  <TabsTrigger value="extended" className="text-xs">Extended</TabsTrigger>
+                  {customPersonas.length > 0 && (
+                    <TabsTrigger value="custom" className="text-xs">
+                      Custom ({customPersonas.length})
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             {filteredPersonas.map((persona) => {
-              const isSelected = selectedPersonas.includes(persona.id);
+              const selected = isSelected(persona.id);
               const isRecommended = recommendedIds.includes(persona.id);
+              const isCustom = persona.category === 'custom';
               return (
                 <Card
                   key={persona.id}
                   className={`p-6 border-4 cursor-pointer transition-all ${
-                    isSelected 
+                    selected 
                       ? 'border-primary bg-secondary' 
                       : isRecommended && categoryFilter !== 'recommended'
                         ? 'border-primary/30 hover:shadow-md'
@@ -291,15 +426,15 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
                 >
                   <div className="flex items-start gap-4">
                     <Checkbox 
-                      checked={isSelected}
+                      checked={selected}
                       className="mt-1 border-2"
                     />
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h4 className="text-xl font-bold">{persona.name}</h4>
                         <Badge 
-                          variant={persona.category === 'core' ? 'default' : 'secondary'} 
-                          className="text-xs"
+                          variant={persona.category === 'core' ? 'default' : persona.category === 'custom' ? 'outline' : 'secondary'} 
+                          className={`text-xs ${persona.category === 'custom' ? 'border-primary text-primary' : ''}`}
                         >
                           {persona.category}
                         </Badge>
@@ -308,6 +443,16 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
                             <Sparkles className="w-3 h-3 mr-1" />
                             recommended
                           </Badge>
+                        )}
+                        {isCustom && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 ml-auto text-destructive hover:bg-destructive/10"
+                            onClick={(e) => handleDeleteCustomPersona(persona.id, e)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">{persona.role}</p>
@@ -343,7 +488,7 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
           <Button
             size="lg"
             onClick={handleCreateSession}
-            disabled={isCreating || selectedPersonas.length === 0}
+            disabled={isCreating || totalSelected === 0}
             className="border-4 border-border shadow-md"
           >
             {isCreating ? "CREATING..." : "START DISCUSSION"}
