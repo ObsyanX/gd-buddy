@@ -5,11 +5,12 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Target, Clock, Mic, Send, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Target, Clock, Mic, Square, Send, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
+import { useStreamingTranscription } from "@/hooks/useStreamingTranscription";
 
 interface DrillType {
   id: string;
@@ -68,6 +69,29 @@ const SkillDrills = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [feedback, setFeedback] = useState<any>(null);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+
+  // Voice input using streaming transcription
+  const {
+    isListening,
+    isSupported: isSpeechSupported,
+    isCorrecting,
+    startListening,
+    stopListening,
+    clearTranscription
+  } = useStreamingTranscription({
+    context: topic,
+    onInterimResult: (text) => setUserResponse(text),
+    onFinalResult: (text) => setUserResponse(text),
+  });
+
+  const toggleVoiceInput = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      clearTranscription();
+      startListening();
+    }
+  };
 
   const handleSelectDrill = (drill: DrillType) => {
     setSelectedDrill(drill);
@@ -209,13 +233,32 @@ const SkillDrills = () => {
             {!feedback ? (
               <Card className="p-6 border-4 border-border space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold">YOUR RESPONSE</label>
-                  <Textarea
-                    placeholder="Type or record your response here..."
-                    value={userResponse}
-                    onChange={(e) => setUserResponse(e.target.value)}
-                    className="border-2 min-h-[200px] text-base"
-                  />
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-bold">YOUR RESPONSE</label>
+                    {isCorrecting && (
+                      <span className="text-xs text-muted-foreground animate-pulse">Correcting...</span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Textarea
+                      placeholder="Type or record your response here..."
+                      value={userResponse}
+                      onChange={(e) => setUserResponse(e.target.value)}
+                      className="border-2 min-h-[200px] text-base pr-14"
+                    />
+                    {isSpeechSupported && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant={isListening ? "default" : "outline"}
+                        onClick={toggleVoiceInput}
+                        className={`absolute right-2 top-2 border-2 ${isListening ? 'bg-destructive hover:bg-destructive/90 animate-pulse' : ''}`}
+                        disabled={isProcessing}
+                      >
+                        {isListening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                      </Button>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground font-mono">
                     Aim for {selectedDrill.timeLimit} seconds worth of content
                   </p>
