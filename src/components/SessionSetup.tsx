@@ -1,13 +1,20 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Users } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Users, Sparkles, Lightbulb } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { PERSONA_TEMPLATES } from "@/config/personas";
+import { 
+  PERSONA_TEMPLATES, 
+  TOPIC_COMBINATIONS, 
+  TOPIC_CATEGORY_INFO,
+  detectTopicCategory,
+  getRecommendedPersonaIds
+} from "@/config/personas";
 
 interface SessionSetupProps {
   topic: any;
@@ -15,11 +22,50 @@ interface SessionSetupProps {
   onBack: () => void;
 }
 
+type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended';
+
 const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) => {
-  const [selectedPersonas, setSelectedPersonas] = useState<string[]>(['aditya', 'priya']);
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('recommended');
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Detect topic category and get recommendations
+  const detectedCategory = useMemo(() => {
+    return detectTopicCategory(topic.title, topic.category);
+  }, [topic.title, topic.category]);
+
+  const recommendedIds = useMemo(() => {
+    if (!detectedCategory) return [];
+    return getRecommendedPersonaIds(detectedCategory);
+  }, [detectedCategory]);
+
+  // Auto-select recommended personas on mount
+  useEffect(() => {
+    if (recommendedIds.length > 0) {
+      setSelectedPersonas(recommendedIds.slice(0, 5));
+    } else {
+      setSelectedPersonas(['aditya', 'priya']);
+    }
+  }, [recommendedIds]);
+
+  // Filter personas based on category
+  const filteredPersonas = useMemo(() => {
+    switch (categoryFilter) {
+      case 'core':
+        return PERSONA_TEMPLATES.filter(p => p.category === 'core');
+      case 'extended':
+        return PERSONA_TEMPLATES.filter(p => p.category === 'extended');
+      case 'recommended':
+        if (recommendedIds.length > 0) {
+          return PERSONA_TEMPLATES.filter(p => recommendedIds.includes(p.id));
+        }
+        return PERSONA_TEMPLATES;
+      default:
+        return PERSONA_TEMPLATES;
+    }
+  }, [categoryFilter, recommendedIds]);
 
   const togglePersona = (id: string) => {
     setSelectedPersonas(prev => 
@@ -27,6 +73,16 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
         ? prev.filter(p => p !== id)
         : prev.length < 5 ? [...prev, id] : prev
     );
+  };
+
+  const applyRecommendation = () => {
+    if (recommendedIds.length > 0) {
+      setSelectedPersonas(recommendedIds.slice(0, 5));
+      toast({
+        title: "Recommended team applied",
+        description: `Selected ${Math.min(recommendedIds.length, 5)} optimal participants for this topic`,
+      });
+    }
   };
 
   const handleCreateSession = async () => {
@@ -87,7 +143,7 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
           persona_interrupt_level: persona.interrupt_level,
           persona_agreeability: persona.agreeability,
           persona_vocab_level: persona.vocab_level,
-          voice_name: persona.voice_name // Assign gender-appropriate voice
+          voice_name: persona.voice_name
         };
       });
 
@@ -153,8 +209,44 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
           </div>
         </Card>
 
+        {/* Recommended Combination Panel */}
+        {detectedCategory && (
+          <Card className="p-4 border-4 border-primary/30 bg-primary/5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Lightbulb className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm flex items-center gap-2">
+                    RECOMMENDED FOR {TOPIC_CATEGORY_INFO[detectedCategory].label.toUpperCase()}
+                    <Badge variant="secondary" className="text-xs">
+                      {TOPIC_CATEGORY_INFO[detectedCategory].description}
+                    </Badge>
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Optimal participants: {recommendedIds.map(id => {
+                      const p = PERSONA_TEMPLATES.find(persona => persona.id === id);
+                      return p?.name;
+                    }).filter(Boolean).join(', ')}
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={applyRecommendation}
+                className="border-2 shrink-0"
+              >
+                <Sparkles className="w-4 h-4 mr-1" />
+                Apply
+              </Button>
+            </div>
+          </Card>
+        )}
+
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h3 className="text-2xl font-bold flex items-center gap-2">
                 <Users className="w-6 h-6" />
@@ -164,18 +256,36 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
                 Choose 1-5 AI participants • Selected: {selectedPersonas.length}/5
               </p>
             </div>
+
+            {/* Category Filter Tabs */}
+            <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
+              <TabsList className="border-2 border-border">
+                {detectedCategory && (
+                  <TabsTrigger value="recommended" className="text-xs">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Recommended
+                  </TabsTrigger>
+                )}
+                <TabsTrigger value="all" className="text-xs">All ({PERSONA_TEMPLATES.length})</TabsTrigger>
+                <TabsTrigger value="core" className="text-xs">Core (10)</TabsTrigger>
+                <TabsTrigger value="extended" className="text-xs">Extended (10)</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
-            {PERSONA_TEMPLATES.map((persona) => {
+            {filteredPersonas.map((persona) => {
               const isSelected = selectedPersonas.includes(persona.id);
+              const isRecommended = recommendedIds.includes(persona.id);
               return (
                 <Card
                   key={persona.id}
                   className={`p-6 border-4 cursor-pointer transition-all ${
                     isSelected 
                       ? 'border-primary bg-secondary' 
-                      : 'border-border hover:shadow-md'
+                      : isRecommended && categoryFilter !== 'recommended'
+                        ? 'border-primary/30 hover:shadow-md'
+                        : 'border-border hover:shadow-md'
                   }`}
                   onClick={() => togglePersona(persona.id)}
                 >
@@ -185,7 +295,7 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
                       className="mt-1 border-2"
                     />
                     <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h4 className="text-xl font-bold">{persona.name}</h4>
                         <Badge 
                           variant={persona.category === 'core' ? 'default' : 'secondary'} 
@@ -193,6 +303,12 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
                         >
                           {persona.category}
                         </Badge>
+                        {isRecommended && categoryFilter !== 'recommended' && (
+                          <Badge variant="outline" className="text-xs border-primary text-primary">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            recommended
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">{persona.role}</p>
                       <p className="text-xs text-muted-foreground italic">{persona.corePerspective}</p>

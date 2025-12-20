@@ -326,3 +326,61 @@ export const getRecommendedPersonas = (topicCategory: keyof typeof TOPIC_COMBINA
   const recommendedIds = TOPIC_COMBINATIONS[topicCategory] || [];
   return PERSONA_TEMPLATES.filter(p => recommendedIds.includes(p.id));
 };
+
+// Get recommended persona IDs for a topic category
+export const getRecommendedPersonaIds = (topicCategory: keyof typeof TOPIC_COMBINATIONS): string[] => {
+  return TOPIC_COMBINATIONS[topicCategory] || [];
+};
+
+// Detect topic category from topic text/category
+export const detectTopicCategory = (topicText: string, category?: string): keyof typeof TOPIC_COMBINATIONS | null => {
+  const text = `${topicText} ${category || ''}`.toLowerCase();
+  
+  // Technology & AI
+  if (text.match(/\b(ai|artificial intelligence|technology|tech|software|digital|cyber|machine learning|automation|robot|internet|data|algorithm)\b/)) {
+    return 'technology';
+  }
+  
+  // Business & Startup
+  if (text.match(/\b(business|startup|entrepreneur|market|economy|finance|investment|corporate|company|profit|revenue|stock|valuation)\b/)) {
+    return 'business';
+  }
+  
+  // Social & Ethical
+  if (text.match(/\b(social|society|ethics|moral|media|culture|rights|justice|equality|discrimination|privacy|regulation)\b/)) {
+    return 'social';
+  }
+  
+  // Education & Youth
+  if (text.match(/\b(education|school|university|student|learning|teaching|youth|skill|training|curriculum|exam)\b/)) {
+    return 'education';
+  }
+  
+  // Environmental & Sustainability
+  if (text.match(/\b(environment|climate|sustainability|green|pollution|energy|carbon|ecology|nature|conservation)\b/)) {
+    return 'environment';
+  }
+  
+  // Case Study / Problem-Solving
+  if (text.match(/\b(case|crisis|problem|solve|scenario|breach|backlash|decision|strategy|handling)\b/)) {
+    return 'case-study';
+  }
+  
+  // Abstract / Conceptual
+  if (text.match(/\b(innovation|failure|success|creativity|change|future|philosophy|concept|idea|abstract)\b/)) {
+    return 'abstract';
+  }
+  
+  return null;
+};
+
+// Get topic category display info
+export const TOPIC_CATEGORY_INFO: Record<keyof typeof TOPIC_COMBINATIONS, { label: string; description: string }> = {
+  'technology': { label: 'Technology & AI', description: 'Tech, AI, digital transformation topics' },
+  'business': { label: 'Business & Startup', description: 'Markets, finance, entrepreneurship topics' },
+  'social': { label: 'Social & Ethical', description: 'Society, ethics, media topics' },
+  'education': { label: 'Education & Youth', description: 'Learning, skills, youth topics' },
+  'environment': { label: 'Environmental', description: 'Climate, sustainability topics' },
+  'case-study': { label: 'Case Study', description: 'Crisis handling, problem-solving' },
+  'abstract': { label: 'Abstract', description: 'Conceptual, philosophical topics' },
+};
