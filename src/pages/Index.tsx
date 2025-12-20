@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, Users, BarChart3, Sparkles, LogOut, LayoutDashboard, Dumbbell, User, Settings as SettingsIcon } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { MessageSquare, Users, BarChart3, Sparkles, LogOut, LayoutDashboard, Dumbbell, User, Settings as SettingsIcon, Menu } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import TopicSelection from "@/components/TopicSelection";
 import SessionSetup from "@/components/SessionSetup";
@@ -18,6 +19,7 @@ const Index = () => {
   const [appState, setAppState] = useState<AppState>('home');
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleTopicSelected = (topic: any) => {
     setSelectedTopic(topic);
@@ -44,6 +46,18 @@ const Index = () => {
     navigate("/auth");
   };
 
+  const handleNavigation = (path: string) => {
+    setMobileMenuOpen(false);
+    navigate(path);
+  };
+
+  const navItems = [
+    { label: "DASHBOARD", icon: LayoutDashboard, path: "/dashboard" },
+    { label: "DRILLS", icon: Dumbbell, path: "/drills" },
+    { label: "PROFILE", icon: User, path: "/profile" },
+    { label: "SETTINGS", icon: SettingsIcon, path: "/settings" },
+  ];
+
   if (appState === 'topic-selection') {
     return <TopicSelection onTopicSelected={handleTopicSelected} onBack={() => setAppState('home')} />;
   }
@@ -66,48 +80,29 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b-4 border-border p-6">
+      <header className="border-b-4 border-border p-4 md:p-6">
         <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <MessageSquare className="w-10 h-10" />
+          <div className="flex items-center gap-2 md:gap-4">
+            <MessageSquare className="w-8 h-8 md:w-10 md:h-10" />
             <div>
-              <h1 className="text-4xl font-bold tracking-tight">GD CONDUCTOR</h1>
-              <p className="text-sm font-mono text-muted-foreground">AI-POWERED GROUP DISCUSSION PRACTICE</p>
+              <h1 className="text-2xl md:text-4xl font-bold tracking-tight">GD CONDUCTOR</h1>
+              <p className="text-xs md:text-sm font-mono text-muted-foreground hidden sm:block">AI-POWERED GROUP DISCUSSION PRACTICE</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/dashboard")}
-              className="border-2"
-            >
-              <LayoutDashboard className="w-4 h-4 mr-2" />
-              DASHBOARD
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/drills")}
-              className="border-2"
-            >
-              <Dumbbell className="w-4 h-4 mr-2" />
-              DRILLS
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/profile")}
-              className="border-2"
-            >
-              <User className="w-4 h-4 mr-2" />
-              PROFILE
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/settings")}
-              className="border-2"
-            >
-              <SettingsIcon className="w-4 h-4 mr-2" />
-              SETTINGS
-            </Button>
+
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex gap-2">
+            {navItems.map((item) => (
+              <Button 
+                key={item.path}
+                variant="outline" 
+                onClick={() => navigate(item.path)}
+                className="border-2"
+              >
+                <item.icon className="w-4 h-4 mr-2" />
+                {item.label}
+              </Button>
+            ))}
             <Button 
               variant="outline" 
               onClick={handleSignOut}
@@ -117,6 +112,41 @@ const Index = () => {
               SIGN OUT
             </Button>
           </div>
+
+          {/* Mobile Hamburger Menu */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild className="lg:hidden">
+              <Button variant="outline" size="icon" className="border-2">
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72 border-l-4 border-border">
+              <div className="flex flex-col gap-3 mt-8">
+                {navItems.map((item) => (
+                  <Button 
+                    key={item.path}
+                    variant="outline" 
+                    onClick={() => handleNavigation(item.path)}
+                    className="border-2 justify-start w-full"
+                  >
+                    <item.icon className="w-4 h-4 mr-2" />
+                    {item.label}
+                  </Button>
+                ))}
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="border-2 justify-start w-full"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  SIGN OUT
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
 
