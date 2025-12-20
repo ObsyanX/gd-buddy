@@ -184,10 +184,10 @@ const TopicSelection = ({ onTopicSelected, onBack }: TopicSelectionProps) => {
                     onClick={() => handleCategorySelect(category)}
                   >
                     <div className="flex flex-col items-center text-center h-full justify-between">
-                      <div className="p-3 rounded-lg bg-primary/10 text-primary mb-3">
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary mb-1">
                         {category.icon}
                       </div>
-                      <div className="flex-1 flex flex-col space-y-2">
+                      <div className="flex-1 flex flex-col space-y-1">
                         <h3 className="font-bold text-sm">{category.name}</h3>
                         <p className="text-xs text-muted-foreground line-clamp-2">{category.description}</p>
                         <div className="flex flex-wrap justify-center gap-1 mt-auto">
