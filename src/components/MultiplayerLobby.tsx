@@ -11,10 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
+import { PERSONA_TEMPLATES } from "@/config/personas";
+
 interface MultiplayerLobbyProps {
   onSessionJoined: (sessionId: string) => void;
   onBack: () => void;
 }
+
 const generateRoomCode = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
@@ -23,62 +26,7 @@ const generateRoomCode = () => {
   }
   return code;
 };
-const PERSONA_TEMPLATES = [{
-  id: 'analytical',
-  name: 'Aditya',
-  role: 'Data Analyst',
-  tone: 'analytical',
-  verbosity: 'moderate',
-  interrupt_level: 0.2,
-  agreeability: 0.1,
-  vocab_level: 'advanced',
-  description: 'Fact-driven, uses statistics',
-  voice_name: 'roger'
-}, {
-  id: 'diplomatic',
-  name: 'Priya',
-  role: 'HR Manager',
-  tone: 'diplomatic',
-  verbosity: 'moderate',
-  interrupt_level: 0.15,
-  agreeability: 0.5,
-  vocab_level: 'intermediate',
-  description: 'Seeks consensus, empathetic',
-  voice_name: 'sarah'
-}, {
-  id: 'assertive',
-  name: 'Rohan',
-  role: 'Business Lead',
-  tone: 'assertive',
-  verbosity: 'concise',
-  interrupt_level: 0.5,
-  agreeability: -0.2,
-  vocab_level: 'advanced',
-  description: 'Direct, confident, decisive',
-  voice_name: 'george'
-}, {
-  id: 'creative',
-  name: 'Meera',
-  role: 'Designer',
-  tone: 'enthusiastic',
-  verbosity: 'elaborate',
-  interrupt_level: 0.3,
-  agreeability: 0.3,
-  vocab_level: 'intermediate',
-  description: 'Innovative perspectives',
-  voice_name: 'aria'
-}, {
-  id: 'devil-advocate',
-  name: 'Vikram',
-  role: 'Legal Counsel',
-  tone: 'critical',
-  verbosity: 'moderate',
-  interrupt_level: 0.4,
-  agreeability: -0.4,
-  vocab_level: 'advanced',
-  description: 'Challenges ideas',
-  voice_name: 'daniel'
-}];
+
 const MultiplayerLobby = ({
   onSessionJoined,
   onBack
@@ -95,7 +43,7 @@ const MultiplayerLobby = ({
   const [generatedTopics, setGeneratedTopics] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
-  const [selectedPersonas, setSelectedPersonas] = useState<string[]>(['analytical', 'diplomatic']);
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>(['aditya', 'priya']);
   const {
     user
   } = useAuth();
@@ -407,8 +355,17 @@ const MultiplayerLobby = ({
                     <div className="flex items-start gap-3">
                       <Checkbox checked={isSelected} className="mt-1 border-2" />
                       <div className="flex-1 space-y-1">
-                        <h4 className="font-bold">{persona.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold">{persona.name}</h4>
+                          <Badge 
+                            variant={persona.category === 'core' ? 'default' : 'secondary'} 
+                            className="text-xs"
+                          >
+                            {persona.category}
+                          </Badge>
+                        </div>
                         <p className="text-xs text-muted-foreground">{persona.role}</p>
+                        <p className="text-xs text-muted-foreground italic">{persona.corePerspective}</p>
                         <p className="text-xs">{persona.description}</p>
                         <Badge variant="outline" className="text-xs">{persona.tone}</Badge>
                       </div>

@@ -7,6 +7,7 @@ import { ArrowLeft, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { PERSONA_TEMPLATES } from "@/config/personas";
 
 interface SessionSetupProps {
   topic: any;
@@ -14,131 +15,8 @@ interface SessionSetupProps {
   onBack: () => void;
 }
 
-const PERSONA_TEMPLATES = [
-  {
-    id: 'analytical',
-    name: 'Aditya',
-    role: 'Data Analyst',
-    tone: 'analytical',
-    verbosity: 'moderate',
-    interrupt_level: 0.2,
-    agreeability: 0.1,
-    vocab_level: 'advanced',
-    description: 'Fact-driven, uses statistics and logic',
-    voice_name: 'roger' // Male voice
-  },
-  {
-    id: 'diplomatic',
-    name: 'Priya',
-    role: 'HR Manager',
-    tone: 'diplomatic',
-    verbosity: 'moderate',
-    interrupt_level: 0.15,
-    agreeability: 0.5,
-    vocab_level: 'intermediate',
-    description: 'Seeks consensus, empathetic',
-    voice_name: 'sarah' // Female voice
-  },
-  {
-    id: 'assertive',
-    name: 'Rohan',
-    role: 'Business Lead',
-    tone: 'assertive',
-    verbosity: 'concise',
-    interrupt_level: 0.5,
-    agreeability: -0.2,
-    vocab_level: 'advanced',
-    description: 'Direct, confident, decisive',
-    voice_name: 'george' // Male voice
-  },
-  {
-    id: 'creative',
-    name: 'Meera',
-    role: 'Designer',
-    tone: 'enthusiastic',
-    verbosity: 'elaborate',
-    interrupt_level: 0.3,
-    agreeability: 0.3,
-    vocab_level: 'intermediate',
-    description: 'Innovative, brings unique perspectives',
-    voice_name: 'aria' // Female voice
-  },
-  {
-    id: 'devil-advocate',
-    name: 'Vikram',
-    role: 'Legal Counsel',
-    tone: 'critical',
-    verbosity: 'moderate',
-    interrupt_level: 0.4,
-    agreeability: -0.4,
-    vocab_level: 'advanced',
-    description: 'Challenges ideas, plays devil\'s advocate',
-    voice_name: 'daniel' // Male voice
-  },
-  {
-    id: 'technical',
-    name: 'Karthik',
-    role: 'Software Engineer',
-    tone: 'technical',
-    verbosity: 'concise',
-    interrupt_level: 0.25,
-    agreeability: 0,
-    vocab_level: 'advanced',
-    description: 'Technical focus, practical solutions',
-    voice_name: 'brian' // Male voice
-  },
-  {
-    id: 'strategic',
-    name: 'Ananya',
-    role: 'Strategy Consultant',
-    tone: 'strategic',
-    verbosity: 'moderate',
-    interrupt_level: 0.35,
-    agreeability: 0.2,
-    vocab_level: 'advanced',
-    description: 'Big-picture thinking, long-term vision',
-    voice_name: 'charlotte' // Female voice
-  },
-  {
-    id: 'supportive',
-    name: 'Rahul',
-    role: 'Team Lead',
-    tone: 'supportive',
-    verbosity: 'moderate',
-    interrupt_level: 0.1,
-    agreeability: 0.6,
-    vocab_level: 'intermediate',
-    description: 'Encourages participation, builds on ideas',
-    voice_name: 'callum' // Male voice
-  },
-  {
-    id: 'skeptical',
-    name: 'Neha',
-    role: 'Researcher',
-    tone: 'skeptical',
-    verbosity: 'elaborate',
-    interrupt_level: 0.3,
-    agreeability: -0.3,
-    vocab_level: 'advanced',
-    description: 'Questions assumptions, evidence-based',
-    voice_name: 'jessica' // Female voice
-  },
-  {
-    id: 'pragmatic',
-    name: 'Arjun',
-    role: 'Operations Manager',
-    tone: 'pragmatic',
-    verbosity: 'concise',
-    interrupt_level: 0.2,
-    agreeability: 0.1,
-    vocab_level: 'intermediate',
-    description: 'Focuses on feasibility and implementation',
-    voice_name: 'chris' // Male voice
-  }
-];
-
 const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) => {
-  const [selectedPersonas, setSelectedPersonas] = useState<string[]>(['analytical', 'diplomatic']);
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>(['aditya', 'priya']);
   const [isCreating, setIsCreating] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -307,10 +185,17 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
                       className="mt-1 border-2"
                     />
                     <div className="flex-1 space-y-2">
-                      <div>
+                      <div className="flex items-center gap-2">
                         <h4 className="text-xl font-bold">{persona.name}</h4>
-                        <p className="text-sm text-muted-foreground">{persona.role}</p>
+                        <Badge 
+                          variant={persona.category === 'core' ? 'default' : 'secondary'} 
+                          className="text-xs"
+                        >
+                          {persona.category}
+                        </Badge>
                       </div>
+                      <p className="text-sm text-muted-foreground">{persona.role}</p>
+                      <p className="text-xs text-muted-foreground italic">{persona.corePerspective}</p>
                       <p className="text-sm">{persona.description}</p>
                       <div className="flex gap-2 flex-wrap">
                         <Badge variant="outline" className="text-xs">
