@@ -190,7 +190,7 @@ const TopicSelection = ({
                 </div>
               </div>
 
-              {generatedTopics.length === 0 ? <Button onClick={handleGenerateTopics} disabled={isLoading} className="w-full border-2 font-bold gap-2" size="lg">
+              {generatedTopics.length === 0 ? <Button onClick={handleGenerateTopics} disabled={isLoading} className="w-full max-w-[90%] md:max-w-[80%] lg:max-w-[75%] mx-auto border-2 font-bold gap-2" size="lg">
                   {isLoading ? <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       GENERATING...
