@@ -176,28 +176,28 @@ const TopicSelection = ({ onTopicSelected, onBack }: TopicSelectionProps) => {
               <p className="text-sm text-muted-foreground font-medium">
                 Choose a category to generate discussion topics:
               </p>
-              <div className="grid gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
                 {TOPIC_CATEGORIES.map((category) => (
                   <Card
                     key={category.id}
-                    className="p-4 border-2 cursor-pointer hover:border-primary hover:bg-accent/50 transition-all"
+                    className="p-4 border-2 cursor-pointer hover:border-primary hover:bg-accent/50 transition-all w-full aspect-square flex flex-col"
                     onClick={() => handleCategorySelect(category)}
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <div className="flex flex-col items-center text-center h-full justify-between">
+                      <div className="p-3 rounded-lg bg-primary/10 text-primary mb-3">
                         {category.icon}
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <h3 className="font-bold">{category.name}</h3>
-                        <p className="text-sm text-muted-foreground">{category.description}</p>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {category.examples.slice(0, 2).map((example, idx) => (
-                            <span key={idx} className="text-xs bg-secondary px-2 py-0.5 rounded">
+                      <div className="flex-1 flex flex-col space-y-2">
+                        <h3 className="font-bold text-sm">{category.name}</h3>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{category.description}</p>
+                        <div className="flex flex-wrap justify-center gap-1 mt-auto">
+                          {category.examples.slice(0, 1).map((example, idx) => (
+                            <span key={idx} className="text-xs bg-secondary px-2 py-0.5 rounded line-clamp-1">
                               {example}
                             </span>
                           ))}
                         </div>
-                        <p className="text-xs text-primary/80 mt-1">✓ {category.tip}</p>
+                        <p className="text-xs text-primary/80">✓ {category.tip}</p>
                       </div>
                     </div>
                   </Card>
