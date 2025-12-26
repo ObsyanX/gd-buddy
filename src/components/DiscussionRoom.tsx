@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle, Loader2, Sparkles, SkipForward, Menu } from "lucide-react";
+import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle, Loader2, Sparkles, SkipForward, Menu, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
@@ -785,12 +785,12 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         </div>
       </header>
 
-      <div className="flex-1 container mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 overflow-hidden">
+      <div className="flex-1 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-3 sm:gap-4 p-2 sm:p-4 overflow-hidden">
         {/* Main Chat Area */}
-        <div className="lg:col-span-8 xl:col-span-9 space-y-4 min-w-0">
-          <Card className="border-4 border-border h-[calc(100vh-350px)] min-h-[400px] flex flex-col">
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
+        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-2 sm:gap-4 min-w-0 flex-1">
+          <Card className="border-2 sm:border-4 border-border flex-1 min-h-[200px] max-h-[calc(100vh-280px)] sm:max-h-[calc(100vh-320px)] lg:max-h-[calc(100vh-350px)] flex flex-col">
+            <ScrollArea className="flex-1 p-2 sm:p-4">
+              <div className="space-y-3 sm:space-y-4">
                 {messages.map((message, index) => {
                   // Determine if this message is from the current authenticated user
                   const messageParticipant = message.gd_participants;
@@ -821,37 +821,37 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                   return (
                     <div 
                       key={index}
-                      className={`flex gap-3 ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
+                      className={`flex gap-2 sm:gap-3 ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
                     >
                       {!isFromCurrentUser && (
-                        <div className={`w-8 h-8 rounded border-2 flex items-center justify-center flex-shrink-0 mt-1 ${isCurrentlySpeaking ? 'border-primary bg-primary/20 animate-pulse' : 'border-border'}`}>
+                        <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded border-2 flex items-center justify-center flex-shrink-0 mt-1 ${isCurrentlySpeaking ? 'border-primary bg-primary/20 animate-pulse' : 'border-border'}`}>
                           {isCurrentlySpeaking ? (
-                            <Volume2 className="w-4 h-4 text-primary animate-pulse" />
+                            <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 text-primary animate-pulse" />
                           ) : isAI ? (
-                            <Bot className="w-4 h-4" />
+                            <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
                           ) : (
-                            <User className="w-4 h-4" />
+                            <User className="w-3 h-3 sm:w-4 sm:h-4" />
                           )}
                         </div>
                       )}
-                      <div className={`max-w-[80%] space-y-1 ${isFromCurrentUser ? 'text-right' : ''}`}>
-                        <p className={`text-xs font-bold ${isCurrentlySpeaking ? 'text-primary' : 'text-muted-foreground'}`}>
+                      <div className={`max-w-[85%] sm:max-w-[80%] space-y-1 ${isFromCurrentUser ? 'text-right' : ''}`}>
+                        <p className={`text-[10px] sm:text-xs font-bold ${isCurrentlySpeaking ? 'text-primary' : 'text-muted-foreground'}`}>
                           {isFromCurrentUser ? 'You' : messageParticipant?.persona_name}
                           {isOtherHuman && <span className="ml-1 text-muted-foreground">(Player)</span>}
-                          {isCurrentlySpeaking && <span className="ml-2 animate-pulse">🔊 Speaking...</span>}
+                          {isCurrentlySpeaking && <span className="ml-2 animate-pulse">🔊</span>}
                         </p>
-                        <div className={`p-4 border-2 ${isFromCurrentUser ? 'bg-primary text-primary-foreground border-primary' : isCurrentlySpeaking ? 'bg-primary/10 border-primary' : 'bg-card border-border'}`}>
-                          <p className="text-sm">{message.text}</p>
+                        <div className={`p-2 sm:p-4 border-2 ${isFromCurrentUser ? 'bg-primary text-primary-foreground border-primary' : isCurrentlySpeaking ? 'bg-primary/10 border-primary' : 'bg-card border-border'}`}>
+                          <p className="text-xs sm:text-sm">{message.text}</p>
                         </div>
                         {message.intent && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-[10px] sm:text-xs">
                             {message.intent}
                           </Badge>
                         )}
                       </div>
                       {isFromCurrentUser && (
-                        <div className="w-8 h-8 rounded border-2 border-border flex items-center justify-center flex-shrink-0 mt-1">
-                          <User className="w-4 h-4" />
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded border-2 border-border flex items-center justify-center flex-shrink-0 mt-1">
+                          <User className="w-3 h-3 sm:w-4 sm:h-4" />
                         </div>
                       )}
                     </div>
@@ -867,9 +867,9 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
           {/* Waiting for Speech Indicator with Skip Button */}
           {isWaitingForSpeech && (
-            <div className="flex items-center justify-center gap-3 py-2 px-4 bg-muted/50 rounded-lg border border-border">
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Waiting for speech to complete...</span>
+            <div className="flex items-center justify-center gap-2 sm:gap-3 py-1.5 sm:py-2 px-3 sm:px-4 bg-muted/50 rounded-lg border border-border">
+              <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-muted-foreground" />
+              <span className="text-xs sm:text-sm text-muted-foreground">Waiting for speech...</span>
               <Button
                 variant="outline"
                 size="sm"
@@ -879,7 +879,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                     console.log('[AI Response Delay] Skipped by user');
                   }
                 }}
-                className="h-7 px-2 text-xs"
+                className="h-6 sm:h-7 px-2 text-[10px] sm:text-xs"
               >
                 <SkipForward className="w-3 h-3 mr-1" />
                 Skip
@@ -887,17 +887,17 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {/* AI Correction Indicator */}
             {isCorrecting && (
-              <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="font-mono text-xs sm:text-sm">Applying AI correction...</span>
+              <div className="flex items-center justify-center gap-2 py-1.5 sm:py-2 text-xs sm:text-sm text-muted-foreground">
+                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                <span className="font-mono text-[10px] sm:text-sm">Applying AI correction...</span>
               </div>
             )}
             
             {/* Input Area - Responsive */}
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
               <Input
                 placeholder={isListening ? "Speaking..." : "Type or use voice..."}
                 value={userInput}
@@ -907,17 +907,120 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                     handleSendMessage();
                   }
                 }}
-                className={`border-2 text-base sm:text-lg flex-1 ${isListening ? 'border-destructive bg-destructive/5' : ''}`}
+                className={`border-2 text-sm sm:text-base lg:text-lg flex-1 h-10 sm:h-11 ${isListening ? 'border-destructive bg-destructive/5' : ''}`}
                 disabled={isProcessing || isPracticing}
                 readOnly={isListening}
               />
-              <div className="flex gap-1.5 sm:gap-2 justify-end">
+              <div className="flex gap-1 sm:gap-1.5 lg:gap-2 justify-between sm:justify-end">
+                {/* Mobile metrics toggle */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="border-2 h-10 w-10 p-0 lg:hidden"
+                      title="View Metrics"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[300px] sm:w-[350px] overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>Session Metrics</SheetTitle>
+                    </SheetHeader>
+                    <div className="space-y-3 mt-4">
+                      {/* Live Feedback Card */}
+                      <Card className="p-3 border-2 border-border">
+                        <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+                          <Info className="w-4 h-4" />
+                          LIVE FEEDBACK
+                        </h3>
+                        {feedback ? (
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
+                                <p className="text-[10px] text-muted-foreground uppercase">Fluency</p>
+                                <p className="font-bold text-sm tabular-nums">{feedback.fluency_score || 0}<span className="text-[10px] text-muted-foreground">/100</span></p>
+                              </div>
+                              <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
+                                <p className="text-[10px] text-muted-foreground uppercase">WPM</p>
+                                <p className="font-bold text-sm tabular-nums">{Math.round(feedback.wpm || 0)}</p>
+                              </div>
+                              <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
+                                <p className="text-[10px] text-muted-foreground uppercase">Fillers</p>
+                                <p className="font-bold text-sm tabular-nums">{feedback.filler_count || 0}</p>
+                              </div>
+                            </div>
+                            {feedback.live_hint && (
+                              <div className="pt-2 border-t border-border">
+                                <p className="text-xs font-mono text-muted-foreground">{feedback.live_hint}</p>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
+                              <p className="text-[10px] text-muted-foreground uppercase">Fluency</p>
+                              <p className="font-bold text-sm text-muted-foreground">--</p>
+                            </div>
+                            <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
+                              <p className="text-[10px] text-muted-foreground uppercase">WPM</p>
+                              <p className="font-bold text-sm text-muted-foreground">--</p>
+                            </div>
+                            <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
+                              <p className="text-[10px] text-muted-foreground uppercase">Fillers</p>
+                              <p className="font-bold text-sm text-muted-foreground">--</p>
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+
+                      {/* Participants Card */}
+                      <Card className="p-3 border-2 border-border">
+                        <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          PARTICIPANTS
+                          <Badge variant="secondary" className="ml-auto text-xs">
+                            {participants.length}
+                          </Badge>
+                        </h3>
+                        <ParticipantPresence
+                          participants={participants}
+                          presenceState={presenceState}
+                          typingParticipants={typingParticipants}
+                          isMultiplayer={session?.is_multiplayer ?? false}
+                        />
+                      </Card>
+
+                      {/* Voice Metrics Panel */}
+                      <VoiceMetricsPanel
+                        isUserSpeaking={isListening && !isSpeaking}
+                        currentTranscript={userInput}
+                        sessionStartTime={session?.start_time ? new Date(session.start_time).getTime() : undefined}
+                      />
+
+                      {/* Video Monitor */}
+                      <VideoMonitor 
+                        isActive={true}
+                        sessionId={session?.id}
+                        isUserMicActive={isListening && !isSpeaking}
+                        onMetricsUpdate={handleVideoMetricsUpdate}
+                      />
+
+                      {/* Practice History */}
+                      <PracticeHistory 
+                        recordings={practiceHistory}
+                        onPlay={playHistoryRecording}
+                        onDelete={deleteHistoryRecording}
+                        currentlyPlaying={currentPlayingId}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
                 <Button
                   onClick={startPracticeRecording}
                   disabled={isProcessing || isListening || isPracticing}
                   variant="outline"
-                  className="border-2 sm:border-4 border-border h-10 w-10 sm:h-11 sm:w-auto p-0 sm:px-4"
-                  size="lg"
+                  className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
                   title="Practice Mode (Ctrl+M)"
                 >
                   <Mic className="w-4 h-4" />
@@ -926,8 +1029,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                   onClick={handleVoiceInput}
                   disabled={isProcessing || isPracticing || isCorrecting}
                   variant={isListening ? "destructive" : "outline"}
-                  className={`border-2 sm:border-4 border-border h-10 w-10 sm:h-11 sm:w-auto p-0 sm:px-4 ${isListening ? 'animate-pulse' : ''}`}
-                  size="lg"
+                  className={`border-2 h-10 w-10 p-0 sm:w-auto sm:px-3 ${isListening ? 'animate-pulse' : ''}`}
                   title="Voice Input - Real-time (Click to toggle)"
                 >
                   {isListening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -935,8 +1037,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                 <Button 
                   onClick={handleSendWithVoice}
                   disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting}
-                  className="border-2 sm:border-4 border-border h-10 w-10 sm:h-11 sm:w-auto p-0 sm:px-4"
-                  size="lg"
+                  className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
                   title={isListening ? "Stop & Send" : "Send (Ctrl+Enter)"}
                 >
                   {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -945,8 +1046,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                   onClick={() => handleSendMessageDirect("[Skipped turn]")}
                   disabled={isProcessing || isPracticing}
                   variant="outline"
-                  className="border-2 h-10 w-10 sm:h-11 sm:w-auto p-0 sm:px-4 hidden sm:flex"
-                  size="lg"
+                  className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3 hidden sm:flex"
                   title="Skip your turn"
                 >
                   <SkipForward className="w-4 h-4" />
@@ -959,8 +1059,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           </div>
         </div>
 
-        {/* Right Sidebar */}
-        <div className="lg:col-span-4 xl:col-span-3 space-y-3 overflow-y-auto max-h-[calc(100vh-180px)] pr-1">
+        {/* Right Sidebar - Desktop Only */}
+        <div className="hidden lg:block lg:col-span-4 xl:col-span-3 space-y-3 overflow-y-auto max-h-[calc(100vh-180px)] pr-1">
           {/* Live Feedback Card */}
           <Card className="p-4 border-4 border-border">
             <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
