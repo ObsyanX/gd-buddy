@@ -152,9 +152,10 @@ const CustomPersonaForm = ({ onPersonaCreated }: CustomPersonaFormProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="border-2 border-dashed border-primary/50 hover:border-primary">
-          <UserPlus className="w-4 h-4 mr-2" />
-          Create Custom AI
+        <Button variant="outline" className="border-2 border-dashed border-primary/50 hover:border-primary w-full sm:w-auto">
+          <UserPlus className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">Create Custom AI</span>
+          <span className="sm:hidden">Custom AI</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
