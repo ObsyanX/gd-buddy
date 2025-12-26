@@ -335,20 +335,20 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
 
         {/* Recommended Combination Panel */}
         {detectedCategory && (
-          <Card className="p-4 border-4 border-primary/30 bg-primary/5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Lightbulb className="w-5 h-5 text-primary" />
+          <Card className="p-3 sm:p-4 border-4 border-primary/30 bg-primary/5">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10 shrink-0">
+                  <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
-                <div>
-                  <h4 className="font-bold text-sm flex items-center gap-2">
-                    RECOMMENDED FOR {TOPIC_CATEGORY_INFO[detectedCategory].label.toUpperCase()}
-                    <Badge variant="secondary" className="text-xs">
+                <div className="min-w-0">
+                  <h4 className="font-bold text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <span className="truncate">RECOMMENDED FOR {TOPIC_CATEGORY_INFO[detectedCategory].label.toUpperCase()}</span>
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs w-fit">
                       {TOPIC_CATEGORY_INFO[detectedCategory].description}
                     </Badge>
                   </h4>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 line-clamp-2">
                     Optimal participants: {recommendedIds.map(id => {
                       const p = PERSONA_TEMPLATES.find(persona => persona.id === id);
                       return p?.name;
@@ -360,7 +360,7 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
                 variant="outline" 
                 size="sm" 
                 onClick={applyRecommendation}
-                className="border-2 shrink-0"
+                className="border-2 shrink-0 w-full sm:w-auto"
               >
                 <Sparkles className="w-4 h-4 mr-1" />
                 Apply
@@ -381,25 +381,29 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
               </p>
             </div>
 
-            <div className="flex gap-2 flex-wrap items-center">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
               {/* Create Custom AI Button */}
               {user && <CustomPersonaForm onPersonaCreated={fetchCustomPersonas} />}
 
               {/* Category Filter Tabs */}
-              <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
-                <TabsList className="border-2 border-border">
+              <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)} className="w-full sm:w-auto">
+                <TabsList className="border-2 border-border w-full sm:w-auto grid grid-cols-5 sm:flex h-auto">
                   {detectedCategory && (
-                    <TabsTrigger value="recommended" className="text-xs">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      Best
+                    <TabsTrigger value="recommended" className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5">
+                      <Sparkles className="w-3 h-3 sm:mr-1" />
+                      <span className="hidden sm:inline">Best</span>
                     </TabsTrigger>
                   )}
-                  <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
-                  <TabsTrigger value="core" className="text-xs">Core</TabsTrigger>
-                  <TabsTrigger value="extended" className="text-xs">Extended</TabsTrigger>
+                  <TabsTrigger value="all" className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5">All</TabsTrigger>
+                  <TabsTrigger value="core" className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5">Core</TabsTrigger>
+                  <TabsTrigger value="extended" className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5">
+                    <span className="sm:hidden">Ext</span>
+                    <span className="hidden sm:inline">Extended</span>
+                  </TabsTrigger>
                   {customPersonas.length > 0 && (
-                    <TabsTrigger value="custom" className="text-xs">
-                      Custom ({customPersonas.length})
+                    <TabsTrigger value="custom" className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5">
+                      <span className="sm:hidden">({customPersonas.length})</span>
+                      <span className="hidden sm:inline">Custom ({customPersonas.length})</span>
                     </TabsTrigger>
                   )}
                 </TabsList>
