@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Copy, Check, ArrowLeft, Loader2, Sparkles, Bot, Lightbulb, Trash2 } from "lucide-react";
+import { Users, Copy, Check, ArrowLeft, Loader2, Sparkles, Bot, Lightbulb, Trash2, FileText, Scale, Briefcase, Newspaper, MessageSquare, Heart, ChevronLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,74 @@ interface CustomPersona {
   voice_name: string;
 }
 
+interface Category {
+  id: string;
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+  examples: string[];
+  tip: string;
+}
+
+const TOPIC_CATEGORIES: Category[] = [
+  {
+    id: 'factual',
+    name: 'Factual Topics',
+    icon: FileText,
+    description: 'Data-driven, verifiable statements',
+    examples: ['Remote work increases productivity by 13%', 'India has the largest youth population'],
+    tip: 'Use statistics and research to support your points'
+  },
+  {
+    id: 'conceptual',
+    name: 'Conceptual/Abstract Topics',
+    icon: Lightbulb,
+    description: 'Ideas, theories, and philosophical concepts',
+    examples: ['Success means different things to different people', 'Is democracy the best form of governance?'],
+    tip: 'Define key terms and explore multiple perspectives'
+  },
+  {
+    id: 'controversial',
+    name: 'Controversial Topics',
+    icon: Scale,
+    description: 'Debatable issues with strong opinions on both sides',
+    examples: ['Should social media be regulated?', 'Is capitalism sustainable?'],
+    tip: 'Acknowledge opposing views before presenting your stance'
+  },
+  {
+    id: 'case-study',
+    name: 'Case Study-Based',
+    icon: Briefcase,
+    description: 'Real-world scenarios and problem-solving',
+    examples: ['How should a startup prioritize growth vs profitability?', 'Crisis management in organizations'],
+    tip: 'Apply frameworks and real examples to analyze situations'
+  },
+  {
+    id: 'current-affairs',
+    name: 'Current Affairs',
+    icon: Newspaper,
+    description: 'Recent news and trending topics',
+    examples: ['Impact of AI on job markets', 'Climate change policies'],
+    tip: 'Stay updated and connect events to broader themes'
+  },
+  {
+    id: 'opinion',
+    name: 'Opinion-Based',
+    icon: MessageSquare,
+    description: 'Personal views and preferences',
+    examples: ['What makes a great leader?', 'Work-life balance priorities'],
+    tip: 'Support opinions with reasoning and examples'
+  },
+  {
+    id: 'ethical',
+    name: 'Ethical Topics',
+    icon: Heart,
+    description: 'Moral dilemmas and value-based discussions',
+    examples: ['Is it ethical to use AI in hiring?', 'Privacy vs security trade-offs'],
+    tip: 'Consider stakeholder impacts and ethical frameworks'
+  }
+];
+
 const generateRoomCode = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
@@ -70,6 +138,7 @@ const MultiplayerLobby = ({
   const [selectedCustomPersonas, setSelectedCustomPersonas] = useState<string[]>([]);
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('recommended');
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -157,6 +226,14 @@ const MultiplayerLobby = ({
   const totalSelected = selectedPersonas.length + selectedCustomPersonas.length;
 
   const handleGenerateTopics = async () => {
+    if (!selectedCategory) {
+      toast({
+        title: "Select a category",
+        description: "Please select a topic category first",
+        variant: "destructive"
+      });
+      return;
+    }
     setIsGenerating(true);
     try {
       const {
@@ -167,7 +244,8 @@ const MultiplayerLobby = ({
           audience: 'engineering students',
           tone: 'formal',
           difficulty: 'medium',
-          count: 6
+          count: 6,
+          category: selectedCategory.id
         }
       });
       if (error) throw error;
@@ -689,33 +767,119 @@ const MultiplayerLobby = ({
             </TabsList>
 
             <TabsContent value="generate" className="space-y-6 mt-4">
-              {generatedTopics.length === 0 ? <Card className="p-12 border-4 border-border text-center space-y-4">
-                  <Sparkles className="w-16 h-16 mx-auto text-muted-foreground" />
-                  <h3 className="text-2xl font-bold">GENERATE TOPICS</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto">
-                    Let AI create engaging discussion topics for your multiplayer session
+              {!selectedCategory ? (
+                <div className="space-y-4">
+                  <p className="text-sm font-mono text-muted-foreground">
+                    Select a category to generate relevant topics
                   </p>
-                  <Button size="lg" onClick={handleGenerateTopics} disabled={isGenerating} className="border-4 border-border shadow-md text-center">
-                    {isGenerating ? <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        GENERATING...
-                      </> : <>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        GENERATE TOPICS
-                      </>}
-                  </Button>
-                </Card> : <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm font-mono text-muted-foreground">
-                      {generatedTopics.length} topics generated
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {TOPIC_CATEGORIES.map((category) => {
+                      const IconComponent = category.icon;
+                      return (
+                        <Card 
+                          key={category.id}
+                          className="p-4 border-4 border-border hover:border-primary hover:shadow-md transition-all cursor-pointer"
+                          onClick={() => setSelectedCategory(category)}
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded-lg bg-secondary">
+                                <IconComponent className="w-5 h-5" />
+                              </div>
+                              <h3 className="font-bold text-sm">{category.name}</h3>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {category.description}
+                            </p>
+                            <div className="space-y-1">
+                              <Badge variant="secondary" className="text-xs">
+                                {category.examples[0]}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground italic">
+                              💡 {category.tip}
+                            </p>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : generatedTopics.length === 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        setSelectedCategory(null);
+                        setGeneratedTopics([]);
+                      }}
+                      className="gap-1"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Change Category
+                    </Button>
+                    <Badge variant="secondary" className="gap-2">
+                      {(() => {
+                        const IconComponent = selectedCategory.icon;
+                        return <IconComponent className="w-3 h-3" />;
+                      })()}
+                      {selectedCategory.name}
+                    </Badge>
+                  </div>
+                  <Card className="p-12 border-4 border-border text-center space-y-4">
+                    <Sparkles className="w-16 h-16 mx-auto text-muted-foreground" />
+                    <h3 className="text-2xl font-bold">GENERATE {selectedCategory.name.toUpperCase()}</h3>
+                    <p className="text-muted-foreground max-w-md mx-auto">
+                      {selectedCategory.description}
                     </p>
+                    <Button size="lg" onClick={handleGenerateTopics} disabled={isGenerating} className="border-4 border-border shadow-md text-center">
+                      {isGenerating ? <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          GENERATING...
+                        </> : <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          GENERATE TOPICS
+                        </>}
+                    </Button>
+                  </Card>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          setSelectedCategory(null);
+                          setGeneratedTopics([]);
+                        }}
+                        className="gap-1"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        Change
+                      </Button>
+                      <Badge variant="secondary" className="gap-2">
+                        {(() => {
+                          const IconComponent = selectedCategory.icon;
+                          return <IconComponent className="w-3 h-3" />;
+                        })()}
+                        {selectedCategory.name}
+                      </Badge>
+                      <span className="text-sm font-mono text-muted-foreground">
+                        {generatedTopics.length} topics
+                      </span>
+                    </div>
                     <Button variant="outline" size="sm" onClick={handleGenerateTopics} disabled={isGenerating} className="border-2">
                       {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : "REGENERATE"}
                     </Button>
                   </div>
 
                   <div className="grid gap-4">
-                    {generatedTopics.map((topic, index) => <Card key={index} className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleTopicSelected(topic)}>
+                    {generatedTopics.map((topic, index) => (
+                      <Card key={index} className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleTopicSelected(topic)}>
                         <div className="space-y-3">
                           <div className="flex items-start justify-between gap-4">
                             <h3 className="text-xl font-bold flex-1">{topic.title}</h3>
@@ -728,9 +892,11 @@ const MultiplayerLobby = ({
                             {topic.tags?.slice(0, 3).map((tag: string, i: number) => <Badge key={i} variant="outline">{tag}</Badge>)}
                           </div>
                         </div>
-                      </Card>)}
+                      </Card>
+                    ))}
                   </div>
-                </div>}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="custom" className="space-y-4 mt-4">
