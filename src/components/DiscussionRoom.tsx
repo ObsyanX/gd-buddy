@@ -370,6 +370,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       if (messageError) throw messageError;
 
       setMessages(prev => [...prev, userMessage]);
+      processedMessagesRef.current.add(userMessage.id); // Prevent realtime handler from re-playing TTS
       setUserInput("");
       clearTranscription();
       
@@ -477,7 +478,10 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             .single();
 
           if (!aiMsgError && aiMsg) {
-            // Add message to UI first
+            // Mark as processed BEFORE adding to state to prevent realtime handler duplication
+            processedMessagesRef.current.add(aiMsg.id);
+            
+            // Add message to UI
             setMessages(prev => [...prev, aiMsg]);
             
             // Play TTS and wait for it to finish before next participant
