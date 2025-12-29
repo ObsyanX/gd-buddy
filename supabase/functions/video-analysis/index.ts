@@ -66,13 +66,6 @@ serve(async (req) => {
     // Use service role to update metrics
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if metrics exist for this session
-    const { data: existingMetrics } = await supabase
-      .from('gd_metrics')
-      .select('id')
-      .eq('session_id', payload.session_id)
-      .single();
-
     const metricsData = {
       session_id: payload.session_id,
       posture_score: payload.posture_score,
@@ -86,22 +79,32 @@ serve(async (req) => {
       updated_at: new Date().toISOString(),
     };
 
+    // Use upsert with session_id to prevent duplicate records
+    // First check if a record exists to determine if we need to include session_id in conflict resolution
+    const { data: existingMetrics } = await supabase
+      .from('gd_metrics')
+      .select('id')
+      .eq('session_id', payload.session_id)
+      .maybeSingle();
+
     let result;
     if (existingMetrics) {
-      // Update existing metrics
+      // Update existing record by ID
       result = await supabase
         .from('gd_metrics')
         .update(metricsData)
         .eq('id', existingMetrics.id)
         .select()
         .single();
+      console.log('Updated existing metrics record:', existingMetrics.id);
     } else {
-      // Insert new metrics
+      // Insert new record
       result = await supabase
         .from('gd_metrics')
         .insert(metricsData)
         .select()
         .single();
+      console.log('Created new metrics record');
     }
 
     if (result.error) {

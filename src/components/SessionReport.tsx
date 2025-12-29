@@ -30,6 +30,44 @@ const FILLER_WORDS = [
   'right', 'okay', 'yeah'
 ];
 
+// Utility function to clean streaming transcription artifacts (repeated phrases)
+const cleanStreamingArtifacts = (text: string): string => {
+  if (!text) return '';
+  
+  // Split into words and remove consecutive duplicates (streaming artifacts)
+  const words = text.split(/\s+/);
+  const cleaned: string[] = [];
+  
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const lastWord = cleaned[cleaned.length - 1];
+    
+    // Skip if this word is the same as the last word (immediate repeat)
+    if (lastWord && word.toLowerCase() === lastWord.toLowerCase()) {
+      continue;
+    }
+    
+    // Check for phrase repetition (e.g., "I am I am getting" -> "I am getting")
+    // Look back up to 5 words for repeated phrase patterns
+    let isRepeatedPhrase = false;
+    for (let lookback = 2; lookback <= 5 && lookback <= cleaned.length; lookback++) {
+      const recentPhrase = cleaned.slice(-lookback).join(' ').toLowerCase();
+      const upcomingWords = words.slice(i, i + lookback).join(' ').toLowerCase();
+      if (recentPhrase === upcomingWords && recentPhrase.length > 3) {
+        isRepeatedPhrase = true;
+        i += lookback - 1; // Skip the repeated phrase
+        break;
+      }
+    }
+    
+    if (!isRepeatedPhrase) {
+      cleaned.push(word);
+    }
+  }
+  
+  return cleaned.join(' ');
+};
+
 const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   const [session, setSession] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
@@ -73,14 +111,21 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       setSession(sessionData);
       setMessages(messagesData || []);
 
-      // Load video metrics if available
-      if (metricsData?.posture_score || metricsData?.eye_contact_score) {
+      // Load video metrics if available - only show if at least one score is non-zero
+      const hasValidVideoMetrics = 
+        (metricsData?.posture_score && metricsData.posture_score > 0) ||
+        (metricsData?.eye_contact_score && metricsData.eye_contact_score > 0) ||
+        (metricsData?.expression_score && metricsData.expression_score > 0);
+        
+      if (hasValidVideoMetrics) {
         setVideoMetrics({
-          postureScore: metricsData.posture_score,
-          eyeContactScore: metricsData.eye_contact_score,
-          expressionScore: metricsData.expression_score,
+          postureScore: metricsData.posture_score || 0,
+          eyeContactScore: metricsData.eye_contact_score || 0,
+          expressionScore: metricsData.expression_score || 0,
           tips: metricsData.video_tips || []
         });
+      } else {
+        setVideoMetrics(null); // Explicitly set null if no valid video data
       }
 
       // Calculate real metrics from session data
@@ -107,9 +152,10 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     const aiMessages = messagesData.filter(m => !m.gd_participants?.is_user);
     const totalMessages = messagesData.length;
     
-    // Calculate total words spoken by user
+    // Calculate total words spoken by user - clean streaming artifacts first
     const totalUserWords = userMessages.reduce((acc, m) => {
-      const words = m.text?.trim().split(/\s+/).filter(Boolean) || [];
+      const cleanedText = cleanStreamingArtifacts(m.text || '');
+      const words = cleanedText.trim().split(/\s+/).filter(Boolean);
       return acc + words.length;
     }, 0);
 
@@ -126,11 +172,13 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       sessionDurationMinutes = Math.max(1, (lastMsg - firstMsg) / (1000 * 60));
     }
 
-    // Calculate actual WPM
-    const actualWpm = Math.round(totalUserWords / sessionDurationMinutes);
+    // Calculate actual WPM - require minimum data for meaningful result
+    const actualWpm = sessionDurationMinutes >= 0.5 && totalUserWords >= 10 
+      ? Math.round(totalUserWords / sessionDurationMinutes)
+      : 0; // Return 0 if insufficient data
 
-    // Count actual filler words
-    const allUserText = userMessages.map(m => m.text?.toLowerCase() || '').join(' ');
+    // Count actual filler words - use cleaned text
+    const allUserText = userMessages.map(m => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
     let fillerCount = 0;
     FILLER_WORDS.forEach(filler => {
       const regex = new RegExp(`\\b${filler}\\b`, 'gi');
@@ -340,7 +388,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           return t >= bucketStart && t < bucketEnd;
         });
         
-        const userWords = userMsgs.reduce((acc, m) => acc + (m.text?.split(/\s+/).length || 0), 0);
+        const userWords = userMsgs.reduce((acc, m) => acc + (cleanStreamingArtifacts(m.text || '').split(/\s+/).filter(Boolean).length), 0);
         const aiWords = aiMsgs.reduce((acc, m) => acc + (m.text?.split(/\s+/).length || 0), 0);
         
         timelineData.push({
@@ -363,8 +411,8 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       { metric: 'Eye Contact', score: metricsData?.eye_contact_score || 0, fullMark: 100 },
     ];
 
-    // Filler words by type
-    const allUserText = userMessages.map(m => m.text?.toLowerCase() || '').join(' ');
+    // Filler words by type - use cleaned text
+    const allUserText = userMessages.map(m => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
     const fillersByType: any[] = [];
     FILLER_WORDS.forEach(filler => {
       const regex = new RegExp(`\\b${filler}\\b`, 'gi');
