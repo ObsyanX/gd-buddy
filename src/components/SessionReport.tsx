@@ -255,11 +255,15 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length 
       : 0;
 
-    // Calculate scores based on benchmarks (0-100)
-    const fluencyScore = calculateScore('wpm', actualWpm);
-    const contentScore = calculateContentScore(myMessages);
-    const structureScore = calculateStructureScore(myMessages, avgResponseLength);
-    const voiceScore = calculateVoiceScore(fillerRate, actualWpm);
+    // CRITICAL: Only calculate scores if we have real participant data
+    // Without messages or words, scores are meaningless and should be null
+    const hasRealData = myMessages.length > 0 && totalUserWords >= 10;
+    
+    // Calculate scores based on benchmarks (0-100) - only if we have data
+    const fluencyScore = hasRealData ? calculateScore('wpm', actualWpm) : null;
+    const contentScore = hasRealData ? calculateContentScore(myMessages) : null;
+    const structureScore = hasRealData ? calculateStructureScore(myMessages, avgResponseLength) : null;
+    const voiceScore = hasRealData ? calculateVoiceScore(fillerRate, actualWpm) : null;
 
     const calculatedMetrics = {
       fluency_score: fluencyScore,
@@ -269,18 +273,31 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       total_words: totalUserWords,
       filler_count: fillerCount,
       avg_pause_s: avgResponseTime,
-      words_per_min: actualWpm
+      words_per_min: actualWpm,
+      has_real_data: hasRealData,
+      data_source: hasRealData 
+        ? `Calculated from ${myMessages.length} messages, ${totalUserWords} words`
+        : 'Insufficient data - no participant contributions found'
     };
 
-    // Update metrics in database
-    supabase
-      .from('gd_metrics')
-      .upsert({ 
-        session_id: sessionId,
-        ...calculatedMetrics,
-        updated_at: new Date().toISOString()
-      })
-      .then(() => console.log('Metrics saved'));
+    // Only update metrics in database if we have real data
+    if (hasRealData) {
+      supabase
+        .from('gd_metrics')
+        .upsert({ 
+          session_id: sessionId,
+          fluency_score: fluencyScore,
+          content_score: contentScore,
+          structure_score: structureScore,
+          voice_score: voiceScore,
+          total_words: totalUserWords,
+          filler_count: fillerCount,
+          avg_pause_s: avgResponseTime,
+          words_per_min: actualWpm,
+          updated_at: new Date().toISOString()
+        })
+        .then(() => console.log('Metrics saved'));
+    }
 
     setMetrics(calculatedMetrics);
 
@@ -569,8 +586,17 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     );
   }
 
-  const avgScore = Math.round((metrics.fluency_score + metrics.content_score + metrics.structure_score + metrics.voice_score) / 4);
-  const wpmStatus = getBenchmarkComparison('wpm', metrics.words_per_min);
+  // Only calculate average if we have real data
+  const hasRealScores = metrics.has_real_data && 
+    metrics.fluency_score !== null && 
+    metrics.content_score !== null && 
+    metrics.structure_score !== null && 
+    metrics.voice_score !== null;
+  
+  const avgScore = hasRealScores 
+    ? Math.round((metrics.fluency_score + metrics.content_score + metrics.structure_score + metrics.voice_score) / 4)
+    : null;
+  const wpmStatus = metrics.words_per_min > 0 ? getBenchmarkComparison('wpm', metrics.words_per_min) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -608,41 +634,67 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       </header>
 
       <main className="container mx-auto py-8 px-6 max-w-5xl space-y-8">
-        {/* Overall Score */}
+        {/* Overall Score - Show N/A if no real data */}
         <Card className="p-8 border-4 border-border text-center space-y-4">
-          <div className="text-6xl font-bold">{avgScore}%</div>
-          <p className="text-2xl font-bold">YOUR PERFORMANCE</p>
-          <Progress value={avgScore} className="h-4 border-2 border-border" />
-          <p className="text-sm text-muted-foreground">
-            {session.is_multiplayer 
-              ? 'Your individual scores based on your contributions only'
-              : 'Based on fluency, content quality, structure, and delivery analysis'}
-          </p>
+          {hasRealScores ? (
+            <>
+              <div className="text-6xl font-bold">{avgScore}%</div>
+              <p className="text-2xl font-bold">YOUR PERFORMANCE</p>
+              <Progress value={avgScore || 0} className="h-4 border-2 border-border" />
+              <p className="text-sm text-muted-foreground">
+                {session.is_multiplayer 
+                  ? 'Your individual scores based on your contributions only'
+                  : 'Based on fluency, content quality, structure, and delivery analysis'}
+              </p>
+              <p className="text-xs text-muted-foreground font-mono">
+                Data source: {metrics.data_source}
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="text-6xl font-bold text-muted-foreground">N/A</div>
+              <p className="text-2xl font-bold">INSUFFICIENT DATA</p>
+              <p className="text-sm text-muted-foreground">
+                No participant contributions were recorded in this session.
+              </p>
+              <p className="text-xs text-destructive">
+                {metrics.data_source}
+              </p>
+            </>
+          )}
         </Card>
 
         {/* Score Breakdown & Key Metrics */}
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-6 border-4 border-border space-y-4">
             <h3 className="text-xl font-bold">SCORE BREAKDOWN</h3>
-            <div className="space-y-4">
-              {[
-                { label: 'Fluency', score: metrics.fluency_score, desc: 'Speaking pace & flow' },
-                { label: 'Content', score: metrics.content_score, desc: 'Substance & relevance' },
-                { label: 'Structure', score: metrics.structure_score, desc: 'Organization & clarity' },
-                { label: 'Voice', score: metrics.voice_score, desc: 'Delivery & filler usage' },
-              ].map(({ label, score, desc }) => (
-                <div key={label}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <div>
-                      <span className="font-bold">{label}</span>
-                      <span className="text-muted-foreground ml-2 text-xs">({desc})</span>
+            {hasRealScores ? (
+              <div className="space-y-4">
+                {[
+                  { label: 'Fluency', score: metrics.fluency_score, desc: 'Speaking pace & flow' },
+                  { label: 'Content', score: metrics.content_score, desc: 'Substance & relevance' },
+                  { label: 'Structure', score: metrics.structure_score, desc: 'Organization & clarity' },
+                  { label: 'Voice', score: metrics.voice_score, desc: 'Delivery & filler usage' },
+                ].map(({ label, score, desc }) => (
+                  <div key={label}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <div>
+                        <span className="font-bold">{label}</span>
+                        <span className="text-muted-foreground ml-2 text-xs">({desc})</span>
+                      </div>
+                      <span className="font-mono">{score}%</span>
                     </div>
-                    <span className="font-mono">{score}%</span>
+                    <Progress value={score || 0} className="h-2" />
                   </div>
-                  <Progress value={score} className="h-2" />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="font-bold text-lg">No Data Available</p>
+                <p className="text-sm mt-2">Scores require at least 10 words spoken</p>
+                <p className="text-xs mt-1">Your contributions: {metrics.total_words} words</p>
+              </div>
+            )}
           </Card>
 
           <Card className="p-6 border-4 border-border space-y-4">
@@ -654,10 +706,14 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                   Words Per Minute
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold font-mono">{metrics.words_per_min}</span>
-                  <Badge variant={wpmStatus.status === 'excellent' ? 'default' : wpmStatus.status === 'good' ? 'secondary' : 'destructive'} className="text-xs">
-                    {wpmStatus.label}
-                  </Badge>
+                  <span className="font-bold font-mono">
+                    {metrics.words_per_min > 0 ? metrics.words_per_min : 'N/A'}
+                  </span>
+                  {wpmStatus && (
+                    <Badge variant={wpmStatus.status === 'excellent' ? 'default' : wpmStatus.status === 'good' ? 'secondary' : 'destructive'} className="text-xs">
+                      {wpmStatus.label}
+                    </Badge>
+                  )}
                 </div>
               </div>
               <p className="text-xs text-muted-foreground pl-6">
@@ -679,7 +735,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="font-bold font-mono">{metrics.filler_count}</span>
-                  {calculatedStats && (
+                  {calculatedStats && metrics.total_words > 0 && (
                     <span className="text-xs text-muted-foreground">
                       ({(calculatedStats.fillerRate * 100).toFixed(1)}%)
                     </span>
@@ -695,10 +751,12 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                   <Clock className="w-4 h-4" />
                   Avg Response Time
                 </span>
-                <span className="font-bold font-mono">{metrics.avg_pause_s?.toFixed(1)}s</span>
+                <span className="font-bold font-mono">
+                  {calculatedStats?.userMessageCount > 0 ? `${metrics.avg_pause_s?.toFixed(1)}s` : 'N/A'}
+                </span>
               </div>
 
-              {calculatedStats && (
+              {calculatedStats && calculatedStats.userMessageCount > 0 && (
                 <>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Avg Words/Response</span>
@@ -785,71 +843,79 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           </Card>
         )}
 
-        {/* Performance Charts Section */}
-        <Card className="p-6 border-4 border-border space-y-6">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <BarChart3 className="w-6 h-6" />
-            PERFORMANCE ANALYTICS
-          </h3>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Performance Radar */}
-            <div className="space-y-2">
-              <h4 className="font-bold text-sm">Overall Performance</h4>
-              <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={chartData.performance}>
-                    <PolarGrid stroke="hsl(var(--border))" />
-                    <PolarAngleAxis 
-                      dataKey="metric" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                    />
-                    <PolarRadiusAxis 
-                      angle={30} 
-                      domain={[0, 100]} 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-                    />
-                    <Radar
-                      name="Score"
-                      dataKey="score"
-                      stroke="hsl(var(--primary))"
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.3}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Filler Words Chart */}
-            {chartData.fillersByType.length > 0 && (
+        {/* Performance Charts Section - Only show if we have real data */}
+        {hasRealScores && (
+          <Card className="p-6 border-4 border-border space-y-6">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <BarChart3 className="w-6 h-6" />
+              PERFORMANCE ANALYTICS
+            </h3>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Performance Radar */}
               <div className="space-y-2">
-                <h4 className="font-bold text-sm">Filler Words Breakdown</h4>
+                <h4 className="font-bold text-sm">Overall Performance</h4>
                 <div className="h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData.fillersByType} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                      <YAxis 
-                        dataKey="word" 
-                        type="category" 
-                        width={60}
+                    <RadarChart data={chartData.performance}>
+                      <PolarGrid stroke="hsl(var(--border))" />
+                      <PolarAngleAxis 
+                        dataKey="metric" 
                         tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                       />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '2px solid hsl(var(--border))',
-                          borderRadius: '4px'
-                        }}
+                      <PolarRadiusAxis 
+                        angle={30} 
+                        domain={[0, 100]} 
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                       />
-                      <Bar dataKey="count" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} />
-                    </BarChart>
+                      <Radar
+                        name="Score"
+                        dataKey="score"
+                        stroke="hsl(var(--primary))"
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.3}
+                      />
+                    </RadarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* Filler Words Chart */}
+              {chartData.fillersByType.length > 0 ? (
+                <div className="space-y-2">
+                  <h4 className="font-bold text-sm">Filler Words Breakdown</h4>
+                  <div className="h-[250px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData.fillersByType} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                        <YAxis 
+                          dataKey="word" 
+                          type="category" 
+                          width={60}
+                          tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '2px solid hsl(var(--border))',
+                            borderRadius: '4px'
+                          }}
+                        />
+                        <Bar dataKey="count" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <h4 className="font-bold text-sm">Filler Words Breakdown</h4>
+                  <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                    <p>No filler words detected - Great job!</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
           {/* Timeline Chart */}
           {chartData.timeline.length > 0 && (
@@ -923,40 +989,46 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
               </ResponsiveContainer>
             </div>
           </div>
-        </Card>
-
-        {/* Benchmark Comparison */}
-        <Card className="p-6 border-4 border-border space-y-4">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <Target className="w-6 h-6" />
-            BENCHMARK COMPARISON
-          </h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="p-4 border-2 border-border rounded">
-              <div className="text-2xl font-bold">{metrics.words_per_min}</div>
-              <div className="text-sm text-muted-foreground">Your WPM</div>
-              <div className="text-xs mt-2 p-2 bg-muted rounded">
-                Professional range: {BENCHMARKS.wpm.min}-{BENCHMARKS.wpm.max}
+          </Card>
+        )}
+        {/* Benchmark Comparison - Only show meaningful data */}
+        {calculatedStats?.userMessageCount > 0 && (
+          <Card className="p-6 border-4 border-border space-y-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <Target className="w-6 h-6" />
+              BENCHMARK COMPARISON
+            </h3>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="p-4 border-2 border-border rounded">
+                <div className="text-2xl font-bold">
+                  {metrics.words_per_min > 0 ? metrics.words_per_min : 'N/A'}
+                </div>
+                <div className="text-sm text-muted-foreground">Your WPM</div>
+                <div className="text-xs mt-2 p-2 bg-muted rounded">
+                  Professional range: {BENCHMARKS.wpm.min}-{BENCHMARKS.wpm.max}
+                </div>
+              </div>
+              <div className="p-4 border-2 border-border rounded">
+                <div className="text-2xl font-bold">
+                  {calculatedStats?.avgResponseLength > 0 ? calculatedStats.avgResponseLength : 'N/A'}
+                </div>
+                <div className="text-sm text-muted-foreground">Words/Response</div>
+                <div className="text-xs mt-2 p-2 bg-muted rounded">
+                  Target: {BENCHMARKS.avgResponseLength.min}-{BENCHMARKS.avgResponseLength.max}
+                </div>
+              </div>
+              <div className="p-4 border-2 border-border rounded">
+                <div className="text-2xl font-bold">
+                  {metrics.total_words > 0 ? `${(calculatedStats.fillerRate * 100).toFixed(1)}%` : 'N/A'}
+                </div>
+                <div className="text-sm text-muted-foreground">Filler Rate</div>
+                <div className="text-xs mt-2 p-2 bg-muted rounded">
+                  Target: &lt;{(BENCHMARKS.fillerRate.max * 100).toFixed(0)}%
+                </div>
               </div>
             </div>
-            <div className="p-4 border-2 border-border rounded">
-              <div className="text-2xl font-bold">{calculatedStats?.avgResponseLength || 0}</div>
-              <div className="text-sm text-muted-foreground">Words/Response</div>
-              <div className="text-xs mt-2 p-2 bg-muted rounded">
-                Target: {BENCHMARKS.avgResponseLength.min}-{BENCHMARKS.avgResponseLength.max}
-              </div>
-            </div>
-            <div className="p-4 border-2 border-border rounded">
-              <div className="text-2xl font-bold">
-                {calculatedStats ? (calculatedStats.fillerRate * 100).toFixed(1) : 0}%
-              </div>
-              <div className="text-sm text-muted-foreground">Filler Rate</div>
-              <div className="text-xs mt-2 p-2 bg-muted rounded">
-                Target: &lt;{(BENCHMARKS.fillerRate.max * 100).toFixed(0)}%
-              </div>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* AI-generated sections */}
         {isGeneratingReport && (
