@@ -70,6 +70,8 @@ const cleanStreamingArtifacts = (text: string): string => {
 
 const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   const [session, setSession] = useState<any>(null);
+  const [currentParticipant, setCurrentParticipant] = useState<any>(null);
+  const [allParticipants, setAllParticipants] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -90,11 +92,41 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
 
   const loadSessionData = async () => {
     try {
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Not authenticated",
+          description: "Please log in to view your report",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data: sessionData } = await supabase
         .from('gd_sessions')
         .select('*')
         .eq('id', sessionId)
         .single();
+
+      // Get all participants for this session
+      const { data: participantsData } = await supabase
+        .from('gd_participants')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('order_index');
+
+      setAllParticipants(participantsData || []);
+
+      // Find the current user's participant record
+      const myParticipant = participantsData?.find(p => p.real_user_id === user.id);
+      if (!myParticipant) {
+        // Fallback for solo mode or legacy sessions - find any human participant
+        const fallbackParticipant = participantsData?.find(p => p.is_user);
+        setCurrentParticipant(fallbackParticipant || null);
+      } else {
+        setCurrentParticipant(myParticipant);
+      }
 
       const { data: metricsData } = await supabase
         .from('gd_metrics')
@@ -125,15 +157,16 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           tips: metricsData.video_tips || []
         });
       } else {
-        setVideoMetrics(null); // Explicitly set null if no valid video data
+        setVideoMetrics(null);
       }
 
-      // Calculate real metrics from session data
-      const realMetrics = calculateRealMetrics(sessionData, messagesData || []);
+      // Calculate real metrics - pass participant ID for filtering
+      const participantId = myParticipant?.id || participantsData?.find(p => p.is_user)?.id;
+      const realMetrics = calculateRealMetrics(sessionData, messagesData || [], participantId, participantsData || []);
       setCalculatedStats(realMetrics);
       
       // Generate chart data
-      generateChartData(messagesData || [], realMetrics, metricsData);
+      generateChartData(messagesData || [], realMetrics, metricsData, participantId);
       
       // Generate detailed report with real data
       generateDetailedReport(sessionData, messagesData || [], realMetrics);
@@ -147,13 +180,19 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     }
   };
 
-  const calculateRealMetrics = (sessionData: any, messagesData: any[]) => {
-    const userMessages = messagesData.filter(m => m.gd_participants?.is_user);
+  const calculateRealMetrics = (sessionData: any, messagesData: any[], currentParticipantId?: string, allParticipants?: any[]) => {
+    // In multiplayer, filter to only THIS participant's messages
+    // In solo mode or if no participant ID, fall back to all human messages
+    const myMessages = currentParticipantId 
+      ? messagesData.filter(m => m.participant_id === currentParticipantId)
+      : messagesData.filter(m => m.gd_participants?.is_user);
+    
     const aiMessages = messagesData.filter(m => !m.gd_participants?.is_user);
     const totalMessages = messagesData.length;
+    const humanParticipantCount = allParticipants?.filter(p => p.is_user).length || 1;
     
-    // Calculate total words spoken by user - clean streaming artifacts first
-    const totalUserWords = userMessages.reduce((acc, m) => {
+    // Calculate total words spoken by THIS participant only - clean streaming artifacts
+    const totalUserWords = myMessages.reduce((acc, m) => {
       const cleanedText = cleanStreamingArtifacts(m.text || '');
       const words = cleanedText.trim().split(/\s+/).filter(Boolean);
       return acc + words.length;
@@ -177,32 +216,33 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       ? Math.round(totalUserWords / sessionDurationMinutes)
       : 0; // Return 0 if insufficient data
 
-    // Count actual filler words - use cleaned text
-    const allUserText = userMessages.map(m => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
+    // Count actual filler words - use cleaned text from THIS participant only
+    const allMyText = myMessages.map(m => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
     let fillerCount = 0;
     FILLER_WORDS.forEach(filler => {
       const regex = new RegExp(`\\b${filler}\\b`, 'gi');
-      const matches = allUserText.match(regex);
+      const matches = allMyText.match(regex);
       fillerCount += matches ? matches.length : 0;
     });
     const fillerRate = totalUserWords > 0 ? fillerCount / totalUserWords : 0;
 
-    // Calculate average response length
-    const avgResponseLength = userMessages.length > 0 
-      ? Math.round(totalUserWords / userMessages.length) 
+    // Calculate average response length for THIS participant
+    const avgResponseLength = myMessages.length > 0 
+      ? Math.round(totalUserWords / myMessages.length) 
       : 0;
 
-    // Calculate participation rate
+    // Calculate participation rate for THIS participant
     const participationRate = totalMessages > 0 
-      ? userMessages.length / totalMessages 
+      ? myMessages.length / totalMessages 
       : 0;
 
-    // Calculate response times (time between AI message and user response)
+    // Calculate response times for THIS participant (time between AI message and their response)
     const responseTimes: number[] = [];
     for (let i = 1; i < messagesData.length; i++) {
       const current = messagesData[i];
       const previous = messagesData[i - 1];
-      if (current.gd_participants?.is_user && !previous.gd_participants?.is_user) {
+      // Only count if current message is from THIS participant and previous was AI
+      if (current.participant_id === currentParticipantId && !previous.gd_participants?.is_user) {
         const prevTime = new Date(previous.end_ts || previous.start_ts).getTime();
         const currTime = new Date(current.start_ts).getTime();
         const responseTime = (currTime - prevTime) / 1000;
@@ -217,8 +257,8 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
 
     // Calculate scores based on benchmarks (0-100)
     const fluencyScore = calculateScore('wpm', actualWpm);
-    const contentScore = calculateContentScore(userMessages);
-    const structureScore = calculateStructureScore(userMessages, avgResponseLength);
+    const contentScore = calculateContentScore(myMessages);
+    const structureScore = calculateStructureScore(myMessages, avgResponseLength);
     const voiceScore = calculateVoiceScore(fillerRate, actualWpm);
 
     const calculatedMetrics = {
@@ -247,13 +287,14 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     return {
       ...calculatedMetrics,
       sessionDurationMinutes,
-      userMessageCount: userMessages.length,
+      userMessageCount: myMessages.length,
       totalMessageCount: totalMessages,
+      humanParticipantCount,
       participationRate,
       avgResponseLength,
       avgResponseTime,
       fillerRate,
-      uniqueWords: new Set(allUserText.split(/\s+/).filter(Boolean)).size,
+      uniqueWords: new Set(allMyText.split(/\s+/).filter(Boolean)).size,
     };
   };
 
@@ -361,9 +402,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     return Math.min(100, Math.max(30, score));
   };
 
-  const generateChartData = (messagesData: any[], realMetrics: any, metricsData: any) => {
-    // Timeline data - message distribution over time
-    const userMessages = messagesData.filter(m => m.gd_participants?.is_user);
+  const generateChartData = (messagesData: any[], realMetrics: any, metricsData: any, currentParticipantId?: string) => {
+    // Timeline data - filter to THIS participant's messages for user data
+    const myMessages = currentParticipantId 
+      ? messagesData.filter(m => m.participant_id === currentParticipantId)
+      : messagesData.filter(m => m.gd_participants?.is_user);
     const aiMessages = messagesData.filter(m => !m.gd_participants?.is_user);
     
     // Create timeline buckets
@@ -379,7 +422,8 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         const bucketStart = firstTime + (i * bucketSize);
         const bucketEnd = bucketStart + bucketSize;
         
-        const userMsgs = userMessages.filter(m => {
+        // Only count THIS participant's messages as "user" words
+        const myMsgs = myMessages.filter(m => {
           const t = new Date(m.start_ts).getTime();
           return t >= bucketStart && t < bucketEnd;
         });
@@ -388,14 +432,14 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           return t >= bucketStart && t < bucketEnd;
         });
         
-        const userWords = userMsgs.reduce((acc, m) => acc + (cleanStreamingArtifacts(m.text || '').split(/\s+/).filter(Boolean).length), 0);
+        const userWords = myMsgs.reduce((acc, m) => acc + (cleanStreamingArtifacts(m.text || '').split(/\s+/).filter(Boolean).length), 0);
         const aiWords = aiMsgs.reduce((acc, m) => acc + (m.text?.split(/\s+/).length || 0), 0);
         
         timelineData.push({
           time: `${i + 1}`,
           userWords,
           aiWords,
-          userMessages: userMsgs.length,
+          userMessages: myMsgs.length,
           aiMessages: aiMsgs.length,
         });
       }
@@ -411,12 +455,12 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       { metric: 'Eye Contact', score: metricsData?.eye_contact_score || 0, fullMark: 100 },
     ];
 
-    // Filler words by type - use cleaned text
-    const allUserText = userMessages.map(m => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
+    // Filler words by type - use THIS participant's text only
+    const allMyText = myMessages.map(m => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
     const fillersByType: any[] = [];
     FILLER_WORDS.forEach(filler => {
       const regex = new RegExp(`\\b${filler}\\b`, 'gi');
-      const matches = allUserText.match(regex);
+      const matches = allMyText.match(regex);
       if (matches && matches.length > 0) {
         fillersByType.push({ word: filler, count: matches.length });
       }
@@ -532,13 +576,34 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     <div className="min-h-screen bg-background">
       <header className="border-b-4 border-border p-6">
         <div className="container mx-auto">
-          <h1 className="text-4xl font-bold">SESSION REPORT</h1>
-          <p className="text-muted-foreground font-mono">{session.topic}</p>
-          {calculatedStats && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Duration: {calculatedStats.sessionDurationMinutes.toFixed(1)} min • {calculatedStats.userMessageCount} contributions
-            </p>
-          )}
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-4xl font-bold">
+                {session.is_multiplayer ? 'YOUR SESSION REPORT' : 'SESSION REPORT'}
+              </h1>
+              <p className="text-muted-foreground font-mono">{session.topic}</p>
+              {calculatedStats && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Duration: {calculatedStats.sessionDurationMinutes.toFixed(1)} min • {calculatedStats.userMessageCount} contributions
+                </p>
+              )}
+            </div>
+            <div className="text-right">
+              <Badge variant={session.is_multiplayer ? 'default' : 'secondary'} className="mb-2">
+                {session.is_multiplayer ? 'Multiplayer' : 'Solo'}
+              </Badge>
+              {currentParticipant && (
+                <p className="text-sm text-muted-foreground">
+                  Participant: <span className="font-mono">{currentParticipant.persona_name}</span>
+                </p>
+              )}
+              {session.is_multiplayer && calculatedStats?.humanParticipantCount > 1 && (
+                <p className="text-xs text-muted-foreground">
+                  {calculatedStats.humanParticipantCount} human participants in session
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
@@ -546,10 +611,12 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         {/* Overall Score */}
         <Card className="p-8 border-4 border-border text-center space-y-4">
           <div className="text-6xl font-bold">{avgScore}%</div>
-          <p className="text-2xl font-bold">OVERALL PERFORMANCE</p>
+          <p className="text-2xl font-bold">YOUR PERFORMANCE</p>
           <Progress value={avgScore} className="h-4 border-2 border-border" />
           <p className="text-sm text-muted-foreground">
-            Based on fluency, content quality, structure, and delivery analysis
+            {session.is_multiplayer 
+              ? 'Your individual scores based on your contributions only'
+              : 'Based on fluency, content quality, structure, and delivery analysis'}
           </p>
         </Card>
 
