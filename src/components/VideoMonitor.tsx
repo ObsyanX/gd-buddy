@@ -3,16 +3,17 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Camera, Eye, User, X, Loader2, Mic, Volume2 } from 'lucide-react';
+import { Camera, Eye, User, X, Loader2, Mic, Volume2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAudioAnalysis, AudioMetrics } from '@/hooks/useAudioAnalysis';
 import { supabase } from '@/integrations/supabase/client';
-import * as faceapi from 'face-api.js';
+import { getMediaPipeClient, destroyMediaPipeClient, LandmarkData } from '@/lib/mediapipe-client';
+import { getAnalyzeFrameClient, resetAnalyzeFrameClient, FrameResponse, AnalysisMetrics } from '@/lib/analyze-frame-client';
 
 interface VideoMonitorProps {
   isActive: boolean;
   sessionId?: string;
-  isUserMicActive?: boolean; // Track if user mic is active (not AI speaking)
+  isUserMicActive?: boolean;
   onMetricsUpdate?: (metrics: VideoMetrics) => void;
   onAudioMetricsUpdate?: (metrics: AudioMetrics) => void;
 }
@@ -27,6 +28,13 @@ export interface VideoMetrics {
   overallScore: number;
   tips: string[];
   faceDetected: boolean;
+  // New metrics from backend
+  attentionPercent: number | null;
+  headMovement: number | null;
+  shoulderTilt: number | null;
+  handActivity: number | null;
+  handsDetected: number;
+  frameConfidence: number;
 }
 
 export interface AccumulatedVideoMetrics {
@@ -38,13 +46,10 @@ export interface AccumulatedVideoMetrics {
   facesDetected: number;
 }
 
-const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
-
 const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsUpdate, onAudioMetricsUpdate }: VideoMonitorProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const animationRef = useRef<number | null>(null);
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveMetricsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isCameraOnRef = useRef(false);
@@ -56,6 +61,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [isInitializingCamera, setIsInitializingCamera] = useState(false);
   const [showFaceMesh, setShowFaceMesh] = useState(true);
+  const [backendError, setBackendError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<VideoMetrics>({
     posture: 'good',
     postureScore: 0,
@@ -65,7 +71,13 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     expressionScore: 0,
     overallScore: 0,
     tips: [],
-    faceDetected: false
+    faceDetected: false,
+    attentionPercent: null,
+    headMovement: null,
+    shoulderTilt: null,
+    handActivity: null,
+    handsDetected: 0,
+    frameConfidence: 0
   });
   const [isMinimized, setIsMinimized] = useState(false);
   
@@ -81,21 +93,11 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     onMetricsUpdate: onAudioMetricsUpdate,
   });
   
-  // Keep ref in sync with state
   useEffect(() => {
     isCameraOnRef.current = isCameraOn;
   }, [isCameraOn]);
   
   const { toast } = useToast();
-
-  const faceHistoryRef = useRef<{
-    centerX: number;
-    centerY: number;
-    width: number;
-    height: number;
-    jawAngle: number;
-    eyeOpenRatio: number;
-  }[]>([]);
 
   const accumulatedRef = useRef<AccumulatedVideoMetrics>({
     postureScores: [],
@@ -111,17 +113,14 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     
     setIsLoadingModels(true);
     try {
-      console.log('Loading face-api models from:', MODEL_URL);
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
-      ]);
+      console.log('Initializing MediaPipe models...');
+      const mediapipe = getMediaPipeClient();
+      await mediapipe.initialize();
       setModelsLoaded(true);
-      console.log('Face-api models loaded successfully');
+      console.log('MediaPipe models loaded successfully');
       return true;
     } catch (error) {
-      console.error('Error loading face-api models:', error);
+      console.error('Error loading MediaPipe models:', error);
       toast({
         title: "Model loading failed",
         description: "Could not load face detection models. Please try again.",
@@ -136,6 +135,10 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   const startCamera = async () => {
     setIsInitializingCamera(true);
     setIsVideoReady(false);
+    setBackendError(null);
+    
+    // Reset the analyze frame client for new session
+    resetAnalyzeFrameClient();
     
     try {
       const modelsReady = await loadModels();
@@ -151,21 +154,16 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
           height: { ideal: 480 },
           facingMode: 'user'
         },
-        audio: true // Also request audio for analysis
+        audio: true
       });
       
       streamRef.current = stream;
       
       if (videoRef.current) {
         const video = videoRef.current;
-        
-        // Clear any previous source
         video.srcObject = null;
-        
-        // Set new stream (only video track for display, audio muted in video element)
         video.srcObject = stream;
         
-        // Wait for video to be ready to play
         await new Promise<void>((resolve, reject) => {
           const handleCanPlay = () => {
             console.log('Video can play, dimensions:', video.videoWidth, video.videoHeight);
@@ -184,12 +182,10 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
           video.addEventListener('canplay', handleCanPlay);
           video.addEventListener('error', handleError);
           
-          // Try to play
           video.play().catch(err => {
             console.log('Initial play attempt failed, waiting for canplay event:', err);
           });
           
-          // Timeout fallback
           setTimeout(() => {
             video.removeEventListener('canplay', handleCanPlay);
             video.removeEventListener('error', handleError);
@@ -200,7 +196,6 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
           }, 3000);
         });
         
-        // Ensure video is playing
         if (video.paused) {
           await video.play();
         }
@@ -209,10 +204,8 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         setIsVideoReady(true);
       }
       
-      // Start audio analysis with the same stream
       startAudioAnalysis(stream);
       
-      // Set ref immediately (before state) to avoid race condition with analyzeFrame
       isCameraOnRef.current = true;
       setIsCameraOn(true);
       setHasPermission(true);
@@ -223,7 +216,6 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         description: "Face detection and audio analysis active",
       });
       
-      // Start analysis after video is ready
       setTimeout(startAnalysis, 300);
     } catch (error: any) {
       console.error('Camera access error:', error);
@@ -239,13 +231,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   };
 
   const stopCamera = () => {
-    // Set ref immediately to stop any running analysis loops
     isCameraOnRef.current = false;
-    
-    // Stop audio analysis
     stopAudioAnalysis();
     
-    // Save final metrics before stopping
     if (sessionId) {
       saveMetricsToDatabase();
     }
@@ -257,123 +245,167 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
     if (analysisTimeoutRef.current) {
       clearTimeout(analysisTimeoutRef.current);
       analysisTimeoutRef.current = null;
     }
+    
+    // Cleanup MediaPipe
+    destroyMediaPipeClient();
+    setModelsLoaded(false);
+    
     setIsCameraOn(false);
     setIsVideoReady(false);
   };
 
-  const drawFaceMesh = useCallback((
+  const drawLandmarks = useCallback((
     ctx: CanvasRenderingContext2D,
-    detection: faceapi.WithFaceExpressions<faceapi.WithFaceLandmarks<{ detection: faceapi.FaceDetection }, faceapi.FaceLandmarks68>>,
-    canvasWidth: number
+    landmarks: LandmarkData,
+    canvasWidth: number,
+    canvasHeight: number
   ) => {
-    const landmarks = detection.landmarks;
-    const positions = landmarks.positions;
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     
-    // Draw all 68 facial landmarks with mesh lines
-    ctx.strokeStyle = 'rgba(34, 197, 94, 0.6)';
-    ctx.fillStyle = 'rgba(34, 197, 94, 0.8)';
-    ctx.lineWidth = 1;
+    if (!showFaceMesh) return;
+    
+    // Draw face landmarks
+    if (landmarks.face && landmarks.face.landmarks.length > 0) {
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.6)';
+      ctx.strokeStyle = 'rgba(34, 197, 94, 0.8)';
+      ctx.lineWidth = 1;
+      
+      // Draw key landmarks only (not all 468 for performance)
+      const keyIndices = [
+        1, 33, 133, 263, 362, // Eyes and nose
+        61, 291, 13, 14, // Mouth
+        234, 454, 152, 10 // Face outline
+      ];
+      
+      for (const idx of keyIndices) {
+        if (idx < landmarks.face.landmarks.length) {
+          const point = landmarks.face.landmarks[idx];
+          const x = canvasWidth - (point[0] * canvasWidth); // Mirror
+          const y = point[1] * canvasHeight;
+          
+          ctx.beginPath();
+          ctx.arc(x, y, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      
+      // Draw face bounding box estimate
+      const xs = landmarks.face.landmarks.map(p => p[0]);
+      const ys = landmarks.face.landmarks.map(p => p[1]);
+      const minX = Math.min(...xs) * canvasWidth;
+      const maxX = Math.max(...xs) * canvasWidth;
+      const minY = Math.min(...ys) * canvasHeight;
+      const maxY = Math.max(...ys) * canvasHeight;
+      
+      ctx.strokeStyle = 'rgba(34, 197, 94, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        canvasWidth - maxX,
+        minY,
+        maxX - minX,
+        maxY - minY
+      );
+    }
+    
+    // Draw hand landmarks
+    if (landmarks.hands && landmarks.hands.length > 0) {
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.6)';
+      
+      for (const hand of landmarks.hands) {
+        for (const point of hand.landmarks) {
+          const x = canvasWidth - (point[0] * canvasWidth);
+          const y = point[1] * canvasHeight;
+          
+          ctx.beginPath();
+          ctx.arc(x, y, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+  }, [showFaceMesh]);
 
-    // Draw face outline (jawline)
-    const jawline = landmarks.getJawOutline();
-    ctx.beginPath();
-    jawline.forEach((point, i) => {
-      const x = canvasWidth - point.x;
-      if (i === 0) ctx.moveTo(x, point.y);
-      else ctx.lineTo(x, point.y);
-    });
-    ctx.stroke();
-
-    // Draw nose
-    const nose = landmarks.getNose();
-    ctx.beginPath();
-    nose.forEach((point, i) => {
-      const x = canvasWidth - point.x;
-      if (i === 0) ctx.moveTo(x, point.y);
-      else ctx.lineTo(x, point.y);
-    });
-    ctx.stroke();
-
-    // Draw left eye outline
-    const leftEye = landmarks.getLeftEye();
-    ctx.beginPath();
-    leftEye.forEach((point, i) => {
-      const x = canvasWidth - point.x;
-      if (i === 0) ctx.moveTo(x, point.y);
-      else ctx.lineTo(x, point.y);
-    });
-    ctx.closePath();
-    ctx.stroke();
-
-    // Draw right eye outline  
-    const rightEye = landmarks.getRightEye();
-    ctx.beginPath();
-    rightEye.forEach((point, i) => {
-      const x = canvasWidth - point.x;
-      if (i === 0) ctx.moveTo(x, point.y);
-      else ctx.lineTo(x, point.y);
-    });
-    ctx.closePath();
-    ctx.stroke();
-
-    // Draw left eyebrow
-    const leftBrow = landmarks.getLeftEyeBrow();
-    ctx.beginPath();
-    leftBrow.forEach((point, i) => {
-      const x = canvasWidth - point.x;
-      if (i === 0) ctx.moveTo(x, point.y);
-      else ctx.lineTo(x, point.y);
-    });
-    ctx.stroke();
-
-    // Draw right eyebrow
-    const rightBrow = landmarks.getRightEyeBrow();
-    ctx.beginPath();
-    rightBrow.forEach((point, i) => {
-      const x = canvasWidth - point.x;
-      if (i === 0) ctx.moveTo(x, point.y);
-      else ctx.lineTo(x, point.y);
-    });
-    ctx.stroke();
-
-    // Draw mouth outline
-    const mouth = landmarks.getMouth();
-    ctx.beginPath();
-    mouth.forEach((point, i) => {
-      const x = canvasWidth - point.x;
-      if (i === 0) ctx.moveTo(x, point.y);
-      else ctx.lineTo(x, point.y);
-    });
-    ctx.closePath();
-    ctx.stroke();
-
-    // Draw all landmark points
-    positions.forEach(point => {
-      const x = canvasWidth - point.x;
-      ctx.beginPath();
-      ctx.arc(x, point.y, 2, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    // Draw bounding box
-    const box = detection.detection.box;
-    ctx.strokeStyle = 'rgba(34, 197, 94, 0.8)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(canvasWidth - box.x - box.width, box.y, box.width, box.height);
-  }, []);
+  const convertBackendMetrics = (response: FrameResponse): VideoMetrics => {
+    const backendMetrics = response.metrics;
+    
+    if (!backendMetrics) {
+      return {
+        posture: 'poor',
+        postureScore: 0,
+        eyeContact: 'avoiding',
+        eyeContactScore: 0,
+        facialExpression: 'nervous',
+        expressionScore: 0,
+        overallScore: 0,
+        tips: ['Face not detected - ensure you are visible in frame'],
+        faceDetected: false,
+        attentionPercent: null,
+        headMovement: null,
+        shoulderTilt: null,
+        handActivity: null,
+        handsDetected: 0,
+        frameConfidence: response.frame_confidence
+      };
+    }
+    
+    const postureScore = backendMetrics.posture_score ?? 0;
+    const eyeContactScore = backendMetrics.eye_contact_score ?? 0;
+    const expressionScore = backendMetrics.expression_score ?? 0;
+    
+    // Derive categorical values from scores
+    const posture: 'good' | 'needs_improvement' | 'poor' = 
+      postureScore >= 70 ? 'good' : postureScore >= 50 ? 'needs_improvement' : 'poor';
+    const eyeContact: 'maintained' | 'occasional' | 'avoiding' = 
+      eyeContactScore >= 70 ? 'maintained' : eyeContactScore >= 50 ? 'occasional' : 'avoiding';
+    const facialExpression: 'confident' | 'neutral' | 'nervous' = 
+      expressionScore >= 70 ? 'confident' : expressionScore >= 50 ? 'neutral' : 'nervous';
+    
+    // Generate tips from warnings
+    const tips: string[] = [];
+    if (response.warnings.length > 0) {
+      tips.push(...response.warnings.slice(0, 3));
+    }
+    
+    // Add tips based on low scores
+    if (postureScore > 0 && postureScore < 70) {
+      tips.push('Adjust your posture - keep shoulders level');
+    }
+    if (eyeContactScore > 0 && eyeContactScore < 70) {
+      tips.push('Look directly at the camera');
+    }
+    if (expressionScore > 0 && expressionScore < 50) {
+      tips.push('Try to maintain a confident expression');
+    }
+    
+    const overallScore = postureScore > 0 && eyeContactScore > 0 && expressionScore > 0
+      ? Math.round((postureScore + eyeContactScore + expressionScore) / 3)
+      : 0;
+    
+    return {
+      posture,
+      postureScore,
+      eyeContact,
+      eyeContactScore,
+      facialExpression,
+      expressionScore,
+      overallScore,
+      tips: tips.slice(0, 3),
+      faceDetected: postureScore > 0 || eyeContactScore > 0,
+      attentionPercent: backendMetrics.attention_percent,
+      headMovement: backendMetrics.head_movement_normalized,
+      shoulderTilt: backendMetrics.shoulder_tilt_deg,
+      handActivity: backendMetrics.hand_activity_normalized,
+      handsDetected: backendMetrics.hands_detected_count,
+      frameConfidence: response.frame_confidence
+    };
+  };
 
   const analyzeFrame = useCallback(async () => {
-    // Use ref for immediate value check (avoids stale closure issues)
     if (!videoRef.current || !canvasRef.current || !isCameraOnRef.current) {
-      console.log('Analysis stopped - camera off or refs missing, isCameraOn:', isCameraOnRef.current);
+      console.log('Analysis stopped - camera off or refs missing');
       return;
     }
 
@@ -381,7 +413,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     const canvas = canvasRef.current;
     
     if (video.readyState !== video.HAVE_ENOUGH_DATA || video.videoWidth === 0 || video.videoHeight === 0) {
-      console.log('Video not ready, waiting...', video.readyState, video.videoWidth, video.videoHeight);
+      console.log('Video not ready, waiting...');
       analysisTimeoutRef.current = setTimeout(analyzeFrame, 200);
       return;
     }
@@ -389,256 +421,86 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     accumulatedRef.current.totalFrames++;
 
     try {
-      const detection = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
-          inputSize: 320,
-          scoreThreshold: 0.2
-        }))
-        .withFaceLandmarks()
-        .withFaceExpressions();
-
+      // Get landmarks from MediaPipe
+      const mediapipe = getMediaPipeClient();
+      if (!mediapipe.isInitialized()) {
+        console.warn('MediaPipe not initialized, waiting...');
+        analysisTimeoutRef.current = setTimeout(analyzeFrame, 500);
+        return;
+      }
+      
+      const landmarks = await mediapipe.processFrame(video);
+      
+      // Update canvas
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       
       if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawLandmarks(ctx, landmarks, canvas.width, canvas.height);
       }
-
-      if (detection && ctx) {
+      
+      // Send to backend for analysis
+      const analyzeClient = getAnalyzeFrameClient();
+      const response = await analyzeClient.analyze(landmarks);
+      
+      if (response.explanations.error) {
+        setBackendError(response.explanations.error);
+      } else {
+        setBackendError(null);
+      }
+      
+      // Convert and update metrics
+      const newMetrics = convertBackendMetrics(response);
+      
+      if (newMetrics.faceDetected) {
         accumulatedRef.current.facesDetected++;
-        console.log('Face detected with score:', detection.detection.score);
-        
-        // Draw face mesh overlay
-        if (showFaceMesh) {
-          drawFaceMesh(ctx, detection, canvas.width);
-        }
-
-        const newMetrics = calculateMetricsFromFace(detection, canvas.width, canvas.height);
-        
         accumulatedRef.current.postureScores.push(newMetrics.postureScore);
         accumulatedRef.current.eyeContactScores.push(newMetrics.eyeContactScore);
         accumulatedRef.current.expressionScores.push(newMetrics.expressionScore);
         newMetrics.tips.forEach(tip => accumulatedRef.current.tips.add(tip));
-        
-        setMetrics(newMetrics);
-        onMetricsUpdate?.(newMetrics);
-      } else {
-        console.log('No face detected in frame');
-        const noFaceMetrics: VideoMetrics = {
-          posture: 'poor',
-          postureScore: 0,
-          eyeContact: 'avoiding',
-          eyeContactScore: 0,
-          facialExpression: 'nervous',
-          expressionScore: 0,
-          overallScore: 0,
-          tips: ['Face not detected - ensure you are visible in frame', 'Check lighting and camera angle'],
-          faceDetected: false
-        };
-        setMetrics(noFaceMetrics);
-        onMetricsUpdate?.(noFaceMetrics);
       }
+      
+      setMetrics(newMetrics);
+      onMetricsUpdate?.(newMetrics);
+      
     } catch (error) {
-      console.error('Face detection error:', error);
+      console.error('Frame analysis error:', error);
+      setBackendError(error instanceof Error ? error.message : 'Analysis failed');
     }
 
     // Continue analysis at ~5 FPS
     analysisTimeoutRef.current = setTimeout(analyzeFrame, 200);
-  }, [isCameraOn, onMetricsUpdate, showFaceMesh, drawFaceMesh]);
-
-  const calculateMetricsFromFace = (
-    detection: faceapi.WithFaceExpressions<faceapi.WithFaceLandmarks<{ detection: faceapi.FaceDetection }, faceapi.FaceLandmarks68>>,
-    canvasWidth: number,
-    canvasHeight: number
-  ): VideoMetrics => {
-    const box = detection.detection.box;
-    const landmarks = detection.landmarks;
-    const expressions = detection.expressions;
-    const tips: string[] = [];
-
-    const faceCenterX = box.x + box.width / 2;
-    const faceCenterY = box.y + box.height / 2;
-
-    const leftEye = landmarks.getLeftEye();
-    const rightEye = landmarks.getRightEye();
-    const jaw = landmarks.getJawOutline();
-
-    const leftEyeHeight = Math.abs(leftEye[1].y - leftEye[5].y);
-    const leftEyeWidth = Math.abs(leftEye[0].x - leftEye[3].x);
-    const rightEyeHeight = Math.abs(rightEye[1].y - rightEye[5].y);
-    const rightEyeWidth = Math.abs(rightEye[0].x - rightEye[3].x);
-    const eyeOpenRatio = ((leftEyeHeight / leftEyeWidth) + (rightEyeHeight / rightEyeWidth)) / 2;
-
-    const jawLeft = jaw[0];
-    const jawRight = jaw[16];
-    const jawAngle = Math.atan2(jawRight.y - jawLeft.y, jawRight.x - jawLeft.x) * (180 / Math.PI);
-
-    faceHistoryRef.current.push({
-      centerX: faceCenterX,
-      centerY: faceCenterY,
-      width: box.width,
-      height: box.height,
-      jawAngle,
-      eyeOpenRatio
-    });
-    if (faceHistoryRef.current.length > 30) {
-      faceHistoryRef.current.shift();
-    }
-
-    // POSTURE ANALYSIS
-    let postureScore = 100;
-    
-    const centerXRatio = faceCenterX / canvasWidth;
-    if (Math.abs(centerXRatio - 0.5) > 0.25) {
-      postureScore -= 30;
-      tips.push('Center yourself in the frame');
-    } else if (Math.abs(centerXRatio - 0.5) > 0.15) {
-      postureScore -= 15;
-    }
-    
-    const centerYRatio = faceCenterY / canvasHeight;
-    if (centerYRatio < 0.15 || centerYRatio > 0.65) {
-      postureScore -= 25;
-      tips.push('Adjust camera height for better framing');
-    } else if (centerYRatio < 0.2 || centerYRatio > 0.55) {
-      postureScore -= 10;
-    }
-
-    if (Math.abs(jawAngle) > 15) {
-      postureScore -= 20;
-      tips.push('Keep your head straight');
-    } else if (Math.abs(jawAngle) > 8) {
-      postureScore -= 10;
-    }
-
-    if (faceHistoryRef.current.length > 10) {
-      const recent = faceHistoryRef.current.slice(-10);
-      let movement = 0;
-      for (let i = 1; i < recent.length; i++) {
-        movement += Math.abs(recent[i].centerX - recent[i-1].centerX);
-        movement += Math.abs(recent[i].centerY - recent[i-1].centerY);
-      }
-      const avgMovement = movement / 10;
-      
-      if (avgMovement > 15) {
-        postureScore -= 20;
-        tips.push('Try to keep your head steady');
-      } else if (avgMovement > 8) {
-        postureScore -= 10;
-      }
-    }
-
-    postureScore = Math.max(0, Math.min(100, postureScore));
-    const posture: 'good' | 'needs_improvement' | 'poor' = 
-      postureScore >= 70 ? 'good' : postureScore >= 50 ? 'needs_improvement' : 'poor';
-
-    // EYE CONTACT ANALYSIS
-    let eyeContactScore = 100;
-    
-    if (eyeOpenRatio < 0.15) {
-      eyeContactScore -= 40;
-      tips.push('Keep your eyes open and look at the camera');
-    } else if (eyeOpenRatio < 0.2) {
-      eyeContactScore -= 20;
-    }
-
-    if (Math.abs(centerXRatio - 0.5) > 0.2) {
-      eyeContactScore -= 30;
-      tips.push('Look directly at the camera');
-    } else if (Math.abs(centerXRatio - 0.5) > 0.1) {
-      eyeContactScore -= 15;
-    }
-
-    if (faceHistoryRef.current.length > 10) {
-      const recentAngles = faceHistoryRef.current.slice(-10).map(f => f.jawAngle);
-      const angleVariance = recentAngles.reduce((acc, a) => {
-        const avg = recentAngles.reduce((s, v) => s + v, 0) / recentAngles.length;
-        return acc + Math.pow(a - avg, 2);
-      }, 0) / recentAngles.length;
-      
-      if (angleVariance > 50) {
-        eyeContactScore -= 15;
-      }
-    }
-
-    eyeContactScore = Math.max(0, Math.min(100, eyeContactScore));
-    const eyeContact: 'maintained' | 'occasional' | 'avoiding' = 
-      eyeContactScore >= 70 ? 'maintained' : eyeContactScore >= 50 ? 'occasional' : 'avoiding';
-
-    // EXPRESSION ANALYSIS
-    let expressionScore = 100;
-    let facialExpression: 'confident' | 'neutral' | 'nervous' = 'confident';
-    
-    const neutralScore = expressions.neutral || 0;
-    const happyScore = expressions.happy || 0;
-    const sadScore = expressions.sad || 0;
-    const fearfulScore = expressions.fearful || 0;
-
-    if (happyScore > 0.3 || (neutralScore > 0.5 && happyScore > 0.1)) {
-      expressionScore = 90 + Math.round(happyScore * 10);
-      facialExpression = 'confident';
-    } else if (neutralScore > 0.6) {
-      expressionScore = 75;
-      facialExpression = 'neutral';
-    } else if (fearfulScore > 0.2 || sadScore > 0.3) {
-      expressionScore = 50 - Math.round((fearfulScore + sadScore) * 20);
-      facialExpression = 'nervous';
-      tips.push('Try to relax and maintain a confident expression');
-    } else {
-      expressionScore = 70;
-      facialExpression = 'neutral';
-    }
-
-    const faceSizeRatio = box.width / canvasWidth;
-    if (faceSizeRatio < 0.15) {
-      expressionScore -= 15;
-      tips.push('Move closer to the camera');
-    } else if (faceSizeRatio > 0.5) {
-      expressionScore -= 10;
-      tips.push('Move back slightly from the camera');
-    }
-
-    expressionScore = Math.max(0, Math.min(100, expressionScore));
-    const overallScore = Math.round((postureScore + eyeContactScore + expressionScore) / 3);
-
-    return {
-      posture,
-      postureScore: Math.round(postureScore),
-      eyeContact,
-      eyeContactScore: Math.round(eyeContactScore),
-      facialExpression,
-      expressionScore: Math.round(expressionScore),
-      overallScore,
-      tips: tips.slice(0, 3),
-      faceDetected: true
-    };
-  };
+  }, [onMetricsUpdate, drawLandmarks]);
 
   const startAnalysis = useCallback(() => {
     if (analysisTimeoutRef.current) {
       clearTimeout(analysisTimeoutRef.current);
     }
-    console.log('Starting face analysis...');
+    console.log('Starting frame analysis with MediaPipe + backend...');
     analyzeFrame();
   }, [analyzeFrame]);
 
   const getSessionMetrics = useCallback(() => {
     const acc = accumulatedRef.current;
     const audioSession = getAudioSessionMetrics();
+    const analyzeClient = getAnalyzeFrameClient();
+    const backendSession = analyzeClient.getSessionMetrics();
+    
     const avg = (arr: number[]) => arr.length > 0 ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
     
     return {
-      avgPostureScore: avg(acc.postureScores),
-      avgEyeContactScore: avg(acc.eyeContactScores),
-      avgExpressionScore: avg(acc.expressionScores),
-      tips: Array.from(acc.tips),
+      avgPostureScore: backendSession.posture_score ?? avg(acc.postureScores),
+      avgEyeContactScore: backendSession.eye_contact_score ?? avg(acc.eyeContactScores),
+      avgExpressionScore: backendSession.expression_score ?? avg(acc.expressionScores),
+      attentionPercent: backendSession.attention_percent,
+      tips: backendSession.tips.length > 0 ? backendSession.tips : Array.from(acc.tips),
       faceDetectionRate: acc.totalFrames > 0 ? Math.round((acc.facesDetected / acc.totalFrames) * 100) : 0,
+      frameCaptureRate: backendSession.frame_capture_rate,
       audio: audioSession,
     };
   }, [getAudioSessionMetrics]);
 
-  // Save metrics to database periodically
   const saveMetricsToDatabase = useCallback(async () => {
     if (!sessionId) return;
     
@@ -649,12 +511,12 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
       const { error } = await supabase.functions.invoke('video-analysis', {
         body: {
           session_id: sessionId,
-          posture_score: videoMetrics.avgPostureScore,
-          eye_contact_score: videoMetrics.avgEyeContactScore,
-          expression_score: videoMetrics.avgExpressionScore,
+          posture_score: videoMetrics.avgPostureScore || null,
+          eye_contact_score: videoMetrics.avgEyeContactScore || null,
+          expression_score: videoMetrics.avgExpressionScore || null,
           video_tips: videoMetrics.tips,
-          voice_score: Math.round(audioSession.speakingRatio * 100),
-          avg_pause_s: audioSession.avgPauseLength,
+          voice_score: audioSession.speakingRatio > 0 ? Math.round(audioSession.speakingRatio * 100) : null,
+          avg_pause_s: audioSession.avgPauseLength > 0 ? audioSession.avgPauseLength : null,
         },
       });
       
@@ -722,6 +584,12 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
               LIVE
             </Badge>
           )}
+          {backendError && (
+            <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500">
+              <AlertCircle className="w-3 h-3 mr-1" />
+              Backend
+            </Badge>
+          )}
         </h3>
         <div className="flex gap-1">
           {isCameraOn && (
@@ -783,7 +651,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                 )}
               </Button>
               {hasPermission === false && (
-                <p className="text-xs text-destructive">
+                <p className="text-xs text-destructive mt-2">
                   Camera access denied. Please check your browser permissions.
                 </p>
               )}
@@ -792,7 +660,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
             <div className="flex flex-col items-center justify-center py-8 px-4 bg-muted/20 rounded-lg border border-dashed border-border">
               <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
               <p className="text-sm font-medium">Initializing Camera...</p>
-              <p className="text-xs text-muted-foreground mt-1">Loading AI models and starting video</p>
+              <p className="text-xs text-muted-foreground mt-1">Loading MediaPipe models and starting video</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -813,7 +681,6 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                   style={{ transform: 'scaleX(-1)' }}
                 />
                 
-                {/* Loading overlay while video initializes */}
                 {!isVideoReady && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/80">
                     <div className="text-center">
@@ -823,7 +690,6 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                   </div>
                 )}
                 
-                {/* Status badges - top corners */}
                 {isVideoReady && (
                   <>
                     <div className="absolute top-1 sm:top-2 left-1 sm:left-2">
@@ -835,7 +701,15 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                       )}
                     </div>
                     
-                    <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
+                    <div className="absolute top-1 sm:top-2 right-1 sm:right-2 flex gap-1">
+                      {metrics.frameConfidence > 0 && (
+                        <Badge 
+                          variant="outline"
+                          className="text-[9px] bg-background/80 px-1.5 py-0.5"
+                        >
+                          {Math.round(metrics.frameConfidence * 100)}%
+                        </Badge>
+                      )}
                       <Badge 
                         className={`${getScoreBg(metrics.overallScore)} text-white text-[9px] sm:text-xs px-1.5 py-0.5`}
                       >
@@ -843,7 +717,6 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                       </Badge>
                     </div>
 
-                    {/* Subtle hint at bottom when no face - doesn't block video */}
                     {!metrics.faceDetected && (
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-1.5 sm:p-2">
                         <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center">
@@ -863,7 +736,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                       Posture
                     </span>
                     <span className={`font-bold ${getScoreColor(metrics.postureScore)}`}>
-                      {metrics.postureScore}%
+                      {metrics.postureScore > 0 ? `${metrics.postureScore}%` : 'N/A'}
                     </span>
                   </div>
                   <Progress value={metrics.postureScore} className="h-1.5" />
@@ -874,7 +747,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                       Eye Contact
                     </span>
                     <span className={`font-bold ${getScoreColor(metrics.eyeContactScore)}`}>
-                      {metrics.eyeContactScore}%
+                      {metrics.eyeContactScore > 0 ? `${metrics.eyeContactScore}%` : 'N/A'}
                     </span>
                   </div>
                   <Progress value={metrics.eyeContactScore} className="h-1.5" />
@@ -884,14 +757,27 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                       😊 Expression
                     </span>
                     <span className={`font-bold ${getScoreColor(metrics.expressionScore)}`}>
-                      {metrics.expressionScore}%
+                      {metrics.expressionScore > 0 ? `${metrics.expressionScore}%` : 'N/A'}
                     </span>
                   </div>
                   <Progress value={metrics.expressionScore} className="h-1.5" />
+                  
+                  {/* Additional metrics from backend */}
+                  {metrics.attentionPercent !== null && (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border">
+                      <span>Attention</span>
+                      <span>{metrics.attentionPercent}%</span>
+                    </div>
+                  )}
+                  {metrics.handsDetected > 0 && (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Hands Visible</span>
+                      <span>{metrics.handsDetected}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Audio Metrics - Only show when user mic is active (not during AI speech) */}
               {isAudioActive && isUserMicActive && (
                 <div className="space-y-2 pt-2 border-t border-border">
                   <div className="flex items-center justify-between text-xs">
