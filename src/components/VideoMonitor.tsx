@@ -3,12 +3,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Camera, Eye, User, X, Loader2, Mic, Volume2, AlertCircle } from 'lucide-react';
+import { Camera, Eye, User, X, Loader2, Mic, Volume2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAudioAnalysis, AudioMetrics } from '@/hooks/useAudioAnalysis';
 import { supabase } from '@/integrations/supabase/client';
 import { getMediaPipeClient, destroyMediaPipeClient, LandmarkData } from '@/lib/mediapipe-client';
 import { getAnalyzeFrameClient, resetAnalyzeFrameClient, FrameResponse, AnalysisMetrics } from '@/lib/analyze-frame-client';
+import { resetExternalVideoAnalyzer } from '@/lib/external-video-analyzer';
 
 interface VideoMonitorProps {
   isActive: boolean;
@@ -62,6 +63,8 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   const [isInitializingCamera, setIsInitializingCamera] = useState(false);
   const [showFaceMesh, setShowFaceMesh] = useState(true);
   const [backendError, setBackendError] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [confidenceStatus, setConfidenceStatus] = useState<'PASS' | 'FAIL' | null>(null);
   const [metrics, setMetrics] = useState<VideoMetrics>({
     posture: 'good',
     postureScore: 0,
@@ -137,8 +140,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     setIsVideoReady(false);
     setBackendError(null);
     
-    // Reset the analyze frame client for new session
+    // Reset both analyzers for new session
     resetAnalyzeFrameClient();
+    resetExternalVideoAnalyzer();
     
     try {
       const modelsReady = await loadModels();
@@ -419,9 +423,10 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     }
 
     accumulatedRef.current.totalFrames++;
+    setIsAnalyzing(true);
 
     try {
-      // Get landmarks from MediaPipe
+      // Get landmarks from MediaPipe (still used for visualization)
       const mediapipe = getMediaPipeClient();
       if (!mediapipe.isInitialized()) {
         console.warn('MediaPipe not initialized, waiting...');
@@ -440,12 +445,18 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         drawLandmarks(ctx, landmarks, canvas.width, canvas.height);
       }
       
-      // Send to backend for analysis
+      // Send to backend for analysis (now uses external backend with video element)
       const analyzeClient = getAnalyzeFrameClient();
-      const response = await analyzeClient.analyze(landmarks);
+      const response = await analyzeClient.analyze(landmarks, video);
+      
+      // Update confidence status from external backend
+      const newConfidenceStatus = analyzeClient.getConfidenceStatus();
+      setConfidenceStatus(newConfidenceStatus);
       
       if (response.explanations.error) {
         setBackendError(response.explanations.error);
+      } else if (response.explanations.reason && response.explanations.reason !== 'throttled') {
+        setBackendError(response.explanations.reason);
       } else {
         setBackendError(null);
       }
@@ -467,10 +478,12 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     } catch (error) {
       console.error('Frame analysis error:', error);
       setBackendError(error instanceof Error ? error.message : 'Analysis failed');
+    } finally {
+      setIsAnalyzing(false);
     }
 
-    // Continue analysis at ~5 FPS
-    analysisTimeoutRef.current = setTimeout(analyzeFrame, 200);
+    // Continue analysis at ~2 FPS (matches external backend interval)
+    analysisTimeoutRef.current = setTimeout(analyzeFrame, 500);
   }, [onMetricsUpdate, drawLandmarks]);
 
   const startAnalysis = useCallback(() => {
@@ -692,16 +705,40 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                 
                 {isVideoReady && (
                   <>
-                    <div className="absolute top-1 sm:top-2 left-1 sm:left-2">
+                    <div className="absolute top-1 sm:top-2 left-1 sm:left-2 flex gap-1">
                       {!metrics.faceDetected && (
                         <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-background/80 border-destructive/50 text-destructive px-1.5 py-0.5">
                           <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                           No Face
                         </Badge>
                       )}
+                      {isAnalyzing && (
+                        <Badge variant="outline" className="text-[9px] bg-background/80 border-primary/50 text-primary px-1.5 py-0.5">
+                          <Loader2 className="w-2.5 h-2.5 mr-0.5 animate-spin" />
+                          Analyzing...
+                        </Badge>
+                      )}
                     </div>
                     
                     <div className="absolute top-1 sm:top-2 right-1 sm:right-2 flex gap-1">
+                      {/* Confidence Status Badge */}
+                      {confidenceStatus && (
+                        <Badge 
+                          variant="outline"
+                          className={`text-[9px] px-1.5 py-0.5 ${
+                            confidenceStatus === 'PASS' 
+                              ? 'bg-green-500/20 border-green-500/50 text-green-400' 
+                              : 'bg-destructive/20 border-destructive/50 text-destructive'
+                          }`}
+                        >
+                          {confidenceStatus === 'PASS' ? (
+                            <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
+                          ) : (
+                            <AlertCircle className="w-2.5 h-2.5 mr-0.5" />
+                          )}
+                          {confidenceStatus}
+                        </Badge>
+                      )}
                       {metrics.frameConfidence > 0 && (
                         <Badge 
                           variant="outline"

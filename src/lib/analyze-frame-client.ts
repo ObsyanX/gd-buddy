@@ -1,8 +1,13 @@
-// API client for analyze-frame edge function
-// Handles communication with backend and state management
+// API client for video frame analysis
+// Supports both external backend and Supabase edge function
 
 import { supabase } from "@/integrations/supabase/client";
 import { LandmarkData } from "./mediapipe-client";
+import { getExternalVideoAnalyzer, ExternalVideoResponse } from "./external-video-analyzer";
+import { captureFrameAsBase64 } from "./frame-capture";
+
+// Use external backend by default
+const USE_EXTERNAL_BACKEND = true;
 
 export interface AnalysisMetrics {
   attention_percent: number | null;
@@ -56,27 +61,122 @@ export class AnalyzeFrameClient {
   private accumulatedMetrics: AccumulatedMetrics = this.createEmptyAccumulated();
   private lastAnalysisTime = 0;
   private minAnalysisInterval = 100; // 10 FPS max
+  private confidenceStatus: 'PASS' | 'FAIL' | null = null;
 
   /**
-   * Analyze a frame by sending landmarks to the edge function
+   * Analyze a frame using external backend (video element required)
    */
-  async analyze(landmarks: LandmarkData): Promise<FrameResponse> {
+  async analyzeWithExternalBackend(video: HTMLVideoElement): Promise<FrameResponse> {
+    const now = Date.now();
+    
+    // Capture frame as base64
+    const frameBase64 = captureFrameAsBase64(video);
+    if (!frameBase64) {
+      return this.createEmptyResponse(now, 'Frame capture failed');
+    }
+
+    // Send to external backend
+    const externalAnalyzer = getExternalVideoAnalyzer();
+    const externalResponse = await externalAnalyzer.analyzeFrame(frameBase64);
+    
+    if (!externalResponse) {
+      // Throttled or error - return empty response
+      const state = externalAnalyzer.getState();
+      return this.createEmptyResponse(now, state.lastError || 'throttled');
+    }
+
+    // Convert external response to our FrameResponse format
+    const response = this.convertExternalResponse(externalResponse, now);
+    
+    // Store confidence status
+    this.confidenceStatus = externalResponse.confidence_status;
+    
+    // Accumulate metrics
+    if (response.metrics) {
+      this.accumulateMetrics(response.metrics, response.warnings);
+    }
+
+    return response;
+  }
+
+  /**
+   * Convert external backend response to our internal format
+   */
+  private convertExternalResponse(external: ExternalVideoResponse, timestamp: number): FrameResponse {
+    // Map external fields to our metrics structure
+    const metrics: AnalysisMetrics = {
+      attention_percent: external.attention,
+      head_movement_normalized: external.head_movement,
+      shoulder_tilt_deg: external.shoulder_tilt,
+      hand_activity_normalized: external.hand_activity,
+      hands_detected_count: external.hands_detected,
+      // Derive scores from external metrics
+      posture_score: this.derivePostureScore(external.shoulder_tilt),
+      eye_contact_score: this.deriveEyeContactScore(external.attention),
+      expression_score: external.frame_confidence > 0.3 ? 70 : 50 // Base expression score
+    };
+
+    return {
+      metrics: external.success ? metrics : null,
+      frame_confidence: external.frame_confidence,
+      explanations: external.success ? {} : { error: 'Analysis failed' },
+      warnings: external.warnings || [],
+      next_state: {
+        face_landmarks: null,
+        hand_landmarks: null,
+        pose_landmarks: null,
+        timestamp
+      }
+    };
+  }
+
+  /**
+   * Derive posture score from shoulder tilt
+   */
+  private derivePostureScore(shoulderTilt: number): number {
+    // Lower tilt = better posture
+    const tiltDeg = Math.abs(shoulderTilt);
+    if (tiltDeg < 3) return 95;
+    if (tiltDeg < 5) return 85;
+    if (tiltDeg < 10) return 70;
+    if (tiltDeg < 15) return 55;
+    return 40;
+  }
+
+  /**
+   * Derive eye contact score from attention
+   */
+  private deriveEyeContactScore(attention: number): number {
+    // Attention percentage maps directly to eye contact score
+    return Math.round(attention);
+  }
+
+  /**
+   * Create an empty response for error/throttled cases
+   */
+  private createEmptyResponse(timestamp: number, reason: string): FrameResponse {
+    return {
+      metrics: null,
+      frame_confidence: 0,
+      explanations: { reason },
+      warnings: reason !== 'throttled' ? [reason] : [],
+      next_state: this.previousState || {
+        face_landmarks: null,
+        hand_landmarks: null,
+        pose_landmarks: null,
+        timestamp
+      }
+    };
+  }
+
+  /**
+   * Analyze a frame using MediaPipe landmarks (Supabase edge function)
+   */
+  async analyzeWithLandmarks(landmarks: LandmarkData): Promise<FrameResponse> {
     // Throttle requests
     const now = Date.now();
     if (now - this.lastAnalysisTime < this.minAnalysisInterval) {
-      // Return cached response structure if throttled
-      return {
-        metrics: null,
-        frame_confidence: 0,
-        explanations: { throttled: "too_soon" },
-        warnings: [],
-        next_state: this.previousState || {
-          face_landmarks: null,
-          hand_landmarks: null,
-          pose_landmarks: null,
-          timestamp: now
-        }
-      };
+      return this.createEmptyResponse(now, 'throttled');
     }
     this.lastAnalysisTime = now;
 
@@ -91,18 +191,7 @@ export class AnalyzeFrameClient {
 
       if (error) {
         console.error('AnalyzeFrameClient: Edge function error:', error);
-        return {
-          metrics: null,
-          frame_confidence: 0,
-          explanations: { error: error.message },
-          warnings: ["Edge function error"],
-          next_state: this.previousState || {
-            face_landmarks: null,
-            hand_landmarks: null,
-            pose_landmarks: null,
-            timestamp: now
-          }
-        };
+        return this.createEmptyResponse(now, error.message);
       }
 
       const response = data as FrameResponse;
@@ -118,19 +207,25 @@ export class AnalyzeFrameClient {
       return response;
     } catch (error) {
       console.error('AnalyzeFrameClient: Request failed:', error);
-      return {
-        metrics: null,
-        frame_confidence: 0,
-        explanations: { error: error instanceof Error ? error.message : 'Unknown error' },
-        warnings: ["Request failed"],
-        next_state: this.previousState || {
-          face_landmarks: null,
-          hand_landmarks: null,
-          pose_landmarks: null,
-          timestamp: now
-        }
-      };
+      return this.createEmptyResponse(now, error instanceof Error ? error.message : 'Unknown error');
     }
+  }
+
+  /**
+   * Main analyze method - routes to appropriate backend
+   */
+  async analyze(landmarks: LandmarkData, video?: HTMLVideoElement): Promise<FrameResponse> {
+    if (USE_EXTERNAL_BACKEND && video) {
+      return this.analyzeWithExternalBackend(video);
+    }
+    return this.analyzeWithLandmarks(landmarks);
+  }
+
+  /**
+   * Get confidence status from last external analysis
+   */
+  getConfidenceStatus(): 'PASS' | 'FAIL' | null {
+    return this.confidenceStatus;
   }
 
   /**
@@ -248,6 +343,7 @@ export class AnalyzeFrameClient {
     this.previousState = null;
     this.accumulatedMetrics = this.createEmptyAccumulated();
     this.lastAnalysisTime = 0;
+    this.confidenceStatus = null;
     console.log('AnalyzeFrameClient: Reset');
   }
 
