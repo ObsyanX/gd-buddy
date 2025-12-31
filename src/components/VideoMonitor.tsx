@@ -99,7 +99,22 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   useEffect(() => {
     isCameraOnRef.current = isCameraOn;
   }, [isCameraOn]);
-  
+
+  // Ensure stream is attached when video element mounts (fixes video not displaying)
+  useEffect(() => {
+    if (isCameraOn && videoRef.current && streamRef.current) {
+      const video = videoRef.current;
+      if (video.srcObject !== streamRef.current) {
+        console.log('Re-attaching stream to video element');
+        video.srcObject = streamRef.current;
+        video.play().then(() => {
+          console.log('Video playing after re-attach');
+          setIsVideoReady(true);
+        }).catch(err => console.warn('Play failed:', err));
+      }
+    }
+  }, [isCameraOn]);
+
   const { toast } = useToast();
 
   const accumulatedRef = useRef<AccumulatedVideoMetrics>({
@@ -669,14 +684,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                 </p>
               )}
             </div>
-          ) : isInitializingCamera ? (
-            <div className="flex flex-col items-center justify-center py-8 px-4 bg-muted/20 rounded-lg border border-dashed border-border">
-              <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
-              <p className="text-sm font-medium">Initializing Camera...</p>
-              <p className="text-xs text-muted-foreground mt-1">Loading MediaPipe models and starting video</p>
-            </div>
           ) : (
             <div className="space-y-3">
+              {/* Video container - ALWAYS render video element when camera is on */}
               <div className="relative aspect-video bg-black rounded overflow-hidden min-h-[100px] sm:min-h-[120px]">
                 <video
                   ref={videoRef}
@@ -694,11 +704,17 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                   style={{ transform: 'scaleX(-1)' }}
                 />
                 
-                {!isVideoReady && (
+                {/* Loading overlay - shown during initialization OR when video not ready */}
+                {(isInitializingCamera || !isVideoReady) && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/80">
                     <div className="text-center">
                       <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
-                      <p className="text-xs text-muted-foreground">Starting video...</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isInitializingCamera ? 'Initializing Camera...' : 'Starting video...'}
+                      </p>
+                      {isInitializingCamera && (
+                        <p className="text-[10px] text-muted-foreground mt-1">Loading MediaPipe models</p>
+                      )}
                     </div>
                   </div>
                 )}
