@@ -58,9 +58,9 @@ class ExternalVideoAnalyzer {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
-      console.log('Sending frame to external backend...');
+      console.log('Sending frame to external backend /analyze/base64...');
       
-      const response = await fetch(`${EXTERNAL_BACKEND_URL}/analyze`, {
+      const response = await fetch(`${EXTERNAL_BACKEND_URL}/analyze/base64`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

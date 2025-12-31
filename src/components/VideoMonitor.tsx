@@ -54,6 +54,8 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveMetricsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isCameraOnRef = useRef(false);
+  const lastValidMetricsRef = useRef<VideoMetrics | null>(null); // Store last valid backend metrics
+  const hasReceivedBackendDataRef = useRef(false); // Track if backend ever returned valid data
   
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
@@ -66,6 +68,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [confidenceStatus, setConfidenceStatus] = useState<'PASS' | 'FAIL' | null>(null);
   const [isWarmingUp, setIsWarmingUp] = useState(false); // Grace period for face detection
+  const [hasBackendData, setHasBackendData] = useState(false); // UI flag for backend data availability
   const [metrics, setMetrics] = useState<VideoMetrics>({
     posture: 'good',
     postureScore: 0,
@@ -273,6 +276,11 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     // Cleanup MediaPipe
     destroyMediaPipeClient();
     setModelsLoaded(false);
+    
+    // Reset backend data tracking
+    lastValidMetricsRef.current = null;
+    hasReceivedBackendDataRef.current = false;
+    setHasBackendData(false);
     
     setIsCameraOn(false);
     setIsVideoReady(false);
@@ -493,7 +501,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         setBackendError(null);
       }
       
-      // Convert and update metrics - preserve existing scores if backend throttled
+      // Convert and update metrics - preserve existing scores if backend throttled/failed
       const newMetrics = convertBackendMetrics(response);
       
       // Use MediaPipe's local face detection as fallback if backend didn't respond properly
@@ -503,16 +511,23 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         newMetrics.tips = newMetrics.tips.filter(tip => !tip.toLowerCase().includes('face not detected'));
       }
       
-      // CRITICAL: If backend was throttled (metrics null), preserve last valid metrics
-      // This prevents flickering "N/A" between valid responses
-      if (!response.metrics && response.explanations.reason === 'throttled') {
-        // Keep existing metrics but update faceDetected based on local detection
-        setMetrics(prev => ({
-          ...prev,
-          faceDetected: hasFaceLocally || prev.faceDetected
-        }));
-      } else {
-        // Update with new metrics from backend
+      // Check if backend returned valid metrics
+      const hasValidBackendMetrics = response.metrics !== null && response.metrics.attention_percent !== null;
+      
+      if (hasValidBackendMetrics) {
+        // Backend returned valid data - store it and update UI
+        lastValidMetricsRef.current = newMetrics;
+        hasReceivedBackendDataRef.current = true;
+        setHasBackendData(true);
+        
+        console.log('✓ Valid backend metrics received:', {
+          posture: newMetrics.postureScore,
+          eyeContact: newMetrics.eyeContactScore,
+          expression: newMetrics.expressionScore,
+          attention: newMetrics.attentionPercent
+        });
+        
+        // Update accumulated metrics
         if (newMetrics.faceDetected) {
           accumulatedRef.current.facesDetected++;
           accumulatedRef.current.postureScores.push(newMetrics.postureScore);
@@ -523,6 +538,22 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         
         setMetrics(newMetrics);
         onMetricsUpdate?.(newMetrics);
+      } else {
+        // Backend failed or throttled - preserve last valid metrics if available
+        if (lastValidMetricsRef.current) {
+          // Keep last valid metrics but update faceDetected based on local detection
+          setMetrics(prev => ({
+            ...prev,
+            ...lastValidMetricsRef.current!,
+            faceDetected: hasFaceLocally || prev.faceDetected
+          }));
+        } else {
+          // No valid backend data yet - just update faceDetected from local detection
+          setMetrics(prev => ({
+            ...prev,
+            faceDetected: hasFaceLocally || prev.faceDetected
+          }));
+        }
       }
       
     } catch (error) {
@@ -833,12 +864,12 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                       Posture
                     </span>
                     <span className={`font-bold ${getScoreColor(metrics.postureScore)}`}>
-                      {metrics.attentionPercent !== null 
+                      {hasBackendData 
                         ? `${metrics.postureScore}%` 
                         : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
                     </span>
                   </div>
-                  <Progress value={metrics.postureScore} className="h-1.5" />
+                  <Progress value={hasBackendData ? metrics.postureScore : 0} className="h-1.5" />
                   
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1">
@@ -846,30 +877,30 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                       Eye Contact
                     </span>
                     <span className={`font-bold ${getScoreColor(metrics.eyeContactScore)}`}>
-                      {metrics.attentionPercent !== null 
+                      {hasBackendData 
                         ? `${metrics.eyeContactScore}%` 
                         : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
                     </span>
                   </div>
-                  <Progress value={metrics.eyeContactScore} className="h-1.5" />
+                  <Progress value={hasBackendData ? metrics.eyeContactScore : 0} className="h-1.5" />
                   
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1">
                       😊 Expression
                     </span>
                     <span className={`font-bold ${getScoreColor(metrics.expressionScore)}`}>
-                      {metrics.attentionPercent !== null 
+                      {hasBackendData 
                         ? `${metrics.expressionScore}%` 
                         : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
                     </span>
                   </div>
-                  <Progress value={metrics.expressionScore} className="h-1.5" />
+                  <Progress value={hasBackendData ? metrics.expressionScore : 0} className="h-1.5" />
                   
                   {/* Additional metrics from backend */}
-                  {metrics.attentionPercent !== null && (
+                  {hasBackendData && metrics.attentionPercent !== null && (
                     <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border">
                       <span>Attention</span>
-                      <span>{metrics.attentionPercent}%</span>
+                      <span>{Math.round(metrics.attentionPercent)}%</span>
                     </div>
                   )}
                   {metrics.handsDetected > 0 && (
