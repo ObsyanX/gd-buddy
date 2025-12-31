@@ -468,6 +468,19 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
       const analyzeClient = getAnalyzeFrameClient();
       const response = await analyzeClient.analyze(landmarks, video);
       
+      // Log backend response for debugging
+      if (response.metrics) {
+        console.log('Backend metrics received:', {
+          attention: response.metrics.attention_percent,
+          posture: response.metrics.posture_score,
+          eyeContact: response.metrics.eye_contact_score,
+          expression: response.metrics.expression_score,
+          frameConfidence: response.frame_confidence
+        });
+      } else if (response.explanations.reason !== 'throttled') {
+        console.log('Backend response (no metrics):', response.explanations);
+      }
+      
       // Update confidence status from external backend
       const newConfidenceStatus = analyzeClient.getConfidenceStatus();
       setConfidenceStatus(newConfidenceStatus);
@@ -480,7 +493,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         setBackendError(null);
       }
       
-      // Convert and update metrics
+      // Convert and update metrics - preserve existing scores if backend throttled
       const newMetrics = convertBackendMetrics(response);
       
       // Use MediaPipe's local face detection as fallback if backend didn't respond properly
@@ -490,16 +503,27 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         newMetrics.tips = newMetrics.tips.filter(tip => !tip.toLowerCase().includes('face not detected'));
       }
       
-      if (newMetrics.faceDetected) {
-        accumulatedRef.current.facesDetected++;
-        accumulatedRef.current.postureScores.push(newMetrics.postureScore);
-        accumulatedRef.current.eyeContactScores.push(newMetrics.eyeContactScore);
-        accumulatedRef.current.expressionScores.push(newMetrics.expressionScore);
-        newMetrics.tips.forEach(tip => accumulatedRef.current.tips.add(tip));
+      // CRITICAL: If backend was throttled (metrics null), preserve last valid metrics
+      // This prevents flickering "N/A" between valid responses
+      if (!response.metrics && response.explanations.reason === 'throttled') {
+        // Keep existing metrics but update faceDetected based on local detection
+        setMetrics(prev => ({
+          ...prev,
+          faceDetected: hasFaceLocally || prev.faceDetected
+        }));
+      } else {
+        // Update with new metrics from backend
+        if (newMetrics.faceDetected) {
+          accumulatedRef.current.facesDetected++;
+          accumulatedRef.current.postureScores.push(newMetrics.postureScore);
+          accumulatedRef.current.eyeContactScores.push(newMetrics.eyeContactScore);
+          accumulatedRef.current.expressionScores.push(newMetrics.expressionScore);
+          newMetrics.tips.forEach(tip => accumulatedRef.current.tips.add(tip));
+        }
+        
+        setMetrics(newMetrics);
+        onMetricsUpdate?.(newMetrics);
       }
-      
-      setMetrics(newMetrics);
-      onMetricsUpdate?.(newMetrics);
       
     } catch (error) {
       console.error('Frame analysis error:', error);
@@ -809,7 +833,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                       Posture
                     </span>
                     <span className={`font-bold ${getScoreColor(metrics.postureScore)}`}>
-                      {metrics.postureScore > 0 ? `${metrics.postureScore}%` : 'N/A'}
+                      {metrics.attentionPercent !== null 
+                        ? `${metrics.postureScore}%` 
+                        : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
                     </span>
                   </div>
                   <Progress value={metrics.postureScore} className="h-1.5" />
@@ -820,7 +846,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                       Eye Contact
                     </span>
                     <span className={`font-bold ${getScoreColor(metrics.eyeContactScore)}`}>
-                      {metrics.eyeContactScore > 0 ? `${metrics.eyeContactScore}%` : 'N/A'}
+                      {metrics.attentionPercent !== null 
+                        ? `${metrics.eyeContactScore}%` 
+                        : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
                     </span>
                   </div>
                   <Progress value={metrics.eyeContactScore} className="h-1.5" />
@@ -830,7 +858,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                       😊 Expression
                     </span>
                     <span className={`font-bold ${getScoreColor(metrics.expressionScore)}`}>
-                      {metrics.expressionScore > 0 ? `${metrics.expressionScore}%` : 'N/A'}
+                      {metrics.attentionPercent !== null 
+                        ? `${metrics.expressionScore}%` 
+                        : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
                     </span>
                   </div>
                   <Progress value={metrics.expressionScore} className="h-1.5" />

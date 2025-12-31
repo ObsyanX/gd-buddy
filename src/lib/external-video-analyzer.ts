@@ -42,17 +42,24 @@ class ExternalVideoAnalyzer {
     
     // Throttle requests
     if (now - this.lastRequestTime < this.minInterval) {
+      // Log throttled requests sparingly
+      if (this.state.frameCount % 10 === 0) {
+        console.log('Frame throttled, waiting for interval...');
+      }
       return null;
     }
     this.lastRequestTime = now;
     
     this.state.isAnalyzing = true;
     this.state.frameCount++;
+    console.log(`Analyzing frame #${this.state.frameCount}...`);
 
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
+      console.log('Sending frame to external backend...');
+      
       const response = await fetch(`${EXTERNAL_BACKEND_URL}/analyze`, {
         method: 'POST',
         headers: {
@@ -73,6 +80,16 @@ class ExternalVideoAnalyzer {
       }
 
       const data: ExternalVideoResponse = await response.json();
+      
+      // Log the raw backend response for debugging
+      console.log('External backend response:', {
+        success: data.success,
+        attention: data.attention,
+        shoulder_tilt: data.shoulder_tilt,
+        frame_confidence: data.frame_confidence,
+        confidence_status: data.confidence_status
+      });
+      
       this.state.lastError = null;
       this.state.isAnalyzing = false;
       
