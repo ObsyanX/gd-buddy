@@ -65,6 +65,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   const [backendError, setBackendError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [confidenceStatus, setConfidenceStatus] = useState<'PASS' | 'FAIL' | null>(null);
+  const [isWarmingUp, setIsWarmingUp] = useState(false); // Grace period for face detection
   const [metrics, setMetrics] = useState<VideoMetrics>({
     posture: 'good',
     postureScore: 0,
@@ -451,6 +452,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
       
       const landmarks = await mediapipe.processFrame(video);
       
+      // Check if MediaPipe detected a face locally (used as fallback)
+      const hasFaceLocally = landmarks.face && landmarks.face.landmarks && landmarks.face.landmarks.length > 0;
+      
       // Update canvas
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -479,6 +483,13 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
       // Convert and update metrics
       const newMetrics = convertBackendMetrics(response);
       
+      // Use MediaPipe's local face detection as fallback if backend didn't respond properly
+      if (hasFaceLocally && !newMetrics.faceDetected) {
+        newMetrics.faceDetected = true;
+        // Clear the "no face" tip if we detected one locally
+        newMetrics.tips = newMetrics.tips.filter(tip => !tip.toLowerCase().includes('face not detected'));
+      }
+      
       if (newMetrics.faceDetected) {
         accumulatedRef.current.facesDetected++;
         accumulatedRef.current.postureScores.push(newMetrics.postureScore);
@@ -506,6 +517,14 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
       clearTimeout(analysisTimeoutRef.current);
     }
     console.log('Starting frame analysis with MediaPipe + backend...');
+    
+    // Start warm-up period (3 seconds) - don't show "No Face" during this time
+    setIsWarmingUp(true);
+    setTimeout(() => {
+      setIsWarmingUp(false);
+      console.log('Warm-up period ended');
+    }, 3000);
+    
     analyzeFrame();
   }, [analyzeFrame]);
 
@@ -722,16 +741,17 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                 {isVideoReady && (
                   <>
                     <div className="absolute top-1 sm:top-2 left-1 sm:left-2 flex gap-1">
-                      {!metrics.faceDetected && (
+                      {/* Only show "No Face" after warm-up period and when not analyzing */}
+                      {!metrics.faceDetected && !isWarmingUp && !isAnalyzing && (
                         <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-background/80 border-destructive/50 text-destructive px-1.5 py-0.5">
                           <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                           No Face
                         </Badge>
                       )}
-                      {isAnalyzing && (
+                      {(isAnalyzing || isWarmingUp) && (
                         <Badge variant="outline" className="text-[9px] bg-background/80 border-primary/50 text-primary px-1.5 py-0.5">
                           <Loader2 className="w-2.5 h-2.5 mr-0.5 animate-spin" />
-                          Analyzing...
+                          {isWarmingUp ? 'Starting...' : 'Analyzing...'}
                         </Badge>
                       )}
                     </div>
