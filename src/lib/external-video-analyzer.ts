@@ -2,7 +2,7 @@
 // Connects to https://video-analyzer-gd-buddy.onrender.com
 
 const EXTERNAL_BACKEND_URL = 'https://video-analyzer-gd-buddy.onrender.com';
-const REQUEST_TIMEOUT = 5000; // 5 seconds
+const REQUEST_TIMEOUT = 30000; // 30 seconds (allow for Render cold starts)
 
 export interface ExternalVideoResponse {
   frame: number;
