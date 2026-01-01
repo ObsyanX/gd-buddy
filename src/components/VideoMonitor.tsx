@@ -494,8 +494,8 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
       const newConfidenceStatus = analyzeClient.getConfidenceStatus();
       setConfidenceStatus(newConfidenceStatus);
       
-      // Update fallback mode status
-      setIsFallbackMode(analyzeClient.isFallbackActive());
+      // Update warming/fallback mode status
+      setIsFallbackMode(analyzeClient.isBackendWarmingUp());
       
       if (response.explanations.error) {
         setBackendError(response.explanations.error);
