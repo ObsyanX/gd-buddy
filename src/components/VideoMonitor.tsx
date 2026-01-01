@@ -505,7 +505,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         setBackendError(null);
       }
       
-      // Convert and update metrics - preserve existing scores if backend throttled/failed
+      // Convert and update metrics from backend response (includes decayed values)
       const newMetrics = convertBackendMetrics(response);
       
       // Use MediaPipe's local face detection as fallback if backend didn't respond properly
@@ -515,24 +515,36 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         newMetrics.tips = newMetrics.tips.filter(tip => !tip.toLowerCase().includes('face not detected'));
       }
       
-      // Check if backend returned valid metrics
-      const hasValidBackendMetrics = response.metrics !== null && response.metrics.attention_percent !== null;
+      // Check if backend returned metrics (includes both fresh and decayed values)
+      // The AnalyzeFrameClient now handles decay internally and always returns metrics
+      const hasMetrics = response.metrics !== null;
       
-      if (hasValidBackendMetrics) {
-        // Backend returned valid data - store it and update UI
+      if (hasMetrics) {
+        // Backend returned data (either fresh or decayed) - update UI
         lastValidMetricsRef.current = newMetrics;
         hasReceivedBackendDataRef.current = true;
         setHasBackendData(true);
         
-        console.log('✓ Valid backend metrics received:', {
-          posture: newMetrics.postureScore,
-          eyeContact: newMetrics.eyeContactScore,
-          expression: newMetrics.expressionScore,
-          attention: newMetrics.attentionPercent
-        });
+        // Check if this was decay-applied (for logging)
+        const wasDecayed = response.explanations.decay_applied === 'true';
+        if (!wasDecayed) {
+          console.log('✓ Fresh backend metrics received:', {
+            posture: newMetrics.postureScore,
+            eyeContact: newMetrics.eyeContactScore,
+            expression: newMetrics.expressionScore,
+            attention: newMetrics.attentionPercent
+          });
+        } else {
+          console.log('⚠ Decayed metrics applied:', {
+            posture: newMetrics.postureScore,
+            eyeContact: newMetrics.eyeContactScore,
+            reason: response.explanations.reason
+          });
+        }
         
-        // Update accumulated metrics
-        if (newMetrics.faceDetected) {
+        // Update accumulated metrics (including decayed values so session average reflects reality)
+        accumulatedRef.current.totalFrames++;
+        if (newMetrics.faceDetected || wasDecayed) {
           accumulatedRef.current.facesDetected++;
           accumulatedRef.current.postureScores.push(newMetrics.postureScore);
           accumulatedRef.current.eyeContactScores.push(newMetrics.eyeContactScore);
@@ -542,22 +554,12 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         
         setMetrics(newMetrics);
         onMetricsUpdate?.(newMetrics);
-      } else {
-        // Backend failed or throttled - preserve last valid metrics if available
-        if (lastValidMetricsRef.current) {
-          // Keep last valid metrics but update faceDetected based on local detection
-          setMetrics(prev => ({
-            ...prev,
-            ...lastValidMetricsRef.current!,
-            faceDetected: hasFaceLocally || prev.faceDetected
-          }));
-        } else {
-          // No valid backend data yet - just update faceDetected from local detection
-          setMetrics(prev => ({
-            ...prev,
-            faceDetected: hasFaceLocally || prev.faceDetected
-          }));
-        }
+      } else if (response.explanations.reason !== 'throttled') {
+        // Only on real errors (not throttling), update faceDetected from local detection
+        setMetrics(prev => ({
+          ...prev,
+          faceDetected: hasFaceLocally || prev.faceDetected
+        }));
       }
       
     } catch (error) {

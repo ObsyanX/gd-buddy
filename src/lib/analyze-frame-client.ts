@@ -64,6 +64,14 @@ export class AnalyzeFrameClient {
   private minAnalysisInterval = 100; // 10 FPS max
   private confidenceStatus: 'PASS' | 'FAIL' | null = null;
   private lastValidMetrics: AnalysisMetrics | null = null; // Preserve last valid metrics
+  private lastSuccessfulAnalysisTime = 0; // Track when we last got valid data
+  private consecutiveFailures = 0; // Track consecutive failures for decay
+  
+  // Decay configuration
+  private static readonly DECAY_RATE_PER_SECOND = 3; // 3% per second
+  private static readonly ACCELERATED_DECAY_MULTIPLIER = 2; // 2x decay when face not detected
+  private static readonly MAX_STALE_TIME_MS = 3000; // Hard cap metrics after 3s of no data
+  private static readonly MIN_METRIC_VALUE = 0; // Floor for metrics
 
   /**
    * Analyze a frame using external backend (direct call, non-blocking)
@@ -74,7 +82,8 @@ export class AnalyzeFrameClient {
     // Capture frame as base64
     const frameBase64 = captureFrameAsBase64(video);
     if (!frameBase64) {
-      return this.createEmptyResponse(now, 'Frame capture failed');
+      this.consecutiveFailures++;
+      return this.handleAnalysisFailure(now, 'Frame capture failed', true);
     }
 
     const externalAnalyzer = getExternalVideoAnalyzer();
@@ -90,16 +99,17 @@ export class AnalyzeFrameClient {
     const externalResponse = await externalAnalyzer.analyzeFrame(frameBase64);
     
     if (!externalResponse) {
-      // Throttled or error - return empty response but preserve last valid metrics
+      // Throttled or error - apply decay logic
       const state = externalAnalyzer.getState();
-      const response = this.createEmptyResponse(now, state.lastError || 'throttled');
+      const reason = state.lastError || 'throttled';
       
-      // If we have last valid metrics, keep them available
-      if (this.lastValidMetrics && state.lastError !== 'throttled') {
-        console.log('[AnalyzeFrameClient] Preserving last valid metrics during error');
+      // Don't decay on throttling (expected behavior)
+      if (reason === 'throttled') {
+        return this.createEmptyResponse(now, 'throttled');
       }
       
-      return response;
+      this.consecutiveFailures++;
+      return this.handleAnalysisFailure(now, reason, false);
     }
 
     // Convert external response to our FrameResponse format
@@ -108,13 +118,102 @@ export class AnalyzeFrameClient {
     // Store confidence status
     this.confidenceStatus = externalResponse.confidence_status;
     
-    // Store last valid metrics
+    // Check if this is a FAIL state (low confidence)
+    const isFail = externalResponse.confidence_status === 'FAIL';
+    
+    if (isFail) {
+      // FAIL state - apply decay to metrics
+      this.consecutiveFailures++;
+      console.log('[AnalyzeFrameClient] FAIL state detected, applying decay');
+      return this.handleAnalysisFailure(now, 'low_confidence', false);
+    }
+    
+    // SUCCESS - store valid metrics and reset failure counter
     if (response.metrics) {
       this.lastValidMetrics = response.metrics;
+      this.lastSuccessfulAnalysisTime = now;
+      this.consecutiveFailures = 0;
       this.accumulateMetrics(response.metrics, response.warnings);
     }
 
     return response;
+  }
+
+  /**
+   * Handle analysis failure with time-based decay
+   * Metrics degrade based on time since last valid data
+   */
+  private handleAnalysisFailure(now: number, reason: string, noFace: boolean): FrameResponse {
+    // If we have no previous metrics, return empty
+    if (!this.lastValidMetrics) {
+      return this.createEmptyResponse(now, reason);
+    }
+
+    const timeSinceLastSuccess = now - this.lastSuccessfulAnalysisTime;
+    const secondsElapsed = timeSinceLastSuccess / 1000;
+    
+    // Calculate decay amount
+    const baseDecay = AnalyzeFrameClient.DECAY_RATE_PER_SECOND * secondsElapsed;
+    const decayMultiplier = noFace ? AnalyzeFrameClient.ACCELERATED_DECAY_MULTIPLIER : 1;
+    const totalDecay = baseDecay * decayMultiplier;
+    
+    // Hard cap: if no valid data for too long, force metrics to low values
+    const hardCap = timeSinceLastSuccess > AnalyzeFrameClient.MAX_STALE_TIME_MS;
+    const capValue = 30; // Hard cap at 30%
+    
+    // Apply decay to metrics
+    const decayedMetrics: AnalysisMetrics = {
+      attention_percent: this.applyDecay(this.lastValidMetrics.attention_percent, totalDecay, hardCap, capValue),
+      head_movement_normalized: this.lastValidMetrics.head_movement_normalized,
+      shoulder_tilt_deg: this.lastValidMetrics.shoulder_tilt_deg,
+      hand_activity_normalized: this.lastValidMetrics.hand_activity_normalized,
+      hands_detected_count: noFace ? 0 : this.lastValidMetrics.hands_detected_count,
+      posture_score: this.applyDecay(this.lastValidMetrics.posture_score, totalDecay, hardCap, capValue),
+      eye_contact_score: this.applyDecay(this.lastValidMetrics.eye_contact_score, totalDecay, hardCap, capValue),
+      expression_score: this.applyDecay(this.lastValidMetrics.expression_score, totalDecay, hardCap, capValue)
+    };
+    
+    console.log('[AnalyzeFrameClient] Applied decay:', {
+      secondsElapsed: secondsElapsed.toFixed(1),
+      totalDecay: totalDecay.toFixed(1),
+      hardCap,
+      noFace,
+      posture: `${this.lastValidMetrics.posture_score} -> ${decayedMetrics.posture_score}`,
+      eyeContact: `${this.lastValidMetrics.eye_contact_score} -> ${decayedMetrics.eye_contact_score}`
+    });
+    
+    // Update last valid metrics with decayed values so subsequent failures continue to decay
+    this.lastValidMetrics = decayedMetrics;
+    
+    // Accumulate the decayed values (so session average reflects reality)
+    this.accumulateMetrics(decayedMetrics, [reason]);
+    
+    return {
+      metrics: decayedMetrics,
+      frame_confidence: hardCap ? 0.1 : 0.3,
+      explanations: { reason, decay_applied: 'true' },
+      warnings: hardCap ? ['No reliable detection for extended period'] : [],
+      next_state: this.previousState || {
+        face_landmarks: null,
+        hand_landmarks: null,
+        pose_landmarks: null,
+        timestamp: now
+      }
+    };
+  }
+
+  /**
+   * Apply decay to a single metric value
+   */
+  private applyDecay(value: number | null, decayAmount: number, hardCap: boolean, capValue: number): number {
+    if (value === null) return 0;
+    
+    if (hardCap) {
+      return Math.min(value, capValue);
+    }
+    
+    const decayed = Math.max(AnalyzeFrameClient.MIN_METRIC_VALUE, value - decayAmount);
+    return Math.round(decayed);
   }
 
   /**
@@ -383,6 +482,8 @@ export class AnalyzeFrameClient {
     this.lastAnalysisTime = 0;
     this.confidenceStatus = null;
     this.lastValidMetrics = null;
+    this.lastSuccessfulAnalysisTime = 0;
+    this.consecutiveFailures = 0;
     console.log('AnalyzeFrameClient: Reset');
   }
 
