@@ -62,22 +62,63 @@ serve(async (req) => {
       const contentType = req.headers.get('content-type');
       
       if (contentType?.includes('application/json')) {
-        // JSON request (base64 endpoint)
-        headers.set('Content-Type', 'application/json');
-        body = req.body;
+        // JSON request - need to transform for backend
+        try {
+          const requestData = await req.json();
+          console.log('[Proxy] Received JSON data:', Object.keys(requestData));
+          
+          // Handle different JSON formats from frontend
+          let transformedData;
+          
+          if (requestData.image) {
+            // Already in correct format for /analyze/base64
+            transformedData = requestData;
+          } else if (requestData.base64 || requestData.imageData || requestData.data) {
+            // Transform to expected format
+            transformedData = {
+              image: requestData.base64 || requestData.imageData || requestData.data
+            };
+          } else if (typeof requestData === 'string') {
+            // Direct base64 string
+            transformedData = { image: requestData };
+          } else {
+            // Try to find any base64-like field
+            const possibleImageFields = ['frame', 'photo', 'picture', 'img'];
+            let imageData = null;
+            
+            for (const field of possibleImageFields) {
+              if (requestData[field]) {
+                imageData = requestData[field];
+                break;
+              }
+            }
+            
+            if (imageData) {
+              transformedData = { image: imageData };
+            } else {
+              // Log the actual structure for debugging
+              console.error('[Proxy] Unknown request format:', JSON.stringify(requestData, null, 2));
+              transformedData = requestData; // Pass through as-is
+            }
+          }
+          
+          headers.set('Content-Type', 'application/json');
+          body = JSON.stringify(transformedData);
+          console.log('[Proxy] Transformed data keys:', Object.keys(transformedData));
+          
+        } catch (error) {
+          console.error('[Proxy] JSON parsing error:', error);
+          body = req.body;
+        }
       } else if (contentType?.includes('multipart/form-data')) {
         // File upload (frame endpoint)
         body = req.body;
         // Don't set content-type for multipart, let fetch handle it
       } else {
-        // Try to parse as JSON for backward compatibility
-        try {
-          const jsonBody = await req.json();
-          headers.set('Content-Type', 'application/json');
-          body = JSON.stringify(jsonBody);
-        } catch {
-          // If not JSON, pass through as-is
-          body = req.body;
+        // Pass through as-is for other content types
+        body = req.body;
+        if (contentType) {
+          headers.set('Content-Type', contentType);
         }
       }
     }
