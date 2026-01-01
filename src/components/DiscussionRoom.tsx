@@ -549,20 +549,40 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       let videoSessionMetrics = null;
       if (getVideoMetrics) {
         videoSessionMetrics = getVideoMetrics();
+        console.log('[EndSession] Video metrics retrieved:', {
+          posture: videoSessionMetrics?.avgPostureScore,
+          eyeContact: videoSessionMetrics?.avgEyeContactScore,
+          expression: videoSessionMetrics?.avgExpressionScore,
+          totalFrames: videoSessionMetrics?.faceDetectionRate
+        });
       }
 
       // Save video metrics to database
-      if (videoSessionMetrics && (videoSessionMetrics.avgPostureScore || videoSessionMetrics.avgEyeContactScore)) {
-        await supabase
+      // CRITICAL: Check for !== null, not just truthy (0 is valid score, but false in JS)
+      const hasPosture = videoSessionMetrics?.avgPostureScore !== null && videoSessionMetrics?.avgPostureScore !== undefined;
+      const hasEyeContact = videoSessionMetrics?.avgEyeContactScore !== null && videoSessionMetrics?.avgEyeContactScore !== undefined;
+      const hasExpression = videoSessionMetrics?.avgExpressionScore !== null && videoSessionMetrics?.avgExpressionScore !== undefined;
+      
+      if (videoSessionMetrics && (hasPosture || hasEyeContact || hasExpression)) {
+        console.log('[EndSession] Saving video metrics to database...');
+        const { error: metricsError } = await supabase
           .from('gd_metrics')
           .upsert({
             session_id: sessionId,
-            posture_score: videoSessionMetrics.avgPostureScore,
-            eye_contact_score: videoSessionMetrics.avgEyeContactScore,
-            expression_score: videoSessionMetrics.avgExpressionScore,
+            posture_score: hasPosture ? videoSessionMetrics.avgPostureScore : null,
+            eye_contact_score: hasEyeContact ? videoSessionMetrics.avgEyeContactScore : null,
+            expression_score: hasExpression ? videoSessionMetrics.avgExpressionScore : null,
             video_tips: videoSessionMetrics.tips,
             updated_at: new Date().toISOString()
           });
+        
+        if (metricsError) {
+          console.error('[EndSession] Failed to save video metrics:', metricsError);
+        } else {
+          console.log('[EndSession] Video metrics saved successfully');
+        }
+      } else {
+        console.log('[EndSession] No valid video metrics to save');
       }
 
       await supabase
