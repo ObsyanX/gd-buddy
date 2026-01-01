@@ -697,35 +697,36 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   }, [isMinimized, isCameraOn]);
 
   return (
-    <Card className={`border-4 border-border transition-all ${isMinimized ? 'p-3' : 'p-4'}`}>
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-bold text-sm flex items-center gap-2">
-          <Camera className="w-4 h-4" />
-          VIDEO MONITOR
+    <Card className={`border-2 sm:border-4 border-border transition-all ${isMinimized ? 'p-2 sm:p-3' : 'p-2 sm:p-4'}`}>
+      <div className="flex items-center justify-between mb-1.5 sm:mb-2 gap-1">
+        <h3 className="font-bold text-xs sm:text-sm flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+          <Camera className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="hidden xs:inline">VIDEO MONITOR</span>
+          <span className="xs:hidden">VIDEO</span>
           {isCameraOn && metrics.faceDetected && (
-            <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500">
+            <Badge variant="outline" className="text-[9px] sm:text-xs bg-green-500/10 text-green-500 border-green-500 px-1 sm:px-1.5">
               LIVE
             </Badge>
           )}
           {backendError && !isFallbackMode && (
-            <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500">
-              <AlertCircle className="w-3 h-3 mr-1" />
+            <Badge variant="outline" className="text-[9px] sm:text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500 px-1 sm:px-1.5 hidden sm:flex">
+              <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
               Backend
             </Badge>
           )}
           {isFallbackMode && (
-            <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-500 border-orange-500">
+            <Badge variant="outline" className="text-[9px] sm:text-xs bg-orange-500/10 text-orange-500 border-orange-500 px-1 sm:px-1.5 hidden sm:flex">
               Fallback
             </Badge>
           )}
         </h3>
-        <div className="flex gap-1">
+        <div className="flex gap-0.5 sm:gap-1 flex-shrink-0">
           {isCameraOn && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowFaceMesh(!showFaceMesh)}
-              className="h-6 px-2 text-xs"
+              className="h-5 w-5 sm:h-6 sm:w-auto sm:px-2 p-0 text-[10px] sm:text-xs"
               title={showFaceMesh ? "Hide mesh" : "Show mesh"}
             >
               {showFaceMesh ? '◉' : '○'}
@@ -735,7 +736,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
             variant="ghost"
             size="sm"
             onClick={() => setIsMinimized(!isMinimized)}
-            className="h-6 w-6 p-0"
+            className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-xs"
           >
             {isMinimized ? '+' : '-'}
           </Button>
@@ -744,9 +745,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
               variant="ghost"
               size="sm"
               onClick={stopCamera}
-              className="h-6 w-6 p-0 text-destructive"
+              className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-destructive"
             >
-              <X className="w-3 h-3" />
+              <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </Button>
           )}
         </div>
@@ -885,10 +886,10 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
           </div>
 
           {metrics.faceDetected && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1">
-                  <User className="w-3 h-3" />
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="flex items-center justify-between text-[10px] sm:text-xs">
+                <span className="flex items-center gap-0.5 sm:gap-1">
+                  <User className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   Posture
                 </span>
                 <span className={`font-bold ${getScoreColor(metrics.postureScore)}`}>
@@ -897,11 +898,11 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                     : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
                 </span>
               </div>
-              <Progress value={hasBackendData ? metrics.postureScore : 0} className="h-1.5" />
+              <Progress value={hasBackendData ? metrics.postureScore : 0} className="h-1 sm:h-1.5" />
               
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1">
-                  <Eye className="w-3 h-3" />
+              <div className="flex items-center justify-between text-[10px] sm:text-xs">
+                <span className="flex items-center gap-0.5 sm:gap-1">
+                  <Eye className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   Eye Contact
                 </span>
                 <span className={`font-bold ${getScoreColor(metrics.eyeContactScore)}`}>
@@ -910,10 +911,10 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                     : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
                 </span>
               </div>
-              <Progress value={hasBackendData ? metrics.eyeContactScore : 0} className="h-1.5" />
+              <Progress value={hasBackendData ? metrics.eyeContactScore : 0} className="h-1 sm:h-1.5" />
               
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1">
+              <div className="flex items-center justify-between text-[10px] sm:text-xs">
+                <span className="flex items-center gap-0.5 sm:gap-1">
                   😊 Expression
                 </span>
                 <span className={`font-bold ${getScoreColor(metrics.expressionScore)}`}>
@@ -922,17 +923,17 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                     : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
                 </span>
               </div>
-              <Progress value={hasBackendData ? metrics.expressionScore : 0} className="h-1.5" />
+              <Progress value={hasBackendData ? metrics.expressionScore : 0} className="h-1 sm:h-1.5" />
               
               {/* Additional metrics from backend */}
               {hasBackendData && metrics.attentionPercent !== null && (
-                <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border">
+                <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground pt-1 border-t border-border">
                   <span>Attention</span>
                   <span>{Math.round(metrics.attentionPercent)}%</span>
                 </div>
               )}
               {metrics.handsDetected > 0 && (
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
                   <span>Hands Visible</span>
                   <span>{metrics.handsDetected}</span>
                 </div>
@@ -941,21 +942,21 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
           )}
 
           {isAudioActive && isUserMicActive && (
-            <div className="space-y-2 pt-2 border-t border-border">
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1">
-                  <Mic className={`w-3 h-3 ${audioMetrics.isSpeaking ? 'text-green-500 animate-pulse' : 'text-muted-foreground'}`} />
+            <div className="space-y-1.5 sm:space-y-2 pt-1.5 sm:pt-2 border-t border-border">
+              <div className="flex items-center justify-between text-[10px] sm:text-xs">
+                <span className="flex items-center gap-0.5 sm:gap-1">
+                  <Mic className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${audioMetrics.isSpeaking ? 'text-green-500 animate-pulse' : 'text-muted-foreground'}`} />
                   Your Voice
                 </span>
-                <Badge variant={audioMetrics.isSpeaking ? "default" : "outline"} className="text-[10px] px-1.5 py-0">
+                <Badge variant={audioMetrics.isSpeaking ? "default" : "outline"} className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0">
                   {audioMetrics.isSpeaking ? 'Speaking' : 'Silent'}
                 </Badge>
               </div>
-              <div className="flex items-center gap-2">
-                <Volume2 className="w-3 h-3 text-muted-foreground" />
-                <Progress value={audioMetrics.volume * 100} className="h-1.5 flex-1" />
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Volume2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-muted-foreground" />
+                <Progress value={audioMetrics.volume * 100} className="h-1 sm:h-1.5 flex-1" />
               </div>
-              <div className="flex justify-between text-[10px] text-muted-foreground">
+              <div className="flex justify-between text-[9px] sm:text-[10px] text-muted-foreground">
                 <span>Pauses: {audioMetrics.pauseCount}</span>
                 <span>Speaking: {Math.round(audioMetrics.totalSpeakingTime)}s</span>
               </div>
@@ -963,11 +964,11 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
           )}
 
           {metrics.tips.length > 0 && (
-            <div className="text-xs space-y-1 pt-2 border-t border-border">
+            <div className="text-[10px] sm:text-xs space-y-0.5 sm:space-y-1 pt-1.5 sm:pt-2 border-t border-border">
               {metrics.tips.map((tip, i) => (
-                <div key={i} className="flex items-start gap-1 text-muted-foreground">
+                <div key={i} className="flex items-start gap-0.5 sm:gap-1 text-muted-foreground">
                   <span>•</span>
-                  <span>{tip}</span>
+                  <span className="leading-tight">{tip}</span>
                 </div>
               ))}
             </div>
