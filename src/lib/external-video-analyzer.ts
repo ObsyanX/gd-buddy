@@ -1,8 +1,9 @@
-// External Video Analyzer API Client
-// Routes through Supabase edge function proxy for secure API key handling
-// Falls back to local Supabase fallback function when backend is unreachable
+// External Video Analyzer - Direct Backend Integration
+// Calls Render backend directly (no Supabase proxy) to avoid timeout issues
+// Backend has 60-90s cold start on free tier - handled gracefully
 
-import { supabase } from "@/integrations/supabase/client";
+const BACKEND_URL = 'https://video-analyzer-gd-buddy.onrender.com';
+const API_KEY = 'gd-buddy-video-2024'; // Public API key for this service
 
 export interface ExternalVideoResponse {
   frame: number;
@@ -19,29 +20,12 @@ export interface ExternalVideoResponse {
   backend_unreachable?: boolean;
 }
 
-export interface FallbackResponse {
-  success: boolean;
-  fallback: boolean;
-  frame_confidence: number;
-  metrics: {
-    attention_percent: number | null;
-    head_movement_normalized: number | null;
-    shoulder_tilt_deg: number | null;
-    hand_activity_normalized: number | null;
-    hands_detected_count: number;
-    posture_score: number | null;
-    eye_contact_score: number | null;
-    expression_score: number | null;
-  };
-  explanations: Record<string, string>;
-  warnings: string[];
-}
-
 export interface ExternalAnalyzerState {
   isAnalyzing: boolean;
   lastError: string | null;
   frameCount: number;
-  isFallbackMode: boolean;
+  isWarmingUp: boolean;
+  backendReady: boolean;
   consecutiveFailures: number;
 }
 
@@ -50,74 +34,108 @@ class ExternalVideoAnalyzer {
     isAnalyzing: false,
     lastError: null,
     frameCount: 0,
-    isFallbackMode: false,
+    isWarmingUp: true,
+    backendReady: false,
     consecutiveFailures: 0
   };
   
   private lastRequestTime = 0;
   private minInterval = 500; // 500ms between requests (2 FPS)
   private lastValidResponse: ExternalVideoResponse | null = null;
-  private fallbackRecoveryTime = 0;
-  private readonly MAX_CONSECUTIVE_FAILURES = 3;
-  private readonly RECOVERY_INTERVAL = 30000; // 30 seconds
+  private wakeupSent = false;
+
+  constructor() {
+    // Fire-and-forget wake-up on instantiation
+    this.wakeBackend();
+  }
 
   /**
-   * Analyze a video frame using the proxy edge function (secure API key handling)
+   * Wake up the Render backend (fire-and-forget)
+   * Cold starts take 60-90 seconds on free tier
+   */
+  private async wakeBackend(): Promise<void> {
+    if (this.wakeupSent) return;
+    this.wakeupSent = true;
+    
+    console.log('[Analyzer] Sending wake-up ping to backend...');
+    
+    try {
+      const response = await fetch(`${BACKEND_URL}/health`, {
+        method: 'GET',
+        headers: { 'X-API-Key': API_KEY }
+      });
+      
+      if (response.ok) {
+        console.log('[Analyzer] Backend is awake and ready');
+        this.state.isWarmingUp = false;
+        this.state.backendReady = true;
+      }
+    } catch (error) {
+      console.log('[Analyzer] Backend warming up (cold start expected)...');
+      // Will retry on next analysis attempt
+    }
+  }
+
+  /**
+   * Analyze a video frame - calls backend directly (non-blocking)
+   * Returns null if throttled or on error (preserves last metrics)
    */
   async analyzeFrame(frameBase64: string): Promise<ExternalVideoResponse | null> {
     const now = Date.now();
     
     // Throttle requests
     if (now - this.lastRequestTime < this.minInterval) {
-      if (this.state.frameCount % 10 === 0) {
-        console.log('[Analyzer] Frame throttled');
-      }
-      return null;
+      return null; // Return null, caller should use cached metrics
     }
     this.lastRequestTime = now;
     
-    // Check if we should try to recover from fallback mode
-    if (this.state.isFallbackMode && now > this.fallbackRecoveryTime) {
-      console.log('[Analyzer] Attempting recovery from fallback mode...');
-      this.state.isFallbackMode = false;
-      this.state.consecutiveFailures = 0;
-    }
-    
     this.state.isAnalyzing = true;
     this.state.frameCount++;
-    console.log(`[Analyzer] Frame #${this.state.frameCount}${this.state.isFallbackMode ? ' (fallback)' : ''}`);
+    
+    // Clean base64 - remove data URL prefix if present
+    let cleanBase64 = frameBase64;
+    if (cleanBase64.includes(',')) {
+      cleanBase64 = cleanBase64.split(',')[1];
+    }
 
     try {
-      // Use Supabase edge function proxy instead of direct call
-      console.log('[Analyzer] Calling video-analyzer-proxy...');
+      console.log(`[Analyzer] Frame #${this.state.frameCount} - calling backend directly`);
       
-      const { data, error } = await supabase.functions.invoke('video-analyzer-proxy', {
-        body: {
-          frame: frameBase64,
-          frame_number: this.state.frameCount,
-          timestamp: now / 1000
-        }
+      // Build the EXACT payload the backend expects
+      const payload = { image: cleanBase64 };
+      
+      // Log payload structure for debugging (not the full image)
+      console.log('[Analyzer] Payload:', { 
+        keys: Object.keys(payload), 
+        imageLength: cleanBase64.length 
       });
 
-      if (error) {
-        throw new Error(error.message || 'Proxy error');
+      const response = await fetch(`${BACKEND_URL}/analyze/base64`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': API_KEY
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Analyzer] Backend error ${response.status}:`, errorText);
+        throw new Error(`Backend error: ${response.status}`);
       }
 
-      if (!data || !data.success) {
-        if (data?.backend_unreachable) {
-          throw new Error('Backend unreachable');
-        }
-        throw new Error(data?.error || 'Analysis failed');
-      }
-
-      // Success - reset failure counter
+      const data = await response.json() as ExternalVideoResponse;
+      
+      // Success - update state
       this.state.consecutiveFailures = 0;
-      this.state.isFallbackMode = false;
+      this.state.isWarmingUp = false;
+      this.state.backendReady = true;
       this.state.lastError = null;
       this.state.isAnalyzing = false;
       
-      // Store last valid response for fallback
-      this.lastValidResponse = data as ExternalVideoResponse;
+      // Store last valid response for metric preservation
+      this.lastValidResponse = { ...data, success: true };
       
       console.log('[Analyzer] Success:', {
         attention: data.attention,
@@ -125,7 +143,8 @@ class ExternalVideoAnalyzer {
         confidence: data.frame_confidence
       });
       
-      return data as ExternalVideoResponse;
+      return this.lastValidResponse;
+      
     } catch (error) {
       this.state.isAnalyzing = false;
       this.state.consecutiveFailures++;
@@ -133,15 +152,20 @@ class ExternalVideoAnalyzer {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.state.lastError = errorMessage;
       
-      console.error(`[Analyzer] Error (${this.state.consecutiveFailures}/${this.MAX_CONSECUTIVE_FAILURES}):`, errorMessage);
-      
-      // Switch to fallback mode after consecutive failures
-      if (this.state.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES && !this.state.isFallbackMode) {
-        console.log('[Analyzer] Switching to fallback mode');
-        this.state.isFallbackMode = true;
-        this.fallbackRecoveryTime = Date.now() + this.RECOVERY_INTERVAL;
+      // Check if this looks like a cold start timeout
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        this.state.isWarmingUp = true;
+        this.state.backendReady = false;
+        console.log('[Analyzer] Backend appears to be in cold start...');
+        
+        // Retry wake-up
+        this.wakeupSent = false;
+        this.wakeBackend();
       }
       
+      console.error(`[Analyzer] Error (${this.state.consecutiveFailures}):`, errorMessage);
+      
+      // Return null - caller should preserve last metrics
       return null;
     }
   }
@@ -154,10 +178,17 @@ class ExternalVideoAnalyzer {
   }
 
   /**
-   * Check if in fallback mode
+   * Check if backend is warming up (cold start)
    */
-  isFallbackActive(): boolean {
-    return this.state.isFallbackMode;
+  isBackendWarmingUp(): boolean {
+    return this.state.isWarmingUp;
+  }
+
+  /**
+   * Check if backend is ready
+   */
+  isBackendReady(): boolean {
+    return this.state.backendReady;
   }
 
   /**
@@ -182,12 +213,14 @@ class ExternalVideoAnalyzer {
       isAnalyzing: false,
       lastError: null,
       frameCount: 0,
-      isFallbackMode: false,
+      isWarmingUp: true,
+      backendReady: false,
       consecutiveFailures: 0
     };
     this.lastRequestTime = 0;
     this.lastValidResponse = null;
-    this.fallbackRecoveryTime = 0;
+    this.wakeupSent = false;
+    this.wakeBackend();
   }
 }
 
@@ -206,3 +239,6 @@ export function resetExternalVideoAnalyzer(): void {
     analyzerInstance.reset();
   }
 }
+
+// Initialize on module load to start wake-up early
+getExternalVideoAnalyzer();

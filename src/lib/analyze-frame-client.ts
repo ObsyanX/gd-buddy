@@ -1,9 +1,9 @@
 // API client for video frame analysis
-// Supports external backend (via proxy), Supabase fallback, and edge function
+// Supports external backend (direct call) and Supabase edge function
 
 import { supabase } from "@/integrations/supabase/client";
 import { LandmarkData } from "./mediapipe-client";
-import { getExternalVideoAnalyzer, ExternalVideoResponse, FallbackResponse } from "./external-video-analyzer";
+import { getExternalVideoAnalyzer, ExternalVideoResponse } from "./external-video-analyzer";
 import { captureFrameAsBase64 } from "./frame-capture";
 
 // Use external backend by default
@@ -33,7 +33,7 @@ export interface FrameResponse {
   explanations: Record<string, string>;
   warnings: string[];
   next_state: PreviousState;
-  isFallback?: boolean;
+  isWarmingUp?: boolean;
 }
 
 export interface AccumulatedMetrics {
@@ -66,7 +66,7 @@ export class AnalyzeFrameClient {
   private lastValidMetrics: AnalysisMetrics | null = null; // Preserve last valid metrics
 
   /**
-   * Analyze a frame using external backend (video element required)
+   * Analyze a frame using external backend (direct call, non-blocking)
    */
   async analyzeWithExternalBackend(video: HTMLVideoElement): Promise<FrameResponse> {
     const now = Date.now();
@@ -78,11 +78,12 @@ export class AnalyzeFrameClient {
     }
 
     const externalAnalyzer = getExternalVideoAnalyzer();
+    const analyzerState = externalAnalyzer.getState();
     
-    // Check if we're in fallback mode
-    if (externalAnalyzer.isFallbackActive()) {
-      console.log('[AnalyzeFrameClient] In fallback mode, using last valid metrics');
-      return this.createFallbackResponse(now);
+    // If backend is warming up, return cached metrics with warming indicator
+    if (analyzerState.isWarmingUp && this.lastValidMetrics) {
+      console.log('[AnalyzeFrameClient] Backend warming up, using cached metrics');
+      return this.createWarmingResponse(now);
     }
 
     // Send to external backend via proxy
@@ -117,39 +118,21 @@ export class AnalyzeFrameClient {
   }
 
   /**
-   * Create a fallback response using last valid metrics or empty values
+   * Create a response when backend is warming up (preserves last metrics)
    */
-  private createFallbackResponse(timestamp: number): FrameResponse {
-    // Return last valid metrics if available
-    if (this.lastValidMetrics) {
-      console.log('[AnalyzeFrameClient] Using cached metrics in fallback mode');
-      return {
-        metrics: this.lastValidMetrics,
-        frame_confidence: 0.5, // Indicate fallback confidence
-        explanations: { mode: 'fallback_cached' },
-        warnings: ['Using cached metrics - backend recovering'],
-        next_state: this.previousState || {
-          face_landmarks: null,
-          hand_landmarks: null,
-          pose_landmarks: null,
-          timestamp
-        },
-        isFallback: true
-      };
-    }
-    
+  private createWarmingResponse(timestamp: number): FrameResponse {
     return {
-      metrics: null,
-      frame_confidence: 0,
-      explanations: { mode: 'fallback_no_data' },
-      warnings: ['Backend unreachable - no cached data'],
+      metrics: this.lastValidMetrics,
+      frame_confidence: 0.5,
+      explanations: { mode: 'warming_up' },
+      warnings: ['Backend warming up (Render cold start)'],
       next_state: this.previousState || {
         face_landmarks: null,
         hand_landmarks: null,
         pose_landmarks: null,
         timestamp
       },
-      isFallback: true
+      isWarmingUp: true
     };
   }
 
@@ -180,8 +163,7 @@ export class AnalyzeFrameClient {
         hand_landmarks: null,
         pose_landmarks: null,
         timestamp
-      },
-      isFallback: false
+      }
     };
   }
 
@@ -405,10 +387,10 @@ export class AnalyzeFrameClient {
   }
 
   /**
-   * Check if currently in fallback mode
+   * Check if backend is warming up
    */
-  isFallbackActive(): boolean {
-    return getExternalVideoAnalyzer().isFallbackActive();
+  isBackendWarmingUp(): boolean {
+    return getExternalVideoAnalyzer().isBackendWarmingUp();
   }
 
   /**
