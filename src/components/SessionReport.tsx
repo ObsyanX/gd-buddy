@@ -463,14 +463,26 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     }
 
     // Performance radar data
+    // CRITICAL: Use session-aggregated video metrics from database
+    // Fallback to null (not 0) to distinguish "no data" from "score of 0"
+    // Radar chart should only show metrics that have real data
+    const postureScore = metricsData?.posture_score;
+    const eyeContactScore = metricsData?.eye_contact_score;
+    
+    // Only include video metrics in radar if they have valid data (non-null and > 0)
+    const hasValidPosture = postureScore !== null && postureScore !== undefined && postureScore > 0;
+    const hasValidEyeContact = eyeContactScore !== null && eyeContactScore !== undefined && eyeContactScore > 0;
+    
     const performanceData = [
       { metric: 'Fluency', score: realMetrics.fluency_score || 0, fullMark: 100 },
       { metric: 'Content', score: realMetrics.content_score || 0, fullMark: 100 },
       { metric: 'Structure', score: realMetrics.structure_score || 0, fullMark: 100 },
       { metric: 'Voice', score: realMetrics.voice_score || 0, fullMark: 100 },
-      { metric: 'Posture', score: metricsData?.posture_score || 0, fullMark: 100 },
-      { metric: 'Eye Contact', score: metricsData?.eye_contact_score || 0, fullMark: 100 },
-    ];
+      // Only include Posture and Eye Contact if we have valid session data
+      // This prevents radar chart from showing misleading 0 values
+      { metric: 'Posture', score: hasValidPosture ? postureScore : (realMetrics.has_real_data ? 0 : -1), fullMark: 100 },
+      { metric: 'Eye Contact', score: hasValidEyeContact ? eyeContactScore : (realMetrics.has_real_data ? 0 : -1), fullMark: 100 },
+    ].filter(d => d.score >= 0); // Filter out metrics with -1 (no data)
 
     // Filler words by type - use THIS participant's text only
     const allMyText = myMessages.map(m => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
