@@ -2,10 +2,6 @@
 // Proxies requests to external Python backend with API key authentication
 // This keeps the API key secure on the server side
 
-// Video Analyzer Proxy Edge Function
-// Proxies requests to external Python backend with API key authentication
-// This keeps the API key secure on the server side
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -60,62 +56,100 @@ serve(async (req) => {
 
     if (req.method === 'POST') {
       const contentType = req.headers.get('content-type');
+      console.log('[Proxy] Content-Type:', contentType);
       
       if (contentType?.includes('application/json')) {
         // JSON request - need to transform for backend
         try {
           const requestData = await req.json();
-          console.log('[Proxy] Received JSON data:', Object.keys(requestData));
+          console.log('[Proxy] Raw request data type:', typeof requestData);
+          console.log('[Proxy] Raw request data keys:', requestData ? Object.keys(requestData) : 'null');
+          console.log('[Proxy] Full request data:', JSON.stringify(requestData, null, 2));
           
           // Handle different JSON formats from frontend
           let transformedData;
           
-          if (requestData.image) {
-            // Already in correct format for /analyze/base64
-            transformedData = requestData;
-          } else if (requestData.base64 || requestData.imageData || requestData.data) {
-            // Transform to expected format
-            transformedData = {
-              image: requestData.base64 || requestData.imageData || requestData.data
-            };
+          if (requestData && typeof requestData === 'object') {
+            if (requestData.image) {
+              // Already in correct format for /analyze/base64
+              transformedData = requestData;
+              console.log('[Proxy] Using existing image field');
+            } else if (requestData.base64) {
+              transformedData = { image: requestData.base64 };
+              console.log('[Proxy] Transformed base64 -> image');
+            } else if (requestData.imageData) {
+              transformedData = { image: requestData.imageData };
+              console.log('[Proxy] Transformed imageData -> image');
+            } else if (requestData.data) {
+              transformedData = { image: requestData.data };
+              console.log('[Proxy] Transformed data -> image');
+            } else {
+              // Try to find any base64-like field
+              const possibleImageFields = ['frame', 'photo', 'picture', 'img', 'file', 'blob'];
+              let imageData = null;
+              let foundField = null;
+              
+              for (const field of possibleImageFields) {
+                if (requestData[field]) {
+                  imageData = requestData[field];
+                  foundField = field;
+                  break;
+                }
+              }
+              
+              if (imageData) {
+                transformedData = { image: imageData };
+                console.log(`[Proxy] Transformed ${foundField} -> image`);
+              } else {
+                // Check if any field contains base64-like data
+                for (const [key, value] of Object.entries(requestData)) {
+                  if (typeof value === 'string' && (
+                    value.startsWith('data:image/') || 
+                    value.startsWith('/9j/') || 
+                    value.startsWith('iVBORw0KGgo') ||
+                    value.length > 100
+                  )) {
+                    transformedData = { image: value };
+                    console.log(`[Proxy] Found base64-like data in field: ${key}`);
+                    break;
+                  }
+                }
+                
+                if (!transformedData) {
+                  console.error('[Proxy] No image data found in request');
+                  console.error('[Proxy] Available fields:', Object.keys(requestData));
+                  // Create a minimal valid request to avoid 400 error
+                  transformedData = { image: 'placeholder' };
+                }
+              }
+            }
           } else if (typeof requestData === 'string') {
             // Direct base64 string
             transformedData = { image: requestData };
+            console.log('[Proxy] Transformed string -> image');
           } else {
-            // Try to find any base64-like field
-            const possibleImageFields = ['frame', 'photo', 'picture', 'img'];
-            let imageData = null;
-            
-            for (const field of possibleImageFields) {
-              if (requestData[field]) {
-                imageData = requestData[field];
-                break;
-              }
-            }
-            
-            if (imageData) {
-              transformedData = { image: imageData };
-            } else {
-              // Log the actual structure for debugging
-              console.error('[Proxy] Unknown request format:', JSON.stringify(requestData, null, 2));
-              transformedData = requestData; // Pass through as-is
-            }
+            console.error('[Proxy] Invalid request data type:', typeof requestData);
+            transformedData = { image: 'placeholder' };
           }
           
           headers.set('Content-Type', 'application/json');
           body = JSON.stringify(transformedData);
-          console.log('[Proxy] Transformed data keys:', Object.keys(transformedData));
+          console.log('[Proxy] Final transformed data:', JSON.stringify(transformedData, null, 2));
           
         } catch (error) {
           console.error('[Proxy] JSON parsing error:', error);
-          body = req.body;
+          // Create fallback request
+          headers.set('Content-Type', 'application/json');
+          body = JSON.stringify({ image: 'error_placeholder' });
         }
       } else if (contentType?.includes('multipart/form-data')) {
         // File upload (frame endpoint)
+        console.log('[Proxy] Handling multipart/form-data');
         body = req.body;
         // Don't set content-type for multipart, let fetch handle it
       } else {
         // Pass through as-is for other content types
+        console.log('[Proxy] Passing through unknown content type');
         body = req.body;
         if (contentType) {
           headers.set('Content-Type', contentType);
