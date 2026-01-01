@@ -3,7 +3,7 @@
 // Backend has 60-90s cold start on free tier - handled gracefully
 
 const BACKEND_URL = 'https://video-analyzer-gd-buddy.onrender.com';
-const API_KEY = 'gd-buddy-video-2024'; // Public API key for this service
+const API_KEY = 'vb_analysis_jLqPYbhOWY84J3RHpYePLMONkVfoX9gk5w9nATPUkZA'; // Working API key
 
 export interface ExternalVideoResponse {
   frame: number;
