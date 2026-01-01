@@ -128,11 +128,21 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         setCurrentParticipant(myParticipant);
       }
 
-      const { data: metricsData } = await supabase
+      const { data: metricsData, error: metricsError } = await supabase
         .from('gd_metrics')
         .select('*')
         .eq('session_id', sessionId)
         .maybeSingle();
+
+      // Log metrics data for debugging
+      console.log('[SessionReport] Loaded metrics from database:', {
+        sessionId,
+        metricsData,
+        metricsError,
+        posture: metricsData?.posture_score,
+        eyeContact: metricsData?.eye_contact_score,
+        expression: metricsData?.expression_score
+      });
 
       const { data: messagesData } = await supabase
         .from('gd_messages')
@@ -143,18 +153,30 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       setSession(sessionData);
       setMessages(messagesData || []);
 
-      // Load video metrics if available - only show if at least one score is non-zero
-      const hasValidVideoMetrics = 
-        (metricsData?.posture_score && metricsData.posture_score > 0) ||
-        (metricsData?.eye_contact_score && metricsData.eye_contact_score > 0) ||
-        (metricsData?.expression_score && metricsData.expression_score > 0);
+      // Load video metrics if available
+      // CRITICAL: Check for explicit null/undefined, not just falsy (0 is valid score)
+      const postureScore = metricsData?.posture_score;
+      const eyeContactScore = metricsData?.eye_contact_score;
+      const expressionScore = metricsData?.expression_score;
+      
+      const hasValidPosture = postureScore !== null && postureScore !== undefined && postureScore > 0;
+      const hasValidEyeContact = eyeContactScore !== null && eyeContactScore !== undefined && eyeContactScore > 0;
+      const hasValidExpression = expressionScore !== null && expressionScore !== undefined && expressionScore > 0;
+      const hasValidVideoMetrics = hasValidPosture || hasValidEyeContact || hasValidExpression;
+        
+      console.log('[SessionReport] Video metrics validation:', {
+        hasValidPosture,
+        hasValidEyeContact,
+        hasValidExpression,
+        hasValidVideoMetrics
+      });
         
       if (hasValidVideoMetrics) {
         setVideoMetrics({
-          postureScore: metricsData.posture_score || 0,
-          eyeContactScore: metricsData.eye_contact_score || 0,
-          expressionScore: metricsData.expression_score || 0,
-          tips: metricsData.video_tips || []
+          postureScore: postureScore ?? 0,
+          eyeContactScore: eyeContactScore ?? 0,
+          expressionScore: expressionScore ?? 0,
+          tips: metricsData?.video_tips || []
         });
       } else {
         setVideoMetrics(null);
@@ -473,12 +495,23 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     const hasValidPosture = postureScore !== null && postureScore !== undefined && postureScore > 0;
     const hasValidEyeContact = eyeContactScore !== null && eyeContactScore !== undefined && eyeContactScore > 0;
     
+    console.log('[SessionReport] Radar chart data sources:', {
+      fluency: realMetrics.fluency_score,
+      content: realMetrics.content_score,
+      structure: realMetrics.structure_score,
+      voice: realMetrics.voice_score,
+      postureFromDB: postureScore,
+      eyeContactFromDB: eyeContactScore,
+      hasValidPosture,
+      hasValidEyeContact
+    });
+    
     const performanceData = [
       { metric: 'Fluency', score: realMetrics.fluency_score || 0, fullMark: 100 },
       { metric: 'Content', score: realMetrics.content_score || 0, fullMark: 100 },
       { metric: 'Structure', score: realMetrics.structure_score || 0, fullMark: 100 },
       { metric: 'Voice', score: realMetrics.voice_score || 0, fullMark: 100 },
-      // Only include Posture and Eye Contact if we have valid session data
+      // Only include Posture and Eye Contact if we have valid session data from database
       // This prevents radar chart from showing misleading 0 values
       { metric: 'Posture', score: hasValidPosture ? postureScore : (realMetrics.has_real_data ? 0 : -1), fullMark: 100 },
       { metric: 'Eye Contact', score: hasValidEyeContact ? eyeContactScore : (realMetrics.has_real_data ? 0 : -1), fullMark: 100 },
