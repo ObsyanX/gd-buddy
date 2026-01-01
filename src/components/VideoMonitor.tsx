@@ -675,6 +675,21 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
 
   if (!isActive) return null;
 
+  // Re-attach stream when minimize state changes
+  useEffect(() => {
+    if (!isMinimized && isCameraOn && videoRef.current && streamRef.current) {
+      const video = videoRef.current;
+      if (video.srcObject !== streamRef.current) {
+        console.log('Re-attaching stream after restore from minimize');
+        video.srcObject = streamRef.current;
+        video.play().then(() => {
+          console.log('Video resumed after restore');
+          setIsVideoReady(true);
+        }).catch(err => console.warn('Resume play failed:', err));
+      }
+    }
+  }, [isMinimized, isCameraOn]);
+
   return (
     <Card className={`border-4 border-border transition-all ${isMinimized ? 'p-3' : 'p-4'}`}>
       <div className="flex items-center justify-between mb-2">
@@ -726,227 +741,227 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
         </div>
       </div>
 
-      {!isMinimized && (
-        <>
-          {!isCameraOn ? (
-            <div className="text-center py-4 px-2 bg-muted/20 rounded-lg border border-dashed border-border">
-              <p className="text-xs text-muted-foreground font-mono leading-relaxed mb-3">
-                Enable camera for real-time face detection and posture analysis.
-              </p>
-              <Button
-                onClick={startCamera}
-                className="w-full border-2"
-                variant="outline"
-                size="sm"
-                disabled={isLoadingModels}
-              >
-                {isLoadingModels ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading AI Models...
-                  </>
-                ) : (
-                  <>
-                    <Camera className="w-4 h-4 mr-2" />
-                    Enable Camera
-                  </>
-                )}
-              </Button>
-              {hasPermission === false && (
-                <p className="text-xs text-destructive mt-2">
-                  Camera access denied. Please check your browser permissions.
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {/* Video container - ALWAYS render video element when camera is on */}
-              <div className="relative aspect-video bg-black rounded overflow-hidden min-h-[100px] sm:min-h-[120px]">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  width={640}
-                  height={480}
-                  className="w-full h-full object-cover block"
-                  style={{ transform: 'scaleX(-1)', backgroundColor: 'black' }}
-                />
-                <canvas 
-                  ref={canvasRef} 
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  style={{ transform: 'scaleX(-1)' }}
-                />
-                
-                {/* Loading overlay - shown during initialization OR when video not ready */}
-                {(isInitializingCamera || !isVideoReady) && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-                    <div className="text-center">
-                      <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
-                      <p className="text-xs text-muted-foreground">
-                        {isInitializingCamera ? 'Initializing Camera...' : 'Starting video...'}
-                      </p>
-                      {isInitializingCamera && (
-                        <p className="text-[10px] text-muted-foreground mt-1">Loading MediaPipe models</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-                
-                {isVideoReady && (
-                  <>
-                    <div className="absolute top-1 sm:top-2 left-1 sm:left-2 flex gap-1">
-                      {/* Only show "No Face" after warm-up period and when not analyzing */}
-                      {!metrics.faceDetected && !isWarmingUp && !isAnalyzing && (
-                        <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-background/80 border-destructive/50 text-destructive px-1.5 py-0.5">
-                          <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-                          No Face
-                        </Badge>
-                      )}
-                      {(isAnalyzing || isWarmingUp) && (
-                        <Badge variant="outline" className="text-[9px] bg-background/80 border-primary/50 text-primary px-1.5 py-0.5">
-                          <Loader2 className="w-2.5 h-2.5 mr-0.5 animate-spin" />
-                          {isWarmingUp ? 'Starting...' : 'Analyzing...'}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="absolute top-1 sm:top-2 right-1 sm:right-2 flex gap-1">
-                      {/* Confidence Status Badge */}
-                      {confidenceStatus && (
-                        <Badge 
-                          variant="outline"
-                          className={`text-[9px] px-1.5 py-0.5 ${
-                            confidenceStatus === 'PASS' 
-                              ? 'bg-green-500/20 border-green-500/50 text-green-400' 
-                              : 'bg-destructive/20 border-destructive/50 text-destructive'
-                          }`}
-                        >
-                          {confidenceStatus === 'PASS' ? (
-                            <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
-                          ) : (
-                            <AlertCircle className="w-2.5 h-2.5 mr-0.5" />
-                          )}
-                          {confidenceStatus}
-                        </Badge>
-                      )}
-                      {metrics.frameConfidence > 0 && (
-                        <Badge 
-                          variant="outline"
-                          className="text-[9px] bg-background/80 px-1.5 py-0.5"
-                        >
-                          {Math.round(metrics.frameConfidence * 100)}%
-                        </Badge>
-                      )}
-                      <Badge 
-                        className={`${getScoreBg(metrics.overallScore)} text-white text-[9px] sm:text-xs px-1.5 py-0.5`}
-                      >
-                        {metrics.faceDetected ? `${metrics.overallScore}%` : '--'}
-                      </Badge>
-                    </div>
+      {/* Camera off state - only show when minimized is false AND camera is off */}
+      {!isMinimized && !isCameraOn && (
+        <div className="text-center py-4 px-2 bg-muted/20 rounded-lg border border-dashed border-border">
+          <p className="text-xs text-muted-foreground font-mono leading-relaxed mb-3">
+            Enable camera for real-time face detection and posture analysis.
+          </p>
+          <Button
+            onClick={startCamera}
+            className="w-full border-2"
+            variant="outline"
+            size="sm"
+            disabled={isLoadingModels}
+          >
+            {isLoadingModels ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Loading AI Models...
+              </>
+            ) : (
+              <>
+                <Camera className="w-4 h-4 mr-2" />
+                Enable Camera
+              </>
+            )}
+          </Button>
+          {hasPermission === false && (
+            <p className="text-xs text-destructive mt-2">
+              Camera access denied. Please check your browser permissions.
+            </p>
+          )}
+        </div>
+      )}
 
-                    {!metrics.faceDetected && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-1.5 sm:p-2">
-                        <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center">
-                          Position your face in frame • Ensure good lighting
-                        </p>
-                      </div>
-                    )}
-                  </>
-                )}
+      {/* Video and metrics - Always render when camera is on, use visibility for minimize */}
+      {isCameraOn && (
+        <div className={isMinimized ? 'hidden' : 'space-y-3'}>
+          {/* Video container - ALWAYS render video element when camera is on */}
+          <div className="relative aspect-video bg-black rounded overflow-hidden min-h-[100px] sm:min-h-[120px]">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              width={640}
+              height={480}
+              className="w-full h-full object-cover block"
+              style={{ transform: 'scaleX(-1)', backgroundColor: 'black' }}
+            />
+            <canvas 
+              ref={canvasRef} 
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ transform: 'scaleX(-1)' }}
+            />
+            
+            {/* Loading overlay - shown during initialization OR when video not ready */}
+            {(isInitializingCamera || !isVideoReady) && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                <div className="text-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">
+                    {isInitializingCamera ? 'Initializing Camera...' : 'Starting video...'}
+                  </p>
+                  {isInitializingCamera && (
+                    <p className="text-[10px] text-muted-foreground mt-1">Loading MediaPipe models</p>
+                  )}
+                </div>
               </div>
-
-              {metrics.faceDetected && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      Posture
-                    </span>
-                    <span className={`font-bold ${getScoreColor(metrics.postureScore)}`}>
-                      {hasBackendData 
-                        ? `${metrics.postureScore}%` 
-                        : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
-                    </span>
-                  </div>
-                  <Progress value={hasBackendData ? metrics.postureScore : 0} className="h-1.5" />
-                  
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      Eye Contact
-                    </span>
-                    <span className={`font-bold ${getScoreColor(metrics.eyeContactScore)}`}>
-                      {hasBackendData 
-                        ? `${metrics.eyeContactScore}%` 
-                        : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
-                    </span>
-                  </div>
-                  <Progress value={hasBackendData ? metrics.eyeContactScore : 0} className="h-1.5" />
-                  
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1">
-                      😊 Expression
-                    </span>
-                    <span className={`font-bold ${getScoreColor(metrics.expressionScore)}`}>
-                      {hasBackendData 
-                        ? `${metrics.expressionScore}%` 
-                        : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
-                    </span>
-                  </div>
-                  <Progress value={hasBackendData ? metrics.expressionScore : 0} className="h-1.5" />
-                  
-                  {/* Additional metrics from backend */}
-                  {hasBackendData && metrics.attentionPercent !== null && (
-                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border">
-                      <span>Attention</span>
-                      <span>{Math.round(metrics.attentionPercent)}%</span>
-                    </div>
-                  )}
-                  {metrics.handsDetected > 0 && (
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Hands Visible</span>
-                      <span>{metrics.handsDetected}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {isAudioActive && isUserMicActive && (
-                <div className="space-y-2 pt-2 border-t border-border">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1">
-                      <Mic className={`w-3 h-3 ${audioMetrics.isSpeaking ? 'text-green-500 animate-pulse' : 'text-muted-foreground'}`} />
-                      Your Voice
-                    </span>
-                    <Badge variant={audioMetrics.isSpeaking ? "default" : "outline"} className="text-[10px] px-1.5 py-0">
-                      {audioMetrics.isSpeaking ? 'Speaking' : 'Silent'}
+            )}
+            
+            {isVideoReady && (
+              <>
+                <div className="absolute top-1 sm:top-2 left-1 sm:left-2 flex gap-1">
+                  {/* Only show "No Face" after warm-up period and when not analyzing */}
+                  {!metrics.faceDetected && !isWarmingUp && !isAnalyzing && (
+                    <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-background/80 border-destructive/50 text-destructive px-1.5 py-0.5">
+                      <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+                      No Face
                     </Badge>
+                  )}
+                  {(isAnalyzing || isWarmingUp) && (
+                    <Badge variant="outline" className="text-[9px] bg-background/80 border-primary/50 text-primary px-1.5 py-0.5">
+                      <Loader2 className="w-2.5 h-2.5 mr-0.5 animate-spin" />
+                      {isWarmingUp ? 'Starting...' : 'Analyzing...'}
+                    </Badge>
+                  )}
+                </div>
+                
+                <div className="absolute top-1 sm:top-2 right-1 sm:right-2 flex gap-1">
+                  {/* Confidence Status Badge */}
+                  {confidenceStatus && (
+                    <Badge 
+                      variant="outline"
+                      className={`text-[9px] px-1.5 py-0.5 ${
+                        confidenceStatus === 'PASS' 
+                          ? 'bg-green-500/20 border-green-500/50 text-green-400' 
+                          : 'bg-destructive/20 border-destructive/50 text-destructive'
+                      }`}
+                    >
+                      {confidenceStatus === 'PASS' ? (
+                        <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
+                      ) : (
+                        <AlertCircle className="w-2.5 h-2.5 mr-0.5" />
+                      )}
+                      {confidenceStatus}
+                    </Badge>
+                  )}
+                  {metrics.frameConfidence > 0 && (
+                    <Badge 
+                      variant="outline"
+                      className="text-[9px] bg-background/80 px-1.5 py-0.5"
+                    >
+                      {Math.round(metrics.frameConfidence * 100)}%
+                    </Badge>
+                  )}
+                  <Badge 
+                    className={`${getScoreBg(metrics.overallScore)} text-white text-[9px] sm:text-xs px-1.5 py-0.5`}
+                  >
+                    {metrics.faceDetected ? `${metrics.overallScore}%` : '--'}
+                  </Badge>
+                </div>
+
+                {!metrics.faceDetected && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/90 to-transparent p-1.5 sm:p-2">
+                    <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center">
+                      Position your face in frame • Ensure good lighting
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Volume2 className="w-3 h-3 text-muted-foreground" />
-                    <Progress value={audioMetrics.volume * 100} className="h-1.5 flex-1" />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground">
-                    <span>Pauses: {audioMetrics.pauseCount}</span>
-                    <span>Speaking: {Math.round(audioMetrics.totalSpeakingTime)}s</span>
-                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {metrics.faceDetected && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1">
+                  <User className="w-3 h-3" />
+                  Posture
+                </span>
+                <span className={`font-bold ${getScoreColor(metrics.postureScore)}`}>
+                  {hasBackendData 
+                    ? `${metrics.postureScore}%` 
+                    : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
+                </span>
+              </div>
+              <Progress value={hasBackendData ? metrics.postureScore : 0} className="h-1.5" />
+              
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  Eye Contact
+                </span>
+                <span className={`font-bold ${getScoreColor(metrics.eyeContactScore)}`}>
+                  {hasBackendData 
+                    ? `${metrics.eyeContactScore}%` 
+                    : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
+                </span>
+              </div>
+              <Progress value={hasBackendData ? metrics.eyeContactScore : 0} className="h-1.5" />
+              
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1">
+                  😊 Expression
+                </span>
+                <span className={`font-bold ${getScoreColor(metrics.expressionScore)}`}>
+                  {hasBackendData 
+                    ? `${metrics.expressionScore}%` 
+                    : (isAnalyzing || isWarmingUp ? '...' : 'N/A')}
+                </span>
+              </div>
+              <Progress value={hasBackendData ? metrics.expressionScore : 0} className="h-1.5" />
+              
+              {/* Additional metrics from backend */}
+              {hasBackendData && metrics.attentionPercent !== null && (
+                <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border">
+                  <span>Attention</span>
+                  <span>{Math.round(metrics.attentionPercent)}%</span>
                 </div>
               )}
-
-              {metrics.tips.length > 0 && (
-                <div className="text-xs space-y-1 pt-2 border-t border-border">
-                  {metrics.tips.map((tip, i) => (
-                    <div key={i} className="flex items-start gap-1 text-muted-foreground">
-                      <span>•</span>
-                      <span>{tip}</span>
-                    </div>
-                  ))}
+              {metrics.handsDetected > 0 && (
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Hands Visible</span>
+                  <span>{metrics.handsDetected}</span>
                 </div>
               )}
             </div>
           )}
-        </>
+
+          {isAudioActive && isUserMicActive && (
+            <div className="space-y-2 pt-2 border-t border-border">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1">
+                  <Mic className={`w-3 h-3 ${audioMetrics.isSpeaking ? 'text-green-500 animate-pulse' : 'text-muted-foreground'}`} />
+                  Your Voice
+                </span>
+                <Badge variant={audioMetrics.isSpeaking ? "default" : "outline"} className="text-[10px] px-1.5 py-0">
+                  {audioMetrics.isSpeaking ? 'Speaking' : 'Silent'}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Volume2 className="w-3 h-3 text-muted-foreground" />
+                <Progress value={audioMetrics.volume * 100} className="h-1.5 flex-1" />
+              </div>
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>Pauses: {audioMetrics.pauseCount}</span>
+                <span>Speaking: {Math.round(audioMetrics.totalSpeakingTime)}s</span>
+              </div>
+            </div>
+          )}
+
+          {metrics.tips.length > 0 && (
+            <div className="text-xs space-y-1 pt-2 border-t border-border">
+              {metrics.tips.map((tip, i) => (
+                <div key={i} className="flex items-start gap-1 text-muted-foreground">
+                  <span>•</span>
+                  <span>{tip}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </Card>
   );
