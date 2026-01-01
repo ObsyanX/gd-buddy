@@ -68,6 +68,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [confidenceStatus, setConfidenceStatus] = useState<'PASS' | 'FAIL' | null>(null);
   const [isWarmingUp, setIsWarmingUp] = useState(false); // Grace period for face detection
+  const [isFallbackMode, setIsFallbackMode] = useState(false); // Track fallback mode
   const [hasBackendData, setHasBackendData] = useState(false); // UI flag for backend data availability
   const [metrics, setMetrics] = useState<VideoMetrics>({
     posture: 'good',
@@ -493,6 +494,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
       const newConfidenceStatus = analyzeClient.getConfidenceStatus();
       setConfidenceStatus(newConfidenceStatus);
       
+      // Update fallback mode status
+      setIsFallbackMode(analyzeClient.isFallbackActive());
+      
       if (response.explanations.error) {
         setBackendError(response.explanations.error);
       } else if (response.explanations.reason && response.explanations.reason !== 'throttled') {
@@ -701,10 +705,15 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
               LIVE
             </Badge>
           )}
-          {backendError && (
+          {backendError && !isFallbackMode && (
             <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500">
               <AlertCircle className="w-3 h-3 mr-1" />
               Backend
+            </Badge>
+          )}
+          {isFallbackMode && (
+            <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-500 border-orange-500">
+              Fallback
             </Badge>
           )}
         </h3>
