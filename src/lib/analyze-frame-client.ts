@@ -1,9 +1,9 @@
 // API client for video frame analysis
-// Supports both external backend and Supabase edge function
+// Supports external backend (via proxy), Supabase fallback, and edge function
 
 import { supabase } from "@/integrations/supabase/client";
 import { LandmarkData } from "./mediapipe-client";
-import { getExternalVideoAnalyzer, ExternalVideoResponse } from "./external-video-analyzer";
+import { getExternalVideoAnalyzer, ExternalVideoResponse, FallbackResponse } from "./external-video-analyzer";
 import { captureFrameAsBase64 } from "./frame-capture";
 
 // Use external backend by default
@@ -33,6 +33,7 @@ export interface FrameResponse {
   explanations: Record<string, string>;
   warnings: string[];
   next_state: PreviousState;
+  isFallback?: boolean;
 }
 
 export interface AccumulatedMetrics {
@@ -62,6 +63,7 @@ export class AnalyzeFrameClient {
   private lastAnalysisTime = 0;
   private minAnalysisInterval = 100; // 10 FPS max
   private confidenceStatus: 'PASS' | 'FAIL' | null = null;
+  private lastValidMetrics: AnalysisMetrics | null = null; // Preserve last valid metrics
 
   /**
    * Analyze a frame using external backend (video element required)
@@ -75,14 +77,28 @@ export class AnalyzeFrameClient {
       return this.createEmptyResponse(now, 'Frame capture failed');
     }
 
-    // Send to external backend
     const externalAnalyzer = getExternalVideoAnalyzer();
+    
+    // Check if we're in fallback mode
+    if (externalAnalyzer.isFallbackActive()) {
+      console.log('[AnalyzeFrameClient] In fallback mode, using last valid metrics');
+      return this.createFallbackResponse(now);
+    }
+
+    // Send to external backend via proxy
     const externalResponse = await externalAnalyzer.analyzeFrame(frameBase64);
     
     if (!externalResponse) {
-      // Throttled or error - return empty response
+      // Throttled or error - return empty response but preserve last valid metrics
       const state = externalAnalyzer.getState();
-      return this.createEmptyResponse(now, state.lastError || 'throttled');
+      const response = this.createEmptyResponse(now, state.lastError || 'throttled');
+      
+      // If we have last valid metrics, keep them available
+      if (this.lastValidMetrics && state.lastError !== 'throttled') {
+        console.log('[AnalyzeFrameClient] Preserving last valid metrics during error');
+      }
+      
+      return response;
     }
 
     // Convert external response to our FrameResponse format
@@ -91,12 +107,50 @@ export class AnalyzeFrameClient {
     // Store confidence status
     this.confidenceStatus = externalResponse.confidence_status;
     
-    // Accumulate metrics
+    // Store last valid metrics
     if (response.metrics) {
+      this.lastValidMetrics = response.metrics;
       this.accumulateMetrics(response.metrics, response.warnings);
     }
 
     return response;
+  }
+
+  /**
+   * Create a fallback response using last valid metrics or empty values
+   */
+  private createFallbackResponse(timestamp: number): FrameResponse {
+    // Return last valid metrics if available
+    if (this.lastValidMetrics) {
+      console.log('[AnalyzeFrameClient] Using cached metrics in fallback mode');
+      return {
+        metrics: this.lastValidMetrics,
+        frame_confidence: 0.5, // Indicate fallback confidence
+        explanations: { mode: 'fallback_cached' },
+        warnings: ['Using cached metrics - backend recovering'],
+        next_state: this.previousState || {
+          face_landmarks: null,
+          hand_landmarks: null,
+          pose_landmarks: null,
+          timestamp
+        },
+        isFallback: true
+      };
+    }
+    
+    return {
+      metrics: null,
+      frame_confidence: 0,
+      explanations: { mode: 'fallback_no_data' },
+      warnings: ['Backend unreachable - no cached data'],
+      next_state: this.previousState || {
+        face_landmarks: null,
+        hand_landmarks: null,
+        pose_landmarks: null,
+        timestamp
+      },
+      isFallback: true
+    };
   }
 
   /**
@@ -126,7 +180,8 @@ export class AnalyzeFrameClient {
         hand_landmarks: null,
         pose_landmarks: null,
         timestamp
-      }
+      },
+      isFallback: false
     };
   }
 
@@ -153,6 +208,7 @@ export class AnalyzeFrameClient {
 
   /**
    * Create an empty response for error/throttled cases
+   * Preserves last valid metrics when reason is 'throttled'
    */
   private createEmptyResponse(timestamp: number, reason: string): FrameResponse {
     return {
@@ -344,7 +400,22 @@ export class AnalyzeFrameClient {
     this.accumulatedMetrics = this.createEmptyAccumulated();
     this.lastAnalysisTime = 0;
     this.confidenceStatus = null;
+    this.lastValidMetrics = null;
     console.log('AnalyzeFrameClient: Reset');
+  }
+
+  /**
+   * Check if currently in fallback mode
+   */
+  isFallbackActive(): boolean {
+    return getExternalVideoAnalyzer().isFallbackActive();
+  }
+
+  /**
+   * Get last valid metrics for preservation
+   */
+  getLastValidMetrics(): AnalysisMetrics | null {
+    return this.lastValidMetrics;
   }
 
   /**

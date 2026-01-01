@@ -23,3 +23,9 @@ verify_jwt = true
 
 [functions.analyze-frame]
 verify_jwt = false
+
+[functions.visual-analyzer-fallback]
+verify_jwt = false
+
+[functions.video-analyzer-proxy]
+verify_jwt = false
