@@ -207,7 +207,7 @@ const SkillDrills = () => {
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="container mx-auto max-w-6xl space-y-4 sm:space-y-6">
         <div className="flex items-center gap-2 sm:gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} className="border-2 h-8 w-8 sm:h-10 sm:w-10">
+          <Button variant="outline" size="icon" onClick={() => navigate("/")} className="border-2 h-8 w-8 sm:h-10 sm:w-10">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>

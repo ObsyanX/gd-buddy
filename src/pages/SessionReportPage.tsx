@@ -18,7 +18,7 @@ const SessionReportPage = () => {
   }
 
   const handleStartNew = () => {
-    navigate('/practice');
+    navigate('/');
   };
 
   return (

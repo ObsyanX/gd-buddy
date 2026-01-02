@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   MessageSquare, LogOut, User, TrendingUp, Target, 
-  Clock, Award, Play, ChevronRight, BarChart3 
+  Clock, Award, Play, ChevronRight, BarChart3, ArrowLeft 
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,6 +96,14 @@ const Dashboard = () => {
       <header className="border-b-4 border-border p-6">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate('/')} 
+              className="mr-2"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
             <MessageSquare className="w-10 h-10" />
             <div>
               <h1 className="text-4xl font-bold tracking-tight">DASHBOARD</h1>
