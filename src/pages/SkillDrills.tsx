@@ -48,6 +48,34 @@ const DRILL_TYPES: DrillType[] = [
     description: 'Practice speaking concisely within strict time limits',
     timeLimit: 30,
     icon: Clock
+  },
+  {
+    id: 'opening_statement',
+    name: 'Elevator Pitch',
+    description: 'Sell yourself or an idea in 60 seconds or less',
+    timeLimit: 60,
+    icon: Target
+  },
+  {
+    id: 'star_response',
+    name: 'Problem-Solution',
+    description: 'Identify a problem and present a clear solution with evidence',
+    timeLimit: 90,
+    icon: CheckCircle2
+  },
+  {
+    id: 'rebuttal',
+    name: 'Devil\'s Advocate',
+    description: 'Argue the opposite side of a position you might normally support',
+    timeLimit: 60,
+    icon: XCircle
+  },
+  {
+    id: 'time_boxed',
+    name: 'Quick Summary',
+    description: 'Summarize a complex topic in exactly 20 seconds',
+    timeLimit: 20,
+    icon: Clock
   }
 ];
 
@@ -56,7 +84,14 @@ const SAMPLE_TOPICS = [
   "Impact of social media on mental health",
   "Should companies prioritize diversity hiring",
   "Is AI replacing human jobs a concern",
-  "Benefits of work-life balance policies"
+  "Benefits of work-life balance policies",
+  "The future of electric vehicles in urban transportation",
+  "Should coding be taught in elementary schools",
+  "The role of influencers in modern marketing",
+  "Privacy vs security in the digital age",
+  "Benefits of a four-day work week",
+  "The impact of streaming on traditional cinema",
+  "Should universities require standardized testing"
 ];
 
 const SkillDrills = () => {
@@ -169,41 +204,41 @@ const SkillDrills = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="container mx-auto max-w-6xl space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} className="border-2">
+    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
+      <div className="container mx-auto max-w-6xl space-y-4 sm:space-y-6">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Button variant="outline" size="icon" onClick={() => navigate("/dashboard")} className="border-2 h-8 w-8 sm:h-10 sm:w-10">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
-            <h1 className="text-4xl font-bold">SKILL DRILLS</h1>
-            <p className="text-muted-foreground font-mono">Focused exercises for specific skills</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">SKILL DRILLS</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground font-mono">Focused exercises for specific skills</p>
           </div>
         </div>
 
         {!selectedDrill ? (
-          <div className="grid md:grid-cols-2 gap-6">
-            {DRILL_TYPES.map((drill) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+            {DRILL_TYPES.map((drill, index) => {
               const Icon = drill.icon;
               return (
                 <Card 
-                  key={drill.id}
-                  className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
+                  key={`${drill.id}-${index}`}
+                  className="p-3 sm:p-4 lg:p-5 border-2 sm:border-3 lg:border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
                   onClick={() => handleSelectDrill(drill)}
                 >
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-2xl font-bold">{drill.name}</h3>
-                        <Badge variant="outline" className="mt-2 border-2">
-                          <Clock className="w-3 h-3 mr-1" />
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base sm:text-lg lg:text-xl font-bold truncate">{drill.name}</h3>
+                        <Badge variant="outline" className="mt-1.5 border text-[10px] sm:text-xs">
+                          <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                           {drill.timeLimit}s
                         </Badge>
                       </div>
-                      <Icon className="w-8 h-8" />
+                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 flex-shrink-0" />
                     </div>
-                    <p className="text-muted-foreground">{drill.description}</p>
-                    <Button className="w-full border-4 border-border shadow-sm">
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{drill.description}</p>
+                    <Button className="w-full border-2 sm:border-3 lg:border-4 border-border shadow-sm text-xs sm:text-sm h-8 sm:h-9 lg:h-10">
                       START DRILL
                     </Button>
                   </div>
