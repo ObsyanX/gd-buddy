@@ -1,7 +1,9 @@
 // Video Analyzer Proxy Edge Function
 // Proxies requests to external Python backend with API key authentication
+// Requires user authentication to protect from abuse
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +16,30 @@ serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Verify user authentication
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: authHeader } } }
+  );
+
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError || !user) {
+    console.error('[Proxy] Auth error:', authError);
+    return new Response(
+      JSON.stringify({ success: false, error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   // Get API key from secrets
@@ -29,7 +55,33 @@ serve(async (req) => {
   try {
     // Parse incoming request
     const requestData = await req.json() as Record<string, unknown>;
-    console.log('[Proxy] Received request with keys:', Object.keys(requestData));
+    console.log('[Proxy] Received request from user:', user.id, 'keys:', Object.keys(requestData));
+
+    // Handle health check action
+    if (requestData.action === 'health') {
+      console.log('[Proxy] Health check requested');
+      try {
+        const healthResponse = await fetch(`${BACKEND_URL}/health`, {
+          method: 'GET',
+          headers: { 'X-API-Key': apiKey }
+        });
+        
+        return new Response(
+          JSON.stringify({ 
+            success: healthResponse.ok, 
+            status: healthResponse.status,
+            message: healthResponse.ok ? 'Backend is healthy' : 'Backend unavailable'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (error) {
+        console.log('[Proxy] Health check failed - backend may be warming up');
+        return new Response(
+          JSON.stringify({ success: false, error: 'Backend warming up', backend_unreachable: true }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     // Extract base64 image - check common field names
     let base64Image: string | null = null;
@@ -123,7 +175,7 @@ serve(async (req) => {
     console.log('[Proxy] Success - frame:', data.frame, 'confidence:', data.frame_confidence);
 
     return new Response(
-      JSON.stringify({ ...data, success: true }),
+      JSON.stringify({ success: true, data }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
