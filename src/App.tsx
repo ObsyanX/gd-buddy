@@ -13,6 +13,8 @@ import PracticeSetup from "./pages/PracticeSetup";
 import Session from "./pages/Session";
 import SessionReportPage from "./pages/SessionReportPage";
 import Multiplayer from "./pages/Multiplayer";
+import MultiplayerTopic from "./pages/MultiplayerTopic";
+import MultiplayerSetup from "./pages/MultiplayerSetup";
 import SkillDrills from "./pages/SkillDrills";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
@@ -74,6 +76,16 @@ const App = () => (
             <Route path="/multiplayer" element={
               <ProtectedRoute>
                 <Multiplayer />
+              </ProtectedRoute>
+            } />
+            <Route path="/multiplayer/topic" element={
+              <ProtectedRoute>
+                <MultiplayerTopic />
+              </ProtectedRoute>
+            } />
+            <Route path="/multiplayer/setup" element={
+              <ProtectedRoute>
+                <MultiplayerSetup />
               </ProtectedRoute>
             } />
             <Route path="/drills" element={

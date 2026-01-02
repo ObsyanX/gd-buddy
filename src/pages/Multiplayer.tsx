@@ -12,10 +12,15 @@ const Multiplayer = () => {
     navigate('/');
   };
 
+  const handleCreateRoom = () => {
+    navigate('/multiplayer/topic');
+  };
+
   return (
     <MultiplayerLobby 
       onSessionJoined={handleSessionJoined} 
-      onBack={handleBack} 
+      onBack={handleBack}
+      onCreateRoom={handleCreateRoom}
     />
   );
 };
