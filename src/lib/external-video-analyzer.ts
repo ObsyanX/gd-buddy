@@ -1,9 +1,8 @@
-// External Video Analyzer - Direct Backend Integration
-// Calls Render backend directly (no Supabase proxy) to avoid timeout issues
-// Backend has 60-90s cold start on free tier - handled gracefully
+// External Video Analyzer - Routes through Edge Function
+// All requests go through authenticated Supabase edge function
+// This ensures API keys are kept server-side
 
-const BACKEND_URL = 'https://video-analyzer-gd-buddy.onrender.com';
-const API_KEY = 'vb_analysis_m_NtMtnD6kYjfcccGHsZfcL-mmKxHpypJ19ph2pcgKI'; // Working API key
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ExternalVideoResponse {
   frame: number;
@@ -50,22 +49,22 @@ class ExternalVideoAnalyzer {
   }
 
   /**
-   * Wake up the Render backend (fire-and-forget)
+   * Wake up the backend via edge function (fire-and-forget)
    * Cold starts take 60-90 seconds on free tier
    */
   private async wakeBackend(): Promise<void> {
     if (this.wakeupSent) return;
     this.wakeupSent = true;
     
-    console.log('[Analyzer] Sending wake-up ping to backend...');
+    console.log('[Analyzer] Sending wake-up ping via edge function...');
     
     try {
-      const response = await fetch(`${BACKEND_URL}/health`, {
-        method: 'GET',
-        headers: { 'X-API-Key': API_KEY }
+      // Use edge function with health check action
+      const { data, error } = await supabase.functions.invoke('video-analyzer-proxy', {
+        body: { action: 'health' }
       });
       
-      if (response.ok) {
+      if (!error && data?.success) {
         console.log('[Analyzer] Backend is awake and ready');
         this.state.isWarmingUp = false;
         this.state.backendReady = true;
@@ -77,7 +76,7 @@ class ExternalVideoAnalyzer {
   }
 
   /**
-   * Analyze a video frame - calls backend directly (non-blocking)
+   * Analyze a video frame - routes through edge function
    * Returns null if throttled or on error (preserves last metrics)
    */
   async analyzeFrame(frameBase64: string): Promise<ExternalVideoResponse | null> {
@@ -99,33 +98,29 @@ class ExternalVideoAnalyzer {
     }
 
     try {
-      console.log(`[Analyzer] Frame #${this.state.frameCount} - calling backend directly`);
-      
-      // Build the EXACT payload the backend expects
-      const payload = { image: cleanBase64 };
+      console.log(`[Analyzer] Frame #${this.state.frameCount} - calling via edge function`);
       
       // Log payload structure for debugging (not the full image)
       console.log('[Analyzer] Payload:', { 
-        keys: Object.keys(payload), 
         imageLength: cleanBase64.length 
       });
 
-      const response = await fetch(`${BACKEND_URL}/analyze/base64`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': API_KEY
-        },
-        body: JSON.stringify(payload)
+      // Call the edge function which handles the API key securely
+      const { data, error } = await supabase.functions.invoke('video-analyzer-proxy', {
+        body: { image: cleanBase64 }
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[Analyzer] Backend error ${response.status}:`, errorText);
-        throw new Error(`Backend error: ${response.status}`);
+      if (error) {
+        console.error(`[Analyzer] Edge function error:`, error);
+        throw new Error(error.message || 'Edge function error');
       }
 
-      const data = await response.json() as ExternalVideoResponse;
+      if (!data?.success) {
+        console.error(`[Analyzer] Backend error:`, data?.error);
+        throw new Error(data?.error || 'Backend error');
+      }
+
+      const analysisData = data.data as ExternalVideoResponse;
       
       // Success - update state
       this.state.consecutiveFailures = 0;
@@ -135,12 +130,12 @@ class ExternalVideoAnalyzer {
       this.state.isAnalyzing = false;
       
       // Store last valid response for metric preservation
-      this.lastValidResponse = { ...data, success: true };
+      this.lastValidResponse = { ...analysisData, success: true };
       
       console.log('[Analyzer] Success:', {
-        attention: data.attention,
-        shoulder_tilt: data.shoulder_tilt,
-        confidence: data.frame_confidence
+        attention: analysisData.attention,
+        shoulder_tilt: analysisData.shoulder_tilt,
+        confidence: analysisData.frame_confidence
       });
       
       return this.lastValidResponse;
@@ -153,7 +148,7 @@ class ExternalVideoAnalyzer {
       this.state.lastError = errorMessage;
       
       // Check if this looks like a cold start timeout
-      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError') || errorMessage.includes('timeout')) {
         this.state.isWarmingUp = true;
         this.state.backendReady = false;
         console.log('[Analyzer] Backend appears to be in cold start...');

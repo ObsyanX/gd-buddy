@@ -60,7 +60,37 @@ const Profile = () => {
       }
 
       const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
+
+      // Validate file size (max 5MB)
+      const MAX_FILE_SIZE = 5 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
+        toast({
+          title: "File too large",
+          description: "Avatar must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file type by MIME type
+      const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validImageTypes.includes(file.type)) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a JPEG, PNG, GIF, or WebP image",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get safe extension from MIME type
+      const mimeToExt: Record<string, string> = {
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'image/gif': 'gif',
+        'image/webp': 'webp',
+      };
+      const fileExt = mimeToExt[file.type] || 'jpg';
       const fileName = `${user?.id}/${Math.random()}.${fileExt}`;
 
       // Upload to storage

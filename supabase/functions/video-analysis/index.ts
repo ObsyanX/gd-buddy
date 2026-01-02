@@ -53,6 +53,29 @@ serve(async (req) => {
     }
 
     const payload: VideoMetricsPayload = await req.json();
+
+    // Verify session ownership before updating metrics
+    const { data: sessionCheck, error: sessionError } = await supabaseAuth
+      .from('gd_sessions')
+      .select('user_id, host_user_id')
+      .eq('id', payload.session_id)
+      .single();
+
+    if (sessionError || !sessionCheck) {
+      console.error('Session lookup error:', sessionError);
+      return new Response(
+        JSON.stringify({ error: 'Session not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (sessionCheck.user_id !== user.id && sessionCheck.host_user_id !== user.id) {
+      console.error('User does not own session:', { userId: user.id, sessionUserId: sessionCheck.user_id, hostUserId: sessionCheck.host_user_id });
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized to update this session' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     console.log('Received video metrics for session:', payload.session_id);
 
     // Validate required fields
