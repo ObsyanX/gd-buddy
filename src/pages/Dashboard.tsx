@@ -156,7 +156,7 @@ const Dashboard = () => {
 
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate("/")}>
+                onClick={() => navigate("/practice")}>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">GROUP DISCUSSION</h3>

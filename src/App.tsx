@@ -4,10 +4,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
+import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
+import Practice from "./pages/Practice";
+import PracticeSetup from "./pages/PracticeSetup";
+import Session from "./pages/Session";
+import SessionReportPage from "./pages/SessionReportPage";
+import Multiplayer from "./pages/Multiplayer";
 import SkillDrills from "./pages/SkillDrills";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
@@ -46,6 +51,31 @@ const App = () => (
                 <Dashboard />
               </ProtectedRoute>
             } />
+            <Route path="/practice" element={
+              <ProtectedRoute>
+                <Practice />
+              </ProtectedRoute>
+            } />
+            <Route path="/practice/setup" element={
+              <ProtectedRoute>
+                <PracticeSetup />
+              </ProtectedRoute>
+            } />
+            <Route path="/session/:sessionId" element={
+              <ProtectedRoute>
+                <Session />
+              </ProtectedRoute>
+            } />
+            <Route path="/session/:sessionId/report" element={
+              <ProtectedRoute>
+                <SessionReportPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/multiplayer" element={
+              <ProtectedRoute>
+                <Multiplayer />
+              </ProtectedRoute>
+            } />
             <Route path="/drills" element={
               <ProtectedRoute>
                 <SkillDrills />
@@ -63,7 +93,7 @@ const App = () => (
             } />
             <Route path="/" element={
               <ProtectedRoute>
-                <Index />
+                <Home />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
