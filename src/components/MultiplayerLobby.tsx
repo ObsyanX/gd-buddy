@@ -1,475 +1,30 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Copy, Check, ArrowLeft, Loader2, Sparkles, Bot, Lightbulb, Trash2, FileText, Scale, Briefcase, Newspaper, MessageSquare, Heart, ChevronLeft } from "lucide-react";
+import { Users, ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { invokeWithAuth } from "@/lib/supabase-auth";
-import { 
-  PERSONA_TEMPLATES, 
-  TOPIC_CATEGORY_INFO,
-  detectTopicCategory,
-  getRecommendedPersonaIds,
-  PersonaTemplate
-} from "@/config/personas";
-import CustomPersonaForm from "./CustomPersonaForm";
-
-type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
 
 interface MultiplayerLobbyProps {
   onSessionJoined: (sessionId: string) => void;
   onBack: () => void;
+  onCreateRoom: () => void;
 }
-
-interface CustomPersona {
-  id: string;
-  name: string;
-  role: string;
-  core_perspective: string;
-  tone: string;
-  verbosity: string;
-  vocab_level: string;
-  description: string | null;
-  interrupt_level: number;
-  agreeability: number;
-  voice_name: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-  description: string;
-  examples: string[];
-  tip: string;
-}
-
-const TOPIC_CATEGORIES: Category[] = [
-  {
-    id: 'factual',
-    name: 'Factual Topics',
-    icon: FileText,
-    description: 'Data-driven, verifiable statements',
-    examples: ['Remote work increases productivity by 13%', 'India has the largest youth population'],
-    tip: 'Use statistics and research to support your points'
-  },
-  {
-    id: 'conceptual',
-    name: 'Conceptual/Abstract Topics',
-    icon: Lightbulb,
-    description: 'Ideas, theories, and philosophical concepts',
-    examples: ['Success means different things to different people', 'Is democracy the best form of governance?'],
-    tip: 'Define key terms and explore multiple perspectives'
-  },
-  {
-    id: 'controversial',
-    name: 'Controversial Topics',
-    icon: Scale,
-    description: 'Debatable issues with strong opinions on both sides',
-    examples: ['Should social media be regulated?', 'Is capitalism sustainable?'],
-    tip: 'Acknowledge opposing views before presenting your stance'
-  },
-  {
-    id: 'case-study',
-    name: 'Case Study-Based',
-    icon: Briefcase,
-    description: 'Real-world scenarios and problem-solving',
-    examples: ['How should a startup prioritize growth vs profitability?', 'Crisis management in organizations'],
-    tip: 'Apply frameworks and real examples to analyze situations'
-  },
-  {
-    id: 'current-affairs',
-    name: 'Current Affairs',
-    icon: Newspaper,
-    description: 'Recent news and trending topics',
-    examples: ['Impact of AI on job markets', 'Climate change policies'],
-    tip: 'Stay updated and connect events to broader themes'
-  },
-  {
-    id: 'opinion',
-    name: 'Opinion-Based',
-    icon: MessageSquare,
-    description: 'Personal views and preferences',
-    examples: ['What makes a great leader?', 'Work-life balance priorities'],
-    tip: 'Support opinions with reasoning and examples'
-  },
-  {
-    id: 'ethical',
-    name: 'Ethical Topics',
-    icon: Heart,
-    description: 'Moral dilemmas and value-based discussions',
-    examples: ['Is it ethical to use AI in hiring?', 'Privacy vs security trade-offs'],
-    tip: 'Consider stakeholder impacts and ethical frameworks'
-  }
-];
-
-const generateRoomCode = () => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-};
 
 const MultiplayerLobby = ({
   onSessionJoined,
-  onBack
+  onBack,
+  onCreateRoom
 }: MultiplayerLobbyProps) => {
   const [joinCode, setJoinCode] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
-  const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [showTopicSelection, setShowTopicSelection] = useState(false);
-  const [showAISelection, setShowAISelection] = useState(false);
-  const [topicMode, setTopicMode] = useState<'generate' | 'custom'>('generate');
-  const [customTopic, setCustomTopic] = useState("");
-  const [generatedTopics, setGeneratedTopics] = useState<any[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedTopic, setSelectedTopic] = useState<any>(null);
-  const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
-  const [selectedCustomPersonas, setSelectedCustomPersonas] = useState<string[]>([]);
-  const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('recommended');
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Fetch custom personas
-  const fetchCustomPersonas = useCallback(async () => {
-    if (!user) return;
-    
-    const { data, error } = await supabase
-      .from('custom_personas')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching custom personas:', error);
-      return;
-    }
-    
-    setCustomPersonas(data || []);
-  }, [user]);
-
-  useEffect(() => {
-    fetchCustomPersonas();
-  }, [fetchCustomPersonas]);
-
-  // Detect topic category and get recommendations
-  const detectedCategory = useMemo(() => {
-    if (!selectedTopic) return null;
-    return detectTopicCategory(selectedTopic.title, selectedTopic.category);
-  }, [selectedTopic]);
-
-  const recommendedIds = useMemo(() => {
-    if (!detectedCategory) return [];
-    return getRecommendedPersonaIds(detectedCategory);
-  }, [detectedCategory]);
-
-  // Update selected personas when topic changes
-  useEffect(() => {
-    if (recommendedIds.length > 0) {
-      setSelectedPersonas(recommendedIds.slice(0, 3));
-      setSelectedCustomPersonas([]);
-    } else {
-      setSelectedPersonas(['aditya', 'priya']);
-      setSelectedCustomPersonas([]);
-    }
-  }, [recommendedIds]);
-
-  // Combined persona list for display
-  const allPersonas = useMemo(() => {
-    const customAsTemplates: PersonaTemplate[] = customPersonas.map(cp => ({
-      id: `custom-${cp.id}`,
-      name: cp.name,
-      role: cp.role,
-      corePerspective: cp.core_perspective,
-      tone: cp.tone,
-      verbosity: cp.verbosity as 'concise' | 'moderate' | 'elaborate',
-      interrupt_level: cp.interrupt_level,
-      agreeability: cp.agreeability,
-      vocab_level: cp.vocab_level as 'beginner' | 'intermediate' | 'advanced',
-      description: cp.description || '',
-      voice_name: cp.voice_name,
-      category: 'custom' as const
-    }));
-    return [...PERSONA_TEMPLATES, ...customAsTemplates];
-  }, [customPersonas]);
-
-  // Filter personas based on category
-  const filteredPersonas = useMemo(() => {
-    switch (categoryFilter) {
-      case 'core':
-        return allPersonas.filter(p => p.category === 'core');
-      case 'extended':
-        return allPersonas.filter(p => p.category === 'extended');
-      case 'custom':
-        return allPersonas.filter(p => p.category === 'custom');
-      case 'recommended':
-        if (recommendedIds.length > 0) {
-          return allPersonas.filter(p => recommendedIds.includes(p.id));
-        }
-        return allPersonas.filter(p => p.category !== 'custom').slice(0, 6);
-      default:
-        return allPersonas;
-    }
-  }, [categoryFilter, recommendedIds, allPersonas]);
-
-  const totalSelected = selectedPersonas.length + selectedCustomPersonas.length;
-
-  const handleGenerateTopics = async () => {
-    if (!selectedCategory) {
-      toast({
-        title: "Select a category",
-        description: "Please select a topic category first",
-        variant: "destructive"
-      });
-      return;
-    }
-    setIsGenerating(true);
-    try {
-      const {
-        data,
-        error
-      } = await invokeWithAuth('gd-topics', {
-        body: {
-          audience: 'engineering students',
-          tone: 'formal',
-          difficulty: 'medium',
-          count: 6,
-          category: selectedCategory.id
-        }
-      });
-      if (error) throw error;
-      setGeneratedTopics(data.topics || []);
-      toast({
-        title: "Topics generated",
-        description: "Choose one to start your multiplayer session"
-      });
-    } catch (error: any) {
-      console.error('Error generating topics:', error);
-      toast({
-        title: "Failed to generate topics",
-        description: error.message || "Please try again",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const togglePersona = (id: string) => {
-    if (id.startsWith('custom-')) {
-      setSelectedCustomPersonas(prev => 
-        prev.includes(id) 
-          ? prev.filter(p => p !== id)
-          : totalSelected < 3 ? [...prev, id] : prev
-      );
-    } else {
-      setSelectedPersonas(prev => 
-        prev.includes(id) 
-          ? prev.filter(p => p !== id)
-          : totalSelected < 3 ? [...prev, id] : prev
-      );
-    }
-  };
-
-  const isSelected = (id: string) => {
-    return id.startsWith('custom-') 
-      ? selectedCustomPersonas.includes(id)
-      : selectedPersonas.includes(id);
-  };
-
-  const handleDeleteCustomPersona = async (personaId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const actualId = personaId.replace('custom-', '');
-    
-    const { error } = await supabase
-      .from('custom_personas')
-      .delete()
-      .eq('id', actualId);
-    
-    if (error) {
-      toast({
-        title: "Failed to delete",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setSelectedCustomPersonas(prev => prev.filter(id => id !== personaId));
-    fetchCustomPersonas();
-    toast({
-      title: "Participant deleted",
-      description: "Custom AI participant has been removed",
-    });
-  };
-
-  const applyRecommendation = () => {
-    if (recommendedIds.length > 0) {
-      setSelectedPersonas(recommendedIds.slice(0, 3));
-      setSelectedCustomPersonas([]);
-      toast({
-        title: "Recommended team applied",
-        description: `Selected ${Math.min(recommendedIds.length, 3)} optimal participants`,
-      });
-    }
-  };
-
-  const handleTopicSelected = (topic: any) => {
-    setSelectedTopic(topic);
-    setShowAISelection(true);
-  };
-  const handleCustomTopicSubmit = () => {
-    if (!customTopic.trim()) {
-      toast({
-        title: "Topic required",
-        description: "Please enter a discussion topic",
-        variant: "destructive"
-      });
-      return;
-    }
-    handleTopicSelected({
-      title: customTopic,
-      category: 'Custom',
-      difficulty: 'medium',
-      tags: []
-    });
-  };
-  const createRoomWithSettings = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to create a multiplayer room",
-        variant: "destructive"
-      });
-      return;
-    }
-    if (!selectedTopic) {
-      toast({
-        title: "Topic required",
-        description: "Please select a topic first",
-        variant: "destructive"
-      });
-      return;
-    }
-    setIsCreating(true);
-    try {
-      const roomCode = generateRoomCode();
-
-      // Create multiplayer session with topic
-      const {
-        data: session,
-        error
-      } = await supabase.from('gd_sessions').insert({
-        user_id: user.id,
-        host_user_id: user.id,
-        topic: selectedTopic.title,
-        topic_category: selectedTopic.category || 'Custom',
-        topic_difficulty: selectedTopic.difficulty || 'medium',
-        topic_tags: selectedTopic.tags || [],
-        is_multiplayer: true,
-        room_code: roomCode,
-        status: 'setup'
-      }).select().single();
-      if (error) throw error;
-
-      // Create host participant
-      const {
-        error: participantError
-      } = await supabase.from('gd_participants').insert({
-        session_id: session.id,
-        is_user: true,
-        real_user_id: user.id,
-        order_index: 0,
-        persona_name: 'You (Host)',
-        persona_tone: 'neutral',
-        persona_verbosity: 'moderate',
-        persona_vocab_level: 'intermediate'
-      });
-      if (participantError) throw participantError;
-
-      // Create AI participants from default templates
-      const defaultAiParticipants = selectedPersonas.map((personaId, index) => {
-        const persona = PERSONA_TEMPLATES.find(p => p.id === personaId)!;
-        return {
-          session_id: session.id,
-          is_user: false,
-          order_index: 100 + index,
-          persona_name: persona.name,
-          persona_role: persona.role,
-          persona_tone: persona.tone,
-          persona_verbosity: persona.verbosity,
-          persona_interrupt_level: persona.interrupt_level,
-          persona_agreeability: persona.agreeability,
-          persona_vocab_level: persona.vocab_level,
-          voice_name: persona.voice_name
-        };
-      });
-
-      // Create AI participants from custom personas
-      const customAiParticipants = selectedCustomPersonas.map((personaId, index) => {
-        const actualId = personaId.replace('custom-', '');
-        const persona = customPersonas.find(p => p.id === actualId)!;
-        return {
-          session_id: session.id,
-          is_user: false,
-          order_index: 100 + selectedPersonas.length + index,
-          persona_name: persona.name,
-          persona_role: persona.role,
-          persona_tone: persona.tone,
-          persona_verbosity: persona.verbosity,
-          persona_interrupt_level: persona.interrupt_level,
-          persona_agreeability: persona.agreeability,
-          persona_vocab_level: persona.vocab_level,
-          voice_name: persona.voice_name
-        };
-      });
-
-      const allAiParticipants = [...defaultAiParticipants, ...customAiParticipants];
-
-      if (allAiParticipants.length > 0) {
-        const { error: aiError } = await supabase.from('gd_participants').insert(allAiParticipants);
-        if (aiError) throw aiError;
-      }
-
-      // Initialize metrics
-      await supabase.from('gd_metrics').insert({
-        session_id: session.id,
-        filler_count: 0,
-        total_words: 0
-      });
-      setCreatedRoomCode(roomCode);
-      toast({
-        title: "Room created!",
-        description: `Share code ${roomCode} with your friends`
-      });
-
-      // Navigate to session after short delay
-      setTimeout(() => onSessionJoined(session.id), 1500);
-    } catch (error: any) {
-      console.error('Error creating room:', error);
-      toast({
-        title: "Failed to create room",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setIsCreating(false);
-    }
-  };
-  const handleCreateRoom = () => {
-    setShowTopicSelection(true);
-  };
   const handleJoinRoom = async () => {
     if (!joinCode.trim()) {
       toast({
@@ -492,12 +47,15 @@ const MultiplayerLobby = ({
       const normalizedCode = joinCode.toUpperCase().trim();
       console.log('Searching for room with code:', normalizedCode);
 
-      // Find session by room code - use RPC or direct query with proper handling
-      const {
-        data: sessions,
-        error: sessionError
-      } = await supabase.from('gd_sessions').select('*').eq('room_code', normalizedCode).eq('is_multiplayer', true);
+      // Find session by room code
+      const { data: sessions, error: sessionError } = await supabase
+        .from('gd_sessions')
+        .select('*')
+        .eq('room_code', normalizedCode)
+        .eq('is_multiplayer', true);
+
       console.log('Session search result:', sessions, sessionError);
+
       if (sessionError) {
         console.error('Session query error:', sessionError);
         throw new Error('Could not search for room. Please try again.');
@@ -505,15 +63,20 @@ const MultiplayerLobby = ({
       if (!sessions || sessions.length === 0) {
         throw new Error('Room not found. Check the code and try again.');
       }
+
       const session = sessions[0];
       if (session.status === 'completed') {
         throw new Error('This session has already ended.');
       }
 
       // Check if already joined
-      const {
-        data: existingParticipant
-      } = await supabase.from('gd_participants').select('*').eq('session_id', session.id).eq('real_user_id', user.id).maybeSingle();
+      const { data: existingParticipant } = await supabase
+        .from('gd_participants')
+        .select('*')
+        .eq('session_id', session.id)
+        .eq('real_user_id', user.id)
+        .maybeSingle();
+
       if (existingParticipant) {
         console.log('Already joined, navigating to session');
         onSessionJoined(session.id);
@@ -521,32 +84,38 @@ const MultiplayerLobby = ({
       }
 
       // Get current participant count for order_index
-      const {
-        data: participants
-      } = await supabase.from('gd_participants').select('*').eq('session_id', session.id).eq('is_user', true);
+      const { data: participants } = await supabase
+        .from('gd_participants')
+        .select('*')
+        .eq('session_id', session.id)
+        .eq('is_user', true);
+
       const humanCount = participants?.length || 1;
 
       // Add as participant
-      const {
-        error: participantError
-      } = await supabase.from('gd_participants').insert({
-        session_id: session.id,
-        is_user: true,
-        real_user_id: user.id,
-        order_index: humanCount,
-        persona_name: user.email?.split('@')[0] || `Player ${humanCount + 1}`,
-        persona_tone: 'neutral',
-        persona_verbosity: 'moderate',
-        persona_vocab_level: 'intermediate'
-      });
+      const { error: participantError } = await supabase
+        .from('gd_participants')
+        .insert({
+          session_id: session.id,
+          is_user: true,
+          real_user_id: user.id,
+          order_index: humanCount,
+          persona_name: user.email?.split('@')[0] || `Player ${humanCount + 1}`,
+          persona_tone: 'neutral',
+          persona_verbosity: 'moderate',
+          persona_vocab_level: 'intermediate'
+        });
+
       if (participantError) {
         console.error('Participant insert error:', participantError);
         throw new Error('Could not join room. Please try again.');
       }
+
       toast({
         title: "Joined room!",
         description: "Connecting to the discussion..."
       });
+
       onSessionJoined(session.id);
     } catch (error: any) {
       console.error('Error joining room:', error);
@@ -559,365 +128,9 @@ const MultiplayerLobby = ({
       setIsJoining(false);
     }
   };
-  const copyRoomCode = () => {
-    if (createdRoomCode) {
-      navigator.clipboard.writeText(createdRoomCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
-  // AI Selection View
-  if (showAISelection) {
-    return <div className="min-h-screen bg-background p-6">
-        <div className="container mx-auto max-w-4xl space-y-6">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => setShowAISelection(false)} className="border-2">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div>
-              <h1 className="text-4xl font-bold">ADD AI PARTICIPANTS</h1>
-              <p className="text-muted-foreground font-mono">Optional: Add AI participants to join the discussion</p>
-            </div>
-          </div>
-
-          <Card className="p-6 border-4 border-border">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-muted-foreground">SELECTED TOPIC</label>
-              <h2 className="text-xl font-bold">{selectedTopic?.title}</h2>
-              <div className="flex gap-2">
-                <Badge variant="secondary">{selectedTopic?.category}</Badge>
-                <Badge variant="outline">{selectedTopic?.difficulty}</Badge>
-              </div>
-            </div>
-          </Card>
-
-          {/* Recommended Combination Panel */}
-          {detectedCategory && (
-            <Card className="p-4 border-4 border-primary/30 bg-primary/5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Lightbulb className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm flex items-center gap-2">
-                      RECOMMENDED FOR {TOPIC_CATEGORY_INFO[detectedCategory].label.toUpperCase()}
-                    </h4>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Best participants: {recommendedIds.slice(0, 3).map(id => {
-                        const p = PERSONA_TEMPLATES.find(persona => persona.id === id);
-                        return p?.name;
-                      }).filter(Boolean).join(', ')}
-                    </p>
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={applyRecommendation}
-                  className="border-2 shrink-0"
-                >
-                  <Sparkles className="w-4 h-4 mr-1" />
-                  Apply
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                  <Bot className="w-5 h-5" />
-                  AI PARTICIPANTS (Optional)
-                </h3>
-                <p className="text-sm text-muted-foreground font-mono">
-                  Select 0-3 AI participants • Selected: {totalSelected}/3
-                </p>
-              </div>
-              <div className="flex gap-2 flex-wrap items-center">
-                {/* Create Custom AI Button */}
-                {user && <CustomPersonaForm onPersonaCreated={fetchCustomPersonas} />}
-                
-                <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
-                  <TabsList className="border-2 border-border">
-                    {detectedCategory && (
-                      <TabsTrigger value="recommended" className="text-xs">
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        Best
-                      </TabsTrigger>
-                    )}
-                    <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
-                    <TabsTrigger value="core" className="text-xs">Core</TabsTrigger>
-                    <TabsTrigger value="extended" className="text-xs">Extended</TabsTrigger>
-                    {customPersonas.length > 0 && (
-                      <TabsTrigger value="custom" className="text-xs">
-                        Custom ({customPersonas.length})
-                      </TabsTrigger>
-                    )}
-                  </TabsList>
-                </Tabs>
-                <Button variant="outline" size="sm" onClick={() => {
-                  setSelectedPersonas([]);
-                  setSelectedCustomPersonas([]);
-                }} className="border-2">
-                  Clear
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-3">
-              {filteredPersonas.map(persona => {
-                const selected = isSelected(persona.id);
-                const isRecommended = recommendedIds.includes(persona.id);
-                const isCustom = persona.category === 'custom';
-                return (
-                  <Card 
-                    key={persona.id} 
-                    className={`p-4 border-4 cursor-pointer transition-all ${
-                      selected 
-                        ? 'border-primary bg-secondary' 
-                        : isRecommended && categoryFilter !== 'recommended' 
-                          ? 'border-primary/30 hover:shadow-md' 
-                          : 'border-border hover:shadow-md'
-                    }`} 
-                    onClick={() => togglePersona(persona.id)}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Checkbox checked={selected} className="mt-1 border-2" />
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="font-bold">{persona.name}</h4>
-                          <Badge 
-                            variant={persona.category === 'core' ? 'default' : persona.category === 'custom' ? 'outline' : 'secondary'} 
-                            className={`text-xs ${persona.category === 'custom' ? 'border-primary text-primary' : ''}`}
-                          >
-                            {persona.category}
-                          </Badge>
-                          {isRecommended && categoryFilter !== 'recommended' && (
-                            <Badge variant="outline" className="text-xs border-primary text-primary">
-                              <Sparkles className="w-2 h-2 mr-1" />
-                              best
-                            </Badge>
-                          )}
-                          {isCustom && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 ml-auto text-destructive hover:bg-destructive/10"
-                              onClick={(e) => handleDeleteCustomPersona(persona.id, e)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">{persona.role}</p>
-                        <p className="text-xs text-muted-foreground italic">{persona.corePerspective}</p>
-                        <p className="text-xs">{persona.description}</p>
-                        <div className="flex gap-1 flex-wrap">
-                          <Badge variant="outline" className="text-xs">{persona.tone}</Badge>
-                          <Badge variant="outline" className="text-xs">{persona.verbosity}</Badge>
-                          <Badge variant="outline" className="text-xs">{persona.vocab_level}</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-4">
-            <Button variant="outline" onClick={() => setShowAISelection(false)} className="border-2">
-              BACK
-            </Button>
-            <Button size="lg" onClick={createRoomWithSettings} disabled={isCreating} className="border-4 border-border shadow-md">
-              {isCreating ? <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  CREATING ROOM...
-                </> : <>
-                  <Users className="w-4 h-4 mr-2" />
-                  CREATE ROOM {totalSelected > 0 ? `(+ ${totalSelected} AI)` : ''}
-                </>}
-            </Button>
-          </div>
-        </div>
-      </div>;
-  }
-
-  // Topic Selection View
-  if (showTopicSelection && !createdRoomCode) {
-    return <div className="min-h-screen bg-background p-6">
-        <div className="container mx-auto max-w-4xl space-y-6">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => setShowTopicSelection(false)} className="border-2">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div>
-              <h1 className="text-4xl font-bold">SELECT TOPIC</h1>
-              <p className="text-muted-foreground font-mono">Choose a topic for your multiplayer session</p>
-            </div>
-          </div>
-
-          <Tabs value={topicMode} onValueChange={v => setTopicMode(v as 'generate' | 'custom')} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 border-2 border-border">
-              <TabsTrigger value="generate" className="font-bold">AI GENERATED</TabsTrigger>
-              <TabsTrigger value="custom" className="font-bold">CUSTOM TOPIC</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="generate" className="space-y-6 mt-4">
-              {!selectedCategory ? (
-                <div className="space-y-4">
-                  <p className="text-sm font-mono text-muted-foreground">
-                    Select a category to generate relevant topics
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {TOPIC_CATEGORIES.map((category) => {
-                      const IconComponent = category.icon;
-                      return (
-                        <Card 
-                          key={category.id}
-                          className="p-4 border-4 border-border hover:border-primary hover:shadow-md transition-all cursor-pointer"
-                          onClick={() => setSelectedCategory(category)}
-                        >
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-lg bg-secondary">
-                                <IconComponent className="w-5 h-5" />
-                              </div>
-                              <h3 className="font-bold text-sm">{category.name}</h3>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              {category.description}
-                            </p>
-                            <div className="space-y-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {category.examples[0]}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground italic">
-                              💡 {category.tip}
-                            </p>
-                          </div>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : generatedTopics.length === 0 ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => {
-                        setSelectedCategory(null);
-                        setGeneratedTopics([]);
-                      }}
-                      className="gap-1"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      Change Category
-                    </Button>
-                    <Badge variant="secondary" className="gap-2">
-                      {(() => {
-                        const IconComponent = selectedCategory.icon;
-                        return <IconComponent className="w-3 h-3" />;
-                      })()}
-                      {selectedCategory.name}
-                    </Badge>
-                  </div>
-                  <Card className="p-12 border-4 border-border text-center space-y-4">
-                    <Sparkles className="w-16 h-16 mx-auto text-muted-foreground" />
-                    <h3 className="text-2xl font-bold">GENERATE {selectedCategory.name.toUpperCase()}</h3>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      {selectedCategory.description}
-                    </p>
-                    <Button size="lg" onClick={handleGenerateTopics} disabled={isGenerating} className="border-4 border-border shadow-md text-center">
-                      {isGenerating ? <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          GENERATING...
-                        </> : <>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          GENERATE TOPICS
-                        </>}
-                    </Button>
-                  </Card>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center flex-wrap gap-2">
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => {
-                          setSelectedCategory(null);
-                          setGeneratedTopics([]);
-                        }}
-                        className="gap-1"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                        Change
-                      </Button>
-                      <Badge variant="secondary" className="gap-2">
-                        {(() => {
-                          const IconComponent = selectedCategory.icon;
-                          return <IconComponent className="w-3 h-3" />;
-                        })()}
-                        {selectedCategory.name}
-                      </Badge>
-                      <span className="text-sm font-mono text-muted-foreground">
-                        {generatedTopics.length} topics
-                      </span>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={handleGenerateTopics} disabled={isGenerating} className="border-2">
-                      {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : "REGENERATE"}
-                    </Button>
-                  </div>
-
-                  <div className="grid gap-4">
-                    {generatedTopics.map((topic, index) => (
-                      <Card key={index} className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleTopicSelected(topic)}>
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between gap-4">
-                            <h3 className="text-xl font-bold flex-1">{topic.title}</h3>
-                            <Badge variant="outline" className="border-2">
-                              {topic.difficulty}
-                            </Badge>
-                          </div>
-                          <div className="flex gap-2 flex-wrap">
-                            <Badge variant="secondary">{topic.category}</Badge>
-                            {topic.tags?.slice(0, 3).map((tag: string, i: number) => <Badge key={i} variant="outline">{tag}</Badge>)}
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="custom" className="space-y-4 mt-4">
-              <Card className="p-8 border-4 border-border space-y-6">
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold">ENTER YOUR TOPIC</Label>
-                  <Input placeholder="e.g., Impact of AI on employment in the next decade" value={customTopic} onChange={e => setCustomTopic(e.target.value)} className="border-2 text-lg" onKeyDown={e => e.key === 'Enter' && handleCustomTopicSubmit()} />
-                  <p className="text-xs text-muted-foreground font-mono">
-                    Enter a clear, debate-worthy topic for group discussion
-                  </p>
-                </div>
-                <Button size="lg" onClick={handleCustomTopicSubmit} disabled={!customTopic.trim()} className="w-full border-4 border-border shadow-md">
-                  CONTINUE WITH THIS TOPIC
-                </Button>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>;
-  }
-  return <div className="min-h-screen bg-background p-6">
+  return (
+    <div className="min-h-screen bg-background p-6">
       <div className="container mx-auto max-w-2xl space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" onClick={onBack} className="border-2">
@@ -929,90 +142,83 @@ const MultiplayerLobby = ({
           </div>
         </div>
 
-        {createdRoomCode ? <Card className="p-8 border-4 border-border text-center space-y-6">
-            <div className="space-y-2">
-              <Users className="w-16 h-16 mx-auto" />
-              <h2 className="text-2xl font-bold">ROOM CREATED!</h2>
-              <p className="text-muted-foreground">Share this code with your friends</p>
-            </div>
-            
-            <div className="flex items-center justify-center gap-2">
-              <div className="text-5xl font-bold font-mono tracking-widest border-4 border-border p-4">
-                {createdRoomCode}
+        <Tabs defaultValue="create" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 border-2 border-border">
+            <TabsTrigger value="create" className="font-bold">CREATE ROOM</TabsTrigger>
+            <TabsTrigger value="join" className="font-bold">JOIN ROOM</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="create" className="mt-4">
+            <Card className="p-0 border-4 border-border space-y-6">
+              <div className="text-center space-y-2">
+                <Users className="w-12 h-12 mx-auto" />
+                <h2 className="text-xl font-bold">CREATE A NEW ROOM</h2>
+                <p className="text-sm text-muted-foreground">
+                  Start a multiplayer session and invite friends to join
+                </p>
               </div>
-              <Button variant="outline" size="icon" onClick={copyRoomCode} className="border-2">
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+
+              <div className="space-y-4">
+                <div className="p-4 border-2 border-border rounded space-y-2">
+                  <h3 className="font-bold text-sm">HOW IT WORKS</h3>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Choose a topic (AI-generated or custom)</li>
+                    <li>• Optionally add AI participants</li>
+                    <li>• You'll get a 6-character room code</li>
+                    <li>• Share the code with your friends</li>
+                    <li>• Everyone joins and discusses in real-time!</li>
+                  </ul>
+                </div>
+              </div>
+
+              <Button onClick={onCreateRoom} size="lg" className="w-full border-4 border-border text-xs text-center">
+                SELECT TOPIC & CREATE ROOM
               </Button>
-            </div>
-            
-            <p className="text-sm text-muted-foreground">
-              Redirecting to session...
-            </p>
-          </Card> : <Tabs defaultValue="create" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 border-2 border-border">
-              <TabsTrigger value="create" className="font-bold">CREATE ROOM</TabsTrigger>
-              <TabsTrigger value="join" className="font-bold">JOIN ROOM</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="create" className="mt-4">
-              <Card className="p-0 border-4 border-border space-y-6">
-                <div className="text-center space-y-2">
-                  <Users className="w-12 h-12 mx-auto" />
-                  <h2 className="text-xl font-bold">CREATE A NEW ROOM</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Start a multiplayer session and invite friends to join
-                  </p>
-                </div>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="join" className="mt-4">
+            <Card className="p-6 border-4 border-border space-y-6">
+              <div className="text-center space-y-2">
+                <Users className="w-12 h-12 mx-auto" />
+                <h2 className="text-xl font-bold">JOIN A ROOM</h2>
+                <p className="text-sm text-muted-foreground">
+                  Enter the room code shared by your friend
+                </p>
+              </div>
 
-                <div className="space-y-4">
-                  <div className="p-4 border-2 border-border rounded space-y-2">
-                    <h3 className="font-bold text-sm">HOW IT WORKS</h3>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• Choose a topic (AI-generated or custom)</li>
-                      <li>• Optionally add AI participants</li>
-                      <li>• You'll get a 6-character room code</li>
-                      <li>• Share the code with your friends</li>
-                      <li>• Everyone joins and discusses in real-time!</li>
-                    </ul>
-                  </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold">ROOM CODE</Label>
+                  <Input 
+                    placeholder="Enter 6-character code" 
+                    value={joinCode} 
+                    onChange={e => setJoinCode(e.target.value.toUpperCase())} 
+                    className="border-2 text-center text-2xl font-mono tracking-widest uppercase" 
+                    maxLength={6} 
+                  />
                 </div>
+              </div>
 
-                <Button onClick={handleCreateRoom} disabled={isCreating} size="lg" className="w-full border-4 border-border text-xs text-center">
-                  {isCreating ? <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      CREATING...
-                    </> : 'SELECT TOPIC & CREATE ROOM'}
-                </Button>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="join" className="mt-4">
-              <Card className="p-6 border-4 border-border space-y-6">
-                <div className="text-center space-y-2">
-                  <Users className="w-12 h-12 mx-auto" />
-                  <h2 className="text-xl font-bold">JOIN A ROOM</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Enter the room code shared by your friend
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-bold">ROOM CODE</Label>
-                    <Input placeholder="Enter 6-character code" value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())} className="border-2 text-center text-2xl font-mono tracking-widest uppercase" maxLength={6} />
-                  </div>
-                </div>
-
-                <Button onClick={handleJoinRoom} disabled={isJoining || joinCode.length < 6} className="w-full border-4 border-border" size="lg">
-                  {isJoining ? <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      JOINING...
-                    </> : 'JOIN ROOM'}
-                </Button>
-              </Card>
-            </TabsContent>
-          </Tabs>}
+              <Button 
+                onClick={handleJoinRoom} 
+                disabled={isJoining || joinCode.length < 6} 
+                className="w-full border-4 border-border" 
+                size="lg"
+              >
+                {isJoining ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    JOINING...
+                  </>
+                ) : 'JOIN ROOM'}
+              </Button>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default MultiplayerLobby;
