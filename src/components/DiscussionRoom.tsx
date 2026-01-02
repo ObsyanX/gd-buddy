@@ -809,17 +809,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         </div>
       </header>
 
-      <div className="flex-1 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-3 sm:gap-4 p-2 sm:p-4 overflow-hidden">
+      <div className="flex-1 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 p-2 sm:p-3 lg:p-4 overflow-hidden">
         {/* Main Chat Area */}
-        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-2 sm:gap-4 min-w-0 flex-1">
-          <Card className="border-2 sm:border-4 border-border flex-1 min-h-[200px] max-h-[calc(100vh-280px)] sm:max-h-[calc(100vh-320px)] lg:max-h-[calc(100vh-350px)] flex flex-col">
-            <ScrollArea className="flex-1 p-2 sm:p-4">
-              <div className="space-y-3 sm:space-y-4">
+        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-2 sm:gap-3 lg:gap-4 min-w-0 flex-1">
+          <Card className="border-2 sm:border-3 lg:border-4 border-border flex-1 min-h-[180px] max-h-[calc(100vh-240px)] sm:max-h-[calc(100vh-280px)] lg:max-h-[calc(100vh-350px)] flex flex-col">
+            <ScrollArea className="flex-1 p-2 sm:p-3 lg:p-4">
+              <div className="space-y-2 sm:space-y-3 lg:space-y-4">
                 {messages.map((message, index) => {
-                  // Determine if this message is from the current authenticated user
                   const messageParticipant = message.gd_participants;
                   
-                  // Debug logging for message attribution
                   if (index === messages.length - 1) {
                     console.log('[Message Attribution]', {
                       messageId: message.id,
@@ -830,8 +828,6 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                     });
                   }
                   
-                  // Check message ownership: compare real_user_id with current user
-                  // This works for both solo and multiplayer modes
                   const isFromCurrentUser = messageParticipant?.is_user && 
                     messageParticipant?.real_user_id && 
                     currentUserId && 
@@ -839,43 +835,42 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                   
                   const isCurrentlySpeaking = isSpeaking && currentSpeaker === messageParticipant?.persona_name;
                   const isAI = !messageParticipant?.is_user;
-                  // Other human = is_user true but NOT from current authenticated user
                   const isOtherHuman = messageParticipant?.is_user && !isFromCurrentUser;
                   
                   return (
                     <div 
                       key={index}
-                      className={`flex gap-2 sm:gap-3 ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
+                      className={`flex gap-1.5 sm:gap-2 lg:gap-3 ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
                     >
                       {!isFromCurrentUser && (
-                        <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded border-2 flex items-center justify-center flex-shrink-0 mt-1 ${isCurrentlySpeaking ? 'border-primary bg-primary/20 animate-pulse' : 'border-border'}`}>
+                        <div className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded border sm:border-2 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1 ${isCurrentlySpeaking ? 'border-primary bg-primary/20 animate-pulse' : 'border-border'}`}>
                           {isCurrentlySpeaking ? (
-                            <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 text-primary animate-pulse" />
+                            <Volume2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 text-primary animate-pulse" />
                           ) : isAI ? (
-                            <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <Bot className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
                           ) : (
-                            <User className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
                           )}
                         </div>
                       )}
-                      <div className={`max-w-[85%] sm:max-w-[80%] space-y-1 ${isFromCurrentUser ? 'text-right' : ''}`}>
-                        <p className={`text-[10px] sm:text-xs font-bold ${isCurrentlySpeaking ? 'text-primary' : 'text-muted-foreground'}`}>
+                      <div className={`max-w-[88%] sm:max-w-[85%] lg:max-w-[80%] space-y-0.5 sm:space-y-1 ${isFromCurrentUser ? 'text-right' : ''}`}>
+                        <p className={`text-[9px] sm:text-[10px] lg:text-xs font-bold ${isCurrentlySpeaking ? 'text-primary' : 'text-muted-foreground'}`}>
                           {isFromCurrentUser ? 'You' : messageParticipant?.persona_name}
                           {isOtherHuman && <span className="ml-1 text-muted-foreground">(Player)</span>}
-                          {isCurrentlySpeaking && <span className="ml-2 animate-pulse">🔊</span>}
+                          {isCurrentlySpeaking && <span className="ml-1 sm:ml-2 animate-pulse">🔊</span>}
                         </p>
-                        <div className={`p-2 sm:p-4 border-2 ${isFromCurrentUser ? 'bg-primary text-primary-foreground border-primary' : isCurrentlySpeaking ? 'bg-primary/10 border-primary' : 'bg-card border-border'}`}>
-                          <p className="text-xs sm:text-sm">{message.text}</p>
+                        <div className={`p-1.5 sm:p-2 lg:p-4 border sm:border-2 rounded-sm sm:rounded ${isFromCurrentUser ? 'bg-primary text-primary-foreground border-primary' : isCurrentlySpeaking ? 'bg-primary/10 border-primary' : 'bg-card border-border'}`}>
+                          <p className="text-[11px] sm:text-xs lg:text-sm leading-relaxed">{message.text}</p>
                         </div>
                         {message.intent && (
-                          <Badge variant="outline" className="text-[10px] sm:text-xs">
+                          <Badge variant="outline" className="text-[8px] sm:text-[10px] lg:text-xs h-4 sm:h-5">
                             {message.intent}
                           </Badge>
                         )}
                       </div>
                       {isFromCurrentUser && (
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded border-2 border-border flex items-center justify-center flex-shrink-0 mt-1">
-                          <User className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded border sm:border-2 border-border flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1">
+                          <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
                         </div>
                       )}
                     </div>
