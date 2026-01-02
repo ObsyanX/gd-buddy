@@ -1,45 +1,15 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { MessageSquare, Users, BarChart3, Sparkles, LogOut, LayoutDashboard, Dumbbell, User, Settings as SettingsIcon, Menu } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import TopicSelection from "@/components/TopicSelection";
-import SessionSetup from "@/components/SessionSetup";
-import DiscussionRoom from "@/components/DiscussionRoom";
-import SessionReport from "@/components/SessionReport";
-import MultiplayerLobby from "@/components/MultiplayerLobby";
 
-type AppState = 'home' | 'topic-selection' | 'setup' | 'discussion' | 'report' | 'multiplayer-lobby';
-
-const Index = () => {
+const Home = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const [appState, setAppState] = useState<AppState>('home');
-  const [selectedTopic, setSelectedTopic] = useState<any>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const { signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const handleTopicSelected = (topic: any) => {
-    setSelectedTopic(topic);
-    setAppState('setup');
-  };
-
-  const handleSessionCreated = (id: string) => {
-    setSessionId(id);
-    setAppState('discussion');
-  };
-
-  const handleSessionComplete = () => {
-    setAppState('report');
-  };
-
-  const handleStartNew = () => {
-    setAppState('topic-selection');
-    setSelectedTopic(null);
-    setSessionId(null);
-  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -53,46 +23,28 @@ const Index = () => {
 
   const navItems = [
     { label: "DASHBOARD", icon: LayoutDashboard, path: "/dashboard" },
+    { label: "PRACTICE", icon: MessageSquare, path: "/practice" },
     { label: "DRILLS", icon: Dumbbell, path: "/drills" },
+    { label: "MULTIPLAYER", icon: Users, path: "/multiplayer" },
     { label: "PROFILE", icon: User, path: "/profile" },
     { label: "SETTINGS", icon: SettingsIcon, path: "/settings" },
   ];
-
-  if (appState === 'topic-selection') {
-    return <TopicSelection onTopicSelected={handleTopicSelected} onBack={() => setAppState('home')} />;
-  }
-
-  if (appState === 'setup' && selectedTopic) {
-    return <SessionSetup topic={selectedTopic} onSessionCreated={handleSessionCreated} onBack={() => setAppState('topic-selection')} />;
-  }
-
-  if (appState === 'discussion' && sessionId) {
-    return <DiscussionRoom sessionId={sessionId} onComplete={handleSessionComplete} />;
-  }
-
-  if (appState === 'report' && sessionId) {
-    return <SessionReport sessionId={sessionId} onStartNew={handleStartNew} />;
-  }
-
-  if (appState === 'multiplayer-lobby') {
-    return <MultiplayerLobby onSessionJoined={handleSessionCreated} onBack={() => setAppState('home')} />;
-  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b-4 border-border p-4 md:p-6">
         <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2 md:gap-4">
+          <Link to="/" className="flex items-center gap-2 md:gap-4">
             <MessageSquare className="w-8 h-8 md:w-10 md:h-10" />
             <div>
               <h1 className="text-2xl md:text-4xl font-bold tracking-tight">GD CONDUCTOR</h1>
               <p className="text-xs md:text-sm font-mono text-muted-foreground hidden sm:block">AI-POWERED GROUP DISCUSSION PRACTICE</p>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex gap-2">
-            {navItems.map((item) => (
+            {navItems.slice(0, 4).map((item) => (
               <Button 
                 key={item.path}
                 variant="outline" 
@@ -189,7 +141,7 @@ const Index = () => {
             <Button 
               size="lg" 
               className="text-xl px-12 py-8 border-4 border-border shadow-md hover:shadow-lg"
-              onClick={handleStartNew}
+              onClick={() => navigate('/practice')}
             >
               START SOLO SESSION
             </Button>
@@ -197,7 +149,7 @@ const Index = () => {
               size="lg" 
               variant="outline"
               className="text-xl px-12 py-8 border-4 border-border shadow-md hover:shadow-lg"
-              onClick={() => setAppState('multiplayer-lobby')}
+              onClick={() => navigate('/multiplayer')}
             >
               <Users className="w-6 h-6 mr-2" />
               MULTIPLAYER MODE
@@ -246,4 +198,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Home;
