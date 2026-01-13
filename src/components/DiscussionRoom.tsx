@@ -46,6 +46,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const pendingSendRef = useRef(false);
   const skipWaitRef = useRef<(() => void) | null>(null);
   const [isWaitingForSpeech, setIsWaitingForSpeech] = useState(false);
+  const [isMobileMetricsOpen, setIsMobileMetricsOpen] = useState(false);
   const { toast } = useToast();
   
   // Load auto-mic setting from localStorage and initialize autoMicEnabled
@@ -932,7 +933,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               />
               <div className="flex gap-1 sm:gap-1.5 lg:gap-2 justify-between sm:justify-end">
                 {/* Mobile metrics toggle */}
-                <Sheet>
+                <Sheet open={isMobileMetricsOpen} onOpenChange={setIsMobileMetricsOpen}>
                   <SheetTrigger asChild>
                     <Button
                       variant="outline"
@@ -1015,14 +1016,6 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                         isUserSpeaking={isListening && !isSpeaking}
                         currentTranscript={userInput}
                         sessionStartTime={session?.start_time ? new Date(session.start_time).getTime() : undefined}
-                      />
-
-                      {/* Video Monitor */}
-                      <VideoMonitor 
-                        isActive={true}
-                        sessionId={session?.id}
-                        isUserMicActive={isListening && !isSpeaking}
-                        onMetricsUpdate={handleVideoMetricsUpdate}
                       />
 
                       {/* Practice History */}
@@ -1151,13 +1144,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             sessionStartTime={session?.start_time ? new Date(session.start_time).getTime() : undefined}
           />
 
-          {/* Video Monitor */}
-          <VideoMonitor 
-            isActive={true}
-            sessionId={session?.id}
-            isUserMicActive={isListening && !isSpeaking}
-            onMetricsUpdate={handleVideoMetricsUpdate}
-          />
+          {/* Video Monitor - Single instance for desktop */}
+          <div className="hidden lg:block">
+            <VideoMonitor 
+              isActive={true}
+              sessionId={session?.id}
+              isUserMicActive={isListening && !isSpeaking}
+              onMetricsUpdate={handleVideoMetricsUpdate}
+            />
+          </div>
 
           {/* Practice History */}
           <PracticeHistory 
@@ -1167,6 +1162,16 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             currentlyPlaying={currentPlayingId}
           />
         </div>
+      </div>
+
+      {/* Mobile Video Monitor - Rendered independently of Sheet to prevent unmount on sheet close */}
+      <div className="lg:hidden fixed bottom-20 right-2 z-40 w-[180px] sm:w-[220px]">
+        <VideoMonitor 
+          isActive={true}
+          sessionId={session?.id}
+          isUserMicActive={isListening && !isSpeaking}
+          onMetricsUpdate={handleVideoMetricsUpdate}
+        />
       </div>
 
       {/* Practice Mode Dialog */}
