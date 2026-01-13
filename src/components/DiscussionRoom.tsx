@@ -19,7 +19,8 @@ import { VoiceActivityIndicator } from "@/components/VoiceActivityIndicator";
 import { PracticeHistory } from "@/components/PracticeHistory";
 import { WPMDisplay, useWordCountEstimator } from "@/components/WPMDisplay";
 import { OnboardingTutorial, useOnboardingTutorial } from "@/components/OnboardingTutorial";
-import VideoMonitor, { VideoMetrics } from "@/components/VideoMonitor";
+import { VideoMetrics } from "@/components/VideoMonitor";
+import FloatingVideoPanel from "@/components/FloatingVideoPanel";
 import ParticipantPresence from "@/components/ParticipantPresence";
 import VoiceMetricsPanel from "@/components/VoiceMetricsPanel";
 import { useMultiplayerPresence } from "@/hooks/useMultiplayerPresence";
@@ -1144,16 +1145,6 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             sessionStartTime={session?.start_time ? new Date(session.start_time).getTime() : undefined}
           />
 
-          {/* Video Monitor - Single instance for desktop */}
-          <div className="hidden lg:block">
-            <VideoMonitor 
-              isActive={true}
-              sessionId={session?.id}
-              isUserMicActive={isListening && !isSpeaking}
-              onMetricsUpdate={handleVideoMetricsUpdate}
-            />
-          </div>
-
           {/* Practice History */}
           <PracticeHistory 
             recordings={practiceHistory}
@@ -1164,15 +1155,12 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         </div>
       </div>
 
-      {/* Mobile Video Monitor - Rendered independently of Sheet to prevent unmount on sheet close */}
-      <div className="lg:hidden fixed bottom-20 right-2 z-40 w-[180px] sm:w-[220px]">
-        <VideoMonitor 
-          isActive={true}
-          sessionId={session?.id}
-          isUserMicActive={isListening && !isSpeaking}
-          onMetricsUpdate={handleVideoMetricsUpdate}
-        />
-      </div>
+      {/* Floating Video Panel - Single draggable instance for all screen sizes */}
+      <FloatingVideoPanel
+        sessionId={session?.id}
+        isUserMicActive={isListening && !isSpeaking}
+        onMetricsUpdate={handleVideoMetricsUpdate}
+      />
 
       {/* Practice Mode Dialog */}
       <Dialog open={isPracticing} onOpenChange={(open) => !open && cancelPractice()}>
