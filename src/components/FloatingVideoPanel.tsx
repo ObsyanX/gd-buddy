@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Minus, Maximize2, X, Camera, Move, Eye, Activity, User } from 'lucide-react';
-import VideoMonitor, { VideoMetrics } from '@/components/VideoMonitor';
+import { Minus, Maximize2, X, Camera, Move, Eye, Activity } from 'lucide-react';
 import { useDraggable } from '@/hooks/useDraggable';
 import { cn } from '@/lib/utils';
 
@@ -13,13 +12,32 @@ interface FloatingVideoPanelProps {
   className?: string;
 }
 
-type PanelSize = 'pip' | 'compact' | 'normal' | 'expanded';
+// VideoMetrics interface - matches VideoMonitor export
+export interface VideoMetrics {
+  posture: 'good' | 'needs_improvement' | 'poor';
+  postureScore: number;
+  eyeContact: 'maintained' | 'occasional' | 'avoiding';
+  eyeContactScore: number;
+  facialExpression: 'confident' | 'neutral' | 'nervous';
+  expressionScore: number;
+  overallScore: number;
+  tips: string[];
+  faceDetected: boolean;
+  attentionPercent: number | null;
+  headMovement: number | null;
+  shoulderTilt: number | null;
+  handActivity: number | null;
+  handsDetected: number;
+  frameConfidence: number;
+}
+
+type ViewMode = 'FULL_VIEW' | 'MINIMIZED_FLOATING';
 
 // Persist panel state to session storage
 const PANEL_STATE_KEY = 'floating-video-panel-state';
 
 interface PanelState {
-  size: PanelSize;
+  viewMode: ViewMode;
   isVideoActive: boolean;
 }
 
@@ -32,7 +50,7 @@ const loadPanelState = (): PanelState => {
   } catch (e) {
     console.warn('Failed to load panel state:', e);
   }
-  return { size: 'normal', isVideoActive: true };
+  return { viewMode: 'FULL_VIEW', isVideoActive: true };
 };
 
 const savePanelState = (state: PanelState) => {
@@ -50,44 +68,38 @@ const FloatingVideoPanel = ({
   className,
 }: FloatingVideoPanelProps) => {
   const initialState = loadPanelState();
-  const [panelSize, setPanelSize] = useState<PanelSize>(initialState.size);
+  const [viewMode, setViewMode] = useState<ViewMode>(initialState.viewMode);
   const [isVideoActive, setIsVideoActive] = useState(initialState.isVideoActive);
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [currentMetrics, setCurrentMetrics] = useState<VideoMetrics | null>(null);
+  const [hasBackendData, setHasBackendData] = useState(false);
+  
+  // Video refs for persistent stream
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Persist state changes
   useEffect(() => {
-    savePanelState({ size: panelSize, isVideoActive });
-  }, [panelSize, isVideoActive]);
+    savePanelState({ viewMode, isVideoActive });
+  }, [viewMode, isVideoActive]);
 
-  // Get panel sizes based on screen
+  // Get panel sizes based on screen and view mode
   const getPanelSizes = useCallback(() => {
-    if (isMobile) {
-      return {
-        pip: { width: 100, height: 80 },
-        compact: { width: 140, height: 110 },
-        normal: { width: 200, height: 240 },
-        expanded: { width: 280, height: 340 },
-      };
+    if (viewMode === 'MINIMIZED_FLOATING') {
+      // Smaller PiP sizes
+      if (isMobile) return { width: 160, height: 120 };
+      if (isTablet) return { width: 200, height: 150 };
+      return { width: 240, height: 180 };
     }
-    if (isTablet) {
-      return {
-        pip: { width: 120, height: 90 },
-        compact: { width: 160, height: 130 },
-        normal: { width: 240, height: 280 },
-        expanded: { width: 340, height: 400 },
-      };
-    }
-    return {
-      pip: { width: 140, height: 100 },
-      compact: { width: 180, height: 140 },
-      normal: { width: 300, height: 360 },
-      expanded: { width: 420, height: 500 },
-    };
-  }, [isMobile, isTablet]);
+    // Full view sizes
+    if (isMobile) return { width: 240, height: 340 };
+    if (isTablet) return { width: 300, height: 420 };
+    return { width: 340, height: 480 };
+  }, [isMobile, isTablet, viewMode]);
 
-  const PANEL_SIZES = getPanelSizes();
+  const currentSize = getPanelSizes();
 
   // Detect screen size
   useEffect(() => {
@@ -107,9 +119,9 @@ const FloatingVideoPanel = ({
     if (typeof window === 'undefined') return [];
     
     const padding = isMobile ? 8 : 16;
-    const currentSize = PANEL_SIZES[panelSize];
-    const maxX = window.innerWidth - currentSize.width - padding;
-    const maxY = window.innerHeight - currentSize.height - padding - (isMobile ? 100 : 60);
+    const size = getPanelSizes();
+    const maxX = window.innerWidth - size.width - padding;
+    const maxY = window.innerHeight - size.height - padding - (isMobile ? 100 : 60);
     
     return [
       { id: 'top-right', x: maxX, y: padding + 60, threshold: 50 },
@@ -117,39 +129,35 @@ const FloatingVideoPanel = ({
       { id: 'bottom-left', x: padding, y: maxY, threshold: 50 },
       { id: 'top-left', x: padding, y: padding + 60, threshold: 50 },
     ];
-  }, [panelSize, isMobile, PANEL_SIZES]);
+  }, [isMobile, viewMode, getPanelSizes]);
 
   // Get initial position based on device
   const getInitialPosition = useCallback(() => {
     if (typeof window === 'undefined') return { x: 0, y: 0 };
     
     const padding = isMobile ? 8 : 16;
-    const currentSize = PANEL_SIZES[panelSize];
+    const size = getPanelSizes();
     
     // Default to bottom-right
     return {
-      x: window.innerWidth - currentSize.width - padding,
-      y: window.innerHeight - currentSize.height - padding - (isMobile ? 120 : 80),
+      x: window.innerWidth - size.width - padding,
+      y: window.innerHeight - size.height - padding - (isMobile ? 120 : 80),
     };
-  }, [panelSize, isMobile, PANEL_SIZES]);
+  }, [isMobile, getPanelSizes]);
 
   // Handle minimize via swipe down
   const handleSwipeDown = useCallback(() => {
-    if (panelSize !== 'pip') {
-      setPanelSize('pip');
+    if (viewMode === 'FULL_VIEW') {
+      setViewMode('MINIMIZED_FLOATING');
     }
-  }, [panelSize]);
+  }, [viewMode]);
 
   // Handle expand via swipe up
   const handleSwipeUp = useCallback(() => {
-    if (panelSize === 'pip') {
-      setPanelSize('normal');
-    } else if (panelSize === 'compact') {
-      setPanelSize('normal');
-    } else if (panelSize === 'normal') {
-      setPanelSize('expanded');
+    if (viewMode === 'MINIMIZED_FLOATING') {
+      setViewMode('FULL_VIEW');
     }
-  }, [panelSize]);
+  }, [viewMode]);
 
   const {
     position,
@@ -159,8 +167,8 @@ const FloatingVideoPanel = ({
     snapToCorner,
   } = useDraggable({
     initialPosition: getInitialPosition(),
-    minSize: PANEL_SIZES.pip,
-    maxSize: PANEL_SIZES.expanded,
+    minSize: { width: 160, height: 120 },
+    maxSize: { width: 400, height: 550 },
     snapZones,
     snapThreshold: 50,
     storageKey: 'floating-video-panel-position',
@@ -170,48 +178,43 @@ const FloatingVideoPanel = ({
     onSwipeDown: handleSwipeDown,
   });
 
-  // Handle size toggle
-  const toggleSize = useCallback(() => {
-    setPanelSize(prev => {
-      if (prev === 'pip') return 'normal';
-      if (prev === 'compact') return 'normal';
-      if (prev === 'normal') return 'expanded';
-      return 'normal';
-    });
-  }, []);
-
-  // Handle minimize (to PiP mode)
+  // Handle minimize toggle (between FULL_VIEW and MINIMIZED_FLOATING)
   const handleMinimize = useCallback(() => {
-    setPanelSize(prev => prev === 'pip' ? 'normal' : 'pip');
+    setViewMode(prev => prev === 'MINIMIZED_FLOATING' ? 'FULL_VIEW' : 'MINIMIZED_FLOATING');
   }, []);
 
-  // Handle close (only stops video, doesn't hide panel)
+  // Handle close (only stops video on explicit action)
   const handleClose = useCallback(() => {
+    // Stop camera stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
     setIsVideoActive(false);
-    setPanelSize('pip');
+    setViewMode('MINIMIZED_FLOATING');
   }, []);
 
   // Handle restore video
   const handleRestoreVideo = useCallback(() => {
     setIsVideoActive(true);
-    setPanelSize('normal');
+    setViewMode('FULL_VIEW');
   }, []);
 
-  // Handle metrics update
+  // Handle metrics update from video
   const handleMetricsUpdate = useCallback((metrics: VideoMetrics) => {
     setCurrentMetrics(metrics);
+    setHasBackendData(metrics.faceDetected && metrics.postureScore > 0);
     onMetricsUpdate?.(metrics);
   }, [onMetricsUpdate]);
 
-  const currentSize = PANEL_SIZES[panelSize];
-  const isPiP = panelSize === 'pip';
+  const isMinimized = viewMode === 'MINIMIZED_FLOATING';
 
-  // PiP (Picture-in-Picture) minimized state
-  if (isPiP && isVideoActive) {
+  // PiP (Picture-in-Picture) minimized state - ONLY video + mini overlay
+  if (isMinimized && isVideoActive) {
     return (
       <div
         className={cn(
-          "fixed z-50 touch-none select-none group safe-bottom safe-right",
+          "fixed z-[9999] touch-none select-none group safe-bottom safe-right",
           isDragging && "cursor-grabbing",
           isSwiping && "transition-transform duration-300",
           className
@@ -221,7 +224,7 @@ const FloatingVideoPanel = ({
           top: position.y,
           width: currentSize.width,
           height: currentSize.height,
-          transition: isDragging ? 'none' : 'left 0.12s ease-out, top 0.12s ease-out, transform 0.12s ease-out',
+          transition: isDragging ? 'none' : 'all 0.12s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
         tabIndex={0}
         role="application"
@@ -229,80 +232,92 @@ const FloatingVideoPanel = ({
         {...handlers}
       >
         <div className={cn(
-          "relative w-full h-full rounded-lg overflow-hidden",
-          "ring-2 ring-border bg-card shadow-lg",
+          "relative w-full h-full rounded-xl overflow-hidden",
+          "ring-2 ring-border/50 bg-card shadow-xl",
           isDragging && "ring-primary scale-[1.02]",
           "transition-all duration-100"
         )}>
-          {/* Mini video preview */}
+          {/* Lazy-loaded mini video component - NO metric bars */}
           <div className="absolute inset-0 bg-muted/50">
-            <VideoMonitor
+            <MiniVideoView 
               isActive={isVideoActive}
-              sessionId={sessionId}
-              isUserMicActive={isUserMicActive}
               onMetricsUpdate={handleMetricsUpdate}
             />
           </div>
           
-          {/* PiP overlay with mini metrics */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
+          {/* Gradient overlay for readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-background/40 pointer-events-none" />
           
-          {/* Mini metrics bar */}
-          <div className="absolute bottom-0 left-0 right-0 p-1 flex items-center justify-between gap-1">
-            <div className="flex items-center gap-1">
-              {currentMetrics && (
-                <>
-                  <div className="flex items-center gap-0.5 text-micro">
-                    <Eye className="w-2.5 h-2.5 text-muted-foreground" />
-                    <span className={cn(
-                      "font-mono",
-                      currentMetrics.eyeContactScore >= 70 ? "text-green-500" : 
-                      currentMetrics.eyeContactScore >= 50 ? "text-yellow-500" : "text-red-500"
-                    )}>
-                      {currentMetrics.eyeContactScore}%
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-0.5 text-micro">
-                    <Activity className="w-2.5 h-2.5 text-muted-foreground" />
-                    <span className={cn(
-                      "font-mono",
-                      currentMetrics.postureScore >= 70 ? "text-green-500" : 
-                      currentMetrics.postureScore >= 50 ? "text-yellow-500" : "text-red-500"
-                    )}>
-                      {currentMetrics.postureScore}%
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
+          {/* Mini status bar - top */}
+          <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between pointer-events-none">
             <Badge
               variant="default"
-              className="text-[6px] px-1 py-0 h-3 bg-green-600 text-white"
+              className="text-[8px] px-1.5 py-0 h-4 bg-green-600/90 text-white shadow-sm"
             >
               LIVE
             </Badge>
+            {currentMetrics?.faceDetected && (
+              <Badge 
+                variant="outline"
+                className="text-[8px] px-1.5 py-0 h-4 bg-background/80 shadow-sm"
+              >
+                {currentMetrics.overallScore}%
+              </Badge>
+            )}
           </div>
           
-          {/* Expand button overlay */}
+          {/* Mini metrics bar - bottom */}
+          <div className="absolute bottom-0 left-0 right-0 p-1.5 flex items-center justify-between pointer-events-none">
+            {hasBackendData && currentMetrics ? (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-0.5 text-[9px]">
+                  <Eye className="w-2.5 h-2.5 text-muted-foreground/80" />
+                  <span className={cn(
+                    "font-mono font-medium",
+                    currentMetrics.eyeContactScore >= 70 ? "text-green-400" : 
+                    currentMetrics.eyeContactScore >= 50 ? "text-yellow-400" : "text-red-400"
+                  )}>
+                    {currentMetrics.eyeContactScore}%
+                  </span>
+                </div>
+                <div className="flex items-center gap-0.5 text-[9px]">
+                  <Activity className="w-2.5 h-2.5 text-muted-foreground/80" />
+                  <span className={cn(
+                    "font-mono font-medium",
+                    currentMetrics.postureScore >= 70 ? "text-green-400" : 
+                    currentMetrics.postureScore >= 50 ? "text-yellow-400" : "text-red-400"
+                  )}>
+                    {currentMetrics.postureScore}%
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <span className="text-[9px] text-muted-foreground">Detecting...</span>
+            )}
+          </div>
+          
+          {/* Expand button overlay - appears on hover/tap */}
           <button
             className={cn(
-              "absolute inset-0 flex items-center justify-center",
-              "opacity-0 group-hover:opacity-100 transition-opacity",
-              "bg-background/30 backdrop-blur-[1px]"
+              "absolute inset-0 flex items-center justify-center pointer-events-auto",
+              "opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200",
+              "bg-background/30 backdrop-blur-[2px]"
             )}
             onClick={(e) => {
               e.stopPropagation();
-              setPanelSize('normal');
+              setViewMode('FULL_VIEW');
             }}
             aria-label="Expand video panel"
           >
-            <Maximize2 className="w-5 h-5 text-foreground" />
+            <div className="bg-background/90 rounded-full p-2 shadow-lg">
+              <Maximize2 className="w-5 h-5 text-foreground" />
+            </div>
           </button>
         </div>
         
         {/* Swipe hint on mobile */}
         {isMobile && (
-          <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-micro text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-background/80 px-2 py-0.5 rounded-full">
             ↑ Swipe to expand
           </div>
         )}
@@ -315,7 +330,7 @@ const FloatingVideoPanel = ({
     return (
       <div
         className={cn(
-          "fixed z-50 touch-none select-none group safe-bottom safe-right",
+          "fixed z-[9999] touch-none select-none group safe-bottom safe-right",
           isDragging && "cursor-grabbing",
           className
         )}
@@ -347,18 +362,18 @@ const FloatingVideoPanel = ({
           <Camera className="w-5 h-5 sm:w-6 sm:h-6" />
         </Button>
         {/* Tooltip on hover */}
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-popover text-popover-foreground text-micro rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-border">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-popover text-popover-foreground text-[10px] rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-border">
           Enable Video
         </div>
       </div>
     );
   }
 
-  // Full panel view
+  // Full panel view - with all metrics bars
   return (
     <div
       className={cn(
-        "fixed z-50 touch-none select-none group safe-bottom safe-right",
+        "fixed z-[9999] touch-none select-none group safe-bottom safe-right",
         isDragging && "cursor-grabbing shadow-2xl",
         isSwiping && "transition-transform duration-300",
         className
@@ -367,7 +382,7 @@ const FloatingVideoPanel = ({
         left: position.x,
         top: position.y,
         width: currentSize.width,
-        transition: isDragging ? 'none' : 'left 0.12s ease-out, top 0.12s ease-out, width 0.2s ease-out',
+        transition: isDragging ? 'none' : 'all 0.12s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
       tabIndex={0}
       role="application"
@@ -405,21 +420,6 @@ const FloatingVideoPanel = ({
           
           {/* Control buttons */}
           <div className="flex items-center gap-0.5">
-            {/* Expand/Shrink button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 sm:h-6 sm:w-6 rounded-sm hover:bg-muted"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleSize();
-              }}
-              title={panelSize === 'expanded' ? 'Shrink' : 'Expand'}
-              aria-label={panelSize === 'expanded' ? 'Shrink panel' : 'Expand panel'}
-            >
-              <Maximize2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-            </Button>
-            
             {/* Minimize button (to PiP) */}
             <Button
               variant="ghost"
@@ -452,13 +452,13 @@ const FloatingVideoPanel = ({
           </div>
         </div>
 
-        {/* Video Monitor Content */}
+        {/* Video Monitor Content - Full metrics visible */}
         <div 
           className="w-full overflow-hidden"
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <VideoMonitor
+          <FullVideoView
             isActive={isVideoActive}
             sessionId={sessionId}
             isUserMicActive={isUserMicActive}
@@ -474,16 +474,16 @@ const FloatingVideoPanel = ({
 
       {/* Swipe hint for mobile */}
       {isMobile && !isDragging && (
-        <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-micro text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-background/80 px-2 py-0.5 rounded-full">
           ↓ Swipe to minimize
         </div>
       )}
 
       {/* Quick snap buttons - shown on hover for desktop */}
       <div className={cn(
-        "absolute -bottom-7 left-1/2 -translate-x-1/2 flex gap-0.5 sm:gap-1",
+        "absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-0.5 sm:gap-1",
         "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-        "hidden sm:flex" // Hide on mobile
+        "hidden sm:flex"
       )}>
         {(['bottom-right', 'bottom-left', 'top-right', 'top-left'] as const).map((corner) => (
           <Button
@@ -507,5 +507,58 @@ const FloatingVideoPanel = ({
     </div>
   );
 };
+
+// MiniVideoView - Lightweight component for PiP mode (no metric bars)
+const MiniVideoView = ({ 
+  isActive, 
+  onMetricsUpdate 
+}: { 
+  isActive: boolean; 
+  onMetricsUpdate?: (metrics: VideoMetrics) => void;
+}) => {
+  // This is a lazy wrapper that imports VideoMonitor but only renders video
+  // For now, we use the full VideoMonitor but could optimize later
+  const VideoMonitor = React.lazy(() => import('@/components/VideoMonitor'));
+  
+  return (
+    <React.Suspense fallback={<div className="w-full h-full bg-muted animate-pulse" />}>
+      <div className="[&_.space-y-1\.5]:hidden [&_.space-y-2]:hidden [&_[class*='pt-1.5']]:hidden [&_[class*='border-t']]:hidden">
+        <VideoMonitor 
+          isActive={isActive} 
+          onMetricsUpdate={onMetricsUpdate}
+        />
+      </div>
+    </React.Suspense>
+  );
+};
+
+// FullVideoView - Complete VideoMonitor with all metrics
+const FullVideoView = ({ 
+  isActive, 
+  sessionId,
+  isUserMicActive,
+  onMetricsUpdate 
+}: { 
+  isActive: boolean;
+  sessionId?: string;
+  isUserMicActive?: boolean;
+  onMetricsUpdate?: (metrics: VideoMetrics) => void;
+}) => {
+  const VideoMonitor = React.lazy(() => import('@/components/VideoMonitor'));
+  
+  return (
+    <React.Suspense fallback={<div className="w-full h-full min-h-[200px] bg-muted animate-pulse" />}>
+      <VideoMonitor 
+        isActive={isActive}
+        sessionId={sessionId}
+        isUserMicActive={isUserMicActive}
+        onMetricsUpdate={onMetricsUpdate}
+      />
+    </React.Suspense>
+  );
+};
+
+// Need to import React for lazy/Suspense
+import React from 'react';
 
 export default FloatingVideoPanel;
