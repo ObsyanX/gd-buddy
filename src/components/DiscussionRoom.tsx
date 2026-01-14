@@ -671,7 +671,17 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           {/* Mobile Header */}
           <div className="flex items-center justify-between gap-2 md:hidden">
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold truncate">{session.topic}</h1>
+              <h1 
+                className="text-base sm:text-lg font-bold leading-tight line-clamp-2 break-words"
+                style={{ 
+                  wordBreak: 'break-word',
+                  overflowWrap: 'anywhere',
+                  hyphens: 'auto'
+                }}
+                title={session.topic}
+              >
+                {session.topic}
+              </h1>
               <div className="flex gap-1 mt-1 flex-wrap">
                 <Badge variant="secondary" className="text-[10px]">{session.topic_category}</Badge>
                 <Badge variant="outline" className="border text-[10px]">{messages.length} turns</Badge>
