@@ -24,6 +24,12 @@ interface SnapZone {
   threshold: number;
 }
 
+interface SwipeState {
+  startY: number;
+  startTime: number;
+  direction: 'up' | 'down' | null;
+}
+
 interface UseDraggableOptions {
   initialPosition?: Position;
   minSize?: Size;
@@ -31,9 +37,13 @@ interface UseDraggableOptions {
   snapZones?: SnapZone[];
   snapThreshold?: number;
   storageKey?: string;
+  enableSwipeGestures?: boolean;
+  swipeThreshold?: number;
   onPositionChange?: (position: Position) => void;
   onDragStart?: () => void;
   onDragEnd?: (position: Position) => void;
+  onSwipeUp?: () => void;
+  onSwipeDown?: () => void;
 }
 
 export const useDraggable = (options: UseDraggableOptions = {}) => {
@@ -44,9 +54,13 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     snapZones = [],
     snapThreshold = 40,
     storageKey = 'floating-video-position',
+    enableSwipeGestures = true,
+    swipeThreshold = 50,
     onPositionChange,
     onDragStart,
     onDragEnd,
+    onSwipeUp,
+    onSwipeDown,
   } = options;
 
   // Load saved position from localStorage
@@ -74,22 +88,29 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
   const [size, setSize] = useState<Size>(minSize);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [isSwiping, setIsSwiping] = useState(false);
   
   const elementRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<Position>({ x: 0, y: 0 });
   const positionStartRef = useRef<Position>({ x: 0, y: 0 });
   const resizeStartRef = useRef<Size>({ width: 0, height: 0 });
+  const swipeRef = useRef<SwipeState>({ startY: 0, startTime: 0, direction: null });
+  const dragDistanceRef = useRef<number>(0);
 
   // Calculate bounds based on window size
   const getBounds = useCallback((): Bounds => {
     if (typeof window === 'undefined') {
       return { minX: 0, maxX: 1000, minY: 0, maxY: 800 };
     }
+    // Account for safe areas
+    const safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-top')) || 0;
+    const safeBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-bottom')) || 0;
+    
     return {
       minX: 0,
       maxX: window.innerWidth - size.width,
-      minY: 0,
-      maxY: window.innerHeight - size.height,
+      minY: safeTop,
+      maxY: window.innerHeight - size.height - safeBottom,
     };
   }, [size]);
 
@@ -145,8 +166,19 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     setIsDragging(true);
     dragStartRef.current = { x: e.clientX, y: e.clientY };
     positionStartRef.current = { ...position };
+    dragDistanceRef.current = 0;
+    
+    // Initialize swipe tracking
+    if (enableSwipeGestures) {
+      swipeRef.current = {
+        startY: e.clientY,
+        startTime: Date.now(),
+        direction: null,
+      };
+    }
+    
     onDragStart?.();
-  }, [position, isResizing, onDragStart]);
+  }, [position, isResizing, enableSwipeGestures, onDragStart]);
 
   // Handle drag move
   const handleDragMove = useCallback((e: React.PointerEvent) => {
@@ -157,6 +189,14 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     const deltaX = e.clientX - dragStartRef.current.x;
     const deltaY = e.clientY - dragStartRef.current.y;
     
+    // Track total drag distance
+    dragDistanceRef.current = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // Detect swipe direction
+    if (enableSwipeGestures && Math.abs(deltaY) > 10) {
+      swipeRef.current.direction = deltaY > 0 ? 'down' : 'up';
+    }
+    
     const newPosition = clampPosition({
       x: positionStartRef.current.x + deltaX,
       y: positionStartRef.current.y + deltaY,
@@ -164,7 +204,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     
     setPosition(newPosition);
     onPositionChange?.(newPosition);
-  }, [isDragging, clampPosition, onPositionChange]);
+  }, [isDragging, clampPosition, enableSwipeGestures, onPositionChange]);
 
   // Handle drag end
   const handleDragEnd = useCallback((e: React.PointerEvent) => {
@@ -172,6 +212,26 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     
     const target = e.currentTarget as HTMLElement;
     target.releasePointerCapture(e.pointerId);
+    
+    // Check for swipe gesture
+    if (enableSwipeGestures) {
+      const deltaY = e.clientY - swipeRef.current.startY;
+      const deltaTime = Date.now() - swipeRef.current.startTime;
+      const velocity = Math.abs(deltaY) / deltaTime;
+      
+      // Fast swipe detection (velocity > 0.5 px/ms or distance > threshold)
+      if (velocity > 0.5 || Math.abs(deltaY) > swipeThreshold) {
+        if (deltaY > swipeThreshold) {
+          onSwipeDown?.();
+          setIsSwiping(true);
+          setTimeout(() => setIsSwiping(false), 300);
+        } else if (deltaY < -swipeThreshold) {
+          onSwipeUp?.();
+          setIsSwiping(true);
+          setTimeout(() => setIsSwiping(false), 300);
+        }
+      }
+    }
     
     // Apply snap zones
     const snappedPosition = findSnapZone(position);
@@ -181,7 +241,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     setIsDragging(false);
     savePosition(finalPosition);
     onDragEnd?.(finalPosition);
-  }, [isDragging, position, findSnapZone, clampPosition, savePosition, onDragEnd]);
+  }, [isDragging, position, findSnapZone, clampPosition, savePosition, onDragEnd, enableSwipeGestures, swipeThreshold, onSwipeUp, onSwipeDown]);
 
   // Handle resize start
   const handleResizeStart = useCallback((e: React.PointerEvent) => {
@@ -265,6 +325,19 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [clampPosition]);
 
+  // Handle orientation change
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      // Wait for orientation to settle
+      setTimeout(() => {
+        setPosition(prev => clampPosition(prev));
+      }, 100);
+    };
+    
+    window.addEventListener('orientationchange', handleOrientationChange);
+    return () => window.removeEventListener('orientationchange', handleOrientationChange);
+  }, [clampPosition]);
+
   // Snap to corner helper
   const snapToCorner = useCallback((corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right') => {
     const bounds = getBounds();
@@ -273,10 +346,10 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     
     switch (corner) {
       case 'top-left':
-        newPosition = { x: padding, y: padding };
+        newPosition = { x: padding, y: bounds.minY + padding };
         break;
       case 'top-right':
-        newPosition = { x: bounds.maxX - padding, y: padding };
+        newPosition = { x: bounds.maxX - padding, y: bounds.minY + padding };
         break;
       case 'bottom-left':
         newPosition = { x: padding, y: bounds.maxY - padding };
@@ -296,6 +369,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     size,
     isDragging,
     isResizing,
+    isSwiping,
     elementRef,
     handlers: {
       onPointerDown: handleDragStart,
@@ -317,5 +391,6 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
       savePosition(clamped);
     },
     setSize,
+    dragDistance: dragDistanceRef.current,
   };
 };
