@@ -1,0 +1,16 @@
+{
+  "name": "GD Buddy – AI Group Discussion Practice",
+  "short_name": "GD Buddy",
+  "description": "Practice group discussions with AI, get instant feedback, and crack placement GD rounds.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a1a1a",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
