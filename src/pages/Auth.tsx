@@ -230,12 +230,12 @@ const Auth = () => {
           </div>
         </div>
       </header>
-<div className="mb-8">
-  <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+<div className="w-full flex flex-col items-center justify-center text-center py-12 px-4">
+  <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900">
     GD Buddy
   </h1>
 
-  <p className="mt-3 text-base md:text-lg text-slate-600 max-w-xl">
+  <p className="mt-4 text-lg md:text-xl text-slate-600 max-w-2xl">
     AI-powered group discussion practice platform for placements
   </p>
 </div>
