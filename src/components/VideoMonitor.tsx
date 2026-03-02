@@ -679,8 +679,6 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     return 'bg-destructive';
   };
 
-  if (!isActive) return null;
-
   // Re-attach stream when minimize state changes
   useEffect(() => {
     if (!isMinimized && isCameraOn && videoRef.current && streamRef.current) {
@@ -695,6 +693,8 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
       }
     }
   }, [isMinimized, isCameraOn]);
+
+  if (!isActive) return null;
 
   return (
     <Card className={`border-2 sm:border-4 border-border transition-all ${isMinimized ? 'p-2 sm:p-3' : 'p-2 sm:p-4'}`}>
@@ -813,10 +813,10 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                 <div className="text-center">
                   <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
                   <p className="text-xs text-muted-foreground">
-                    {isInitializingCamera ? 'Initializing Camera...' : 'Starting video...'}
+                    {isInitializingCamera ? 'Initializing camera…' : 'Starting video…'}
                   </p>
                   {isInitializingCamera && (
-                    <p className="text-[10px] text-muted-foreground mt-1">Loading MediaPipe models</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">Loading detection models</p>
                   )}
                 </div>
               </div>
@@ -835,7 +835,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
                   {(isAnalyzing || isWarmingUp) && (
                     <Badge variant="outline" className="text-[9px] bg-background/80 border-primary/50 text-primary px-1.5 py-0.5">
                       <Loader2 className="w-2.5 h-2.5 mr-0.5 animate-spin" />
-                      {isWarmingUp ? 'Starting...' : 'Analyzing...'}
+                      {isWarmingUp ? 'Initializing…' : 'Analyzing…'}
                     </Badge>
                   )}
                 </div>

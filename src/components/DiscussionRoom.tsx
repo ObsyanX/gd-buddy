@@ -19,8 +19,7 @@ import { VoiceActivityIndicator } from "@/components/VoiceActivityIndicator";
 import { PracticeHistory } from "@/components/PracticeHistory";
 import { WPMDisplay, useWordCountEstimator } from "@/components/WPMDisplay";
 import { OnboardingTutorial, useOnboardingTutorial } from "@/components/OnboardingTutorial";
-import { VideoMetrics } from "@/components/VideoMonitor";
-import FloatingVideoPanel from "@/components/FloatingVideoPanel";
+import VideoMonitor, { VideoMetrics } from "@/components/VideoMonitor";
 import ParticipantPresence from "@/components/ParticipantPresence";
 import VoiceMetricsPanel from "@/components/VoiceMetricsPanel";
 import { useMultiplayerPresence } from "@/hooks/useMultiplayerPresence";
@@ -822,6 +821,16 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       </header>
 
       <div className="flex-1 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 p-2 sm:p-3 lg:p-4 overflow-hidden">
+        {/* Mobile/Tablet Video Monitor - Stacked above chat */}
+        <div className="lg:hidden">
+          <VideoMonitor
+            isActive={true}
+            sessionId={session?.id}
+            isUserMicActive={isListening && !isSpeaking}
+            onMetricsUpdate={handleVideoMetricsUpdate}
+          />
+        </div>
+
         {/* Main Chat Area */}
         <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-2 sm:gap-3 lg:gap-4 min-w-0 flex-1">
           <Card className="border-2 sm:border-3 lg:border-4 border-border flex-1 min-h-[180px] max-h-[calc(100vh-240px)] sm:max-h-[calc(100vh-280px)] lg:max-h-[calc(100vh-350px)] flex flex-col">
@@ -1083,8 +1092,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         </div>
 
         {/* Right Sidebar - Desktop Only */}
-        <div className="hidden lg:block lg:col-span-4 xl:col-span-3 space-y-3 overflow-y-auto max-h-[calc(100vh-180px)] pr-1">
-          {/* Live Feedback Card */}
+        <div className="hidden lg:flex lg:col-span-4 xl:col-span-3 flex-col gap-3 overflow-y-auto max-h-[calc(100vh-180px)] pr-1">
+          {/* Video Monitor - Grid Integrated */}
+          <VideoMonitor
+            isActive={true}
+            sessionId={session?.id}
+            isUserMicActive={isListening && !isSpeaking}
+            onMetricsUpdate={handleVideoMetricsUpdate}
+          />
           <Card className="p-4 border-4 border-border">
             <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
               <Info className="w-4 h-4" />
@@ -1165,12 +1180,6 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         </div>
       </div>
 
-      {/* Floating Video Panel - Single draggable instance for all screen sizes */}
-      <FloatingVideoPanel
-        sessionId={session?.id}
-        isUserMicActive={isListening && !isSpeaking}
-        onMetricsUpdate={handleVideoMetricsUpdate}
-      />
 
       {/* Practice Mode Dialog */}
       <Dialog open={isPracticing} onOpenChange={(open) => !open && cancelPractice()}>
