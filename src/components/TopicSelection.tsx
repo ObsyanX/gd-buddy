@@ -140,13 +140,13 @@ const TopicSelection = ({
   };
   return <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={onBack} className="border-2">
+        <Button variant="outline" size="icon" onClick={onBack} className="border-2 mx-[20px] mr-0">
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <h2 className="text-2xl font-black">SELECT TOPIC</h2>
       </div>
 
-      <Tabs defaultValue="ai" className="w-full">
+      <Tabs defaultValue="ai" className="w-full px-[20px] py-[5px]">
         <TabsList className="grid w-full grid-cols-2 border-2 border-border">
           <TabsTrigger value="ai" className="font-bold">AI GENERATED</TabsTrigger>
           <TabsTrigger value="custom" className="font-bold">CUSTOM TOPIC</TabsTrigger>
@@ -160,7 +160,7 @@ const TopicSelection = ({
                 Choose a category to generate discussion topics:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
-                {TOPIC_CATEGORIES.map(category => <Card key={category.id} onClick={() => handleCategorySelect(category)} className="p-3 cursor-pointer hover:border-primary hover:bg-accent/50 transition-all w-full border-2 border-solid rounded-xl shadow-md">
+                {TOPIC_CATEGORIES.map((category) => <Card key={category.id} onClick={() => handleCategorySelect(category)} className="p-3 cursor-pointer hover:border-primary hover:bg-accent/50 transition-all w-full border-2 border-solid rounded-xl shadow-md">
                     <div className="flex flex-col items-center text-center gap-1">
                       <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                         {category.icon}
@@ -224,7 +224,7 @@ const TopicSelection = ({
 
         <TabsContent value="custom" className="space-y-4 mt-4">
           <div className="space-y-3">
-            <Input placeholder="Enter your discussion topic..." value={customTopic} onChange={e => setCustomTopic(e.target.value)} className="border-2" />
+            <Input placeholder="Enter your discussion topic..." value={customTopic} onChange={(e) => setCustomTopic(e.target.value)} className="border-2" />
             <Button onClick={handleCustomTopicSubmit} className="w-full border-2 font-bold" disabled={!customTopic.trim()}>
               START WITH THIS TOPIC
             </Button>
