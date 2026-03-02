@@ -1149,7 +1149,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           <Button
             size="lg"
             onClick={onStartNew}
-            className="border-4 border-border shadow-md">
+            className="border-4 border-border shadow-none">
 
             START NEW SESSION
           </Button>
