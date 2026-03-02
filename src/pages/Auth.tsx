@@ -232,6 +232,8 @@ const Auth = () => {
       </header>
 
       <main className="flex-1 container mx-auto py-12 px-6 flex items-center justify-center">
+       <h1>GD Buddy</h1>
+<p>AI-powered group discussion practice platform for placements</p>
         <Card className="w-full max-w-md p-8 border-4 border-border">
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-3 border-2">
