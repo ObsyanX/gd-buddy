@@ -575,7 +575,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             expression_score: hasExpression ? videoSessionMetrics.avgExpressionScore : null,
             video_tips: videoSessionMetrics.tips,
             updated_at: new Date().toISOString()
-          });
+          }, { onConflict: 'session_id', ignoreDuplicates: false });
         
         if (metricsError) {
           console.error('[EndSession] Failed to save video metrics:', metricsError);
