@@ -20,33 +20,33 @@ const BENCHMARKS = {
   fillerRate: { ideal: 0.01, max: 0.03, label: "Filler Word Rate" }, // fillers per word
   avgResponseLength: { ideal: 60, min: 40, max: 100, label: "Avg Words Per Response" },
   participationRate: { ideal: 0.25, min: 0.15, max: 0.35, label: "Participation Rate" }, // in group discussion
-  responseTime: { ideal: 2, max: 5, label: "Avg Response Time (s)" },
+  responseTime: { ideal: 2, max: 5, label: "Avg Response Time (s)" }
 };
 
 // Common filler words to detect
 const FILLER_WORDS = [
-  'um', 'uh', 'uhh', 'umm', 'er', 'ah', 'like', 'you know', 'basically', 
-  'actually', 'literally', 'so', 'well', 'i mean', 'kind of', 'sort of',
-  'right', 'okay', 'yeah'
-];
+'um', 'uh', 'uhh', 'umm', 'er', 'ah', 'like', 'you know', 'basically',
+'actually', 'literally', 'so', 'well', 'i mean', 'kind of', 'sort of',
+'right', 'okay', 'yeah'];
+
 
 // Utility function to clean streaming transcription artifacts (repeated phrases)
 const cleanStreamingArtifacts = (text: string): string => {
   if (!text) return '';
-  
+
   // Split into words and remove consecutive duplicates (streaming artifacts)
   const words = text.split(/\s+/);
   const cleaned: string[] = [];
-  
+
   for (let i = 0; i < words.length; i++) {
     const word = words[i];
     const lastWord = cleaned[cleaned.length - 1];
-    
+
     // Skip if this word is the same as the last word (immediate repeat)
     if (lastWord && word.toLowerCase() === lastWord.toLowerCase()) {
       continue;
     }
-    
+
     // Check for phrase repetition (e.g., "I am I am getting" -> "I am getting")
     // Look back up to 5 words for repeated phrase patterns
     let isRepeatedPhrase = false;
@@ -59,12 +59,12 @@ const cleanStreamingArtifacts = (text: string): string => {
         break;
       }
     }
-    
+
     if (!isRepeatedPhrase) {
       cleaned.push(word);
     }
   }
-  
+
   return cleaned.join(' ');
 };
 
@@ -98,41 +98,41 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         toast({
           title: "Not authenticated",
           description: "Please log in to view your report",
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
 
-      const { data: sessionData } = await supabase
-        .from('gd_sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .single();
+      const { data: sessionData } = await supabase.
+      from('gd_sessions').
+      select('*').
+      eq('id', sessionId).
+      single();
 
       // Get all participants for this session
-      const { data: participantsData } = await supabase
-        .from('gd_participants')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('order_index');
+      const { data: participantsData } = await supabase.
+      from('gd_participants').
+      select('*').
+      eq('session_id', sessionId).
+      order('order_index');
 
       setAllParticipants(participantsData || []);
 
       // Find the current user's participant record
-      const myParticipant = participantsData?.find(p => p.real_user_id === user.id);
+      const myParticipant = participantsData?.find((p) => p.real_user_id === user.id);
       if (!myParticipant) {
         // Fallback for solo mode or legacy sessions - find any human participant
-        const fallbackParticipant = participantsData?.find(p => p.is_user);
+        const fallbackParticipant = participantsData?.find((p) => p.is_user);
         setCurrentParticipant(fallbackParticipant || null);
       } else {
         setCurrentParticipant(myParticipant);
       }
 
-      const { data: metricsData, error: metricsError } = await supabase
-        .from('gd_metrics')
-        .select('*')
-        .eq('session_id', sessionId)
-        .maybeSingle();
+      const { data: metricsData, error: metricsError } = await supabase.
+      from('gd_metrics').
+      select('*').
+      eq('session_id', sessionId).
+      maybeSingle();
 
       // Log metrics data for debugging
       console.log('[SessionReport] Loaded metrics from database:', {
@@ -144,11 +144,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         expression: metricsData?.expression_score
       });
 
-      const { data: messagesData } = await supabase
-        .from('gd_messages')
-        .select('*, gd_participants(*)')
-        .eq('session_id', sessionId)
-        .order('start_ts');
+      const { data: messagesData } = await supabase.
+      from('gd_messages').
+      select('*, gd_participants(*)').
+      eq('session_id', sessionId).
+      order('start_ts');
 
       setSession(sessionData);
       setMessages(messagesData || []);
@@ -158,19 +158,19 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       const postureScore = metricsData?.posture_score;
       const eyeContactScore = metricsData?.eye_contact_score;
       const expressionScore = metricsData?.expression_score;
-      
+
       const hasValidPosture = postureScore !== null && postureScore !== undefined && postureScore > 0;
       const hasValidEyeContact = eyeContactScore !== null && eyeContactScore !== undefined && eyeContactScore > 0;
       const hasValidExpression = expressionScore !== null && expressionScore !== undefined && expressionScore > 0;
       const hasValidVideoMetrics = hasValidPosture || hasValidEyeContact || hasValidExpression;
-        
+
       console.log('[SessionReport] Video metrics validation:', {
         hasValidPosture,
         hasValidEyeContact,
         hasValidExpression,
         hasValidVideoMetrics
       });
-        
+
       if (hasValidVideoMetrics) {
         setVideoMetrics({
           postureScore: postureScore ?? 0,
@@ -183,13 +183,13 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       }
 
       // Calculate real metrics - pass participant ID for filtering
-      const participantId = myParticipant?.id || participantsData?.find(p => p.is_user)?.id;
+      const participantId = myParticipant?.id || participantsData?.find((p) => p.is_user)?.id;
       const realMetrics = calculateRealMetrics(sessionData, messagesData || [], participantId, participantsData || []);
       setCalculatedStats(realMetrics);
-      
+
       // Generate chart data
       generateChartData(messagesData || [], realMetrics, metricsData, participantId);
-      
+
       // Generate detailed report with real data
       generateDetailedReport(sessionData, messagesData || [], realMetrics);
     } catch (error: any) {
@@ -197,7 +197,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       toast({
         title: "Error loading report",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -205,14 +205,14 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   const calculateRealMetrics = (sessionData: any, messagesData: any[], currentParticipantId?: string, allParticipants?: any[]) => {
     // In multiplayer, filter to only THIS participant's messages
     // In solo mode or if no participant ID, fall back to all human messages
-    const myMessages = currentParticipantId 
-      ? messagesData.filter(m => m.participant_id === currentParticipantId)
-      : messagesData.filter(m => m.gd_participants?.is_user);
-    
-    const aiMessages = messagesData.filter(m => !m.gd_participants?.is_user);
+    const myMessages = currentParticipantId ?
+    messagesData.filter((m) => m.participant_id === currentParticipantId) :
+    messagesData.filter((m) => m.gd_participants?.is_user);
+
+    const aiMessages = messagesData.filter((m) => !m.gd_participants?.is_user);
     const totalMessages = messagesData.length;
-    const humanParticipantCount = allParticipants?.filter(p => p.is_user).length || 1;
-    
+    const humanParticipantCount = allParticipants?.filter((p) => p.is_user).length || 1;
+
     // Calculate total words spoken by THIS participant only - clean streaming artifacts
     const totalUserWords = myMessages.reduce((acc, m) => {
       const cleanedText = cleanStreamingArtifacts(m.text || '');
@@ -234,14 +234,14 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     }
 
     // Calculate actual WPM - require minimum data for meaningful result
-    const actualWpm = sessionDurationMinutes >= 0.5 && totalUserWords >= 10 
-      ? Math.round(totalUserWords / sessionDurationMinutes)
-      : 0; // Return 0 if insufficient data
+    const actualWpm = sessionDurationMinutes >= 0.5 && totalUserWords >= 10 ?
+    Math.round(totalUserWords / sessionDurationMinutes) :
+    0; // Return 0 if insufficient data
 
     // Count actual filler words - use cleaned text from THIS participant only
-    const allMyText = myMessages.map(m => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
+    const allMyText = myMessages.map((m) => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
     let fillerCount = 0;
-    FILLER_WORDS.forEach(filler => {
+    FILLER_WORDS.forEach((filler) => {
       const regex = new RegExp(`\\b${filler}\\b`, 'gi');
       const matches = allMyText.match(regex);
       fillerCount += matches ? matches.length : 0;
@@ -249,14 +249,14 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     const fillerRate = totalUserWords > 0 ? fillerCount / totalUserWords : 0;
 
     // Calculate average response length for THIS participant
-    const avgResponseLength = myMessages.length > 0 
-      ? Math.round(totalUserWords / myMessages.length) 
-      : 0;
+    const avgResponseLength = myMessages.length > 0 ?
+    Math.round(totalUserWords / myMessages.length) :
+    0;
 
     // Calculate participation rate for THIS participant
-    const participationRate = totalMessages > 0 
-      ? myMessages.length / totalMessages 
-      : 0;
+    const participationRate = totalMessages > 0 ?
+    myMessages.length / totalMessages :
+    0;
 
     // Calculate response times for THIS participant (time between AI message and their response)
     const responseTimes: number[] = [];
@@ -273,14 +273,14 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         }
       }
     }
-    const avgResponseTime = responseTimes.length > 0 
-      ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length 
-      : 0;
+    const avgResponseTime = responseTimes.length > 0 ?
+    responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length :
+    0;
 
     // CRITICAL: Only calculate scores if we have real participant data
     // Without messages or words, scores are meaningless and should be null
     const hasRealData = myMessages.length > 0 && totalUserWords >= 10;
-    
+
     // Calculate scores based on benchmarks (0-100) - only if we have data
     const fluencyScore = hasRealData ? calculateScore('wpm', actualWpm) : null;
     const contentScore = hasRealData ? calculateContentScore(myMessages) : null;
@@ -297,28 +297,28 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       avg_pause_s: avgResponseTime,
       words_per_min: actualWpm,
       has_real_data: hasRealData,
-      data_source: hasRealData 
-        ? `Calculated from ${myMessages.length} messages, ${totalUserWords} words`
-        : 'Insufficient data - no participant contributions found'
+      data_source: hasRealData ?
+      `Calculated from ${myMessages.length} messages, ${totalUserWords} words` :
+      'Insufficient data - no participant contributions found'
     };
 
     // Only update metrics in database if we have real data
     if (hasRealData) {
-      supabase
-        .from('gd_metrics')
-        .upsert({ 
-          session_id: sessionId,
-          fluency_score: fluencyScore,
-          content_score: contentScore,
-          structure_score: structureScore,
-          voice_score: voiceScore,
-          total_words: totalUserWords,
-          filler_count: fillerCount,
-          avg_pause_s: avgResponseTime,
-          words_per_min: actualWpm,
-          updated_at: new Date().toISOString()
-        })
-        .then(() => console.log('Metrics saved'));
+      supabase.
+      from('gd_metrics').
+      upsert({
+        session_id: sessionId,
+        fluency_score: fluencyScore,
+        content_score: contentScore,
+        structure_score: structureScore,
+        voice_score: voiceScore,
+        total_words: totalUserWords,
+        filler_count: fillerCount,
+        avg_pause_s: avgResponseTime,
+        words_per_min: actualWpm,
+        updated_at: new Date().toISOString()
+      }).
+      then(() => console.log('Metrics saved'));
     }
 
     setMetrics(calculatedMetrics);
@@ -333,7 +333,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       avgResponseLength,
       avgResponseTime,
       fillerRate,
-      uniqueWords: new Set(allMyText.split(/\s+/).filter(Boolean)).size,
+      uniqueWords: new Set(allMyText.split(/\s+/).filter(Boolean)).size
     };
   };
 
@@ -342,12 +342,12 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     if (!benchmark) return 70;
 
     if ('ideal' in benchmark && 'min' in benchmark && 'max' in benchmark) {
-      const { ideal, min, max } = benchmark as { ideal: number; min: number; max: number };
+      const { ideal, min, max } = benchmark as {ideal: number;min: number;max: number;};
       if (value >= min && value <= max) {
         // Within range - calculate how close to ideal
         const distanceFromIdeal = Math.abs(value - ideal);
         const maxDistance = Math.max(ideal - min, max - ideal);
-        return Math.round(100 - (distanceFromIdeal / maxDistance) * 20);
+        return Math.round(100 - distanceFromIdeal / maxDistance * 20);
       } else if (value < min) {
         return Math.max(40, Math.round(60 - (min - value) / min * 40));
       } else {
@@ -361,17 +361,17 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     if (userMessages.length === 0) return 50;
 
     let score = 60; // base score
-    const allText = userMessages.map(m => m.text?.toLowerCase() || '').join(' ');
-    
+    const allText = userMessages.map((m) => m.text?.toLowerCase() || '').join(' ');
+
     // Check for substantive content indicators
     const contentIndicators = [
-      { pattern: /because|therefore|however|although|furthermore/gi, points: 5 },
-      { pattern: /for example|such as|specifically|in particular/gi, points: 5 },
-      { pattern: /i think|i believe|in my opinion|my perspective/gi, points: 3 },
-      { pattern: /data|research|studies|evidence|statistics/gi, points: 5 },
-      { pattern: /firstly|secondly|finally|in conclusion/gi, points: 4 },
-      { pattern: /agree|disagree|point|argument|perspective/gi, points: 3 },
-    ];
+    { pattern: /because|therefore|however|although|furthermore/gi, points: 5 },
+    { pattern: /for example|such as|specifically|in particular/gi, points: 5 },
+    { pattern: /i think|i believe|in my opinion|my perspective/gi, points: 3 },
+    { pattern: /data|research|studies|evidence|statistics/gi, points: 5 },
+    { pattern: /firstly|secondly|finally|in conclusion/gi, points: 4 },
+    { pattern: /agree|disagree|point|argument|perspective/gi, points: 3 }];
+
 
     contentIndicators.forEach(({ pattern, points }) => {
       const matches = allText.match(pattern);
@@ -382,8 +382,8 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
 
     // Penalize very short responses
     const avgLength = allText.length / userMessages.length;
-    if (avgLength < 50) score -= 15;
-    else if (avgLength < 100) score -= 5;
+    if (avgLength < 50) score -= 15;else
+    if (avgLength < 100) score -= 5;
 
     return Math.min(100, Math.max(30, score));
   };
@@ -392,10 +392,10 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     if (userMessages.length === 0) return 50;
 
     let score = 60;
-    
+
     // Good response length
-    if (avgResponseLength >= BENCHMARKS.avgResponseLength.min && 
-        avgResponseLength <= BENCHMARKS.avgResponseLength.max) {
+    if (avgResponseLength >= BENCHMARKS.avgResponseLength.min &&
+    avgResponseLength <= BENCHMARKS.avgResponseLength.max) {
       score += 15;
     } else if (avgResponseLength > BENCHMARKS.avgResponseLength.max) {
       score -= 10; // Too verbose
@@ -404,16 +404,16 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     }
 
     // Consistency in response lengths
-    const lengths = userMessages.map(m => m.text?.split(/\s+/).length || 0);
-    const variance = lengths.length > 1 
-      ? lengths.reduce((acc, len) => acc + Math.pow(len - avgResponseLength, 2), 0) / lengths.length 
-      : 0;
+    const lengths = userMessages.map((m) => m.text?.split(/\s+/).length || 0);
+    const variance = lengths.length > 1 ?
+    lengths.reduce((acc, len) => acc + Math.pow(len - avgResponseLength, 2), 0) / lengths.length :
+    0;
     const stdDev = Math.sqrt(variance);
     if (stdDev < 20) score += 10; // Consistent
     else if (stdDev > 50) score -= 10; // Inconsistent
 
     // Check for structured responses
-    const allText = userMessages.map(m => m.text || '').join(' ');
+    const allText = userMessages.map((m) => m.text || '').join(' ');
     if (/first|second|third|finally|in conclusion/i.test(allText)) score += 10;
 
     return Math.min(100, Math.max(30, score));
@@ -443,11 +443,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
 
   const generateChartData = (messagesData: any[], realMetrics: any, metricsData: any, currentParticipantId?: string) => {
     // Timeline data - filter to THIS participant's messages for user data
-    const myMessages = currentParticipantId 
-      ? messagesData.filter(m => m.participant_id === currentParticipantId)
-      : messagesData.filter(m => m.gd_participants?.is_user);
-    const aiMessages = messagesData.filter(m => !m.gd_participants?.is_user);
-    
+    const myMessages = currentParticipantId ?
+    messagesData.filter((m) => m.participant_id === currentParticipantId) :
+    messagesData.filter((m) => m.gd_participants?.is_user);
+    const aiMessages = messagesData.filter((m) => !m.gd_participants?.is_user);
+
     // Create timeline buckets
     const timelineData: any[] = [];
     if (messagesData.length > 1) {
@@ -456,30 +456,30 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       const duration = lastTime - firstTime;
       const bucketCount = Math.min(10, messagesData.length);
       const bucketSize = duration / bucketCount;
-      
+
       for (let i = 0; i < bucketCount; i++) {
-        const bucketStart = firstTime + (i * bucketSize);
+        const bucketStart = firstTime + i * bucketSize;
         const bucketEnd = bucketStart + bucketSize;
-        
+
         // Only count THIS participant's messages as "user" words
-        const myMsgs = myMessages.filter(m => {
+        const myMsgs = myMessages.filter((m) => {
           const t = new Date(m.start_ts).getTime();
           return t >= bucketStart && t < bucketEnd;
         });
-        const aiMsgs = aiMessages.filter(m => {
+        const aiMsgs = aiMessages.filter((m) => {
           const t = new Date(m.start_ts).getTime();
           return t >= bucketStart && t < bucketEnd;
         });
-        
-        const userWords = myMsgs.reduce((acc, m) => acc + (cleanStreamingArtifacts(m.text || '').split(/\s+/).filter(Boolean).length), 0);
+
+        const userWords = myMsgs.reduce((acc, m) => acc + cleanStreamingArtifacts(m.text || '').split(/\s+/).filter(Boolean).length, 0);
         const aiWords = aiMsgs.reduce((acc, m) => acc + (m.text?.split(/\s+/).length || 0), 0);
-        
+
         timelineData.push({
           time: `${i + 1}`,
           userWords,
           aiWords,
           userMessages: myMsgs.length,
-          aiMessages: aiMsgs.length,
+          aiMessages: aiMsgs.length
         });
       }
     }
@@ -490,11 +490,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     // Radar chart should only show metrics that have real data
     const postureScore = metricsData?.posture_score;
     const eyeContactScore = metricsData?.eye_contact_score;
-    
+
     // Only include video metrics in radar if they have valid data (non-null and > 0)
     const hasValidPosture = postureScore !== null && postureScore !== undefined && postureScore > 0;
     const hasValidEyeContact = eyeContactScore !== null && eyeContactScore !== undefined && eyeContactScore > 0;
-    
+
     console.log('[SessionReport] Radar chart data sources:', {
       fluency: realMetrics.fluency_score,
       content: realMetrics.content_score,
@@ -505,22 +505,22 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       hasValidPosture,
       hasValidEyeContact
     });
-    
+
     const performanceData = [
-      { metric: 'Fluency', score: realMetrics.fluency_score || 0, fullMark: 100 },
-      { metric: 'Content', score: realMetrics.content_score || 0, fullMark: 100 },
-      { metric: 'Structure', score: realMetrics.structure_score || 0, fullMark: 100 },
-      { metric: 'Voice', score: realMetrics.voice_score || 0, fullMark: 100 },
-      // Only include Posture and Eye Contact if we have valid session data from database
-      // This prevents radar chart from showing misleading 0 values
-      { metric: 'Posture', score: hasValidPosture ? postureScore : (realMetrics.has_real_data ? 0 : -1), fullMark: 100 },
-      { metric: 'Eye Contact', score: hasValidEyeContact ? eyeContactScore : (realMetrics.has_real_data ? 0 : -1), fullMark: 100 },
-    ].filter(d => d.score >= 0); // Filter out metrics with -1 (no data)
+    { metric: 'Fluency', score: realMetrics.fluency_score || 0, fullMark: 100 },
+    { metric: 'Content', score: realMetrics.content_score || 0, fullMark: 100 },
+    { metric: 'Structure', score: realMetrics.structure_score || 0, fullMark: 100 },
+    { metric: 'Voice', score: realMetrics.voice_score || 0, fullMark: 100 },
+    // Only include Posture and Eye Contact if we have valid session data from database
+    // This prevents radar chart from showing misleading 0 values
+    { metric: 'Posture', score: hasValidPosture ? postureScore : realMetrics.has_real_data ? 0 : -1, fullMark: 100 },
+    { metric: 'Eye Contact', score: hasValidEyeContact ? eyeContactScore : realMetrics.has_real_data ? 0 : -1, fullMark: 100 }].
+    filter((d) => d.score >= 0); // Filter out metrics with -1 (no data)
 
     // Filler words by type - use THIS participant's text only
-    const allMyText = myMessages.map(m => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
+    const allMyText = myMessages.map((m) => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
     const fillersByType: any[] = [];
-    FILLER_WORDS.forEach(filler => {
+    FILLER_WORDS.forEach((filler) => {
       const regex = new RegExp(`\\b${filler}\\b`, 'gi');
       const matches = allMyText.match(regex);
       if (matches && matches.length > 0) {
@@ -531,49 +531,49 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
 
     // Benchmark comparison data
     const comparisonData = [
-      { 
-        metric: 'WPM', 
-        yours: realMetrics.words_per_min || 0, 
-        ideal: BENCHMARKS.wpm.ideal,
-        min: BENCHMARKS.wpm.min,
-        max: BENCHMARKS.wpm.max 
-      },
-      { 
-        metric: 'Words/Response', 
-        yours: realMetrics.avgResponseLength || 0, 
-        ideal: BENCHMARKS.avgResponseLength.ideal,
-        min: BENCHMARKS.avgResponseLength.min,
-        max: BENCHMARKS.avgResponseLength.max 
-      },
-      { 
-        metric: 'Response Time (s)', 
-        yours: realMetrics.avgResponseTime || 0, 
-        ideal: BENCHMARKS.responseTime.ideal,
-        max: BENCHMARKS.responseTime.max 
-      },
-    ];
+    {
+      metric: 'WPM',
+      yours: realMetrics.words_per_min || 0,
+      ideal: BENCHMARKS.wpm.ideal,
+      min: BENCHMARKS.wpm.min,
+      max: BENCHMARKS.wpm.max
+    },
+    {
+      metric: 'Words/Response',
+      yours: realMetrics.avgResponseLength || 0,
+      ideal: BENCHMARKS.avgResponseLength.ideal,
+      min: BENCHMARKS.avgResponseLength.min,
+      max: BENCHMARKS.avgResponseLength.max
+    },
+    {
+      metric: 'Response Time (s)',
+      yours: realMetrics.avgResponseTime || 0,
+      ideal: BENCHMARKS.responseTime.ideal,
+      max: BENCHMARKS.responseTime.max
+    }];
+
 
     setChartData({
       timeline: timelineData,
       performance: performanceData,
       fillersByType: fillersByType.slice(0, 8),
-      comparison: comparisonData,
+      comparison: comparisonData
     });
   };
 
   const generateDetailedReport = async (sessionData: any, messagesData: any[], realMetrics: any) => {
     setIsGeneratingReport(true);
     try {
-      const conversationHistory = messagesData.map(m => ({
+      const conversationHistory = messagesData.map((m) => ({
         who: m.gd_participants?.persona_name || 'Unknown',
         is_user: m.gd_participants?.is_user || false,
         text: m.text
       }));
 
-      const participants = await supabase
-        .from('gd_participants')
-        .select('*')
-        .eq('session_id', sessionId);
+      const participants = await supabase.
+      from('gd_participants').
+      select('*').
+      eq('session_id', sessionId);
 
       const { data: aiReport } = await invokeWithAuth('gd-conductor', {
         body: {
@@ -605,12 +605,12 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     }
   };
 
-  const getBenchmarkComparison = (metric: string, value: number): { status: 'excellent' | 'good' | 'needs-work'; label: string } => {
+  const getBenchmarkComparison = (metric: string, value: number): {status: 'excellent' | 'good' | 'needs-work';label: string;} => {
     const benchmark = BENCHMARKS[metric as keyof typeof BENCHMARKS];
     if (!benchmark) return { status: 'good', label: 'Good' };
 
     if ('ideal' in benchmark && 'min' in benchmark && 'max' in benchmark) {
-      const { ideal, min, max } = benchmark as { ideal: number; min: number; max: number };
+      const { ideal, min, max } = benchmark as {ideal: number;min: number;max: number;};
       const tolerance = (max - min) * 0.1;
       if (Math.abs(value - ideal) <= tolerance) return { status: 'excellent', label: 'Excellent' };
       if (value >= min && value <= max) return { status: 'good', label: 'Good' };
@@ -627,20 +627,20 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           <p className="text-xl font-mono">ANALYZING SESSION DATA...</p>
           <p className="text-sm text-muted-foreground">Calculating real metrics from your performance</p>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   // Only calculate average if we have real data
-  const hasRealScores = metrics.has_real_data && 
-    metrics.fluency_score !== null && 
-    metrics.content_score !== null && 
-    metrics.structure_score !== null && 
-    metrics.voice_score !== null;
-  
-  const avgScore = hasRealScores 
-    ? Math.round((metrics.fluency_score + metrics.content_score + metrics.structure_score + metrics.voice_score) / 4)
-    : null;
+  const hasRealScores = metrics.has_real_data &&
+  metrics.fluency_score !== null &&
+  metrics.content_score !== null &&
+  metrics.structure_score !== null &&
+  metrics.voice_score !== null;
+
+  const avgScore = hasRealScores ?
+  Math.round((metrics.fluency_score + metrics.content_score + metrics.structure_score + metrics.voice_score) / 4) :
+  null;
   const wpmStatus = metrics.words_per_min > 0 ? getBenchmarkComparison('wpm', metrics.words_per_min) : null;
 
   return (
@@ -653,26 +653,26 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                 {session.is_multiplayer ? 'YOUR SESSION REPORT' : 'SESSION REPORT'}
               </h1>
               <p className="text-muted-foreground font-mono">{session.topic}</p>
-              {calculatedStats && (
-                <p className="text-sm text-muted-foreground mt-1">
+              {calculatedStats &&
+              <p className="text-sm text-muted-foreground mt-1">
                   Duration: {calculatedStats.sessionDurationMinutes.toFixed(1)} min • {calculatedStats.userMessageCount} contributions
                 </p>
-              )}
+              }
             </div>
             <div className="text-right">
               <Badge variant={session.is_multiplayer ? 'default' : 'secondary'} className="mb-2">
                 {session.is_multiplayer ? 'Multiplayer' : 'Solo'}
               </Badge>
-              {currentParticipant && (
-                <p className="text-sm text-muted-foreground">
+              {currentParticipant &&
+              <p className="text-sm text-muted-foreground">
                   Participant: <span className="font-mono">{currentParticipant.persona_name}</span>
                 </p>
-              )}
-              {session.is_multiplayer && calculatedStats?.humanParticipantCount > 1 && (
-                <p className="text-xs text-muted-foreground">
+              }
+              {session.is_multiplayer && calculatedStats?.humanParticipantCount > 1 &&
+              <p className="text-xs text-muted-foreground">
                   {calculatedStats.humanParticipantCount} human participants in session
                 </p>
-              )}
+              }
             </div>
           </div>
         </div>
@@ -681,22 +681,22 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       <main className="container mx-auto py-8 px-6 max-w-5xl space-y-8">
         {/* Overall Score - Show N/A if no real data */}
         <Card className="p-8 border-4 border-border text-center space-y-4">
-          {hasRealScores ? (
-            <>
+          {hasRealScores ?
+          <>
               <div className="text-6xl font-bold">{avgScore}%</div>
               <p className="text-2xl font-bold">YOUR PERFORMANCE</p>
               <Progress value={avgScore || 0} className="h-4 border-2 border-border" />
               <p className="text-sm text-muted-foreground">
-                {session.is_multiplayer 
-                  ? 'Your individual scores based on your contributions only'
-                  : 'Based on fluency, content quality, structure, and delivery analysis'}
+                {session.is_multiplayer ?
+              'Your individual scores based on your contributions only' :
+              'Based on fluency, content quality, structure, and delivery analysis'}
               </p>
               <p className="text-xs text-muted-foreground font-mono">
                 Data source: {metrics.data_source}
               </p>
-            </>
-          ) : (
-            <>
+            </> :
+
+          <>
               <div className="text-6xl font-bold text-muted-foreground">N/A</div>
               <p className="text-2xl font-bold">INSUFFICIENT DATA</p>
               <p className="text-sm text-muted-foreground">
@@ -706,22 +706,22 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                 {metrics.data_source}
               </p>
             </>
-          )}
+          }
         </Card>
 
         {/* Score Breakdown & Key Metrics */}
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-6 border-4 border-border space-y-4">
             <h3 className="text-xl font-bold">SCORE BREAKDOWN</h3>
-            {hasRealScores ? (
-              <div className="space-y-4">
+            {hasRealScores ?
+            <div className="space-y-4">
                 {[
-                  { label: 'Fluency', score: metrics.fluency_score, desc: 'Speaking pace & flow' },
-                  { label: 'Content', score: metrics.content_score, desc: 'Substance & relevance' },
-                  { label: 'Structure', score: metrics.structure_score, desc: 'Organization & clarity' },
-                  { label: 'Voice', score: metrics.voice_score, desc: 'Delivery & filler usage' },
-                ].map(({ label, score, desc }) => (
-                  <div key={label}>
+              { label: 'Fluency', score: metrics.fluency_score, desc: 'Speaking pace & flow' },
+              { label: 'Content', score: metrics.content_score, desc: 'Substance & relevance' },
+              { label: 'Structure', score: metrics.structure_score, desc: 'Organization & clarity' },
+              { label: 'Voice', score: metrics.voice_score, desc: 'Delivery & filler usage' }].
+              map(({ label, score, desc }) =>
+              <div key={label}>
                     <div className="flex justify-between text-sm mb-1">
                       <div>
                         <span className="font-bold">{label}</span>
@@ -731,15 +731,15 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                     </div>
                     <Progress value={score || 0} className="h-2" />
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
+              )}
+              </div> :
+
+            <div className="text-center py-8 text-muted-foreground">
                 <p className="font-bold text-lg">No Data Available</p>
                 <p className="text-sm mt-2">Scores require at least 10 words spoken</p>
                 <p className="text-xs mt-1">Your contributions: {metrics.total_words} words</p>
               </div>
-            )}
+            }
           </Card>
 
           <Card className="p-6 border-4 border-border space-y-4">
@@ -754,11 +754,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                   <span className="font-bold font-mono">
                     {metrics.words_per_min > 0 ? metrics.words_per_min : 'N/A'}
                   </span>
-                  {wpmStatus && (
-                    <Badge variant={wpmStatus.status === 'excellent' ? 'default' : wpmStatus.status === 'good' ? 'secondary' : 'destructive'} className="text-xs">
+                  {wpmStatus &&
+                  <Badge variant={wpmStatus.status === 'excellent' ? 'default' : wpmStatus.status === 'good' ? 'secondary' : 'destructive'} className="text-xs">
                       {wpmStatus.label}
                     </Badge>
-                  )}
+                  }
                 </div>
               </div>
               <p className="text-xs text-muted-foreground pl-6">
@@ -780,11 +780,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="font-bold font-mono">{metrics.filler_count}</span>
-                  {calculatedStats && metrics.total_words > 0 && (
-                    <span className="text-xs text-muted-foreground">
+                  {calculatedStats && metrics.total_words > 0 &&
+                  <span className="text-xs text-muted-foreground">
                       ({(calculatedStats.fillerRate * 100).toFixed(1)}%)
                     </span>
-                  )}
+                  }
                 </div>
               </div>
               <p className="text-xs text-muted-foreground pl-6">
@@ -801,8 +801,8 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                 </span>
               </div>
 
-              {calculatedStats && calculatedStats.userMessageCount > 0 && (
-                <>
+              {calculatedStats && calculatedStats.userMessageCount > 0 &&
+              <>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Avg Words/Response</span>
                     <span className="font-bold font-mono">{calculatedStats.avgResponseLength}</span>
@@ -816,14 +816,14 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                     <span className="font-bold font-mono">{calculatedStats.uniqueWords} unique words</span>
                   </div>
                 </>
-              )}
+              }
             </div>
           </Card>
         </div>
 
         {/* Video Metrics Section */}
-        {videoMetrics && (
-          <Card className="p-6 border-4 border-border space-y-4">
+        {videoMetrics &&
+        <Card className="p-6 border-4 border-border space-y-4">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <Camera className="w-6 h-6" />
               VIDEO ANALYSIS
@@ -872,25 +872,25 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
               </div>
             </div>
 
-            {videoMetrics.tips && videoMetrics.tips.length > 0 && (
-              <div className="pt-4 border-t border-border">
+            {videoMetrics.tips && videoMetrics.tips.length > 0 &&
+          <div className="pt-4 border-t border-border">
                 <p className="text-sm font-bold mb-2">Video Tips:</p>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  {videoMetrics.tips.slice(0, 5).map((tip: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2">
+                  {videoMetrics.tips.slice(0, 5).map((tip: string, i: number) =>
+              <li key={i} className="flex items-start gap-2">
                       <span>•</span>
                       <span>{tip}</span>
                     </li>
-                  ))}
+              )}
                 </ul>
               </div>
-            )}
+          }
           </Card>
-        )}
+        }
 
         {/* Performance Charts Section - Only show if we have real data */}
-        {hasRealScores && (
-          <Card className="p-6 border-4 border-border space-y-6">
+        {hasRealScores &&
+        <Card className="p-6 border-4 border-border space-y-6">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <BarChart3 className="w-6 h-6" />
               PERFORMANCE ANALYTICS
@@ -904,107 +904,107 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart data={chartData.performance}>
                       <PolarGrid stroke="hsl(var(--border))" />
-                      <PolarAngleAxis 
-                        dataKey="metric" 
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                      />
-                      <PolarRadiusAxis 
-                        angle={30} 
-                        domain={[0, 100]} 
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-                      />
+                      <PolarAngleAxis
+                      dataKey="metric"
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+
+                      <PolarRadiusAxis
+                      angle={30}
+                      domain={[0, 100]}
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+
                       <Radar
-                        name="Score"
-                        dataKey="score"
-                        stroke="hsl(var(--primary))"
-                        fill="hsl(var(--primary))"
-                        fillOpacity={0.3}
-                      />
+                      name="Score"
+                      dataKey="score"
+                      stroke="hsl(var(--primary))"
+                      fill="hsl(var(--primary))"
+                      fillOpacity={0.3} />
+
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
               {/* Filler Words Chart */}
-              {chartData.fillersByType.length > 0 ? (
-                <div className="space-y-2">
+              {chartData.fillersByType.length > 0 ?
+            <div className="space-y-2">
                   <h4 className="font-bold text-sm">Filler Words Breakdown</h4>
                   <div className="h-[250px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={chartData.fillersByType} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                        <YAxis 
-                          dataKey="word" 
-                          type="category" 
-                          width={60}
-                          tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                        />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'hsl(var(--card))', 
-                            border: '2px solid hsl(var(--border))',
-                            borderRadius: '4px'
-                          }}
-                        />
+                        <YAxis
+                      dataKey="word"
+                      type="category"
+                      width={60}
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+
+                        <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '2px solid hsl(var(--border))',
+                        borderRadius: '4px'
+                      }} />
+
                         <Bar dataKey="count" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
+                </div> :
+
+            <div className="space-y-2">
                   <h4 className="font-bold text-sm">Filler Words Breakdown</h4>
                   <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                     <p>No filler words detected - Great job!</p>
                   </div>
                 </div>
-              )}
+            }
             </div>
 
           {/* Timeline Chart */}
-          {chartData.timeline.length > 0 && (
-            <div className="space-y-2 pt-4 border-t border-border">
+          {chartData.timeline.length > 0 &&
+          <div className="space-y-2 pt-4 border-t border-border">
               <h4 className="font-bold text-sm">Discussion Timeline (Words Over Time)</h4>
               <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData.timeline}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="time" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                      label={{ value: 'Time Period', position: 'insideBottomRight', offset: -5, fontSize: 10 }}
-                    />
+                    <XAxis
+                    dataKey="time"
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                    label={{ value: 'Time Period', position: 'insideBottomRight', offset: -5, fontSize: 10 }} />
+
                     <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '2px solid hsl(var(--border))',
-                        borderRadius: '4px'
-                      }}
-                    />
+                    <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '2px solid hsl(var(--border))',
+                      borderRadius: '4px'
+                    }} />
+
                     <Legend />
-                    <Area 
-                      type="monotone" 
-                      dataKey="userWords" 
-                      name="Your Words"
-                      stroke="hsl(var(--primary))" 
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.3}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="aiWords" 
-                      name="AI Words"
-                      stroke="hsl(var(--muted-foreground))" 
-                      fill="hsl(var(--muted-foreground))"
-                      fillOpacity={0.2}
-                    />
+                    <Area
+                    type="monotone"
+                    dataKey="userWords"
+                    name="Your Words"
+                    stroke="hsl(var(--primary))"
+                    fill="hsl(var(--primary))"
+                    fillOpacity={0.3} />
+
+                    <Area
+                    type="monotone"
+                    dataKey="aiWords"
+                    name="AI Words"
+                    stroke="hsl(var(--muted-foreground))"
+                    fill="hsl(var(--muted-foreground))"
+                    fillOpacity={0.2} />
+
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
-          )}
+          }
 
           {/* Benchmark Comparison Chart */}
           <div className="space-y-2 pt-4 border-t border-border">
@@ -1014,19 +1014,19 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                 <BarChart data={chartData.comparison} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                  <YAxis 
-                    dataKey="metric" 
+                  <YAxis
+                    dataKey="metric"
                     type="category"
                     width={100}
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
                       border: '2px solid hsl(var(--border))',
                       borderRadius: '4px'
-                    }}
-                  />
+                    }} />
+
                   <Legend />
                   <Bar dataKey="yours" name="Your Score" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                   <Bar dataKey="ideal" name="Ideal" fill="hsl(var(--muted-foreground))" radius={[0, 4, 4, 0]} />
@@ -1035,10 +1035,10 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             </div>
           </div>
           </Card>
-        )}
+        }
         {/* Benchmark Comparison - Only show meaningful data */}
-        {calculatedStats?.userMessageCount > 0 && (
-          <Card className="p-6 border-4 border-border space-y-4">
+        {calculatedStats?.userMessageCount > 0 &&
+        <Card className="p-6 border-4 border-border space-y-4">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <Target className="w-6 h-6" />
               BENCHMARK COMPARISON
@@ -1073,90 +1073,90 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
               </div>
             </div>
           </Card>
-        )}
+        }
 
         {/* AI-generated sections */}
-        {isGeneratingReport && (
-          <Card className="p-6 border-4 border-border">
+        {isGeneratingReport &&
+        <Card className="p-6 border-4 border-border">
             <div className="flex items-center gap-3">
               <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
               <span>Generating detailed AI analysis...</span>
             </div>
           </Card>
-        )}
+        }
 
-        {detailedReport?.strengths && (
-          <Card className="p-6 border-4 border-border space-y-4">
+        {detailedReport?.strengths &&
+        <Card className="p-6 border-4 border-border space-y-4">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <CheckCircle2 className="w-6 h-6 text-green-600" />
               STRENGTHS
             </h3>
             <ul className="space-y-2">
-              {detailedReport.strengths.map((strength: string, i: number) => (
-                <li key={i} className="flex gap-2 items-start">
+              {detailedReport.strengths.map((strength: string, i: number) =>
+            <li key={i} className="flex gap-2 items-start">
                   <span className="text-green-600">•</span>
                   <span>{strength}</span>
                 </li>
-              ))}
+            )}
             </ul>
           </Card>
-        )}
+        }
 
-        {detailedReport?.weaknesses && (
-          <Card className="p-6 border-4 border-border space-y-4">
+        {detailedReport?.weaknesses &&
+        <Card className="p-6 border-4 border-border space-y-4">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <XCircle className="w-6 h-6 text-destructive" />
               AREAS FOR IMPROVEMENT
             </h3>
             <ul className="space-y-2">
-              {detailedReport.weaknesses.map((weakness: string, i: number) => (
-                <li key={i} className="flex gap-2 items-start">
+              {detailedReport.weaknesses.map((weakness: string, i: number) =>
+            <li key={i} className="flex gap-2 items-start">
                   <span className="text-destructive">•</span>
                   <span>{weakness}</span>
                 </li>
-              ))}
+            )}
             </ul>
           </Card>
-        )}
+        }
 
-        {detailedReport?.drills && (
-          <Card className="p-6 border-4 border-border space-y-4">
+        {detailedReport?.drills &&
+        <Card className="p-6 border-4 border-border space-y-4">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <TrendingUp className="w-6 h-6" />
               IMPROVEMENT DRILLS
             </h3>
             <div className="space-y-3">
-              {detailedReport.drills.map((drill: any, i: number) => (
-                <div key={i} className="p-4 border-2 border-border space-y-2">
+              {detailedReport.drills.map((drill: any, i: number) =>
+            <div key={i} className="p-4 border-2 border-border space-y-2">
                   <h4 className="font-bold">{drill.title || `Drill ${i + 1}`}</h4>
                   <p className="text-sm text-muted-foreground">{drill.description}</p>
                 </div>
-              ))}
+            )}
             </div>
           </Card>
-        )}
+        }
 
-        <div className="flex gap-4 justify-center">
+        <div className="gap-[8px] rounded shadow-lg flex-col flex items-center justify-center">
           <Button
             size="lg"
             variant="outline"
             onClick={onStartNew}
-            className="border-4 border-border"
-          >
+            className="border-4 border-border">
+
             <Home className="w-4 h-4 mr-2" />
             HOME
           </Button>
           <Button
             size="lg"
             onClick={onStartNew}
-            className="border-4 border-border shadow-md"
-          >
+            className="border-4 border-border shadow-md">
+
             START NEW SESSION
           </Button>
         </div>
       </main>
-    </div>
-  );
+    </div>);
+
 };
 
 export default SessionReport;
