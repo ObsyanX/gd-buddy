@@ -1136,7 +1136,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           </Card>
         }
 
-        <div className="gap-[8px] rounded shadow-lg flex-col flex items-center justify-center">
+        <div className="gap-[8px] rounded flex-col flex items-center justify-center shadow-none">
           <Button
             size="lg"
             variant="outline"
