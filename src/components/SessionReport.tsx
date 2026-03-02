@@ -822,71 +822,70 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         </div>
 
         {/* Video Metrics Section */}
-        {videoMetrics &&
         <Card className="p-6 border-4 border-border space-y-4">
-            <h3 className="text-xl font-bold flex items-center gap-2">
-              <Camera className="w-6 h-6" />
-              VIDEO ANALYSIS
-            </h3>
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    Posture
-                  </span>
-                  <span className="font-bold font-mono">{videoMetrics.postureScore}%</span>
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <Camera className="w-6 h-6" />
+            VIDEO ANALYSIS
+          </h3>
+          {videoMetrics ? (
+            <>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Posture
+                    </span>
+                    <span className="font-bold font-mono">{videoMetrics.postureScore}%</span>
+                  </div>
+                  <Progress value={videoMetrics.postureScore} className="h-2" />
+                  <p className="text-xs text-muted-foreground">Body positioning and steadiness</p>
                 </div>
-                <Progress value={videoMetrics.postureScore} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  Body positioning and steadiness
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2">
-                    <Eye className="w-4 h-4" />
-                    Eye Contact
-                  </span>
-                  <span className="font-bold font-mono">{videoMetrics.eyeContactScore}%</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <Eye className="w-4 h-4" />
+                      Eye Contact
+                    </span>
+                    <span className="font-bold font-mono">{videoMetrics.eyeContactScore}%</span>
+                  </div>
+                  <Progress value={videoMetrics.eyeContactScore} className="h-2" />
+                  <p className="text-xs text-muted-foreground">Looking at the camera/audience</p>
                 </div>
-                <Progress value={videoMetrics.eyeContactScore} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  Looking at the camera/audience
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Expression
-                  </span>
-                  <span className="font-bold font-mono">{videoMetrics.expressionScore}%</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Expression
+                    </span>
+                    <span className="font-bold font-mono">{videoMetrics.expressionScore}%</span>
+                  </div>
+                  <Progress value={videoMetrics.expressionScore} className="h-2" />
+                  <p className="text-xs text-muted-foreground">Confidence and composure</p>
                 </div>
-                <Progress value={videoMetrics.expressionScore} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  Confidence and composure
-                </p>
               </div>
-            </div>
-
-            {videoMetrics.tips && videoMetrics.tips.length > 0 &&
-          <div className="pt-4 border-t border-border">
-                <p className="text-sm font-bold mb-2">Video Tips:</p>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  {videoMetrics.tips.slice(0, 5).map((tip: string, i: number) =>
-              <li key={i} className="flex items-start gap-2">
-                      <span>•</span>
-                      <span>{tip}</span>
-                    </li>
+              {videoMetrics.tips && videoMetrics.tips.length > 0 && (
+                <div className="pt-4 border-t border-border">
+                  <p className="text-sm font-bold mb-2">Video Tips:</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    {videoMetrics.tips.slice(0, 5).map((tip: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span>•</span>
+                        <span>{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
-                </ul>
-              </div>
-          }
-          </Card>
-        }
+            </>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">
+              <Camera className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="font-bold">Video analytics unavailable for this session</p>
+              <p className="text-sm mt-1">Enable your camera during the session to receive posture, eye contact, and expression analysis.</p>
+            </div>
+          )}
+        </Card>
 
         {/* Performance Charts Section - Only show if we have real data */}
         {hasRealScores &&
