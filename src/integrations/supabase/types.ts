@@ -232,7 +232,7 @@ export type Database = {
           {
             foreignKeyName: "gd_metrics_session_id_fkey"
             columns: ["session_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "gd_sessions"
             referencedColumns: ["id"]
           },

@@ -302,12 +302,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       'Insufficient data - no participant contributions found'
     };
 
-    // Only update metrics in database if we have real data
+    // Only update voice/text metrics in database if we have real data
+    // CRITICAL: Use separate select+update/insert to avoid overwriting video metrics
+    // (posture, eye_contact, expression) that were saved by VideoMonitor during the session
     if (hasRealData) {
-      supabase.
-      from('gd_metrics').
-      upsert({
-        session_id: sessionId,
+      const textMetrics = {
         fluency_score: fluencyScore,
         content_score: contentScore,
         structure_score: structureScore,
@@ -317,8 +316,33 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         avg_pause_s: avgResponseTime,
         words_per_min: actualWpm,
         updated_at: new Date().toISOString()
-      }).
-      then(() => console.log('Metrics saved'));
+      };
+
+      // Fire-and-forget: check if row exists, then update or insert
+      (async () => {
+        const { data: existing } = await supabase
+          .from('gd_metrics')
+          .select('id')
+          .eq('session_id', sessionId)
+          .maybeSingle();
+
+        if (existing) {
+          // UPDATE only text/voice columns — preserves video columns
+          const { error } = await supabase
+            .from('gd_metrics')
+            .update(textMetrics)
+            .eq('session_id', sessionId);
+          if (error) console.error('[SessionReport] Metrics update error:', error);
+          else console.log('[SessionReport] Voice/text metrics updated (video metrics preserved)');
+        } else {
+          // No row yet — insert with all text metrics
+          const { error } = await supabase
+            .from('gd_metrics')
+            .insert({ session_id: sessionId, ...textMetrics });
+          if (error) console.error('[SessionReport] Metrics insert error:', error);
+          else console.log('[SessionReport] Metrics row created');
+        }
+      })();
     }
 
     setMetrics(calculatedMetrics);
@@ -883,6 +907,10 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
               <Camera className="w-8 h-8 mx-auto mb-2 opacity-40" />
               <p className="font-bold">Video analytics unavailable for this session</p>
               <p className="text-sm mt-1">Enable your camera during the session to receive posture, eye contact, and expression analysis.</p>
+              <Button variant="outline" className="mt-3 border-2" onClick={onStartNew}>
+                <Camera className="w-4 h-4 mr-2" />
+                Start New Session with Camera
+              </Button>
             </div>
           )}
         </Card>
