@@ -7,9 +7,10 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { lazy, Suspense } from "react";
 
 // Eager load core pages
-import Home from "./pages/Home";
+import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+const Home = lazy(() => import("./pages/Home"));
 
 // Lazy load all other pages
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -55,6 +56,9 @@ const App = () => (
           <Sonner />
           <Suspense fallback={<Loading />}>
             <Routes>
+              {/* Public landing page — canonical ranking page */}
+              <Route path="/" element={<Landing />} />
+
               {/* Public SEO pages */}
               <Route path="/gd-topics-for-placements" element={<GDTopics />} />
               <Route path="/how-to-crack-group-discussion" element={<HowToCrackGD />} />
@@ -65,6 +69,7 @@ const App = () => (
               <Route path="/auth/reset-password" element={<Suspense fallback={<Loading />}><ResetPassword /></Suspense>} />
 
               {/* Protected routes (noindex) */}
+              <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/practice" element={<ProtectedRoute><Practice /></ProtectedRoute>} />
               <Route path="/practice/setup" element={<ProtectedRoute><PracticeSetup /></ProtectedRoute>} />
@@ -76,7 +81,6 @@ const App = () => (
               <Route path="/drills" element={<ProtectedRoute><SkillDrills /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

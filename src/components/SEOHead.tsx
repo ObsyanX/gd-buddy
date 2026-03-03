@@ -8,7 +8,7 @@ interface SEOHeadProps {
   noindex?: boolean;
   type?: string;
   image?: string;
-  jsonLd?: Record<string, unknown>;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 const BASE_TITLE = "GD Buddy";
@@ -63,7 +63,11 @@ const SEOHead = ({
       <meta name="twitter:image" content={ogImage} />
 
       {jsonLd && (
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+        Array.isArray(jsonLd) && jsonLd.length > 0 && jsonLd[0]["@context"]
+          ? jsonLd.map((ld, i) => (
+              <script key={i} type="application/ld+json">{JSON.stringify(ld)}</script>
+            ))
+          : <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       )}
     </Helmet>
   );

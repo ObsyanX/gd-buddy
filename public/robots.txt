@@ -1,13 +1,17 @@
 User-agent: *
 Allow: /
 
+Disallow: /home
 Disallow: /dashboard
 Disallow: /profile
 Disallow: /settings
 Disallow: /session/
+Disallow: /practice
 Disallow: /practice/setup
+Disallow: /multiplayer
 Disallow: /multiplayer/setup
 Disallow: /multiplayer/topic
+Disallow: /drills
 Disallow: /auth/reset-password
 
-Sitemap: https://gd-buddy.vercel.app/sitemap.xml
+Sitemap: https://gdbuddy.lovable.app/sitemap.xml

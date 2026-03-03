@@ -12,6 +12,28 @@ const skills = [
   { icon: HandMetal, title: "Active Listening", points: ["Build on what others say instead of repeating", "Reference specific points made by other participants", "Ask clarifying questions that add value", "Summarize different viewpoints before concluding"] },
 ];
 
+const articleJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: "Communication Skills for Group Discussion",
+    description: "Master verbal and non-verbal communication skills for group discussions in placement rounds.",
+    author: { "@type": "Organization", name: "GD Buddy" },
+    publisher: { "@type": "Organization", name: "GD Buddy" },
+    mainEntityOfPage: { "@type": "WebPage" },
+    datePublished: "2025-01-15",
+    dateModified: "2026-03-03",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      { "@type": "Question", name: "What communication skills are needed for group discussions?", acceptedAnswer: { "@type": "Answer", text: "Key communication skills include verbal clarity, active listening, body language control, analytical thinking, and the ability to build on others' points constructively." } },
+      { "@type": "Question", name: "How can I improve my speaking speed for GDs?", acceptedAnswer: { "@type": "Answer", text: "The ideal speaking speed for GDs is 120-150 words per minute. Practice with GD Buddy, which tracks your WPM in real-time and gives feedback." } },
+    ],
+  },
+];
+
 const CommunicationSkills = () => (
   <div className="min-h-screen bg-background flex flex-col">
     <SEOHead
@@ -19,6 +41,7 @@ const CommunicationSkills = () => (
       description="Master verbal and non-verbal communication skills for group discussions. Learn speaking techniques, body language tips, and analytical frameworks for GD rounds."
       keywords="communication skills for GD, how to speak in group discussion, GD body language, verbal skills for placements, soft skills for GD"
       path="/communication-skills-for-gd"
+      jsonLd={articleJsonLd}
     />
     <header className="border-b-4 border-border p-4 md:p-6">
       <div className="container mx-auto flex items-center gap-4">
@@ -82,6 +105,22 @@ const CommunicationSkills = () => (
             <Button asChild variant="outline" size="lg" className="border-4 border-border">
               <Link to="/gd-topics-for-placements">Browse GD Topics</Link>
             </Button>
+          </div>
+          <div className="mt-4 flex gap-4 flex-wrap text-sm">
+            <Link to="/how-to-crack-group-discussion" className="text-muted-foreground hover:text-foreground underline">How to crack group discussion →</Link>
+            <Link to="/common-gd-mistakes" className="text-muted-foreground hover:text-foreground underline">Common GD mistakes to avoid →</Link>
+          </div>
+        </section>
+
+        <section className="mb-10">
+          <h2 className="text-h2 font-bold mb-4">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            {articleJsonLd[1].mainEntity.map((faq: any, i: number) => (
+              <details key={i} className="border-2 border-border p-4">
+                <summary className="font-semibold cursor-pointer">{faq.name}</summary>
+                <p className="mt-2 text-muted-foreground">{faq.acceptedAnswer.text}</p>
+              </details>
+            ))}
           </div>
         </section>
       </article>

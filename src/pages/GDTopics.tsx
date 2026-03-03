@@ -13,20 +13,42 @@ const topics = [
   { category: "Abstract", items: ["Is Necessity the Mother of Invention?", "Change is the Only Constant", "Quality vs Quantity", "Does Money Buy Happiness?", "Leaders are Born, Not Made"] },
 ];
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "ItemList",
-  name: "GD Topics for Placements",
-  description: "Comprehensive list of group discussion topics for campus placement preparation",
-  numberOfItems: topics.reduce((a, c) => a + c.items.length, 0),
-  itemListElement: topics.flatMap((cat, ci) =>
-    cat.items.map((item, i) => ({
-      "@type": "ListItem",
-      position: ci * 5 + i + 1,
-      name: item,
-    }))
-  ),
-};
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: "GD Topics for Placements 2025",
+    description: "50+ trending group discussion topics for campus placements across current affairs, business, technology, social issues, and abstract categories.",
+    author: { "@type": "Organization", name: "GD Buddy" },
+    publisher: { "@type": "Organization", name: "GD Buddy" },
+    mainEntityOfPage: { "@type": "WebPage" },
+    datePublished: "2025-01-15",
+    dateModified: "2026-03-03",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "GD Topics for Placements",
+    description: "Comprehensive list of group discussion topics for campus placement preparation",
+    numberOfItems: topics.reduce((a, c) => a + c.items.length, 0),
+    itemListElement: topics.flatMap((cat, ci) =>
+      cat.items.map((item, i) => ({
+        "@type": "ListItem",
+        position: ci * 5 + i + 1,
+        name: item,
+      }))
+    ),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      { "@type": "Question", name: "What type of GD topics are asked in placements?", acceptedAnswer: { "@type": "Answer", text: "Companies typically ask current affairs, business, technology, and abstract topics. The trend in 2025 is towards AI, sustainability, and digital economy topics." } },
+      { "@type": "Question", name: "How many GD topics should I prepare?", acceptedAnswer: { "@type": "Answer", text: "Aim to be comfortable with at least 20-30 topics across categories. Focus on building frameworks rather than memorizing points." } },
+      { "@type": "Question", name: "Can I practice GD online?", acceptedAnswer: { "@type": "Answer", text: "Yes! GD Buddy provides AI-powered group discussion simulation where you can practice with realistic AI participants and get instant feedback." } },
+    ],
+  },
+];
 
 const GDTopics = () => (
   <div className="min-h-screen bg-background flex flex-col">
@@ -93,6 +115,10 @@ const GDTopics = () => (
             <Button asChild variant="outline" size="lg" className="border-4 border-border">
               <Link to="/how-to-crack-group-discussion">GD Tips & Strategies</Link>
             </Button>
+          </div>
+          <div className="mt-4 flex gap-4 flex-wrap text-sm">
+            <Link to="/common-gd-mistakes" className="text-muted-foreground hover:text-foreground underline">Common GD mistakes to avoid →</Link>
+            <Link to="/communication-skills-for-gd" className="text-muted-foreground hover:text-foreground underline">Improve communication skills for GD →</Link>
           </div>
         </section>
 

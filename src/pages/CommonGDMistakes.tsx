@@ -5,6 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, XCircle } from "lucide-react";
 
+const articleJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: "10 Common GD Mistakes That Cost You Placements",
+    description: "Avoid these 10 common group discussion mistakes that cost candidates their placement.",
+    author: { "@type": "Organization", name: "GD Buddy" },
+    publisher: { "@type": "Organization", name: "GD Buddy" },
+    mainEntityOfPage: { "@type": "WebPage" },
+    datePublished: "2025-01-15",
+    dateModified: "2026-03-03",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      { "@type": "Question", name: "What is the biggest mistake in group discussions?", acceptedAnswer: { "@type": "Answer", text: "The biggest mistake is speaking without listening. Evaluators notice when you repeat points or go off-topic because you weren't paying attention to others." } },
+      { "@type": "Question", name: "How do I avoid getting nervous in a GD?", acceptedAnswer: { "@type": "Answer", text: "Practice regularly with mock GDs. GD Buddy's AI simulation helps you get comfortable speaking in group settings, reducing anxiety for the real round." } },
+    ],
+  },
+];
+
 const mistakes = [
   { title: "Speaking Without Listening", desc: "Many candidates focus on talking more rather than listening. Evaluators notice when you repeat what someone already said or go off-topic because you weren't paying attention." },
   { title: "Being Too Aggressive", desc: "Dominating the conversation or interrupting others aggressively is a red flag. Assertiveness is valued, but aggression is not. GD Buddy tracks interruption patterns." },
@@ -25,6 +47,7 @@ const CommonGDMistakes = () => (
       description="Avoid these 10 common group discussion mistakes that cost candidates their placement. Learn what NOT to do in a GD round and how to fix these habits."
       keywords="common GD mistakes, group discussion mistakes, GD errors in placements, what not to do in GD, GD round tips"
       path="/common-gd-mistakes"
+      jsonLd={articleJsonLd}
     />
     <header className="border-b-4 border-border p-4 md:p-6">
       <div className="container mx-auto flex items-center gap-4">
@@ -72,6 +95,23 @@ const CommonGDMistakes = () => (
           <Button asChild size="lg" className="border-4 border-border">
             <Link to="/practice">Practice Now</Link>
           </Button>
+          <div className="mt-4 flex gap-4 flex-wrap text-sm">
+            <Link to="/how-to-crack-group-discussion" className="text-muted-foreground hover:text-foreground underline">How to crack group discussion →</Link>
+            <Link to="/communication-skills-for-gd" className="text-muted-foreground hover:text-foreground underline">Communication skills for GD →</Link>
+            <Link to="/gd-topics-for-placements" className="text-muted-foreground hover:text-foreground underline">GD topics for placements →</Link>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-h2 font-bold mb-4">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            {articleJsonLd[1].mainEntity.map((faq: any, i: number) => (
+              <details key={i} className="border-2 border-border p-4">
+                <summary className="font-semibold cursor-pointer">{faq.name}</summary>
+                <p className="mt-2 text-muted-foreground">{faq.acceptedAnswer.text}</p>
+              </details>
+            ))}
+          </div>
         </section>
       </article>
     </main>
