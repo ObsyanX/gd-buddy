@@ -36,8 +36,9 @@ const Home = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <SEOHead
         title="Home"
-        description="Master group discussions with AI participants. Practice with realistic personas, get real-time feedback, and ace your placement interviews with GD Buddy."
-        path="/"
+        description="Your GD Buddy dashboard. Start solo practice, multiplayer sessions, skill drills, and track your progress."
+        path="/home"
+        noindex={true}
       />
 
       <header className="border-b-4 border-border p-4 md:p-6" role="banner">

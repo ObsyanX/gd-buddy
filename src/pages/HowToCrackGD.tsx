@@ -5,15 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, CheckCircle } from "lucide-react";
 
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [
-    { "@type": "Question", name: "How do I start a group discussion?", acceptedAnswer: { "@type": "Answer", text: "Begin with a strong opening statement that defines the topic clearly. Use a fact, statistic, or thought-provoking question to grab attention." } },
-    { "@type": "Question", name: "What are the dos and don'ts of GD?", acceptedAnswer: { "@type": "Answer", text: "Do: Listen actively, build on others' points, stay relevant. Don't: Interrupt aggressively, dominate the conversation, or go off-topic." } },
-    { "@type": "Question", name: "How is GD scored in placements?", acceptedAnswer: { "@type": "Answer", text: "Evaluators score on content quality, communication skills, leadership, body language, and ability to work in a team. GD Buddy provides AI scoring on all these parameters." } },
-  ],
-};
+const faqJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: "How to Crack Group Discussion in Placements",
+    description: "Complete guide on how to crack group discussions in placement rounds with proven tips and strategies.",
+    author: { "@type": "Organization", name: "GD Buddy" },
+    publisher: { "@type": "Organization", name: "GD Buddy" },
+    mainEntityOfPage: { "@type": "WebPage" },
+    datePublished: "2025-01-15",
+    dateModified: "2026-03-03",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      { "@type": "Question", name: "How do I start a group discussion?", acceptedAnswer: { "@type": "Answer", text: "Begin with a strong opening statement that defines the topic clearly. Use a fact, statistic, or thought-provoking question to grab attention." } },
+      { "@type": "Question", name: "What are the dos and don'ts of GD?", acceptedAnswer: { "@type": "Answer", text: "Do: Listen actively, build on others' points, stay relevant. Don't: Interrupt aggressively, dominate the conversation, or go off-topic." } },
+      { "@type": "Question", name: "How is GD scored in placements?", acceptedAnswer: { "@type": "Answer", text: "Evaluators score on content quality, communication skills, leadership, body language, and ability to work in a team. GD Buddy provides AI scoring on all these parameters." } },
+    ],
+  },
+];
 
 const tips = [
   { title: "Research the Topic Beforehand", desc: "Stay updated with current affairs, business news, and trending topics. Read newspapers, follow news apps, and note down key points for common GD topics." },
@@ -84,12 +97,17 @@ const HowToCrackGD = () => (
           <Button asChild size="lg" className="border-4 border-border">
             <Link to="/practice">Start a Practice Session</Link>
           </Button>
+          <div className="mt-4 flex gap-4 flex-wrap text-sm">
+            <Link to="/gd-topics-for-placements" className="text-muted-foreground hover:text-foreground underline">Browse 50+ GD topics for placements →</Link>
+            <Link to="/common-gd-mistakes" className="text-muted-foreground hover:text-foreground underline">Common GD mistakes to avoid →</Link>
+            <Link to="/communication-skills-for-gd" className="text-muted-foreground hover:text-foreground underline">Communication skills guide →</Link>
+          </div>
         </section>
 
         <section>
           <h2 className="text-h2 font-bold mb-4">Frequently Asked Questions</h2>
           <div className="space-y-4">
-            {faqJsonLd.mainEntity.map((faq, i) => (
+            {faqJsonLd[1].mainEntity.map((faq: any, i: number) => (
               <details key={i} className="border-2 border-border p-4">
                 <summary className="font-semibold cursor-pointer">{faq.name}</summary>
                 <p className="mt-2 text-muted-foreground">{faq.acceptedAnswer.text}</p>
