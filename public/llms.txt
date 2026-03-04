@@ -1,0 +1,18 @@
+# GD Buddy
+
+GD Buddy is an AI-powered group discussion practice platform for students preparing for placement GD rounds.
+
+Features:
+- AI participants for GD simulation
+- Instant feedback on communication
+- argument analysis
+- body language feedback
+- structured GD practice
+
+Website:
+https://gd-buddy.vercel.app
+
+Category:
+Education
+AI Tools
+Career Preparation
