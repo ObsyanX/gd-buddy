@@ -151,7 +151,7 @@ const MultiplayerLobby = ({
           <TabsContent value="create" className="mt-4">
             <Card className="p-0 border-4 border-border space-y-6">
               <div className="text-center space-y-2">
-                <Users className="w-12 h-12 mx-auto" />
+                <Users className="w-12 h-12 mx-auto py-0 my-[10px]" />
                 <h2 className="text-xl font-bold">CREATE A NEW ROOM</h2>
                 <p className="text-sm text-muted-foreground">
                   Start a multiplayer session and invite friends to join
