@@ -12,26 +12,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { invokeWithAuth } from '@/lib/supabase-auth';
 
 const VOICE_OPTIONS = [
-  { value: 'sarah', label: 'Sarah', description: 'Clear female voice' },
-  { value: 'aria', label: 'Aria', description: 'Expressive female' },
-  { value: 'laura', label: 'Laura', description: 'Warm female' },
-  { value: 'charlotte', label: 'Charlotte', description: 'British female' },
-  { value: 'alice', label: 'Alice', description: 'Confident female' },
-  { value: 'matilda', label: 'Matilda', description: 'Warm storyteller' },
-  { value: 'jessica', label: 'Jessica', description: 'Friendly female' },
-  { value: 'lily', label: 'Lily', description: 'Young female' },
-  { value: 'roger', label: 'Roger', description: 'Professional male' },
-  { value: 'george', label: 'George', description: 'Deep British male' },
-  { value: 'charlie', label: 'Charlie', description: 'Casual male' },
-  { value: 'callum', label: 'Callum', description: 'Scottish male' },
-  { value: 'liam', label: 'Liam', description: 'Young male' },
-  { value: 'will', label: 'Will', description: 'Friendly male' },
-  { value: 'eric', label: 'Eric', description: 'Soft male' },
-  { value: 'chris', label: 'Chris', description: 'Casual male' },
-  { value: 'brian', label: 'Brian', description: 'Deep narrative' },
-  { value: 'daniel', label: 'Daniel', description: 'Authoritative male' },
-  { value: 'bill', label: 'Bill', description: 'Mature male' },
-];
+{ value: 'sarah', label: 'Sarah', description: 'Clear female voice' },
+{ value: 'aria', label: 'Aria', description: 'Expressive female' },
+{ value: 'laura', label: 'Laura', description: 'Warm female' },
+{ value: 'charlotte', label: 'Charlotte', description: 'British female' },
+{ value: 'alice', label: 'Alice', description: 'Confident female' },
+{ value: 'matilda', label: 'Matilda', description: 'Warm storyteller' },
+{ value: 'jessica', label: 'Jessica', description: 'Friendly female' },
+{ value: 'lily', label: 'Lily', description: 'Young female' },
+{ value: 'roger', label: 'Roger', description: 'Professional male' },
+{ value: 'george', label: 'George', description: 'Deep British male' },
+{ value: 'charlie', label: 'Charlie', description: 'Casual male' },
+{ value: 'callum', label: 'Callum', description: 'Scottish male' },
+{ value: 'liam', label: 'Liam', description: 'Young male' },
+{ value: 'will', label: 'Will', description: 'Friendly male' },
+{ value: 'eric', label: 'Eric', description: 'Soft male' },
+{ value: 'chris', label: 'Chris', description: 'Casual male' },
+{ value: 'brian', label: 'Brian', description: 'Deep narrative' },
+{ value: 'daniel', label: 'Daniel', description: 'Authoritative male' },
+{ value: 'bill', label: 'Bill', description: 'Mature male' }];
+
 
 export interface VoiceSettings {
   voice: string;
@@ -58,7 +58,7 @@ const Settings = () => {
       setVoice(parsed.voice);
       setSpeed(parsed.speed);
     }
-    
+
     // Load app settings from localStorage
     const savedAppSettings = localStorage.getItem('appSettings');
     if (savedAppSettings) {
@@ -71,14 +71,14 @@ const Settings = () => {
     // Save voice settings
     const voiceSettings: VoiceSettings = { voice, speed };
     localStorage.setItem('voiceSettings', JSON.stringify(voiceSettings));
-    
+
     // Save app settings
     const appSettings: AppSettings = { autoMicEnabled };
     localStorage.setItem('appSettings', JSON.stringify(appSettings));
-    
+
     toast({
       title: "Settings saved",
-      description: "Your preferences have been updated",
+      description: "Your preferences have been updated"
     });
   };
 
@@ -86,9 +86,9 @@ const Settings = () => {
     setIsTesting(true);
     try {
       const { data, error } = await invokeWithAuth('text-to-speech', {
-        body: { 
+        body: {
           text: "Hello! This is a test of the selected voice. How does it sound?",
-          voice: voice 
+          voice: voice
         }
       });
 
@@ -103,7 +103,7 @@ const Settings = () => {
       const byteArray = new Uint8Array(byteNumbers);
       const audioBlob = new Blob([byteArray], { type: 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(audioBlob);
-      
+
       const audio = new Audio(audioUrl);
       audio.playbackRate = speed;
       audio.onended = () => {
@@ -114,14 +114,14 @@ const Settings = () => {
         setIsTesting(false);
         URL.revokeObjectURL(audioUrl);
       };
-      
+
       await audio.play();
     } catch (error: any) {
       console.error('Error testing voice:', error);
       toast({
         title: "Test failed",
         description: error.message || "Could not play test audio",
-        variant: "destructive",
+        variant: "destructive"
       });
       setIsTesting(false);
     }
@@ -131,15 +131,15 @@ const Settings = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b-4 border-border p-4">
         <div className="container mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/home')}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-          <h1 className="text-4xl font-bold">SETTINGS</h1>
+          
+
+
+
+
+
+
+          
+          <h1 className="text-4xl font-bold text-center">SETTINGS</h1>
         </div>
       </header>
 
@@ -160,14 +160,14 @@ const Settings = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {VOICE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                    {VOICE_OPTIONS.map((option) =>
+                    <SelectItem key={option.value} value={option.value}>
                         <div className="flex items-center gap-2">
                           <span className="font-bold">{option.label}</span>
                           <span className="text-xs text-muted-foreground">- {option.description}</span>
                         </div>
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
@@ -184,8 +184,8 @@ const Settings = () => {
                   step={0.1}
                   value={[speed]}
                   onValueChange={([value]) => setSpeed(value)}
-                  className="w-full"
-                />
+                  className="w-full" />
+                
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>0.5x (Slow)</span>
                   <span>1.0x (Normal)</span>
@@ -199,8 +199,8 @@ const Settings = () => {
                 variant="outline"
                 onClick={handleTestVoice}
                 disabled={isTesting}
-                className="border-2"
-              >
+                className="border-2">
+                
                 <Play className="w-4 h-4 mr-2" />
                 {isTesting ? 'PLAYING...' : 'TEST VOICE'}
               </Button>
@@ -225,15 +225,15 @@ const Settings = () => {
                 <Switch
                   id="autoMic"
                   checked={autoMicEnabled}
-                  onCheckedChange={setAutoMicEnabled}
-                />
+                  onCheckedChange={setAutoMicEnabled} />
+                
               </div>
               
               <div className="p-4 border-2 border-border rounded bg-muted/50">
                 <p className="text-sm text-muted-foreground font-mono">
-                  {autoMicEnabled 
-                    ? "✓ Mic will auto-open after the first message for continuous conversation flow"
-                    : "✗ You'll need to manually click the mic button for each response"
+                  {autoMicEnabled ?
+                  "✓ Mic will auto-open after the first message for continuous conversation flow" :
+                  "✗ You'll need to manually click the mic button for each response"
                   }
                 </p>
               </div>
@@ -244,8 +244,8 @@ const Settings = () => {
           <Button
             onClick={handleSave}
             className="w-full border-4 border-border"
-            size="lg"
-          >
+            size="lg">
+            
             SAVE ALL PREFERENCES
           </Button>
 
@@ -279,8 +279,8 @@ const Settings = () => {
           </Card>
         </div>
       </main>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Settings;
