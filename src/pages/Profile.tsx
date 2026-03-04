@@ -166,14 +166,14 @@ const Profile = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b-4 border-border p-4 px-[16px]">
         <div className="container mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/home')}
-            className="mb-4">
-            
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
+          
+
+
+
+
+
+
+          
           <h1 className="text-4xl font-bold text-center">MY PROFILE</h1>
         </div>
       </header>
