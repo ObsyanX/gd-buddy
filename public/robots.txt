@@ -5,4 +5,4 @@ Disallow: /home
 Disallow: /home/
 Disallow: /auth/reset-password
 
-Sitemap: https://gdbuddy.lovable.app/sitemap.xml
+Sitemap: https://gdbuddy.vercel.app/sitemap.xml
