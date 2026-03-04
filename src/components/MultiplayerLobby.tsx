@@ -171,7 +171,7 @@ const MultiplayerLobby = ({
                 </div>
               </div>
 
-              <Button onClick={onCreateRoom} size="lg" className="w-full border-4 border-border text-xs text-center">
+              <Button onClick={onCreateRoom} size="lg" className="w-3/4 border-4 border-border text-xs text-center mx-[75px] my-[5px] py-0 px-[7px]">
                 SELECT TOPIC & CREATE ROOM
               </Button>
             </Card>
