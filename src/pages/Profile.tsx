@@ -27,11 +27,11 @@ const Profile = () => {
     try {
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      const { data, error } = await supabase.
+      from('profiles').
+      select('*').
+      eq('id', user.id).
+      single();
 
       if (error && error.code !== 'PGRST116') throw error;
 
@@ -44,7 +44,7 @@ const Profile = () => {
       toast({
         title: "Error loading profile",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -67,7 +67,7 @@ const Profile = () => {
         toast({
           title: "File too large",
           description: "Avatar must be less than 5MB",
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
@@ -78,7 +78,7 @@ const Profile = () => {
         toast({
           title: "Invalid file type",
           description: "Please upload a JPEG, PNG, GIF, or WebP image",
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
@@ -88,35 +88,35 @@ const Profile = () => {
         'image/jpeg': 'jpg',
         'image/png': 'png',
         'image/gif': 'gif',
-        'image/webp': 'webp',
+        'image/webp': 'webp'
       };
       const fileExt = mimeToExt[file.type] || 'jpg';
       const fileName = `${user?.id}/${Math.random()}.${fileExt}`;
 
       // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
+      const { error: uploadError } = await supabase.storage.
+      from('avatars').
+      upload(fileName, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
+      const { data: { publicUrl } } = supabase.storage.
+      from('avatars').
+      getPublicUrl(fileName);
 
       setAvatarUrl(publicUrl);
 
       toast({
         title: "Avatar uploaded",
-        description: "Your avatar has been updated successfully",
+        description: "Your avatar has been updated successfully"
       });
     } catch (error: any) {
       console.error('Error uploading avatar:', error);
       toast({
         title: "Upload failed",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setUploading(false);
@@ -127,27 +127,27 @@ const Profile = () => {
     try {
       setLoading(true);
 
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user?.id,
-          display_name: displayName,
-          avatar_url: avatarUrl,
-          updated_at: new Date().toISOString()
-        });
+      const { error } = await supabase.
+      from('profiles').
+      upsert({
+        id: user?.id,
+        display_name: displayName,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString()
+      });
 
       if (error) throw error;
 
       toast({
         title: "Profile updated",
-        description: "Your profile has been saved successfully",
+        description: "Your profile has been saved successfully"
       });
     } catch (error: any) {
       console.error('Error saving profile:', error);
       toast({
         title: "Error saving profile",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -158,23 +158,23 @@ const Profile = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-xl font-mono">LOADING...</p>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b-4 border-border p-4">
+      <header className="border-b-4 border-border p-4 px-[16px]">
         <div className="container mx-auto">
           <Button
             variant="ghost"
             onClick={() => navigate('/home')}
-            className="mb-4"
-          >
+            className="mb-4">
+            
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-4xl font-bold">MY PROFILE</h1>
+          <h1 className="text-4xl font-bold text-center">MY PROFILE</h1>
         </div>
       </header>
 
@@ -202,8 +202,8 @@ const Profile = () => {
                     accept="image/*"
                     onChange={handleAvatarUpload}
                     disabled={uploading}
-                    className="hidden"
-                  />
+                    className="hidden" />
+                  
                 </Label>
                 <p className="text-xs text-muted-foreground">
                   JPG, PNG or GIF (max 5MB)
@@ -219,8 +219,8 @@ const Profile = () => {
                   id="email"
                   value={user?.email || ''}
                   disabled
-                  className="border-2"
-                />
+                  className="border-2" />
+                
               </div>
 
               <div className="space-y-2">
@@ -230,8 +230,8 @@ const Profile = () => {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Enter your display name"
-                  className="border-2"
-                />
+                  className="border-2" />
+                
               </div>
             </div>
 
@@ -240,15 +240,15 @@ const Profile = () => {
               onClick={handleSaveProfile}
               disabled={loading}
               className="w-full border-4 border-border"
-              size="lg"
-            >
+              size="lg">
+              
               {loading ? 'SAVING...' : 'SAVE PROFILE'}
             </Button>
           </div>
         </Card>
       </main>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Profile;
