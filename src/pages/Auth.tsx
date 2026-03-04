@@ -237,7 +237,7 @@ const Auth = () => {
         </span>
 
         <p className="text-xs md:text-sm font-mono text-muted-foreground hidden sm:block">
-          AI-POWERED GROUP DISCUSSION PRACTICE
+          AUTHENTICATION
         </p>
       </div>
     </Link>
