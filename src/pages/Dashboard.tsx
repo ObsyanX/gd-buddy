@@ -94,7 +94,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b-4 border-border p-6">
-        <div className="container mx-auto flex items-center justify-between">
+        <div className="container mx-auto items-center justify-between flex flex-col">
           <div className="flex items-center gap-4">
             
 
@@ -104,10 +104,10 @@ const Dashboard = () => {
 
 
             
-            <MessageSquare className="w-10 h-10" />
+            <MessageSquare className="h-[28px] w-[28px]" />
             <div>
-              <h1 className="text-4xl font-bold tracking-tight">DASHBOARD</h1>
-              <p className="text-sm font-mono text-muted-foreground">
+              
+              <p className="font-mono text-muted-foreground text-2xl">
                 Welcome back, {profile?.display_name || 'User'}
               </p>
             </div>
