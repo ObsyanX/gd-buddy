@@ -149,29 +149,29 @@ const MultiplayerLobby = ({
           </TabsList>
           
           <TabsContent value="create" className="mt-4">
-            <Card className="p-0 border-4 border-border space-y-6 min-w-fit">
+            <Card className="p-0 border-4 border-border space-y-6 ">
               <div className="text-center space-y-2">
                 <Users className="w-12 h-12 mx-auto py-0 my-[10px]" />
                 <h2 className="text-xl font-bold">CREATE A NEW ROOM</h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Start a multiplayer session and invite friends to join
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="p-4 border-2 border-border rounded space-y-2 pr-0 pl-[30px] mx-px px-0">
-                  <h3 className="font-bold text-sm text-center">HOW IT WORKS</h3>
+                  <h3 className="font-bold text-center text-sm">HOW IT WORKS</h3>
                   <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Choose a topic (AI-generated or custom)</li>
-                    <li>• Optionally add AI participants</li>
-                    <li>• You'll get a 6-character room code</li>
-                    <li>• Share the code with your friends</li>
-                    <li>• Everyone joins and discusses in real-time!</li>
+                    <li className="text-xs">• Choose a topic (AI-generated or custom)</li>
+                    <li className="text-xs">• Optionally add AI participants</li>
+                    <li className="text-xs">• You'll get a 6-character room code</li>
+                    <li className="text-xs">• Share the code with your friends</li>
+                    <li className="text-xs">• Everyone joins and discusses in real-time!</li>
                   </ul>
                 </div>
               </div>
 
-              <Button onClick={onCreateRoom} size="lg" className="w-11/12 border-4 border-border text-xs text-center py-0 px-0 mx-[15px] my-[15px]">
+              <Button onClick={onCreateRoom} size="lg" className="w-11/12 border-4 border-border text-xs text-center px-0 mx-[15px] my-[15px] py-[5px]">
                 SELECT TOPIC & CREATE ROOM
               </Button>
             </Card>
