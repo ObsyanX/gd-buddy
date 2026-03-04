@@ -95,7 +95,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b-4 border-border p-6">
         <div className="container mx-auto items-center justify-between flex flex-col">
-          <div className="flex items-center gap-4">
+          <div className="items-center justify-center flex flex-row gap-0 mx-0">
             
 
 
@@ -104,7 +104,7 @@ const Dashboard = () => {
 
 
             
-            <MessageSquare className="h-[28px] w-[28px]" />
+            
             <div>
               
               <p className="font-mono text-muted-foreground text-2xl">
