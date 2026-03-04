@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageSquare, Loader2 } from "lucide-react";
 import { z } from "zod";
+import { Link } from "react-router-dom";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
@@ -218,15 +219,30 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b-4 border-border p-6">
-        <div className="container mx-auto flex items-center gap-4">
-          <MessageSquare className="w-10 h-10" />
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight">GD BUDDY</h1>
-            <p className="text-sm font-mono text-muted-foreground">AUTHENTICATION</p>
-          </div>
-        </div>
-      </header>
+    <header className="border-b-4 border-border p-6">
+  <div className="container mx-auto">
+    <Link
+      to="/"
+      className="flex items-center gap-2 md:gap-4 hover:opacity-80 transition-opacity"
+      aria-label="GD Buddy Home"
+    >
+      <MessageSquare
+        className="w-8 h-8 md:w-10 md:h-10"
+        aria-hidden="true"
+      />
+
+      <div>
+        <span className="text-2xl md:text-4xl font-bold tracking-tight">
+          GD BUDDY
+        </span>
+
+        <p className="text-xs md:text-sm font-mono text-muted-foreground hidden sm:block">
+          AI-POWERED GROUP DISCUSSION PRACTICE
+        </p>
+      </div>
+    </Link>
+  </div>
+</header>
       
 
 
