@@ -5,10 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  MessageSquare, LogOut, User, TrendingUp, Target, 
-  Clock, Award, Play, ChevronRight, BarChart3, ArrowLeft 
-} from "lucide-react";
+import {
+  MessageSquare, LogOut, User, TrendingUp, Target,
+  Clock, Award, Play, ChevronRight, BarChart3, ArrowLeft } from
+"lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -32,46 +32,46 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       // Load profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user?.id)
-        .single();
+      const { data: profileData } = await supabase.
+      from('profiles').
+      select('*').
+      eq('id', user?.id).
+      single();
       setProfile(profileData);
 
       // Load recent sessions
-      const { data: sessionsData } = await supabase
-        .from('gd_sessions')
-        .select('*, gd_metrics(*)')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
+      const { data: sessionsData } = await supabase.
+      from('gd_sessions').
+      select('*, gd_metrics(*)').
+      eq('user_id', user?.id).
+      order('created_at', { ascending: false }).
+      limit(5);
       setSessions(sessionsData || []);
 
       // Load recent drills
-      const { data: drillsData } = await supabase
-        .from('skill_drills')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
+      const { data: drillsData } = await supabase.
+      from('skill_drills').
+      select('*').
+      eq('user_id', user?.id).
+      order('created_at', { ascending: false }).
+      limit(5);
       setDrills(drillsData || []);
 
       // Calculate stats
       const totalSessions = sessionsData?.length || 0;
       const totalDrills = drillsData?.length || 0;
-      
+
       const allScores = [
-        ...((sessionsData || []).flatMap((s: any) => {
-          const metrics = s.gd_metrics?.[0];
-          return metrics ? [metrics.fluency_score, metrics.content_score, metrics.structure_score, metrics.voice_score].filter(Boolean) : [];
-        })),
-        ...((drillsData || []).map((d: any) => d.score).filter(Boolean))
-      ];
-      
-      const avgScore = allScores.length > 0 
-        ? Math.round(allScores.reduce((a: number, b: number) => a + b, 0) / allScores.length) 
-        : 0;
+      ...(sessionsData || []).flatMap((s: any) => {
+        const metrics = s.gd_metrics?.[0];
+        return metrics ? [metrics.fluency_score, metrics.content_score, metrics.structure_score, metrics.voice_score].filter(Boolean) : [];
+      }),
+      ...(drillsData || []).map((d: any) => d.score).filter(Boolean)];
+
+
+      const avgScore = allScores.length > 0 ?
+      Math.round(allScores.reduce((a: number, b: number) => a + b, 0) / allScores.length) :
+      0;
 
       const hoursSpent = Math.round((totalSessions * 15 + totalDrills * 3) / 60 * 10) / 10;
 
@@ -81,7 +81,7 @@ const Dashboard = () => {
       toast({
         title: "Error loading dashboard",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -96,12 +96,12 @@ const Dashboard = () => {
       <header className="border-b-4 border-border p-6">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => navigate('/home')} 
-              className="mr-2"
-            >
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/home')}
+              className="mr-2">
+              
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <MessageSquare className="w-10 h-10" />
@@ -112,14 +112,14 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={handleSignOut}
-            className="border-2"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            SIGN OUT
-          </Button>
+          
+
+
+
+
+
+
+          
         </div>
       </header>
 
@@ -164,7 +164,7 @@ const Dashboard = () => {
 
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate("/home/practice")}>
+          onClick={() => navigate("/home/practice")}>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">GROUP DISCUSSION</h3>
@@ -180,7 +180,7 @@ const Dashboard = () => {
           </Card>
 
           <Card className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate("/home/drills")}>
+          onClick={() => navigate("/home/drills")}>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">SKILL DRILLS</h3>
@@ -196,7 +196,7 @@ const Dashboard = () => {
           </Card>
 
           <Card className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate("/home/profile")}>
+          onClick={() => navigate("/home/profile")}>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">PROFILE</h3>
@@ -232,26 +232,26 @@ const Dashboard = () => {
                   <h3 className="text-xl font-bold">RECENT SESSIONS</h3>
                   <TrendingUp className="w-5 h-5 text-muted-foreground" />
                 </div>
-                {sessions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground font-mono py-4 text-center">
+                {sessions.length === 0 ?
+                <p className="text-sm text-muted-foreground font-mono py-4 text-center">
                     No sessions yet. Start practicing!
-                  </p>
-                ) : (
-                  <div className="space-y-3">
+                  </p> :
+
+                <div className="space-y-3">
                     {sessions.map((session: any) => {
-                      const metrics = session.gd_metrics?.[0];
-                      const scores = metrics ? [
-                        metrics.fluency_score, 
-                        metrics.content_score, 
-                        metrics.structure_score, 
-                        metrics.voice_score
-                      ].filter((s): s is number => s !== null && s !== undefined) : [];
-                      const avgScore = scores.length > 0 
-                        ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-                        : 0;
-                      
-                      return (
-                        <div key={session.id} className="p-4 border-2 border-border hover:shadow-sm transition-shadow">
+                    const metrics = session.gd_metrics?.[0];
+                    const scores = metrics ? [
+                    metrics.fluency_score,
+                    metrics.content_score,
+                    metrics.structure_score,
+                    metrics.voice_score].
+                    filter((s): s is number => s !== null && s !== undefined) : [];
+                    const avgScore = scores.length > 0 ?
+                    Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) :
+                    0;
+
+                    return (
+                      <div key={session.id} className="p-4 border-2 border-border hover:shadow-sm transition-shadow">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <h4 className="font-bold text-sm line-clamp-1">{session.topic}</h4>
@@ -260,17 +260,17 @@ const Dashboard = () => {
                                 <Badge variant="outline" className="text-xs">{session.status}</Badge>
                               </div>
                             </div>
-                            {avgScore > 0 && (
-                              <div className="text-right">
+                            {avgScore > 0 &&
+                          <div className="text-right">
                                 <p className="text-2xl font-bold">{avgScore}%</p>
                               </div>
-                            )}
+                          }
                           </div>
-                        </div>
-                      );
-                    })}
+                        </div>);
+
+                  })}
                   </div>
-                )}
+                }
               </Card>
 
               <Card className="p-6 border-4 border-border space-y-4">
@@ -278,14 +278,14 @@ const Dashboard = () => {
                   <h3 className="text-xl font-bold">RECENT DRILLS</h3>
                   <Target className="w-5 h-5 text-muted-foreground" />
                 </div>
-                {drills.length === 0 ? (
-                  <p className="text-sm text-muted-foreground font-mono py-4 text-center">
+                {drills.length === 0 ?
+                <p className="text-sm text-muted-foreground font-mono py-4 text-center">
                     No drills completed yet. Try skill drills!
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {drills.map((drill: any) => (
-                      <div key={drill.id} className="p-4 border-2 border-border hover:shadow-sm transition-shadow">
+                  </p> :
+
+                <div className="space-y-3">
+                    {drills.map((drill: any) =>
+                  <div key={drill.id} className="p-4 border-2 border-border hover:shadow-sm transition-shadow">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <h4 className="font-bold text-sm line-clamp-1">{drill.topic}</h4>
@@ -293,23 +293,23 @@ const Dashboard = () => {
                               <Badge variant="secondary" className="text-xs">
                                 {drill.drill_type.replace('_', ' ')}
                               </Badge>
-                              {drill.time_limit_seconds && (
-                                <Badge variant="outline" className="text-xs">
+                              {drill.time_limit_seconds &&
+                          <Badge variant="outline" className="text-xs">
                                   {drill.time_limit_seconds}s
                                 </Badge>
-                              )}
+                          }
                             </div>
                           </div>
-                          {drill.score && (
-                            <div className="text-right">
+                          {drill.score &&
+                      <div className="text-right">
                               <p className="text-2xl font-bold">{drill.score}%</p>
                             </div>
-                          )}
+                      }
                         </div>
                       </div>
-                    ))}
+                  )}
                   </div>
-                )}
+                }
               </Card>
             </div>
           </TabsContent>
@@ -319,8 +319,8 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Dashboard;
