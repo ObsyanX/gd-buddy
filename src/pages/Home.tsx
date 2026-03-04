@@ -1,39 +1,15 @@
-import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { MessageSquare, Users, BarChart3, Sparkles, LogOut, LayoutDashboard, Dumbbell, User, Settings as SettingsIcon, Menu } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { MessageSquare, Users, BarChart3, Sparkles } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import SEOFooter from "@/components/SEOFooter";
 
 const Home = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/auth");
-  };
-
-  const handleNavigation = (path: string) => {
-    setMobileMenuOpen(false);
-    navigate(path);
-  };
-
-  const navItems = [
-    { label: "DASHBOARD", icon: LayoutDashboard, path: "/dashboard" },
-    { label: "PRACTICE", icon: MessageSquare, path: "/practice" },
-    { label: "DRILLS", icon: Dumbbell, path: "/drills" },
-    { label: "MULTIPLAYER", icon: Users, path: "/multiplayer" },
-    { label: "PROFILE", icon: User, path: "/profile" },
-    { label: "SETTINGS", icon: SettingsIcon, path: "/settings" },
-  ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="flex flex-col">
       <SEOHead
         title="Home"
         description="Your GD Buddy dashboard. Start solo practice, multiplayer sessions, skill drills, and track your progress."
@@ -41,54 +17,7 @@ const Home = () => {
         noindex={true}
       />
 
-      <header className="border-b-4 border-border p-4 md:p-6" role="banner">
-        <div className="container mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 md:gap-4" aria-label="GD Buddy Home">
-            <MessageSquare className="w-8 h-8 md:w-10 md:h-10" aria-hidden="true" />
-            <div>
-              <span className="text-2xl md:text-4xl font-bold tracking-tight">GD BUDDY</span>
-              <p className="text-xs md:text-sm font-mono text-muted-foreground hidden sm:block">AI-POWERED GROUP DISCUSSION PRACTICE</p>
-            </div>
-          </Link>
-
-          <nav className="hidden lg:flex gap-2" aria-label="Main navigation">
-            {navItems.slice(0, 4).map((item) => (
-              <Button key={item.path} variant="outline" onClick={() => navigate(item.path)} className="border-2" aria-label={`Go to ${item.label}`}>
-                <item.icon className="w-4 h-4 mr-2" aria-hidden="true" />
-                {item.label}
-              </Button>
-            ))}
-            <Button variant="outline" onClick={handleSignOut} className="border-2" aria-label="Sign out">
-              <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
-              SIGN OUT
-            </Button>
-          </nav>
-
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild className="lg:hidden">
-              <Button variant="outline" size="icon" className="border-2" aria-label="Open menu">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-72 border-l-4 border-border">
-              <nav className="flex flex-col gap-3 mt-8" aria-label="Mobile navigation">
-                {navItems.map((item) => (
-                  <Button key={item.path} variant="outline" onClick={() => handleNavigation(item.path)} className="border-2 justify-start w-full">
-                    <item.icon className="w-4 h-4 mr-2" aria-hidden="true" />
-                    {item.label}
-                  </Button>
-                ))}
-                <Button variant="outline" onClick={() => { setMobileMenuOpen(false); handleSignOut(); }} className="border-2 justify-start w-full">
-                  <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
-                  SIGN OUT
-                </Button>
-              </nav>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
-
-      <main className="flex-1 container mx-auto py-12 px-6" role="main">
+      <div className="flex-1 container mx-auto py-12 px-6">
         <div className="max-w-4xl mx-auto space-y-12">
           <section className="text-center space-y-4">
             <h1 className="text-display font-bold">AI Group Discussion Practice Platform</h1>
@@ -119,10 +48,10 @@ const Home = () => {
           </section>
 
           <section className="flex justify-center gap-4 flex-wrap" aria-label="Get started">
-            <Button size="lg" className="text-xl px-12 py-8 border-4 border-border shadow-md hover:shadow-lg" onClick={() => navigate('/practice')} aria-label="Start a solo practice session">
+            <Button size="lg" className="text-xl px-12 py-8 border-4 border-border shadow-md hover:shadow-lg" onClick={() => navigate('/home/practice')} aria-label="Start a solo practice session">
               START SOLO SESSION
             </Button>
-            <Button size="lg" variant="outline" className="text-xl px-12 py-8 border-4 border-border shadow-md hover:shadow-lg" onClick={() => navigate('/multiplayer')} aria-label="Start a multiplayer session">
+            <Button size="lg" variant="outline" className="text-xl px-12 py-8 border-4 border-border shadow-md hover:shadow-lg" onClick={() => navigate('/home/multiplayer')} aria-label="Start a multiplayer session">
               <Users className="w-6 h-6 mr-2" aria-hidden="true" />
               MULTIPLAYER MODE
             </Button>
@@ -178,7 +107,7 @@ const Home = () => {
             </p>
           </Card>
         </div>
-      </main>
+      </div>
 
       <SEOFooter />
     </div>

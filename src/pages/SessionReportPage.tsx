@@ -6,10 +6,9 @@ const SessionReportPage = () => {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId: string }>();
 
-  // Guard: redirect if no sessionId
   useEffect(() => {
     if (!sessionId) {
-      navigate('/practice', { replace: true });
+      navigate('/home/practice', { replace: true });
     }
   }, [sessionId, navigate]);
 
@@ -18,7 +17,7 @@ const SessionReportPage = () => {
   }
 
   const handleStartNew = () => {
-    navigate('/');
+    navigate('/home');
   };
 
   return (

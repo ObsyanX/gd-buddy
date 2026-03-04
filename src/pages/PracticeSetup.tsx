@@ -7,10 +7,9 @@ const PracticeSetup = () => {
   const location = useLocation();
   const topic = location.state?.topic;
 
-  // Guard: redirect to practice if no topic
   useEffect(() => {
     if (!topic) {
-      navigate('/practice', { replace: true });
+      navigate('/home/practice', { replace: true });
     }
   }, [topic, navigate]);
 
@@ -19,11 +18,11 @@ const PracticeSetup = () => {
   }
 
   const handleSessionCreated = (sessionId: string) => {
-    navigate(`/session/${sessionId}`);
+    navigate(`/home/session/${sessionId}`);
   };
 
   const handleBack = () => {
-    navigate('/practice');
+    navigate('/home/practice');
   };
 
   return (

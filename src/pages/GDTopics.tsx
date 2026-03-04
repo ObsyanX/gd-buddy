@@ -110,7 +110,7 @@ const GDTopics = () => (
           </p>
           <div className="flex gap-4 flex-wrap">
             <Button asChild size="lg" className="border-4 border-border">
-              <Link to="/practice">Start Practicing Now</Link>
+              <Link to="/home/practice">Start Practicing Now</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="border-4 border-border">
               <Link to="/how-to-crack-group-discussion">GD Tips & Strategies</Link>

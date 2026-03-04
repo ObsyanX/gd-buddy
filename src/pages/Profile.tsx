@@ -168,7 +168,7 @@ const Profile = () => {
         <div className="container mx-auto">
           <Button
             variant="ghost"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/home')}
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
