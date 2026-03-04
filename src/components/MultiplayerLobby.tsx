@@ -48,11 +48,11 @@ const MultiplayerLobby = ({
       console.log('Searching for room with code:', normalizedCode);
 
       // Find session by room code
-      const { data: sessions, error: sessionError } = await supabase
-        .from('gd_sessions')
-        .select('*')
-        .eq('room_code', normalizedCode)
-        .eq('is_multiplayer', true);
+      const { data: sessions, error: sessionError } = await supabase.
+      from('gd_sessions').
+      select('*').
+      eq('room_code', normalizedCode).
+      eq('is_multiplayer', true);
 
       console.log('Session search result:', sessions, sessionError);
 
@@ -70,12 +70,12 @@ const MultiplayerLobby = ({
       }
 
       // Check if already joined
-      const { data: existingParticipant } = await supabase
-        .from('gd_participants')
-        .select('*')
-        .eq('session_id', session.id)
-        .eq('real_user_id', user.id)
-        .maybeSingle();
+      const { data: existingParticipant } = await supabase.
+      from('gd_participants').
+      select('*').
+      eq('session_id', session.id).
+      eq('real_user_id', user.id).
+      maybeSingle();
 
       if (existingParticipant) {
         console.log('Already joined, navigating to session');
@@ -84,27 +84,27 @@ const MultiplayerLobby = ({
       }
 
       // Get current participant count for order_index
-      const { data: participants } = await supabase
-        .from('gd_participants')
-        .select('*')
-        .eq('session_id', session.id)
-        .eq('is_user', true);
+      const { data: participants } = await supabase.
+      from('gd_participants').
+      select('*').
+      eq('session_id', session.id).
+      eq('is_user', true);
 
       const humanCount = participants?.length || 1;
 
       // Add as participant
-      const { error: participantError } = await supabase
-        .from('gd_participants')
-        .insert({
-          session_id: session.id,
-          is_user: true,
-          real_user_id: user.id,
-          order_index: humanCount,
-          persona_name: user.email?.split('@')[0] || `Player ${humanCount + 1}`,
-          persona_tone: 'neutral',
-          persona_verbosity: 'moderate',
-          persona_vocab_level: 'intermediate'
-        });
+      const { error: participantError } = await supabase.
+      from('gd_participants').
+      insert({
+        session_id: session.id,
+        is_user: true,
+        real_user_id: user.id,
+        order_index: humanCount,
+        persona_name: user.email?.split('@')[0] || `Player ${humanCount + 1}`,
+        persona_tone: 'neutral',
+        persona_verbosity: 'moderate',
+        persona_vocab_level: 'intermediate'
+      });
 
       if (participantError) {
         console.error('Participant insert error:', participantError);
@@ -132,13 +132,13 @@ const MultiplayerLobby = ({
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="container mx-auto max-w-2xl space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={onBack} className="border-2">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
+        <div className="gap-4 flex items-center justify-center">
+          
+
+          
           <div>
-            <h1 className="text-4xl font-bold">MULTIPLAYER MODE</h1>
-            <p className="text-muted-foreground font-mono">Practice with friends in real-time</p>
+            <h1 className="text-4xl font-bold text-center">MULTIPLAYER MODE</h1>
+            <p className="text-muted-foreground font-mono text-center">Practice with friends in real-time</p>
           </div>
         </div>
 
@@ -159,7 +159,7 @@ const MultiplayerLobby = ({
               </div>
 
               <div className="space-y-4">
-                <div className="p-4 border-2 border-border rounded space-y-2">
+                <div className="p-4 border-2 border-border rounded space-y-2 px-[102px] pr-0 mx-[95px] pl-[30px]">
                   <h3 className="font-bold text-sm">HOW IT WORKS</h3>
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• Choose a topic (AI-generated or custom)</li>
@@ -190,35 +190,35 @@ const MultiplayerLobby = ({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold">ROOM CODE</Label>
-                  <Input 
-                    placeholder="Enter 6-character code" 
-                    value={joinCode} 
-                    onChange={e => setJoinCode(e.target.value.toUpperCase())} 
-                    className="border-2 text-center text-2xl font-mono tracking-widest uppercase" 
-                    maxLength={6} 
-                  />
+                  <Input
+                    placeholder="Enter 6-character code"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    className="border-2 text-center text-2xl font-mono tracking-widest uppercase"
+                    maxLength={6} />
+                  
                 </div>
               </div>
 
-              <Button 
-                onClick={handleJoinRoom} 
-                disabled={isJoining || joinCode.length < 6} 
-                className="w-full border-4 border-border" 
-                size="lg"
-              >
-                {isJoining ? (
-                  <>
+              <Button
+                onClick={handleJoinRoom}
+                disabled={isJoining || joinCode.length < 6}
+                className="w-full border-4 border-border"
+                size="lg">
+                
+                {isJoining ?
+                <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     JOINING...
-                  </>
-                ) : 'JOIN ROOM'}
+                  </> :
+                'JOIN ROOM'}
               </Button>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default MultiplayerLobby;
