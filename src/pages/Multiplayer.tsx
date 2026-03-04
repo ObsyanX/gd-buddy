@@ -5,15 +5,15 @@ const Multiplayer = () => {
   const navigate = useNavigate();
 
   const handleSessionJoined = (sessionId: string) => {
-    navigate(`/session/${sessionId}`);
+    navigate(`/home/session/${sessionId}`);
   };
 
   const handleBack = () => {
-    navigate('/');
+    navigate('/home');
   };
 
   const handleCreateRoom = () => {
-    navigate('/multiplayer/topic');
+    navigate('/home/multiplayer/topic');
   };
 
   return (

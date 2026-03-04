@@ -7,9 +7,9 @@ const SEOFooter = () => (
         <div>
           <h3 className="font-bold text-sm mb-2">PRACTICE</h3>
           <ul className="space-y-1 text-sm text-muted-foreground">
-            <li><Link to="/practice" className="hover:text-foreground transition-colors">Solo Practice</Link></li>
-            <li><Link to="/multiplayer" className="hover:text-foreground transition-colors">Multiplayer</Link></li>
-            <li><Link to="/drills" className="hover:text-foreground transition-colors">Skill Drills</Link></li>
+            <li><Link to="/home/practice" className="hover:text-foreground transition-colors">Solo Practice</Link></li>
+            <li><Link to="/home/multiplayer" className="hover:text-foreground transition-colors">Multiplayer</Link></li>
+            <li><Link to="/home/drills" className="hover:text-foreground transition-colors">Skill Drills</Link></li>
           </ul>
         </div>
         <div>
@@ -24,14 +24,14 @@ const SEOFooter = () => (
           <h3 className="font-bold text-sm mb-2">LEARN</h3>
           <ul className="space-y-1 text-sm text-muted-foreground">
             <li><Link to="/common-gd-mistakes" className="hover:text-foreground transition-colors">Common Mistakes</Link></li>
-            <li><Link to="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link></li>
+            <li><Link to="/home/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link></li>
           </ul>
         </div>
         <div>
           <h3 className="font-bold text-sm mb-2">ACCOUNT</h3>
           <ul className="space-y-1 text-sm text-muted-foreground">
-            <li><Link to="/profile" className="hover:text-foreground transition-colors">Profile</Link></li>
-            <li><Link to="/settings" className="hover:text-foreground transition-colors">Settings</Link></li>
+            <li><Link to="/home/profile" className="hover:text-foreground transition-colors">Profile</Link></li>
+            <li><Link to="/home/settings" className="hover:text-foreground transition-colors">Settings</Link></li>
           </ul>
         </div>
       </nav>

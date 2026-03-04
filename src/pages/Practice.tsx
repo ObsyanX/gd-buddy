@@ -5,11 +5,11 @@ const Practice = () => {
   const navigate = useNavigate();
 
   const handleTopicSelected = (topic: any) => {
-    navigate('/practice/setup', { state: { topic } });
+    navigate('/home/practice/setup', { state: { topic } });
   };
 
   const handleBack = () => {
-    navigate('/');
+    navigate('/home');
   };
 
   return (

@@ -61,7 +61,7 @@ const MultiplayerSetup = () => {
   // Guard: redirect if no topic
   useEffect(() => {
     if (!topic) {
-      navigate('/multiplayer/topic', { replace: true });
+      navigate('/home/multiplayer/topic', { replace: true });
     }
   }, [topic, navigate]);
 
@@ -315,7 +315,7 @@ const MultiplayerSetup = () => {
       });
 
       // Navigate to session after short delay
-      setTimeout(() => navigate(`/session/${session.id}`), 1500);
+      setTimeout(() => navigate(`/home/session/${session.id}`), 1500);
     } catch (error: any) {
       console.error('Error creating room:', error);
       toast({
@@ -337,7 +337,7 @@ const MultiplayerSetup = () => {
   };
 
   const handleBack = () => {
-    navigate('/multiplayer/topic');
+    navigate('/home/multiplayer/topic');
   };
 
   if (!topic) {

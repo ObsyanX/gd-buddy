@@ -126,7 +126,7 @@ const MultiplayerTopic = () => {
   };
 
   const handleTopicSelected = (topic: any) => {
-    navigate('/multiplayer/setup', { state: { topic } });
+    navigate('/home/multiplayer/setup', { state: { topic } });
   };
 
   const handleCustomTopicSubmit = () => {
@@ -147,7 +147,7 @@ const MultiplayerTopic = () => {
   };
 
   const handleBack = () => {
-    navigate('/multiplayer');
+    navigate('/home/multiplayer');
   };
 
   return (

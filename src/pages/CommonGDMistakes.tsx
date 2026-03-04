@@ -93,7 +93,7 @@ const CommonGDMistakes = () => (
             GD Buddy's AI-powered simulation helps you identify and fix these mistakes in real-time. Get feedback on your speaking patterns, body language, and argument quality — all before your actual placement GD.
           </p>
           <Button asChild size="lg" className="border-4 border-border">
-            <Link to="/practice">Practice Now</Link>
+            <Link to="/home/practice">Practice Now</Link>
           </Button>
           <div className="mt-4 flex gap-4 flex-wrap text-sm">
             <Link to="/how-to-crack-group-discussion" className="text-muted-foreground hover:text-foreground underline">How to crack group discussion →</Link>

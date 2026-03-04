@@ -99,7 +99,7 @@ const Dashboard = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => navigate('/')} 
+              onClick={() => navigate('/home')} 
               className="mr-2"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -164,7 +164,7 @@ const Dashboard = () => {
 
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate("/practice")}>
+                onClick={() => navigate("/home/practice")}>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">GROUP DISCUSSION</h3>
@@ -180,7 +180,7 @@ const Dashboard = () => {
           </Card>
 
           <Card className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate("/drills")}>
+                onClick={() => navigate("/home/drills")}>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">SKILL DRILLS</h3>
@@ -196,7 +196,7 @@ const Dashboard = () => {
           </Card>
 
           <Card className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate("/profile")}>
+                onClick={() => navigate("/home/profile")}>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">PROFILE</h3>

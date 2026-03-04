@@ -95,7 +95,7 @@ const HowToCrackGD = () => (
             Reading tips is helpful, but nothing beats actual practice. GD Buddy simulates real group discussions with AI participants who have different personalities, speaking styles, and viewpoints. You get real-time feedback on your pace, filler words, body language, and argument structure — metrics that are impossible to track when practicing alone.
           </p>
           <Button asChild size="lg" className="border-4 border-border">
-            <Link to="/practice">Start a Practice Session</Link>
+            <Link to="/home/practice">Start a Practice Session</Link>
           </Button>
           <div className="mt-4 flex gap-4 flex-wrap text-sm">
             <Link to="/gd-topics-for-placements" className="text-muted-foreground hover:text-foreground underline">Browse 50+ GD topics for placements →</Link>

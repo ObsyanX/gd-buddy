@@ -10,9 +10,12 @@ import { lazy, Suspense } from "react";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-const Home = lazy(() => import("./pages/Home"));
 
-// Lazy load all other pages
+// Layout
+const AppLayout = lazy(() => import("./layouts/AppLayout"));
+
+// Lazy load all app pages
+const Home = lazy(() => import("./pages/Home"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Practice = lazy(() => import("./pages/Practice"));
@@ -40,6 +43,23 @@ const Loading = () => (
   </div>
 );
 
+// Redirect authenticated users from / to /home
+const LandingGuard = () => {
+  const { user, loading } = useAuth();
+  if (loading) return <Loading />;
+  if (user) return <Navigate to="/home" replace />;
+  return <Landing />;
+};
+
+// Redirect authenticated users away from /auth
+const AuthGuard = () => {
+  const { user, loading } = useAuth();
+  if (loading) return <Loading />;
+  if (user) return <Navigate to="/home" replace />;
+  return <Auth />;
+};
+
+// Protect all /home/* routes
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <Loading />;
@@ -57,7 +77,7 @@ const App = () => (
           <Suspense fallback={<Loading />}>
             <Routes>
               {/* Public landing page — canonical ranking page */}
-              <Route path="/" element={<Landing />} />
+              <Route path="/" element={<LandingGuard />} />
 
               {/* Public SEO pages */}
               <Route path="/gd-topics-for-placements" element={<GDTopics />} />
@@ -65,22 +85,35 @@ const App = () => (
               <Route path="/common-gd-mistakes" element={<CommonGDMistakes />} />
               <Route path="/communication-skills-for-gd" element={<CommunicationSkills />} />
 
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/auth/reset-password" element={<Suspense fallback={<Loading />}><ResetPassword /></Suspense>} />
+              <Route path="/auth" element={<AuthGuard />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
 
-              {/* Protected routes (noindex) */}
-              <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/practice" element={<ProtectedRoute><Practice /></ProtectedRoute>} />
-              <Route path="/practice/setup" element={<ProtectedRoute><PracticeSetup /></ProtectedRoute>} />
-              <Route path="/session/:sessionId" element={<ProtectedRoute><Session /></ProtectedRoute>} />
-              <Route path="/session/:sessionId/report" element={<ProtectedRoute><SessionReportPage /></ProtectedRoute>} />
-              <Route path="/multiplayer" element={<ProtectedRoute><Multiplayer /></ProtectedRoute>} />
-              <Route path="/multiplayer/topic" element={<ProtectedRoute><MultiplayerTopic /></ProtectedRoute>} />
-              <Route path="/multiplayer/setup" element={<ProtectedRoute><MultiplayerSetup /></ProtectedRoute>} />
-              <Route path="/drills" element={<ProtectedRoute><SkillDrills /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              {/* Protected app routes under /home */}
+              <Route path="/home" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                <Route index element={<Home />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="practice" element={<Practice />} />
+                <Route path="practice/setup" element={<PracticeSetup />} />
+                <Route path="session/:sessionId" element={<Session />} />
+                <Route path="session/:sessionId/report" element={<SessionReportPage />} />
+                <Route path="multiplayer" element={<Multiplayer />} />
+                <Route path="multiplayer/topic" element={<MultiplayerTopic />} />
+                <Route path="multiplayer/setup" element={<MultiplayerSetup />} />
+                <Route path="drills" element={<SkillDrills />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="settings" element={<Settings />} />
+              </Route>
+
+              {/* Legacy redirects: redirect old paths to new /home/* paths */}
+              <Route path="/dashboard" element={<Navigate to="/home/dashboard" replace />} />
+              <Route path="/practice" element={<Navigate to="/home/practice" replace />} />
+              <Route path="/practice/setup" element={<Navigate to="/home/practice/setup" replace />} />
+              <Route path="/session/:sessionId" element={<Navigate to="/home/session/:sessionId" replace />} />
+              <Route path="/drills" element={<Navigate to="/home/drills" replace />} />
+              <Route path="/multiplayer" element={<Navigate to="/home/multiplayer" replace />} />
+              <Route path="/profile" element={<Navigate to="/home/profile" replace />} />
+              <Route path="/settings" element={<Navigate to="/home/settings" replace />} />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
