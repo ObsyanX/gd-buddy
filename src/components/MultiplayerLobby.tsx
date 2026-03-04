@@ -159,8 +159,8 @@ const MultiplayerLobby = ({
               </div>
 
               <div className="space-y-4">
-                <div className="p-4 border-2 border-border rounded space-y-2 px-[102px] pr-0 mx-[95px] pl-[30px]">
-                  <h3 className="font-bold text-sm">HOW IT WORKS</h3>
+                <div className="p-4 border-2 border-border rounded space-y-2 pr-0 pl-[30px] mx-px px-0">
+                  <h3 className="font-bold text-sm text-center">HOW IT WORKS</h3>
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• Choose a topic (AI-generated or custom)</li>
                     <li>• Optionally add AI participants</li>
@@ -171,7 +171,7 @@ const MultiplayerLobby = ({
                 </div>
               </div>
 
-              <Button onClick={onCreateRoom} size="lg" className="w-3/4 border-4 border-border text-xs text-center mx-[75px] py-0 px-0 my-[16px]">
+              <Button onClick={onCreateRoom} size="lg" className="w-11/12 border-4 border-border text-xs text-center py-0 px-0 mx-[15px] my-[15px]">
                 SELECT TOPIC & CREATE ROOM
               </Button>
             </Card>
