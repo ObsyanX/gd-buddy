@@ -139,10 +139,10 @@ const TopicSelection = ({
     setGeneratedTopics([]);
   };
   return <div className="space-y-6">
-      <div className="flex items-center gap-4 mt-[10px]">
-        <Button variant="outline" size="icon" onClick={onBack} className="border-2 mx-[20px] mr-0">
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
+      <div className="gap-4 mt-[10px] flex items-center justify-center">
+        
+
+      
         <h2 className="text-2xl font-black">SELECT TOPIC</h2>
       </div>
 
