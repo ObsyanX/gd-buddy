@@ -37,7 +37,7 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       emailSchema.parse(loginEmail);
       passwordSchema.parse(loginPassword);
@@ -46,7 +46,7 @@ const Auth = () => {
         toast({
           title: "Validation Error",
           description: error.issues[0].message,
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
@@ -55,25 +55,25 @@ const Auth = () => {
     setIsLoading(true);
     try {
       const { error } = await signIn(loginEmail, loginPassword);
-      
+
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
           toast({
             title: "Login failed",
             description: "Invalid email or password. Please try again.",
-            variant: "destructive",
+            variant: "destructive"
           });
         } else {
           toast({
             title: "Login failed",
             description: error.message,
-            variant: "destructive",
+            variant: "destructive"
           });
         }
       } else {
         toast({
           title: "Welcome back!",
-          description: "You've successfully logged in.",
+          description: "You've successfully logged in."
         });
         navigate("/home");
       }
@@ -81,7 +81,7 @@ const Auth = () => {
       toast({
         title: "Error",
         description: "An unexpected error occurred",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
@@ -100,7 +100,7 @@ const Auth = () => {
         toast({
           title: "Validation Error",
           description: error.issues[0].message,
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
@@ -115,19 +115,19 @@ const Auth = () => {
           toast({
             title: "Signup failed",
             description: "This email is already registered. Please login instead.",
-            variant: "destructive",
+            variant: "destructive"
           });
         } else {
           toast({
             title: "Signup failed",
             description: error.message,
-            variant: "destructive",
+            variant: "destructive"
           });
         }
       } else {
         toast({
           title: "Account created!",
-          description: "Check your email to confirm your account. You can now log in.",
+          description: "Check your email to confirm your account. You can now log in."
         });
         setTimeout(() => {
           navigate("/home");
@@ -137,7 +137,7 @@ const Auth = () => {
       toast({
         title: "Error",
         description: "An unexpected error occurred",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
@@ -154,7 +154,7 @@ const Auth = () => {
         toast({
           title: "Validation Error",
           description: error.issues[0].message,
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
@@ -168,20 +168,20 @@ const Auth = () => {
         toast({
           title: "Error",
           description: error.message || "Failed to send reset email",
-          variant: "destructive",
+          variant: "destructive"
         });
       } else {
         setResetSent(true);
         toast({
           title: "Reset link sent!",
-          description: "Check your email for the password reset link.",
+          description: "Check your email for the password reset link."
         });
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "An unexpected error occurred",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
@@ -194,22 +194,22 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/home`,
-        },
+          redirectTo: `${window.location.origin}/home`
+        }
       });
 
       if (error) {
         toast({
           title: "Google Sign-in Failed",
           description: error.message,
-          variant: "destructive",
+          variant: "destructive"
         });
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "An unexpected error occurred",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsGoogleLoading(false);
@@ -227,14 +227,14 @@ const Auth = () => {
           </div>
         </div>
       </header>
-      <div className="w-full flex flex-col items-center justify-center text-center py-12 px-4">
-        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
-          GD Buddy
-        </h1>
-        <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-2xl">
-          AI-powered group discussion practice platform for placements
-        </p>
-      </div>
+      
+
+
+
+
+
+
+      
       <main className="flex-1 container mx-auto py-12 px-6 flex items-center justify-center">
         <Card className="w-full max-w-md p-8 border-4 border-border">
           <Tabs defaultValue="login" className="w-full">
@@ -255,7 +255,7 @@ const Auth = () => {
                   <Input id="login-password" type="password" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="border-2" required />
                 </div>
                 <Button type="submit" className="w-full border-4 border-border shadow-md" disabled={isLoading}>
-                  {isLoading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />LOGGING IN...</>) : "LOGIN"}
+                  {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />LOGGING IN...</> : "LOGIN"}
                 </Button>
               </form>
 
@@ -265,8 +265,8 @@ const Auth = () => {
               </div>
 
               <Button type="button" variant="outline" className="w-full border-2 border-border" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
-                {isGoogleLoading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />CONNECTING...</>) : (
-                  <>
+                {isGoogleLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />CONNECTING...</> :
+                <>
                     <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                       <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                       <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -275,7 +275,7 @@ const Auth = () => {
                     </svg>
                     CONTINUE WITH GOOGLE
                   </>
-                )}
+                }
               </Button>
             </TabsContent>
 
@@ -295,7 +295,7 @@ const Auth = () => {
                   <p className="text-xs text-muted-foreground font-mono">Minimum 6 characters</p>
                 </div>
                 <Button type="submit" className="w-full border-4 border-border shadow-md" disabled={isLoading}>
-                  {isLoading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />CREATING ACCOUNT...</>) : "CREATE ACCOUNT"}
+                  {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />CREATING ACCOUNT...</> : "CREATE ACCOUNT"}
                 </Button>
               </form>
 
@@ -305,8 +305,8 @@ const Auth = () => {
               </div>
 
               <Button type="button" variant="outline" className="w-full border-2 border-border" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
-                {isGoogleLoading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />CONNECTING...</>) : (
-                  <>
+                {isGoogleLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />CONNECTING...</> :
+                <>
                     <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                       <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                       <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -315,39 +315,39 @@ const Auth = () => {
                     </svg>
                     SIGN UP WITH GOOGLE
                   </>
-                )}
+                }
               </Button>
             </TabsContent>
 
             <TabsContent value="reset" className="space-y-4 mt-6">
-              {resetSent ? (
-                <div className="space-y-4 text-center py-6">
+              {resetSent ?
+              <div className="space-y-4 text-center py-6">
                   <p className="text-lg font-bold">CHECK YOUR EMAIL</p>
                   <p className="text-sm text-muted-foreground">
                     We've sent a password reset link to <strong>{resetEmail}</strong>. Click the link in your email to set a new password.
                   </p>
-                  <Button onClick={() => { setResetSent(false); setResetEmail(""); }} variant="outline" className="w-full border-2">
+                  <Button onClick={() => {setResetSent(false);setResetEmail("");}} variant="outline" className="w-full border-2">
                     SEND ANOTHER EMAIL
                   </Button>
-                </div>
-              ) : (
-                <form onSubmit={handleResetPassword} className="space-y-4">
+                </div> :
+
+              <form onSubmit={handleResetPassword} className="space-y-4">
                   <p className="text-sm text-muted-foreground mb-4">Enter your email address and we'll send you a link to reset your password.</p>
                   <div className="space-y-2">
                     <Label htmlFor="reset-email">EMAIL</Label>
                     <Input id="reset-email" type="email" placeholder="your@email.com" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="border-2" required />
                   </div>
                   <Button type="submit" className="w-full border-4 border-border shadow-md" disabled={isLoading}>
-                    {isLoading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />SENDING...</>) : "SEND RESET LINK"}
+                    {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />SENDING...</> : "SEND RESET LINK"}
                   </Button>
                 </form>
-              )}
+              }
             </TabsContent>
           </Tabs>
         </Card>
       </main>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Auth;
