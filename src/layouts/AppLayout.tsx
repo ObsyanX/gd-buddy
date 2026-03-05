@@ -12,10 +12,8 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { label: "HOME", icon: MessageSquare, path: "/home" },
   { label: "DASHBOARD", icon: LayoutDashboard, path: "/home/dashboard" },
-  { label: "PRACTICE", icon: Play, path: "/home/practice" },
-  { label: "DRILLS", icon: Dumbbell, path: "/home/drills" },
-  { label: "MULTIPLAYER", icon: Users, path: "/home/multiplayer" },
   { label: "PROFILE", icon: User, path: "/home/profile" },
+  { label: "DRILLS", icon: Dumbbell, path: "/home/drills" },
   { label: "SETTINGS", icon: SettingsIcon, path: "/home/settings" },
 ];
 
