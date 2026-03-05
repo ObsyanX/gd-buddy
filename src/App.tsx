@@ -5,6 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { lazy, Suspense } from "react";
+import {
+  PageSkeleton,
+  DashboardSkeleton,
+  FormSkeleton,
+  SessionSkeleton,
+} from "@/components/SkeletonLoaders";
 
 // Eager load core pages
 import Landing from "./pages/Landing";
@@ -89,19 +95,19 @@ const App = () => (
               <Route path="/auth/reset-password" element={<ResetPassword />} />
 
               {/* Protected app routes under /home */}
-              <Route path="/home" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                <Route index element={<Home />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="practice" element={<Practice />} />
-                <Route path="practice/setup" element={<PracticeSetup />} />
-                <Route path="session/:sessionId" element={<Session />} />
-                <Route path="session/:sessionId/report" element={<SessionReportPage />} />
-                <Route path="multiplayer" element={<Multiplayer />} />
-                <Route path="multiplayer/topic" element={<MultiplayerTopic />} />
-                <Route path="multiplayer/setup" element={<MultiplayerSetup />} />
-                <Route path="drills" element={<SkillDrills />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="settings" element={<Settings />} />
+              <Route path="/home" element={<ProtectedRoute><Suspense fallback={<Loading />}><AppLayout /></Suspense></ProtectedRoute>}>
+                <Route index element={<Suspense fallback={<PageSkeleton />}><Home /></Suspense>} />
+                <Route path="dashboard" element={<Suspense fallback={<DashboardSkeleton />}><Dashboard /></Suspense>} />
+                <Route path="practice" element={<Suspense fallback={<PageSkeleton />}><Practice /></Suspense>} />
+                <Route path="practice/setup" element={<Suspense fallback={<SessionSkeleton />}><PracticeSetup /></Suspense>} />
+                <Route path="session/:sessionId" element={<Suspense fallback={<SessionSkeleton />}><Session /></Suspense>} />
+                <Route path="session/:sessionId/report" element={<Suspense fallback={<DashboardSkeleton />}><SessionReportPage /></Suspense>} />
+                <Route path="multiplayer" element={<Suspense fallback={<PageSkeleton />}><Multiplayer /></Suspense>} />
+                <Route path="multiplayer/topic" element={<Suspense fallback={<PageSkeleton />}><MultiplayerTopic /></Suspense>} />
+                <Route path="multiplayer/setup" element={<Suspense fallback={<SessionSkeleton />}><MultiplayerSetup /></Suspense>} />
+                <Route path="drills" element={<Suspense fallback={<PageSkeleton />}><SkillDrills /></Suspense>} />
+                <Route path="profile" element={<Suspense fallback={<FormSkeleton />}><Profile /></Suspense>} />
+                <Route path="settings" element={<Suspense fallback={<FormSkeleton />}><Settings /></Suspense>} />
               </Route>
 
               {/* Legacy redirects: redirect old paths to new /home/* paths */}
