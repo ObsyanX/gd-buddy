@@ -6,11 +6,16 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { lazy, Suspense } from "react";
 import {
-  PageSkeleton,
+  HomeSkeleton,
   DashboardSkeleton,
-  FormSkeleton,
+  ProfileSkeleton,
+  SettingsSkeleton,
+  DrillsSkeleton,
+  PracticeSkeleton,
   SessionSkeleton,
+  PageSkeleton,
 } from "@/components/SkeletonLoaders";
+import PageTransition from "@/components/PageTransition";
 
 // Eager load core pages
 import Landing from "./pages/Landing";
@@ -96,18 +101,18 @@ const App = () => (
 
               {/* Protected app routes under /home */}
               <Route path="/home" element={<ProtectedRoute><Suspense fallback={<Loading />}><AppLayout /></Suspense></ProtectedRoute>}>
-                <Route index element={<Suspense fallback={<PageSkeleton />}><Home /></Suspense>} />
-                <Route path="dashboard" element={<Suspense fallback={<DashboardSkeleton />}><Dashboard /></Suspense>} />
-                <Route path="practice" element={<Suspense fallback={<PageSkeleton />}><Practice /></Suspense>} />
-                <Route path="practice/setup" element={<Suspense fallback={<SessionSkeleton />}><PracticeSetup /></Suspense>} />
-                <Route path="session/:sessionId" element={<Suspense fallback={<SessionSkeleton />}><Session /></Suspense>} />
-                <Route path="session/:sessionId/report" element={<Suspense fallback={<DashboardSkeleton />}><SessionReportPage /></Suspense>} />
-                <Route path="multiplayer" element={<Suspense fallback={<PageSkeleton />}><Multiplayer /></Suspense>} />
-                <Route path="multiplayer/topic" element={<Suspense fallback={<PageSkeleton />}><MultiplayerTopic /></Suspense>} />
-                <Route path="multiplayer/setup" element={<Suspense fallback={<SessionSkeleton />}><MultiplayerSetup /></Suspense>} />
-                <Route path="drills" element={<Suspense fallback={<PageSkeleton />}><SkillDrills /></Suspense>} />
-                <Route path="profile" element={<Suspense fallback={<FormSkeleton />}><Profile /></Suspense>} />
-                <Route path="settings" element={<Suspense fallback={<FormSkeleton />}><Settings /></Suspense>} />
+                <Route index element={<Suspense fallback={<HomeSkeleton />}><PageTransition><Home /></PageTransition></Suspense>} />
+                <Route path="dashboard" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Dashboard /></PageTransition></Suspense>} />
+                <Route path="practice" element={<Suspense fallback={<PracticeSkeleton />}><PageTransition><Practice /></PageTransition></Suspense>} />
+                <Route path="practice/setup" element={<Suspense fallback={<SessionSkeleton />}><PageTransition><PracticeSetup /></PageTransition></Suspense>} />
+                <Route path="session/:sessionId" element={<Suspense fallback={<SessionSkeleton />}><PageTransition><Session /></PageTransition></Suspense>} />
+                <Route path="session/:sessionId/report" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><SessionReportPage /></PageTransition></Suspense>} />
+                <Route path="multiplayer" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Multiplayer /></PageTransition></Suspense>} />
+                <Route path="multiplayer/topic" element={<Suspense fallback={<PageSkeleton />}><PageTransition><MultiplayerTopic /></PageTransition></Suspense>} />
+                <Route path="multiplayer/setup" element={<Suspense fallback={<SessionSkeleton />}><PageTransition><MultiplayerSetup /></PageTransition></Suspense>} />
+                <Route path="drills" element={<Suspense fallback={<DrillsSkeleton />}><PageTransition><SkillDrills /></PageTransition></Suspense>} />
+                <Route path="profile" element={<Suspense fallback={<ProfileSkeleton />}><PageTransition><Profile /></PageTransition></Suspense>} />
+                <Route path="settings" element={<Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense>} />
               </Route>
 
               {/* Legacy redirects: redirect old paths to new /home/* paths */}
