@@ -7,7 +7,7 @@
 🎙️ **Realistic GD Simulations**  
 🤖 **AI-Generated Participants**  
 ⚡ **Instant Feedback & Performance Analysis**   
-🎯 **Website - https://gdbuddy.lovable.app**
+🎯 **Website - https://gdbuddy.vercel.app**
 </div>
 
 ---
