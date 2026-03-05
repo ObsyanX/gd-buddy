@@ -13,6 +13,10 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 
+    <!-- Preload critical fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
 <!-- Open Graph -->
 <meta property="og:title" content="GD Buddy – AI Group Discussion Practice for Placements">
 <meta property="og:description" content="Practice group discussions with AI participants and get instant feedback on communication skills to crack placement GD rounds.">
@@ -55,6 +59,6 @@
     GD Buddy is an AI-powered group discussion practice platform where students can simulate GD rounds with AI participants and receive feedback on communication skills.
   </noscript>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx" defer></script>
   </body>
 </html>

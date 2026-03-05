@@ -15,4 +15,23 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom"],
+          router: ["react-router-dom"],
+          radix: [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-popover",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-tooltip",
+          ],
+          charts: ["recharts"],
+        },
+      },
+    },
+  },
 }));
