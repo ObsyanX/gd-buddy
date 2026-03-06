@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ProfileSkeleton } from '@/components/SkeletonLoaders';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -155,11 +156,7 @@ const Profile = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-xl font-mono">LOADING...</p>
-      </div>);
-
+    return <ProfileSkeleton />;
   }
 
   return (
