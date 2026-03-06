@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DashboardSkeleton } from "@/components/SkeletonLoaders";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,6 +19,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [sessions, setSessions] = useState<any[]>([]);
   const [drills, setDrills] = useState<any[]>([]);
@@ -83,6 +85,8 @@ const Dashboard = () => {
         description: error.message,
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,6 +94,10 @@ const Dashboard = () => {
     await signOut();
     navigate("/auth");
   };
+
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
