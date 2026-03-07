@@ -32,6 +32,7 @@ const SEOFooter = () => (
           <ul className="space-y-1 text-sm text-muted-foreground">
             <li><Link to="/home/profile" className="hover:text-foreground transition-colors">Profile</Link></li>
             <li><Link to="/home/settings" className="hover:text-foreground transition-colors">Settings</Link></li>
+            <li><Link to="/about" className="hover:text-foreground transition-colors">About</Link></li>
           </ul>
         </div>
       </nav>
