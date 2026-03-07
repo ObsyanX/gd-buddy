@@ -45,6 +45,7 @@ const GDTopics = lazy(() => import("./pages/GDTopics"));
 const HowToCrackGD = lazy(() => import("./pages/HowToCrackGD"));
 const CommonGDMistakes = lazy(() => import("./pages/CommonGDMistakes"));
 const CommunicationSkills = lazy(() => import("./pages/CommunicationSkills"));
+const About = lazy(() => import("./pages/About"));
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,7 @@ const App = () => (
               <Route path="/how-to-crack-group-discussion" element={<HowToCrackGD />} />
               <Route path="/common-gd-mistakes" element={<CommonGDMistakes />} />
               <Route path="/communication-skills-for-gd" element={<CommunicationSkills />} />
+              <Route path="/about" element={<About />} />
 
               <Route path="/auth" element={<AuthGuard />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />
