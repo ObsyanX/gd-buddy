@@ -22,6 +22,7 @@ interface SessionSidebarProps {
   onPlayHistory: (recording: PracticeRecording) => void;
   onDeleteHistory: (id: string) => void;
   liveVoiceMetrics: VoiceSessionMetrics | null;
+  onVoiceMetricsUpdate: (metrics: VoiceSessionMetrics) => void;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
