@@ -43,7 +43,11 @@ const orgJsonLd = {
   url: typeof window !== "undefined" ? window.location.origin : "https://gdbuddy.lovable.app",
   logo: typeof window !== "undefined" ? `${window.location.origin}/favicon.ico` : "https://gdbuddy.lovable.app/favicon.ico",
   description: "AI-powered group discussion practice platform for placement preparation.",
-  sameAs: [],
+  sameAs: [
+    "https://github.com/sayandutta111",
+    "https://www.linkedin.com/in/sayandutta111",
+    "https://x.com/gdbuddy",
+  ],
 };
 
 const Landing = () => {

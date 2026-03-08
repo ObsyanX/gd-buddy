@@ -23,7 +23,7 @@ const jsonLd = [
     publisher: { "@type": "Organization", name: "GD Buddy" },
     mainEntityOfPage: { "@type": "WebPage" },
     datePublished: "2025-01-15",
-    dateModified: "2026-03-03",
+    dateModified: "2026-03-08",
   },
   {
     "@context": "https://schema.org",
@@ -79,6 +79,20 @@ const GDTopics = () => (
 
       <article>
         <h1 className="text-display font-bold mb-4">GD Topics for Placements 2025</h1>
+
+        {/* LLM-friendly Quick Summary */}
+        <section className="border-2 border-border p-5 mb-8 bg-muted/30" aria-label="Quick summary">
+          <h2 className="font-bold mb-2">📋 Quick Summary</h2>
+          <p className="text-sm text-muted-foreground mb-3">This page contains 50+ curated group discussion topics across 5 categories — Current Affairs, Business, Social Issues, Technology, and Abstract — frequently asked in campus placements at top companies.</p>
+          <h3 className="font-bold text-sm mb-1">Key Takeaways</h3>
+          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+            <li>Prepare 20-30 topics across categories for comprehensive coverage</li>
+            <li>AI, sustainability, and digital economy are trending in 2025</li>
+            <li>Build argument frameworks instead of memorizing talking points</li>
+            <li>Practice speaking on topics aloud using <Link to="/ai-gd-simulator" className="underline hover:text-foreground">AI GD simulation</Link></li>
+          </ul>
+        </section>
+
         <p className="text-body text-muted-foreground mb-8">
           Group discussions are a critical part of campus placement rounds. Preparing with the right topics can make all the difference. Below is a curated list of 50+ trending GD topics across multiple categories that are frequently asked in placement drives at top companies.
         </p>
@@ -86,7 +100,7 @@ const GDTopics = () => (
         <section className="mb-8">
           <h2 className="text-h2 font-bold mb-2">Why GD Topics Matter in Placements</h2>
           <p className="text-body text-muted-foreground mb-4">
-            Recruiters use group discussions to assess communication skills, leadership ability, teamwork, and analytical thinking. Being familiar with current and classic GD topics helps you structure arguments, present balanced viewpoints, and stand out in competitive placement rounds. Companies like TCS, Infosys, Wipro, Deloitte, and major banks regularly conduct GD rounds.
+            Recruiters use group discussions to assess <a href="https://en.wikipedia.org/wiki/Communication" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">communication skills</a>, leadership ability, teamwork, and analytical thinking. Being familiar with current and classic GD topics helps you structure arguments, present balanced viewpoints, and stand out in competitive placement rounds. Companies like TCS, Infosys, Wipro, Deloitte, and major banks regularly conduct GD rounds.
           </p>
         </section>
 
@@ -116,27 +130,29 @@ const GDTopics = () => (
               <Link to="/how-to-crack-group-discussion">GD Tips & Strategies</Link>
             </Button>
           </div>
-          <div className="mt-4 flex gap-4 flex-wrap text-sm">
-            <Link to="/common-gd-mistakes" className="text-muted-foreground hover:text-foreground underline">Common GD mistakes to avoid →</Link>
-            <Link to="/communication-skills-for-gd" className="text-muted-foreground hover:text-foreground underline">Improve communication skills for GD →</Link>
-          </div>
+        </section>
+
+        {/* Related Resources */}
+        <section className="mb-10 border-2 border-border p-5">
+          <h2 className="font-bold mb-3">Related Resources</h2>
+          <ul className="space-y-2 text-sm">
+            <li><Link to="/how-to-crack-group-discussion" className="text-muted-foreground hover:text-foreground underline">How to crack group discussion — tips & strategies →</Link></li>
+            <li><Link to="/common-gd-mistakes" className="text-muted-foreground hover:text-foreground underline">10 common GD mistakes to avoid →</Link></li>
+            <li><Link to="/communication-skills-for-gd" className="text-muted-foreground hover:text-foreground underline">Communication skills for group discussion →</Link></li>
+            <li><Link to="/group-discussion-preparation-guide" className="text-muted-foreground hover:text-foreground underline">Complete GD preparation guide →</Link></li>
+            <li><a href="https://hbr.org/topic/subject/leadership" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground underline">Harvard Business Review: Leadership insights ↗</a></li>
+          </ul>
         </section>
 
         <section>
           <h2 className="text-h2 font-bold mb-2">Frequently Asked Questions</h2>
           <div className="space-y-4">
-            <details className="border-2 border-border p-4">
-              <summary className="font-semibold cursor-pointer">What type of GD topics are asked in placements?</summary>
-              <p className="mt-2 text-muted-foreground">Companies typically ask current affairs, business, technology, and abstract topics. The trend in 2025 is towards AI, sustainability, and digital economy topics.</p>
-            </details>
-            <details className="border-2 border-border p-4">
-              <summary className="font-semibold cursor-pointer">How many GD topics should I prepare?</summary>
-              <p className="mt-2 text-muted-foreground">Aim to be comfortable with at least 20-30 topics across categories. Focus on building frameworks rather than memorizing points.</p>
-            </details>
-            <details className="border-2 border-border p-4">
-              <summary className="font-semibold cursor-pointer">Can I practice GD online?</summary>
-              <p className="mt-2 text-muted-foreground">Yes! GD Buddy provides AI-powered group discussion simulation where you can practice with realistic AI participants and get instant feedback.</p>
-            </details>
+            {jsonLd[2].mainEntity.map((faq: any, i: number) => (
+              <details key={i} className="border-2 border-border p-4">
+                <summary className="font-semibold cursor-pointer">{faq.name}</summary>
+                <p className="mt-2 text-muted-foreground">{faq.acceptedAnswer.text}</p>
+              </details>
+            ))}
           </div>
         </section>
       </article>
