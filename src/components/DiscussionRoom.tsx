@@ -27,6 +27,7 @@ import SessionHeader from "@/components/discussion/SessionHeader";
 import MessageList from "@/components/discussion/MessageList";
 import MessageInput from "@/components/discussion/MessageInput";
 import SessionSidebar, { FeedbackGrid } from "@/components/discussion/SessionSidebar";
+import { updatePracticeStreak } from "@/lib/streak-updater";
 
 interface DiscussionRoomProps {
   sessionId: string;
