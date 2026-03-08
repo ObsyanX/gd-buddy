@@ -129,6 +129,9 @@ const VoiceMetricsPanel = ({
   // Track accumulated finalized words and latest finalized transcript to avoid double-counting
   const accumulatedFinalWordsRef = useRef<string[]>([]);
   const lastFinalizedTranscriptRef = useRef('');
+  // Track actual voice activity via transcript changes (not just mic-open state)
+  const lastTranscriptChangeRef = useRef<number>(0);
+  const SILENCE_THRESHOLD_MS = 2000; // Stop counting speaking time after 2s of no transcript change
   // Debounce speaking state to avoid rapid true/false toggles
   const stableSpeakingRef = useRef(false);
   const speakingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
