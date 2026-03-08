@@ -87,9 +87,11 @@ Provide score (0-100), time management feedback, and pacing tips.`;
         break;
     }
 
+    const scenarioContext = scenario ? `\nScenario Context: ${scenario}\nEvaluate the response specifically in the context of this scenario. Did they address the scenario appropriately?\n` : '';
+
     const userMessage = `Topic: ${topic}
 ${time_limit_seconds ? `Time Limit: ${time_limit_seconds} seconds` : ''}
-
+${scenarioContext}
 User's Response:
 "${user_response}"
 
