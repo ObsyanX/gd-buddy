@@ -109,7 +109,8 @@ const VoiceMetricsPanel = ({
   currentTranscript,
   sessionStartTime,
   isMinimized = false,
-  onMinimizeToggle
+  onMinimizeToggle,
+  onMetricsUpdate
 }: VoiceMetricsPanelProps) => {
   const [metrics, setMetrics] = useState<VoiceSessionMetrics>({
     totalWords: 0,
