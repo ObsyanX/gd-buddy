@@ -291,6 +291,11 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
 
       if (metricsError) throw metricsError;
 
+      // Store moderator preference for this session
+      if (moderatorEnabled) {
+        localStorage.setItem(`gd-moderator-${session.id}`, 'true');
+      }
+
       toast({
         title: "Session created",
         description: "Ready to start your practice discussion",
