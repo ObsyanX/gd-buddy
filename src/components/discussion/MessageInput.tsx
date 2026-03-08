@@ -10,6 +10,7 @@ interface MessageInputProps {
   isPracticing: boolean;
   isCorrecting: boolean;
   isPaused: boolean;
+  isBusy?: boolean;
   autoSendEnabled: boolean;
   autoSkipEnabled: boolean;
   onInputChange: (value: string) => void;
