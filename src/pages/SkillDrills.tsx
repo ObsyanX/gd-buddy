@@ -49,9 +49,70 @@ const SkillDrills = () => {
   
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Load custom drills from DB + migrate localStorage drills
   useEffect(() => {
-    setCustomDrills(getCustomDrills());
-  }, []);
+    if (!user) return;
+    const loadDrills = async () => {
+      // Fetch from DB
+      const { data, error } = await supabase
+        .from('custom_drills')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading custom drills:', error);
+        return;
+      }
+
+      const dbDrills: DrillType[] = (data || []).map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        description: d.description || '',
+        prompt: d.prompt || undefined,
+        timeLimit: d.time_limit,
+        difficulty: d.difficulty || undefined,
+        icon: Target,
+        type: 'custom' as const,
+      }));
+
+      // Migrate localStorage drills if any
+      const localDrills = getCustomDrillsFromLocalStorage();
+      if (localDrills.length > 0) {
+        const toInsert = localDrills.map(d => ({
+          user_id: user.id,
+          name: d.name,
+          description: d.description,
+          prompt: d.prompt || null,
+          time_limit: d.timeLimit,
+          difficulty: d.difficulty || 'medium',
+        }));
+        const { data: inserted, error: insertError } = await supabase
+          .from('custom_drills')
+          .insert(toInsert)
+          .select();
+
+        if (!insertError && inserted) {
+          clearLocalStorageDrills();
+          const migratedDrills: DrillType[] = inserted.map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            description: d.description || '',
+            prompt: d.prompt || undefined,
+            timeLimit: d.time_limit,
+            difficulty: d.difficulty || undefined,
+            icon: Target,
+            type: 'custom' as const,
+          }));
+          setCustomDrills([...dbDrills, ...migratedDrills]);
+          return;
+        }
+      }
+
+      setCustomDrills(dbDrills);
+    };
+    loadDrills();
+  }, [user]);
 
   const allDrills = [...BUILT_IN_DRILLS, ...customDrills];
 
