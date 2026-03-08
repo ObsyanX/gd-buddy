@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Mic, MicVocal, Square, Loader2, SkipForward, BarChart3 } from "lucide-react";
@@ -18,7 +18,7 @@ interface MessageInputProps {
   onOpenMobileMetrics: () => void;
 }
 
-const AUTO_SEND_DELAY = 7000; // 7 seconds
+const AUTO_SEND_DELAY = 7; // 7 seconds
 
 const MessageInput = ({
   userInput, isListening, isProcessing, isPracticing, isCorrecting,
@@ -26,26 +26,40 @@ const MessageInput = ({
   onStartPractice, onSkipTurn, onOpenMobileMetrics,
 }: MessageInputProps) => {
   const autoSendTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   // Auto-send after 7s of idle when there's unsent text
   useEffect(() => {
-    // Clear existing timer on any change
     if (autoSendTimer.current) {
       clearTimeout(autoSendTimer.current);
       autoSendTimer.current = null;
     }
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
+    setCountdown(null);
 
-    // Only auto-send if there's text, not currently processing/practicing/correcting, and not listening
-    if (userInput.trim() && !isProcessing && !isPracticing && !isCorrecting && !isListening) {
+    const shouldAutoSend = userInput.trim() && !isProcessing && !isPracticing && !isCorrecting && !isListening;
+
+    if (shouldAutoSend) {
+      setCountdown(AUTO_SEND_DELAY);
+      countdownRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev === null || prev <= 1) return null;
+          return prev - 1;
+        });
+      }, 1000);
+
       autoSendTimer.current = setTimeout(() => {
         onSendMessage();
-      }, AUTO_SEND_DELAY);
+      }, AUTO_SEND_DELAY * 1000);
     }
 
     return () => {
-      if (autoSendTimer.current) {
-        clearTimeout(autoSendTimer.current);
-      }
+      if (autoSendTimer.current) clearTimeout(autoSendTimer.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
     };
   }, [userInput, isListening, isProcessing, isPracticing, isCorrecting, onSendMessage]);
   return (
@@ -99,14 +113,19 @@ const MessageInput = ({
           >
             {isListening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
           </Button>
-          <Button
-            onClick={onSendWithVoice}
-            disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting}
-            className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
-            title={isListening ? "Stop & Send" : "Send (Ctrl+Enter)"}
-          >
-            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </Button>
+          <div className="relative flex flex-col items-center">
+            <Button
+              onClick={onSendWithVoice}
+              disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting}
+              className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
+              title={isListening ? "Stop & Send" : "Send (Ctrl+Enter)"}
+            >
+              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </Button>
+            {countdown !== null && (
+              <span className="absolute -bottom-4 text-[9px] font-mono text-muted-foreground">{countdown}s</span>
+            )}
+          </div>
           <Button
             onClick={onSkipTurn}
             disabled={isProcessing || isPracticing}
