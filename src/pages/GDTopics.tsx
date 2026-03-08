@@ -20,6 +20,7 @@ const jsonLd = [
     mainEntityOfPage: { "@type": "WebPage" },
     datePublished: "2025-01-15",
     dateModified: "2026-03-08",
+    numberOfTopics: categories.reduce((a, [, t]) => a + t.length, 0),
   },
   {
     "@context": "https://schema.org",
