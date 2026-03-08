@@ -829,6 +829,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               isUserSpeaking={isListening && !isSpeaking}
               currentTranscript={userInput}
               sessionStartTime={session?.start_time ? new Date(session.start_time).getTime() : undefined}
+              onMetricsUpdate={setLiveVoiceMetrics}
             />
             <PracticeHistory
               recordings={practiceHistory}
