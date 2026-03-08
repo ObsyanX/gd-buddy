@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import SessionHistoryComparison from "@/components/SessionHistoryComparison";
 import SkillProgressWidget from "@/components/SkillProgressWidget";
 import Leaderboard from "@/components/Leaderboard";
+import PracticeStreakWidget from "@/components/PracticeStreakWidget";
+import PerformanceInsights from "@/components/PerformanceInsights";
 
 const Dashboard = () => {
   const navigate = useNavigate();
