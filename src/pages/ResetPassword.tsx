@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SEOFooter from "@/components/SEOFooter";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
