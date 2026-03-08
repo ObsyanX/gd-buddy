@@ -55,6 +55,7 @@ interface VoiceMetricsPanelProps {
   sessionStartTime?: number;
   isMinimized?: boolean;
   onMinimizeToggle?: () => void;
+  onMetricsUpdate?: (metrics: VoiceSessionMetrics) => void;
 }
 
 const splitNormalizedWords = (text: string): string[] => {
