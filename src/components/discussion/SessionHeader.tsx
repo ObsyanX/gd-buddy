@@ -59,6 +59,15 @@ const SessionHeader = ({
                 </SheetHeader>
                 <div className="flex flex-col gap-3 mt-6">
                   <Button
+                    variant={isPaused ? "default" : "outline"}
+                    size="sm"
+                    onClick={onTogglePause}
+                    className={`border-2 justify-start ${isPaused ? '' : ''}`}
+                  >
+                    {isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />}
+                    {isPaused ? 'Continue Discussion' : 'Pause Discussion'}
+                  </Button>
+                  <Button
                     variant="outline" size="sm"
                     onClick={onToggleAutoMic}
                     className={`border-2 justify-start ${autoMicEnabled && autoMicSetting ? 'bg-accent/20' : ''}`}
