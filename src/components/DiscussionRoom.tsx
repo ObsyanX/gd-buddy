@@ -53,15 +53,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [isMobileMetricsOpen, setIsMobileMetricsOpen] = useState(false);
   const { toast } = useToast();
   
-  // Load auto-mic setting from localStorage and initialize autoMicEnabled
+  // Load auto-mic setting from Zustand store
   useEffect(() => {
-    const savedAppSettings = localStorage.getItem('appSettings');
-    if (savedAppSettings) {
-      const parsed = JSON.parse(savedAppSettings) as AppSettings;
-      const setting = parsed.autoMicEnabled ?? true;
-      setAutoMicSetting(setting);
-      setAutoMicEnabled(setting); // Initialize from user preference
-    }
+    const setting = useAppSettingsStore.getState().autoMicEnabled;
+    setAutoMicSetting(setting);
+    setAutoMicEnabled(setting);
   }, []);
   
   // Streaming transcription for real-time voice input (like Google Keyboard)

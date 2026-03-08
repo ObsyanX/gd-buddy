@@ -217,7 +217,7 @@ export const useOnboardingTutorial = () => {
   const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
-    const completed = localStorage.getItem('gd-buddy-onboarding-complete');
+    const completed = useUserStore.getState().onboardingComplete;
     if (!completed) {
       setShowTutorial(true);
     }

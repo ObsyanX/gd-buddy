@@ -43,14 +43,10 @@ export const useTextToSpeech = () => {
 
   // Returns a promise that resolves when audio finishes playing
   const speak = useCallback(async (text: string, speaker?: string, participantVoice?: string): Promise<void> => {
-    // Load voice settings from localStorage
-    const savedSettings = localStorage.getItem('voiceSettings');
-    const settings: VoiceSettings = savedSettings
-      ? JSON.parse(savedSettings)
-      : { voice: 'sarah', speed: 1.0 };
-
-    // Use participant's voice if provided, otherwise fall back to user settings
-    const voice = participantVoice || settings.voice;
+    // Read voice settings from Zustand store
+    const storeState = useVoiceStore.getState();
+    const voice = participantVoice || storeState.voice;
+    const settings = { voice: storeState.voice, speed: storeState.speed };
 
     return new Promise(async (resolve, reject) => {
       // Reset the success flag at the start
