@@ -126,6 +126,7 @@ const SessionSidebar = ({
         isUserSpeaking={isListening && !isSpeaking}
         currentTranscript={userInput}
         sessionStartTime={session?.start_time ? new Date(session.start_time).getTime() : undefined}
+        onMetricsUpdate={() => {}}
       />
 
       <PracticeHistory
