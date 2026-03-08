@@ -41,6 +41,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [userInput, setUserInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [feedback, setFeedback] = useState<any>(null);
+  const [liveVoiceMetrics, setLiveVoiceMetrics] = useState<VoiceSessionMetrics | null>(null);
   const [autoPlayTTS, setAutoPlayTTS] = useState(true);
   const [hasSentFirstMessage, setHasSentFirstMessage] = useState(false);
   const [autoMicEnabled, setAutoMicEnabled] = useState(false);
