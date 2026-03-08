@@ -186,9 +186,11 @@ export const SAMPLE_TOPICS = [
   "Should universities require standardized testing",
 ];
 
+// Legacy localStorage key (for migration)
 const CUSTOM_DRILLS_KEY = 'gd-buddy-custom-drills';
 
-export function getCustomDrills(): DrillType[] {
+// Legacy: get custom drills from localStorage (kept for migration)
+export function getCustomDrillsFromLocalStorage(): DrillType[] {
   try {
     const stored = localStorage.getItem(CUSTOM_DRILLS_KEY);
     if (!stored) return [];
@@ -199,17 +201,23 @@ export function getCustomDrills(): DrillType[] {
   }
 }
 
+export function clearLocalStorageDrills(): void {
+  localStorage.removeItem(CUSTOM_DRILLS_KEY);
+}
+
+// Keep backward-compatible exports (now just wrappers)
+export function getCustomDrills(): DrillType[] {
+  return getCustomDrillsFromLocalStorage();
+}
+
 export function saveCustomDrill(drill: Omit<DrillType, 'icon' | 'type'>): DrillType {
-  const customs = getCustomDrills();
-  const newDrill: DrillType = { ...drill, icon: Target, type: 'custom' };
-  customs.push(newDrill);
-  const toStore = customs.map(({ icon: _icon, ...rest }) => rest);
-  localStorage.setItem(CUSTOM_DRILLS_KEY, JSON.stringify(toStore));
-  return newDrill;
+  // Legacy fallback — real saves now go through Supabase in the component
+  return { ...drill, icon: Target, type: 'custom' };
 }
 
 export function deleteCustomDrill(drillId: string): void {
-  const customs = getCustomDrills().filter(d => d.id !== drillId);
+  // Legacy fallback — real deletes now go through Supabase in the component
+  const customs = getCustomDrillsFromLocalStorage().filter(d => d.id !== drillId);
   const toStore = customs.map(({ icon: _icon, ...rest }) => rest);
   localStorage.setItem(CUSTOM_DRILLS_KEY, JSON.stringify(toStore));
 }
