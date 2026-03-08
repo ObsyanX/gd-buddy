@@ -5,6 +5,13 @@ import { MessageSquare, Users, BarChart3, Sparkles } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import SEOFooter from "@/components/SEOFooter";
 
+const HOME_FAQS = [
+  { q: "How do I start a solo practice session?", a: "Click 'Start Solo Session', choose a GD topic and AI participants, then begin speaking. The AI will respond in real-time with realistic turn-taking." },
+  { q: "What is multiplayer mode?", a: "Multiplayer mode lets you create a room and invite friends to practice GDs together alongside AI participants for a realistic group dynamic." },
+  { q: "How are my sessions scored?", a: "After each session you receive a detailed report with scores on content quality, fluency, filler words, speaking pace, argument structure, eye contact, and posture." },
+  { q: "Can I track my progress over time?", a: "Yes! Your Dashboard shows session history, score trends, and areas for improvement so you can see how your GD skills are developing." },
+];
+
 const Home = () => {
   const navigate = useNavigate();
 
