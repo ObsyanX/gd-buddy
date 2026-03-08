@@ -72,7 +72,25 @@ const About = () => (
         "@context": "https://schema.org",
         "@type": "AboutPage",
         name: "About GD Buddy",
-        description: "AI-Powered Group Discussion Practice Platform",
+        description: "GD Buddy is a modern SaaS platform designed to help students practice and master group discussions with AI-assisted feedback.",
+        url: typeof window !== "undefined" ? `${window.location.origin}/about` : "https://gdbuddy.lovable.app/about",
+        mainEntity: {
+          "@type": "WebApplication",
+          name: "GD Buddy",
+          applicationCategory: "EducationalApplication",
+          operatingSystem: "Web",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+          creator: {
+            "@type": "Person",
+            name: "Sayan Dutta",
+            jobTitle: "Full Stack Developer",
+            url: "https://sayan-dutta-portfolio.vercel.app/",
+            sameAs: [
+              "https://github.com/ObsyanX",
+              "https://www.linkedin.com/in/sayan-dutta-exceptional98/"
+            ]
+          }
+        }
       }}
     />
 
