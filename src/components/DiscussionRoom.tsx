@@ -22,7 +22,7 @@ import ParticipantPresence from "@/components/ParticipantPresence";
 import VoiceMetricsPanel from "@/components/VoiceMetricsPanel";
 import { PracticeHistory } from "@/components/PracticeHistory";
 import { useMultiplayerPresence } from "@/hooks/useMultiplayerPresence";
-import { AppSettings } from "@/pages/Settings";
+import { useAppSettingsStore } from "@/stores/useAppSettingsStore";
 import SessionHeader from "@/components/discussion/SessionHeader";
 import MessageList from "@/components/discussion/MessageList";
 import MessageInput from "@/components/discussion/MessageInput";
