@@ -343,66 +343,68 @@ const VoiceMetricsPanel = ({
   }
 
   return (
-    <Card className="p-4 border-4 border-border space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="font-bold text-sm flex items-center gap-2">
-          <Volume2 className="w-4 h-4" />
-          VOICE METRICS
+    <Card className="p-3 sm:p-4 border-4 border-border space-y-2 sm:space-y-3 w-full max-w-full overflow-hidden">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-bold text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">VOICE METRICS</span>
         </h3>
-        <Badge variant={isUserSpeaking ? "default" : "outline"} className="text-[10px]">
+        <Badge variant={isUserSpeaking ? "default" : "outline"} className="text-[9px] sm:text-[10px] shrink-0">
           {isUserSpeaking ? 'LIVE' : 'PAUSED'}
         </Badge>
       </div>
 
       {/* WPM Display */}
       <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs">
-          <span className="flex items-center gap-1">
-            <TrendingUp className="w-3 h-3" />
-            Speaking Rate
+        <div className="flex items-center justify-between text-[11px] sm:text-xs gap-2">
+          <span className="flex items-center gap-1 min-w-0 shrink-0">
+            <TrendingUp className="w-3 h-3 shrink-0" />
+            <span className="hidden xs:inline">Speaking Rate</span>
+            <span className="xs:hidden">Rate</span>
           </span>
-          <div className="flex items-center gap-2">
-            <span className={`font-bold font-mono ${wpmStatus.color}`}>
-              {displayMetrics.estimatedWpm} WPM
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <span className={`font-bold font-mono text-[11px] sm:text-xs ${wpmStatus.color}`}>
+              {displayMetrics.estimatedWpm} <span className="text-[9px] sm:text-[10px]">WPM</span>
             </span>
-            <Badge variant="outline" className="text-[9px]">
+            <Badge variant="outline" className="text-[8px] sm:text-[9px] px-1 sm:px-1.5">
               {wpmStatus.label}
             </Badge>
           </div>
         </div>
         <Progress 
           value={Math.min(100, (displayMetrics.estimatedWpm / 200) * 100)} 
-          className="h-1.5" 
+          className="h-1 sm:h-1.5" 
         />
-        <p className="text-[9px] text-muted-foreground">
+        <p className="text-[8px] sm:text-[9px] text-muted-foreground">
           Target: 120-180 WPM for clarity
         </p>
       </div>
 
       {/* Filler Words */}
       <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs">
-          <span className="flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" />
-            Filler Words
+        <div className="flex items-center justify-between text-[11px] sm:text-xs gap-2">
+          <span className="flex items-center gap-1 min-w-0 shrink-0">
+            <AlertTriangle className="w-3 h-3 shrink-0" />
+            <span className="hidden xs:inline">Filler Words</span>
+            <span className="xs:hidden">Fillers</span>
           </span>
-          <div className="flex items-center gap-2">
-            <span className={`font-bold font-mono ${fillerStatus.color}`}>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <span className={`font-bold font-mono text-[11px] sm:text-xs ${fillerStatus.color}`}>
               {displayMetrics.fillerCount}
             </span>
-            <span className="text-muted-foreground">
+            <span className="text-muted-foreground text-[10px] sm:text-xs">
               ({(displayMetrics.fillerRate * 100).toFixed(1)}%)
             </span>
           </div>
         </div>
         <Progress 
           value={Math.min(100, displayMetrics.fillerRate * 1000)} 
-          className="h-1.5" 
+          className="h-1 sm:h-1.5" 
         />
         {topFillers.length > 0 && (
           <div className="flex flex-wrap gap-1 pt-1">
             {topFillers.map(([word, count]) => (
-              <Badge key={word} variant="secondary" className="text-[9px] px-1.5 py-0">
+              <Badge key={word} variant="secondary" className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0">
                 "{word}" × {count}
               </Badge>
             ))}
@@ -421,23 +423,23 @@ const VoiceMetricsPanel = ({
       />
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border text-center">
-        <div>
-          <div className="text-lg font-bold font-mono">{displayMetrics.totalWords}</div>
-          <div className="text-[9px] text-muted-foreground">Words</div>
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-2 border-t border-border text-center">
+        <div className="min-w-0">
+          <div className="text-base sm:text-lg font-bold font-mono truncate">{displayMetrics.totalWords}</div>
+          <div className="text-[8px] sm:text-[9px] text-muted-foreground">Words</div>
         </div>
-        <div>
-          <div className="text-lg font-bold font-mono flex items-center justify-center gap-1">
-            <Timer className="w-3 h-3" />
-            {Math.floor(displayMetrics.speakingTimeSeconds / 60)}:{String(Math.floor(displayMetrics.speakingTimeSeconds % 60)).padStart(2, '0')}
+        <div className="min-w-0">
+          <div className="text-base sm:text-lg font-bold font-mono flex items-center justify-center gap-0.5 sm:gap-1">
+            <Timer className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+            <span className="truncate">{Math.floor(displayMetrics.speakingTimeSeconds / 60)}:{String(Math.floor(displayMetrics.speakingTimeSeconds % 60)).padStart(2, '0')}</span>
           </div>
-          <div className="text-[9px] text-muted-foreground">Speaking Time</div>
+          <div className="text-[8px] sm:text-[9px] text-muted-foreground">Speaking Time</div>
         </div>
-        <div>
-          <div className={`text-lg font-bold font-mono ${fillerStatus.color}`}>
+        <div className="min-w-0">
+          <div className={`text-sm sm:text-lg font-bold font-mono truncate ${fillerStatus.color}`}>
             {fillerStatus.label}
           </div>
-          <div className="text-[9px] text-muted-foreground">Filler Status</div>
+          <div className="text-[8px] sm:text-[9px] text-muted-foreground">Filler Status</div>
         </div>
       </div>
     </Card>
