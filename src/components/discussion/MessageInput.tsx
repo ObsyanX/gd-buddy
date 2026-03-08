@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Mic, Square, Loader2, SkipForward } from "lucide-react";
+import { Send, Mic, MicVocal, Square, Loader2, SkipForward, BarChart3 } from "lucide-react";
 
 interface MessageInputProps {
   userInput: string;
@@ -53,7 +53,7 @@ const MessageInput = ({
             title="View Metrics"
             onClick={onOpenMobileMetrics}
           >
-            <Mic className="w-4 h-4" />
+            <BarChart3 className="w-4 h-4" />
           </Button>
           <Button
             onClick={onStartPractice}
@@ -62,7 +62,7 @@ const MessageInput = ({
             className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
             title="Practice Mode (Ctrl+M)"
           >
-            <Mic className="w-4 h-4" />
+            <MicVocal className="w-4 h-4" />
           </Button>
           <Button
             onClick={onVoiceInput}

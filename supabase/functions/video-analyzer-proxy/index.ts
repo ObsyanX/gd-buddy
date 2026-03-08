@@ -131,7 +131,7 @@ serve(async (req) => {
 
     // Send to backend
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 55000);
 
     const response = await fetch(`${BACKEND_URL}/analyze/base64`, {
       method: 'POST',
