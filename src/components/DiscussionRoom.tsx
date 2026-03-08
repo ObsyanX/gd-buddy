@@ -27,6 +27,7 @@ import SessionHeader from "@/components/discussion/SessionHeader";
 import MessageList from "@/components/discussion/MessageList";
 import MessageInput from "@/components/discussion/MessageInput";
 import SessionSidebar, { FeedbackGrid } from "@/components/discussion/SessionSidebar";
+import { updatePracticeStreak } from "@/lib/streak-updater";
 
 interface DiscussionRoomProps {
   sessionId: string;
@@ -622,6 +623,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         .from('gd_sessions')
         .update({ status: 'completed', end_time: new Date().toISOString() })
         .eq('id', sessionId);
+
+      // Update practice streak
+      if (currentUserId && session?.start_time) {
+        const durationMin = Math.max(1, Math.round(
+          (Date.now() - new Date(session.start_time).getTime()) / 60000
+        ));
+        await updatePracticeStreak(currentUserId, durationMin);
+      }
 
       onComplete();
     } catch (error: any) {

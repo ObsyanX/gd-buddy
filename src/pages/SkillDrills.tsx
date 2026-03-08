@@ -26,6 +26,7 @@ import { Target } from "lucide-react";
 import CreateDrillModal from "@/components/CreateDrillModal";
 import DrillHistory from "@/components/DrillHistory";
 import { updateSkillProgress } from "@/components/SkillProgressWidget";
+import { updatePracticeStreak } from "@/lib/streak-updater";
 
 const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -248,6 +249,12 @@ const SkillDrills = () => {
           user.id,
           skills.map(s => ({ skill_name: s, score: feedbackData.score, minutes }))
         );
+      }
+
+      // Update practice streak
+      if (user?.id) {
+        const minutes = Math.max(1, Math.round(selectedDrill.timeLimit / 60));
+        await updatePracticeStreak(user.id, minutes);
       }
 
       toast({ title: "Drill completed!", description: `Score: ${feedbackData.score}%` });
