@@ -10,9 +10,10 @@ export interface DrillType {
   description: string;
   timeLimit: number;
   icon: any;
-  type?: "builtin" | "custom";
+  type?: "builtin" | "custom" | "scenario";
   prompt?: string;
   difficulty?: string;
+  scenario?: string;
 }
 
 // Maps unique drill IDs to the 4 API-level drill types for backend compatibility
