@@ -40,6 +40,7 @@ const MultiplayerSetup = lazy(() => import("./pages/MultiplayerSetup"));
 const SkillDrills = lazy(() => import("./pages/SkillDrills"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
+const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
 
 // SEO content pages (public, indexable)
 const GDTopics = lazy(() => import("./pages/GDTopics"));
