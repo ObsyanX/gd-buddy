@@ -783,6 +783,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           session={session}
           participants={participants}
           feedback={feedback}
+          liveVoiceMetrics={liveVoiceMetrics}
           isListening={isListening}
           isSpeaking={isSpeaking}
           userInput={userInput}
@@ -791,6 +792,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           practiceHistory={practiceHistory}
           currentPlayingId={currentPlayingId}
           onVideoMetricsUpdate={handleVideoMetricsUpdate}
+          onVoiceMetricsUpdate={setLiveVoiceMetrics}
           onPlayHistory={playHistoryRecording}
           onDeleteHistory={deleteHistoryRecording}
         />
