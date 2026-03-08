@@ -55,7 +55,7 @@ const Landing = () => {
         description="Practice group discussions with AI participants, get instant feedback on communication skills, and crack placement GD rounds. Free AI-powered GD simulator for students."
         keywords="GD Buddy, group discussion practice, GD preparation, AI GD simulator, placement preparation tool, communication skills for GD, mock GD online"
         path="/"
-        jsonLd={[webAppJsonLd, orgJsonLd]}
+        jsonLd={[webAppJsonLd, orgJsonLd, faqJsonLd]}
       />
 
       <header className="border-b-4 border-border p-4 md:p-6" role="banner">
