@@ -3,7 +3,7 @@ import SEOHead from "@/components/SEOHead";
 import SEOFooter from "@/components/SEOFooter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, BookOpen, ArrowRight } from "lucide-react";
+import { MessageSquare, ArrowRight } from "lucide-react";
 
 const jsonLd = [
   {

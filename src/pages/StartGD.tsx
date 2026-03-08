@@ -30,7 +30,7 @@ const jsonLd = [
 const strategies = [
   { title: "Open with a Fact or Statistic", desc: "Starting with a relevant data point immediately establishes credibility. For example: 'According to a recent NASSCOM report, AI will create 97 million new jobs by 2025, which makes this topic particularly relevant for us as future professionals.'" },
   { title: "Ask a Thought-Provoking Question", desc: "A rhetorical question engages the group immediately. 'When we talk about social media regulation, who decides what's acceptable speech — the government, the platform, or the users?'" },
-  { title: "Define the Scope", desc: "Clearly defining what the topic covers (and doesn't) shows analytical thinking. 'Let's break down "Work from Home" into three dimensions — productivity, employee well-being, and organizational culture.'" },
+  { title: "Define the Scope", desc: "Clearly defining what the topic covers (and doesn't) shows analytical thinking. 'Let\'s break down Work from Home into three dimensions — productivity, employee well-being, and organizational culture.'" },
   { title: "Use a Quote or Anecdote", desc: "A relevant quote from a known figure adds weight. Keep it brief and immediately connect it to the topic. Avoid obscure quotes that need explaining." },
   { title: "Present a Contrarian View", desc: "Starting with a perspective that challenges the obvious shows independent thinking. 'While most people assume AI will replace jobs, I'd argue it will create more specialized roles than it eliminates.'" },
   { title: "Connect to Current Events", desc: "Linking the topic to recent news shows awareness. 'Just last week, India crossed 10 billion UPI transactions in a month — making this discussion about digital payments very timely.'" },
