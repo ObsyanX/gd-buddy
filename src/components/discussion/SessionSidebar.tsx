@@ -86,7 +86,7 @@ const FeedbackGrid = ({ feedback, liveVoiceMetrics }: { feedback: any; liveVoice
 };
 
 const SessionSidebar = ({
-  session, participants, feedback, isListening, isSpeaking, userInput,
+  session, participants, feedback, liveVoiceMetrics, isListening, isSpeaking, userInput,
   presenceState, typingParticipants, practiceHistory, currentPlayingId,
   onVideoMetricsUpdate, onPlayHistory, onDeleteHistory,
 }: SessionSidebarProps) => {
