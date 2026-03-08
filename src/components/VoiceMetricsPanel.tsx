@@ -266,6 +266,10 @@ const VoiceMetricsPanel = ({
     // Track when transcript actually changes (real speech activity)
     if (currentTranscript.length > prevLength) {
       lastTranscriptChangeRef.current = Date.now();
+      // Restart speaking clock if it was paused due to silence
+      if (stableSpeaking && !speakingStartRef.current) {
+        speakingStartRef.current = Date.now();
+      }
     }
     
     // If transcript was cleared/sent (length reduced significantly), finalize previous text
