@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Info, User } from "lucide-react";
+import { Info, User, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import VideoMonitor, { VideoMetrics } from "@/components/VideoMonitor";
 import ParticipantPresence from "@/components/ParticipantPresence";
 import { ParticipantPresence as PresenceType } from "@/hooks/useMultiplayerPresence";
@@ -70,6 +70,32 @@ const FeedbackGrid = ({ feedback, liveVoiceMetrics }: { feedback: any; liveVoice
             <p className="text-xs font-mono text-muted-foreground leading-relaxed">{resolvedFeedback.live_hint}</p>
           </div>
         )}
+        {hasLiveVoiceData && liveVoiceMetrics && (() => {
+          const words = liveVoiceMetrics.totalWords;
+          const speakTime = liveVoiceMetrics.speakingTimeSeconds;
+          if (words < 8 || speakTime < 5) {
+            return (
+              <div className="flex items-center gap-1.5 pt-2 border-t border-border">
+                <Loader2 className="w-3 h-3 text-muted-foreground animate-spin" />
+                <p className="text-[10px] text-muted-foreground">Warming up — keep speaking for stable scores</p>
+              </div>
+            );
+          }
+          if (words < 30) {
+            return (
+              <div className="flex items-center gap-1.5 pt-2 border-t border-border">
+                <AlertCircle className="w-3 h-3 text-yellow-500" />
+                <p className="text-[10px] text-yellow-600 dark:text-yellow-400">Low confidence — speak more for accurate metrics</p>
+              </div>
+            );
+          }
+          return (
+            <div className="flex items-center gap-1.5 pt-2 border-t border-border">
+              <CheckCircle2 className="w-3 h-3 text-green-500" />
+              <p className="text-[10px] text-green-600 dark:text-green-400">Stable — metrics are reliable</p>
+            </div>
+          );
+        })()}
       </div>
     );
   }
