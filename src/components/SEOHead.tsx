@@ -37,6 +37,19 @@ const SEOHead = ({
   const canonicalUrl = `${base}${path}`;
   const ogImage = image || `${base}/og-image.png`;
 
+  const globalWebSiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "GD Buddy",
+    alternateName: "GD Buddy AI",
+    url: "https://gd-buddy.vercel.app",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: "https://gd-buddy.vercel.app/search?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <Helmet>
       <title>{fullTitle}</title>
@@ -61,6 +74,8 @@ const SEOHead = ({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
+
+      <script type="application/ld+json">{JSON.stringify(globalWebSiteJsonLd)}</script>
 
       {jsonLd && (
         Array.isArray(jsonLd) && jsonLd.length > 0 && jsonLd[0]["@context"]
