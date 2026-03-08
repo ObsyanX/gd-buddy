@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Send, Mic, Square, User, Bot, Info, Volume2, VolumeX, Play, RefreshCw, Check, X, HelpCircle, Loader2, Sparkles, SkipForward, Menu, BarChart3 } from "lucide-react";
+import { Mic, Info, Play, RefreshCw, Check, X, Loader2, SkipForward, BarChart3, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
@@ -16,14 +14,19 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useStreamingTranscription } from "@/hooks/useStreamingTranscription";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { VoiceActivityIndicator } from "@/components/VoiceActivityIndicator";
-import { PracticeHistory } from "@/components/PracticeHistory";
 import { WPMDisplay, useWordCountEstimator } from "@/components/WPMDisplay";
 import { OnboardingTutorial, useOnboardingTutorial } from "@/components/OnboardingTutorial";
-import VideoMonitor, { VideoMetrics } from "@/components/VideoMonitor";
+import { VideoMetrics } from "@/components/VideoMonitor";
+import VideoMonitor from "@/components/VideoMonitor";
 import ParticipantPresence from "@/components/ParticipantPresence";
 import VoiceMetricsPanel from "@/components/VoiceMetricsPanel";
+import { PracticeHistory } from "@/components/PracticeHistory";
 import { useMultiplayerPresence } from "@/hooks/useMultiplayerPresence";
 import { AppSettings } from "@/pages/Settings";
+import SessionHeader from "@/components/discussion/SessionHeader";
+import MessageList from "@/components/discussion/MessageList";
+import MessageInput from "@/components/discussion/MessageInput";
+import SessionSidebar, { FeedbackGrid } from "@/components/discussion/SessionSidebar";
 
 interface DiscussionRoomProps {
   sessionId: string;
