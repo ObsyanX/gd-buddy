@@ -5,6 +5,25 @@ import { MessageSquare, Users, BarChart3, Sparkles, Mic, Target, BookOpen, Arrow
 import SEOHead from "@/components/SEOHead";
 import SEOFooter from "@/components/SEOFooter";
 
+const LANDING_FAQS = [
+  { q: "What is GD Buddy?", a: "GD Buddy is a free AI-powered platform that lets students practice group discussions with realistic AI participants, get real-time feedback on communication skills, and prepare for placement GD rounds." },
+  { q: "Is GD Buddy free to use?", a: "Yes. GD Buddy is completely free. You can start practicing group discussions instantly after signing up." },
+  { q: "How does the AI simulate a real group discussion?", a: "GD Buddy uses multiple AI personas with distinct debate styles, tones, and viewpoints. They respond to your arguments in real-time with realistic turn-taking, just like a real placement GD." },
+  { q: "What kind of feedback does GD Buddy provide?", a: "You receive detailed post-session reports covering content quality, fluency, filler word count, speaking pace, argument structure, eye contact, posture, and actionable improvement suggestions." },
+  { q: "Can I practice with friends?", a: "Yes! GD Buddy has a multiplayer mode where you can create a room, share a code with friends, and practice together alongside AI participants." },
+  { q: "Who is GD Buddy for?", a: "GD Buddy is designed for engineering and MBA students preparing for campus placements, job seekers, public speaking enthusiasts, and study groups who want structured GD practice." },
+];
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: LANDING_FAQS.map(f => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
+
 const webAppJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
