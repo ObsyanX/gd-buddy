@@ -21,6 +21,7 @@ interface SessionSidebarProps {
   onVideoMetricsUpdate: (metrics: VideoMetrics) => void;
   onPlayHistory: (recording: PracticeRecording) => void;
   onDeleteHistory: (id: string) => void;
+  liveVoiceMetrics: VoiceSessionMetrics | null;
 }
 
 const FeedbackGrid = ({ feedback }: { feedback: any }) => {
