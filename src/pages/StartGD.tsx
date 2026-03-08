@@ -23,6 +23,7 @@ const jsonLd = [
       { "@type": "Question", name: "Should I always try to start the GD?", acceptedAnswer: { "@type": "Answer", text: "Not necessarily. Only initiate if you have a strong opening ready. A weak start hurts more than not starting. If someone else starts, focus on making a strong second or third contribution." } },
       { "@type": "Question", name: "What is the best way to open a group discussion?", acceptedAnswer: { "@type": "Answer", text: "The best openings use a relevant fact/statistic, a thought-provoking question, or a clear definition of the topic. Avoid generic openings like 'This is a very important topic'." } },
       { "@type": "Question", name: "How long should my opening statement be?", acceptedAnswer: { "@type": "Answer", text: "Keep your opening to 30-45 seconds. Define the topic, state your position, and set the direction for the discussion. Longer openings risk being seen as dominating." } },
+      { "@type": "Question", name: "What is the best way to practice group discussion openings?", acceptedAnswer: { "@type": "Answer", text: "Use GD Buddy's AI-powered group discussion simulator to practice opening statements. The AI participants respond to your opening in real-time, helping you refine your technique." } },
     ],
   },
   {

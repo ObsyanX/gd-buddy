@@ -24,6 +24,8 @@ const jsonLd = [
       { "@type": "Question", name: "How realistic is the AI simulation?", acceptedAnswer: { "@type": "Answer", text: "GD Buddy uses advanced AI models to generate contextual, nuanced responses. AI participants interrupt, agree, disagree, and build on points naturally — simulating real human group dynamics." } },
       { "@type": "Question", name: "What feedback do I get after a session?", acceptedAnswer: { "@type": "Answer", text: "You receive a detailed report with scores on content quality, communication clarity, fluency, filler word count, speaking pace, eye contact, posture, and actionable improvement tips." } },
       { "@type": "Question", name: "Is the AI GD simulator free?", acceptedAnswer: { "@type": "Answer", text: "Yes, GD Buddy is completely free to use. You can practice unlimited GD sessions with AI participants at no cost." } },
+      { "@type": "Question", name: "Is there an AI tool for group discussion practice?", acceptedAnswer: { "@type": "Answer", text: "Yes! GD Buddy is a free AI-powered group discussion practice platform. It simulates realistic GD rounds with AI participants, provides real-time feedback, and helps you prepare for campus placements." } },
+      { "@type": "Question", name: "How can I practice GD online?", acceptedAnswer: { "@type": "Answer", text: "You can practice GD online using GD Buddy's AI simulator. Choose a topic, select AI participants, and start speaking — the AI responds in real-time just like a real group discussion." } },
     ],
   },
   {

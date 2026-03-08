@@ -23,6 +23,7 @@ const jsonLd = [
       { "@type": "Question", name: "Who should conclude a group discussion?", acceptedAnswer: { "@type": "Answer", text: "Anyone who has been listening actively and can summarize all viewpoints fairly. The concluder doesn't need to be the person who started the discussion. Taking charge of summarizing shows leadership and listening skills." } },
       { "@type": "Question", name: "What should a GD conclusion include?", acceptedAnswer: { "@type": "Answer", text: "A good GD conclusion should: 1) Acknowledge key points from all sides, 2) Present the majority consensus (if any), 3) Offer a balanced perspective, and 4) End with a forward-looking statement." } },
       { "@type": "Question", name: "How long should a GD summary be?", acceptedAnswer: { "@type": "Answer", text: "Keep your summary to 45-60 seconds. Cover the main arguments from all sides, note the consensus, and end with a brief personal stance or call to action." } },
+      { "@type": "Question", name: "How can I practice GD summarization online?", acceptedAnswer: { "@type": "Answer", text: "Use GD Buddy's AI group discussion simulator to practice full GD sessions including conclusions. The AI provides feedback on how well you summarized the discussion." } },
     ],
   },
   {
