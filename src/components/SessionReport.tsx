@@ -6,7 +6,7 @@ import PerTurnAnalysis from "@/components/PerTurnAnalysis";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic, Eye, User, Camera, BarChart3 } from "lucide-react";
+import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic, Eye, User, Camera, BarChart3, Bot, Star, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
