@@ -71,9 +71,9 @@ export const useTextToSpeech = () => {
           body: { text, voice }
         });
 
-        if (error) {
-          console.warn('ElevenLabs TTS failed, falling back to browser TTS:', error);
-          // Fallback to browser TTS only if ElevenLabs didn't succeed
+        if (error || !data?.audioContent) {
+          console.warn('ElevenLabs TTS unavailable, using browser TTS:', error?.message || 'No audio content');
+          // Silently fallback to browser TTS
           try {
             await speakWithBrowserTTS(text, speaker);
             resolve();

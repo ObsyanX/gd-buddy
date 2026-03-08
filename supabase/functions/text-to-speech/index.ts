@@ -128,7 +128,15 @@ serve(async (req) => {
     }
 
     if (!response || !response.ok) {
-      throw new Error(`All ElevenLabs API keys failed. Last error: ${lastError}`);
+      // Return a structured error with fallback hint so client uses browser TTS
+      return new Response(
+        JSON.stringify({ 
+          error: 'ElevenLabs unavailable', 
+          fallback: true,
+          detail: lastError.substring(0, 200)
+        }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Convert audio buffer to base64 in chunks to avoid stack overflow
