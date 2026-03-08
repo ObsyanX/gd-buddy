@@ -19,7 +19,7 @@ const getCanonicalBase = () => {
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
-  return "https://gdbuddy.lovable.app";
+  return "https://gd-buddy.vercel.app";
 };
 
 const SEOHead = ({

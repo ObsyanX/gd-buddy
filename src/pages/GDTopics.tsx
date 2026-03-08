@@ -33,7 +33,7 @@ const jsonLd = [
         "@type": "ListItem",
         position: ci * 10 + i + 1,
         name: t.title,
-        url: `https://gdbuddy.lovable.app/gd-topic/${t.slug}`,
+        url: `https://gd-buddy.vercel.app/gd-topic/${t.slug}`,
       }))
     ),
   },
