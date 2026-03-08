@@ -62,7 +62,7 @@ const MessageInput = ({
             className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
             title="Practice Mode (Ctrl+M)"
           >
-            <Mic className="w-4 h-4" />
+            <MicVocal className="w-4 h-4" />
           </Button>
           <Button
             onClick={onVoiceInput}
