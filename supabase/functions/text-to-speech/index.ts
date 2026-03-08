@@ -128,14 +128,14 @@ serve(async (req) => {
     }
 
     if (!response || !response.ok) {
-      // Return a structured error with fallback hint so client uses browser TTS
+      // Return 200 with fallback flag to avoid client runtime popups from 5xx responses
       return new Response(
-        JSON.stringify({ 
-          error: 'ElevenLabs unavailable', 
+        JSON.stringify({
           fallback: true,
+          message: 'ElevenLabs unavailable',
           detail: lastError.substring(0, 200)
         }),
-        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
