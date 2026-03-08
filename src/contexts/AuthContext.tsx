@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useExperimentStore } from '@/stores/useExperimentStore';
 
 interface AuthContextType {
   user: User | null;
@@ -27,6 +28,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        // Load experiments when user authenticates
+        if (session?.user) {
+          useExperimentStore.getState().loadExperiments(session.user.id);
+        }
       }
     );
 

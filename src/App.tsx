@@ -4,8 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import '@/lib/error-monitor'; // Initialize global error monitoring
 import {
   HomeSkeleton,
   DashboardSkeleton,
@@ -40,6 +41,7 @@ const MultiplayerSetup = lazy(() => import("./pages/MultiplayerSetup"));
 const SkillDrills = lazy(() => import("./pages/SkillDrills"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
+const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
 
 // SEO content pages (public, indexable)
 const GDTopics = lazy(() => import("./pages/GDTopics"));
@@ -131,6 +133,7 @@ const App = () => (
                 <Route path="drills" element={<ErrorBoundary fallbackTitle="Drills Error"><Suspense fallback={<DrillsSkeleton />}><PageTransition><SkillDrills /></PageTransition></Suspense></ErrorBoundary>} />
                 <Route path="profile" element={<Suspense fallback={<ProfileSkeleton />}><PageTransition><Profile /></PageTransition></Suspense>} />
                 <Route path="settings" element={<Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense>} />
+                <Route path="instructor" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><InstructorDashboard /></PageTransition></Suspense>} />
               </Route>
 
               {/* Legacy redirects: redirect old paths to new /home/* paths */}

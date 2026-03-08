@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   MessageSquare, LayoutDashboard, Dumbbell, Users, User,
-  Settings as SettingsIcon, LogOut, Menu, Play,
+  Settings as SettingsIcon, LogOut, Menu, Play, GraduationCap,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { label: "DASHBOARD", icon: LayoutDashboard, path: "/home/dashboard" },
   { label: "PROFILE", icon: User, path: "/home/profile" },
   { label: "DRILLS", icon: Dumbbell, path: "/home/drills" },
+  { label: "INSTRUCTOR", icon: GraduationCap, path: "/home/instructor" },
   { label: "SETTINGS", icon: SettingsIcon, path: "/home/settings" },
 ];
 
@@ -54,7 +55,7 @@ const AppLayout = () => {
 
           {/* Desktop nav */}
           <nav className="hidden lg:flex gap-1" aria-label="Main navigation">
-            {NAV_ITEMS.slice(1, 5).map((item) => (
+            {NAV_ITEMS.slice(1, 6).map((item) => (
               <Button
                 key={item.path}
                 variant={isActive(item.path) ? "default" : "outline"}
