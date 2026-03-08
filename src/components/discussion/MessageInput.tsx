@@ -53,7 +53,7 @@ const MessageInput = ({
             title="View Metrics"
             onClick={onOpenMobileMetrics}
           >
-            <Mic className="w-4 h-4" />
+            <BarChart3 className="w-4 h-4" />
           </Button>
           <Button
             onClick={onStartPractice}
