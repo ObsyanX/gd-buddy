@@ -13,8 +13,8 @@ const jsonLd = [
     description: "Master non-verbal communication for GD rounds. Learn eye contact, posture, gestures, and facial expression techniques that impress evaluators.",
     author: { "@type": "Organization", name: "GD Buddy" },
     publisher: { "@type": "Organization", name: "GD Buddy" },
-    datePublished: "2026-03-08",
-    dateModified: "2026-03-08",
+    datePublished: "2026-03-08T00:00:00+05:30",
+    dateModified: "2026-03-08T00:00:00+05:30",
   },
   {
     "@context": "https://schema.org",
