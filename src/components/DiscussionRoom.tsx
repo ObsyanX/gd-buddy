@@ -19,7 +19,7 @@ import { OnboardingTutorial, useOnboardingTutorial } from "@/components/Onboardi
 import { VideoMetrics } from "@/components/VideoMonitor";
 import VideoMonitor from "@/components/VideoMonitor";
 import ParticipantPresence from "@/components/ParticipantPresence";
-import VoiceMetricsPanel from "@/components/VoiceMetricsPanel";
+import VoiceMetricsPanel, { VoiceSessionMetrics } from "@/components/VoiceMetricsPanel";
 import { PracticeHistory } from "@/components/PracticeHistory";
 import { useMultiplayerPresence } from "@/hooks/useMultiplayerPresence";
 import { useAppSettingsStore } from "@/stores/useAppSettingsStore";
