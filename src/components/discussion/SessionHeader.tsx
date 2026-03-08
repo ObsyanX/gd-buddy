@@ -1,7 +1,8 @@
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Mic, Volume2, VolumeX, Square, HelpCircle, Menu, Sparkles, Pause, Play } from "lucide-react";
+import { Mic, Volume2, VolumeX, Square, HelpCircle, Menu, Sparkles, Pause, Play, Clock } from "lucide-react";
 
 interface SessionHeaderProps {
   session: any;
@@ -20,11 +21,48 @@ interface SessionHeaderProps {
   onTogglePause: () => void;
 }
 
+const formatTimer = (seconds: number): string => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+};
+
 const SessionHeader = ({
   session, messagesCount, isListening, isCorrecting,
   autoMicEnabled, autoMicSetting, autoPlayTTS, usingFallbackTTS,
   isPaused, onToggleAutoMic, onToggleTTS, onResetTutorial, onEndSession, onTogglePause,
 }: SessionHeaderProps) => {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Session timer that pauses/resumes with discussion
+  useEffect(() => {
+    if (!session?.start_time) return;
+
+    // Calculate initial elapsed from start_time
+    const startMs = new Date(session.start_time).getTime();
+    const initialElapsed = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+    setElapsedSeconds(initialElapsed);
+  }, [session?.start_time]);
+
+  useEffect(() => {
+    if (isPaused) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+
+    intervalRef.current = setInterval(() => {
+      setElapsedSeconds(prev => prev + 1);
+    }, 1000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isPaused]);
+
   return (
     <header className="border-b-4 border-border p-2 sm:p-4">
       <div className="container mx-auto">
@@ -41,10 +79,17 @@ const SessionHeader = ({
             <div className="flex gap-1 mt-1 flex-wrap">
               <Badge variant="secondary" className="text-[10px]">{session.topic_category}</Badge>
               <Badge variant="outline" className="border text-[10px]">{messagesCount} turns</Badge>
+              <Badge variant="outline" className={`border text-[10px] font-mono ${isPaused ? 'bg-warning/10 text-warning' : ''}`}>
+                <Clock className="w-2.5 h-2.5 mr-0.5" />
+                {formatTimer(elapsedSeconds)}
+              </Badge>
             </div>
           </div>
           <div className="flex items-center gap-1">
-            {isListening && (
+            {isPaused && (
+              <Badge variant="outline" className="border bg-warning/20 text-warning text-[10px] px-1.5">⏸</Badge>
+            )}
+            {isListening && !isPaused && (
               <Badge variant="outline" className="border animate-pulse bg-destructive/20 text-[10px] px-1.5">🎤</Badge>
             )}
             <Sheet>
@@ -62,7 +107,7 @@ const SessionHeader = ({
                     variant={isPaused ? "default" : "outline"}
                     size="sm"
                     onClick={onTogglePause}
-                    className={`border-2 justify-start ${isPaused ? '' : ''}`}
+                    className="border-2 justify-start"
                   >
                     {isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />}
                     {isPaused ? 'Continue Discussion' : 'Pause Discussion'}
@@ -106,10 +151,15 @@ const SessionHeader = ({
         <div className="hidden md:flex items-center justify-between">
           <div>
             <h1 className="text-xl lg:text-2xl font-bold">{session.topic}</h1>
-            <div className="flex gap-2 mt-1 flex-wrap">
+            <div className="flex gap-2 mt-1 flex-wrap items-center">
               <Badge variant="secondary">{session.topic_category}</Badge>
               <Badge variant="outline" className="border-2">{messagesCount} turns</Badge>
-              {isListening && (
+              <Badge variant="outline" className={`border-2 font-mono ${isPaused ? 'bg-warning/10 text-warning' : ''}`}>
+                <Clock className="w-3 h-3 mr-1" />
+                {formatTimer(elapsedSeconds)}
+                {isPaused && <span className="ml-1 text-[10px]">⏸</span>}
+              </Badge>
+              {isListening && !isPaused && (
                 <Badge variant="outline" className="border-2 animate-pulse bg-destructive/20">🎤 Listening...</Badge>
               )}
               {isCorrecting && (

@@ -53,6 +53,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [isWaitingForSpeech, setIsWaitingForSpeech] = useState(false);
   const [isMobileMetricsOpen, setIsMobileMetricsOpen] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [autoSendEnabled, setAutoSendEnabled] = useState(true);
+  const [autoSkipEnabled, setAutoSkipEnabled] = useState(true);
   const { toast } = useToast();
   
   // Load auto-mic setting from Zustand store
@@ -803,6 +805,9 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             isProcessing={isProcessing}
             isPracticing={isPracticing}
             isCorrecting={isCorrecting}
+            isPaused={isPaused}
+            autoSendEnabled={autoSendEnabled}
+            autoSkipEnabled={autoSkipEnabled}
             onInputChange={setUserInput}
             onSendMessage={handleSendMessage}
             onSendWithVoice={handleSendWithVoice}
@@ -810,6 +815,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             onStartPractice={startPracticeRecording}
             onSkipTurn={() => handleSendMessageDirect("[Skipped turn]")}
             onOpenMobileMetrics={() => setIsMobileMetricsOpen(true)}
+            onToggleAutoSend={() => setAutoSendEnabled(prev => !prev)}
+            onToggleAutoSkip={() => setAutoSkipEnabled(prev => !prev)}
           />
         </div>
 

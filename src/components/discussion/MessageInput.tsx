@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Mic, MicVocal, Square, Loader2, SkipForward, BarChart3 } from "lucide-react";
+import { Send, Mic, MicVocal, Square, Loader2, SkipForward, BarChart3, SendHorizonal, Timer } from "lucide-react";
 
 interface MessageInputProps {
   userInput: string;
@@ -9,6 +9,9 @@ interface MessageInputProps {
   isProcessing: boolean;
   isPracticing: boolean;
   isCorrecting: boolean;
+  isPaused: boolean;
+  autoSendEnabled: boolean;
+  autoSkipEnabled: boolean;
   onInputChange: (value: string) => void;
   onSendMessage: () => void;
   onSendWithVoice: () => void;
@@ -16,15 +19,19 @@ interface MessageInputProps {
   onStartPractice: () => void;
   onSkipTurn: () => void;
   onOpenMobileMetrics: () => void;
+  onToggleAutoSend: () => void;
+  onToggleAutoSkip: () => void;
 }
 
 const AUTO_SEND_DELAY = 7;
 const AUTO_SKIP_DELAY = 12;
 
 const MessageInput = ({
-  userInput, isListening, isProcessing, isPracticing, isCorrecting,
+  userInput, isListening, isProcessing, isPracticing, isCorrecting, isPaused,
+  autoSendEnabled, autoSkipEnabled,
   onInputChange, onSendMessage, onSendWithVoice, onVoiceInput,
   onStartPractice, onSkipTurn, onOpenMobileMetrics,
+  onToggleAutoSend, onToggleAutoSkip,
 }: MessageInputProps) => {
   const autoSendTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoSkipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,7 +56,7 @@ const MessageInput = ({
     if (autoSendTimer.current) clearTimeout(autoSendTimer.current);
     if (sendCountdownRef.current) clearInterval(sendCountdownRef.current);
 
-    const canAutoSend = Boolean(userInput.trim()) && !isProcessing && !isPracticing && !isCorrecting;
+    const canAutoSend = autoSendEnabled && !isPaused && Boolean(userInput.trim()) && !isProcessing && !isPracticing && !isCorrecting;
 
     if (!canAutoSend) {
       setCountdown(null);
@@ -74,14 +81,14 @@ const MessageInput = ({
       if (autoSendTimer.current) clearTimeout(autoSendTimer.current);
       if (sendCountdownRef.current) clearInterval(sendCountdownRef.current);
     };
-  }, [userInput, isProcessing, isPracticing, isCorrecting]);
+  }, [userInput, isProcessing, isPracticing, isCorrecting, autoSendEnabled, isPaused]);
 
   // Auto-skip after 12s when there is still no spoken/typed input
   useEffect(() => {
     if (autoSkipTimer.current) clearTimeout(autoSkipTimer.current);
     if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
 
-    const canAutoSkip = !userInput.trim() && !isProcessing && !isPracticing && !isCorrecting;
+    const canAutoSkip = autoSkipEnabled && !isPaused && !userInput.trim() && !isProcessing && !isPracticing && !isCorrecting;
 
     if (!canAutoSkip) {
       setSkipCountdown(null);
@@ -106,7 +113,8 @@ const MessageInput = ({
       if (autoSkipTimer.current) clearTimeout(autoSkipTimer.current);
       if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
     };
-  }, [userInput, isProcessing, isPracticing, isCorrecting]);
+  }, [userInput, isProcessing, isPracticing, isCorrecting, autoSkipEnabled, isPaused]);
+
   return (
     <div className="space-y-1.5 sm:space-y-2">
       {isCorrecting && (
@@ -118,7 +126,7 @@ const MessageInput = ({
 
       <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
         <Input
-          placeholder={isListening ? "Speaking..." : "Type or use voice..."}
+          placeholder={isPaused ? "Discussion paused..." : isListening ? "Speaking..." : "Type or use voice..."}
           value={userInput}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={(e) => {
@@ -127,7 +135,7 @@ const MessageInput = ({
             }
           }}
           className={`border-2 text-sm sm:text-base lg:text-lg flex-1 h-10 sm:h-11 ${isListening ? 'border-destructive bg-destructive/5' : ''}`}
-          disabled={isProcessing || isPracticing}
+          disabled={isProcessing || isPracticing || isPaused}
           readOnly={isListening}
         />
         <div className="flex gap-1 sm:gap-1.5 lg:gap-2 justify-between sm:justify-end">
@@ -142,7 +150,7 @@ const MessageInput = ({
           </Button>
           <Button
             onClick={onStartPractice}
-            disabled={isProcessing || isListening || isPracticing}
+            disabled={isProcessing || isListening || isPracticing || isPaused}
             variant="outline"
             className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
             title="Practice Mode (Ctrl+M)"
@@ -151,7 +159,7 @@ const MessageInput = ({
           </Button>
           <Button
             onClick={onVoiceInput}
-            disabled={isProcessing || isPracticing || isCorrecting}
+            disabled={isProcessing || isPracticing || isCorrecting || isPaused}
             variant={isListening ? "destructive" : "outline"}
             className={`border-2 h-10 w-10 p-0 sm:w-auto sm:px-3 ${isListening ? 'animate-pulse' : ''}`}
             title="Voice Input - Real-time (Click to toggle)"
@@ -161,7 +169,7 @@ const MessageInput = ({
           <div className="flex flex-col items-center">
             <Button
               onClick={onSendWithVoice}
-              disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting}
+              disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting || isPaused}
               className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
               title={isListening ? "Stop & Send" : "Send (Ctrl+Enter)"}
             >
@@ -174,7 +182,7 @@ const MessageInput = ({
           <div className="flex flex-col items-center">
             <Button
               onClick={onSkipTurn}
-              disabled={isProcessing || isPracticing}
+              disabled={isProcessing || isPracticing || isPaused}
               variant="outline"
               className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
               title="Skip your turn"
@@ -187,9 +195,32 @@ const MessageInput = ({
           </div>
         </div>
       </div>
-      <p className="text-[10px] sm:text-xs text-muted-foreground font-mono text-center hidden sm:block mt-1">
-        TIP: Ctrl+M for practice • Ctrl+Enter to send • Esc to stop audio
-      </p>
+      <div className="flex items-center justify-center gap-2 sm:gap-3 mt-1">
+        <button
+          onClick={onToggleAutoSend}
+          className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono border transition-colors ${
+            autoSendEnabled
+              ? 'bg-primary/10 border-primary/30 text-primary'
+              : 'bg-muted/30 border-border text-muted-foreground'
+          }`}
+          title={autoSendEnabled ? "Auto-send ON: sends after 7s idle" : "Auto-send OFF"}
+        >
+          <SendHorizonal className="w-3 h-3" />
+          Auto-send {autoSendEnabled ? 'ON' : 'OFF'}
+        </button>
+        <button
+          onClick={onToggleAutoSkip}
+          className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono border transition-colors ${
+            autoSkipEnabled
+              ? 'bg-primary/10 border-primary/30 text-primary'
+              : 'bg-muted/30 border-border text-muted-foreground'
+          }`}
+          title={autoSkipEnabled ? "Auto-skip ON: skips turn after 12s" : "Auto-skip OFF"}
+        >
+          <Timer className="w-3 h-3" />
+          Auto-skip {autoSkipEnabled ? 'ON' : 'OFF'}
+        </button>
+      </div>
     </div>
   );
 };
