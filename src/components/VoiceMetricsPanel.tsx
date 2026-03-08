@@ -244,7 +244,7 @@ const VoiceMetricsPanel = ({
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [isUserSpeaking]);
+  }, [stableSpeaking]);
 
   // Calculate live preview metrics (including current interim text for display only)
   const getLiveMetrics = useCallback((): VoiceSessionMetrics => {
