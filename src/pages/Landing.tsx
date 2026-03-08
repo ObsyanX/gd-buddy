@@ -249,6 +249,24 @@ const Landing = () => {
           </div>
         </section>
 
+        {/* FAQ */}
+        <section className="container mx-auto py-16 px-6" aria-label="Frequently asked questions">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
+            <div className="space-y-4">
+              {LANDING_FAQS.map((faq) => (
+                <details key={faq.q} className="border-2 border-border p-5 group">
+                  <summary className="font-bold cursor-pointer list-none flex items-center justify-between">
+                    {faq.q}
+                    <span className="text-muted-foreground group-open:rotate-45 transition-transform duration-200 text-xl">+</span>
+                  </summary>
+                  <p className="mt-3 text-muted-foreground text-sm leading-relaxed">{faq.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* CTA */}
         <section className="container mx-auto py-16 px-6 text-center" aria-label="Get started">
           <div className="max-w-2xl mx-auto">

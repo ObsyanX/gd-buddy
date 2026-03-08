@@ -113,6 +113,21 @@ const Home = () => {
               Practice with friends in real-time! Create a room, share the code, and discuss together with AI participants.
             </p>
           </Card>
+
+          <section aria-label="Frequently asked questions">
+            <h2 className="text-2xl font-bold mb-4">FREQUENTLY ASKED QUESTIONS</h2>
+            <div className="space-y-4">
+              {HOME_FAQS.map((faq) => (
+                <details key={faq.q} className="border-2 border-border p-5 group">
+                  <summary className="font-bold cursor-pointer list-none flex items-center justify-between">
+                    {faq.q}
+                    <span className="text-muted-foreground group-open:rotate-45 transition-transform duration-200 text-xl">+</span>
+                  </summary>
+                  <p className="mt-3 text-muted-foreground text-sm leading-relaxed">{faq.a}</p>
+                </details>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
 
