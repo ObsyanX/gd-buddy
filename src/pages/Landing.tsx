@@ -52,7 +52,7 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SEOHead
-        description="Practice group discussions with AI participants, get instant feedback on communication skills, and crack placement GD rounds. Free AI-powered GD simulator for students."
+        description="Practice group discussions with AI participants. Get instant feedback on communication skills and crack placement GD rounds. Free GD simulator for students."
         keywords="GD Buddy, group discussion practice, GD preparation, AI GD simulator, placement preparation tool, communication skills for GD, mock GD online"
         path="/"
         jsonLd={[webAppJsonLd, orgJsonLd, faqJsonLd]}
