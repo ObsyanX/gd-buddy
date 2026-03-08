@@ -162,6 +162,7 @@ export const useTextToSpeech = () => {
   return {
     isSpeaking,
     currentSpeaker,
+    usingFallbackTTS,
     speak,
     stop
   };
