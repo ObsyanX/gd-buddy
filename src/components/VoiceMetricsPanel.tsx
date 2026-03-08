@@ -57,6 +57,43 @@ interface VoiceMetricsPanelProps {
   onMinimizeToggle?: () => void;
 }
 
+const splitNormalizedWords = (text: string): string[] => {
+  if (!text) return [];
+  return cleanStreamingArtifacts(text.trim().toLowerCase())
+    .split(/\s+/)
+    .filter((word) => word.length > 0);
+};
+
+/**
+ * Prevent double counting when current transcript still contains a finalized tail.
+ * Example:
+ * finalized: ["ai", "has", "both"]
+ * current:   ["ai", "has", "both", "positive", "aspects"]
+ * result:    ["positive", "aspects"]
+ */
+const getIncrementalTranscriptWords = (
+  finalizedWords: string[],
+  currentTranscript: string
+): string[] => {
+  const currentWords = splitNormalizedWords(currentTranscript);
+  if (currentWords.length === 0 || finalizedWords.length === 0) return currentWords;
+
+  const maxOverlap = Math.min(finalizedWords.length, currentWords.length);
+  let overlapCount = 0;
+
+  for (let overlap = maxOverlap; overlap >= 1; overlap--) {
+    const finalizedSuffix = finalizedWords.slice(-overlap).join(' ');
+    const currentPrefix = currentWords.slice(0, overlap).join(' ');
+
+    if (finalizedSuffix === currentPrefix) {
+      overlapCount = overlap;
+      break;
+    }
+  }
+
+  return currentWords.slice(overlapCount);
+};
+
 export interface VoiceSessionMetrics {
   totalWords: number;
   fillerCount: number;
