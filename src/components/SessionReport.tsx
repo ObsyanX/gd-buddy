@@ -95,6 +95,13 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     loadSessionData();
   }, [sessionId]);
 
+  // Auto-generate AI feedback once session data is loaded
+  useEffect(() => {
+    if (session && calculatedStats && !aiFeedback && !isLoadingFeedback) {
+      loadAiFeedback();
+    }
+  }, [session, calculatedStats]);
+
   const loadSessionData = async () => {
     try {
       // Get current authenticated user
@@ -1236,10 +1243,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
               AI FEEDBACK
             </h3>
             {!aiFeedback && !isLoadingFeedback && (
-              <Button onClick={loadAiFeedback} variant="outline" className="border-2">
-                <Bot className="w-4 h-4 mr-2" />
-                Generate AI Feedback
-              </Button>
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             )}
           </div>
 
@@ -1307,7 +1311,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
 
           {!aiFeedback && !isLoadingFeedback && (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Click "Generate AI Feedback" to get a personalized analysis of your discussion performance.
+              AI feedback will generate automatically…
             </p>
           )}
         </Card>
