@@ -5,6 +5,13 @@ import { MessageSquare, Users, BarChart3, Sparkles } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import SEOFooter from "@/components/SEOFooter";
 
+const HOME_FAQS = [
+  { q: "How do I start a solo practice session?", a: "Click 'Start Solo Session', choose a GD topic and AI participants, then begin speaking. The AI will respond in real-time with realistic turn-taking." },
+  { q: "What is multiplayer mode?", a: "Multiplayer mode lets you create a room and invite friends to practice GDs together alongside AI participants for a realistic group dynamic." },
+  { q: "How are my sessions scored?", a: "After each session you receive a detailed report with scores on content quality, fluency, filler words, speaking pace, argument structure, eye contact, and posture." },
+  { q: "Can I track my progress over time?", a: "Yes! Your Dashboard shows session history, score trends, and areas for improvement so you can see how your GD skills are developing." },
+];
+
 const Home = () => {
   const navigate = useNavigate();
 
@@ -106,6 +113,21 @@ const Home = () => {
               Practice with friends in real-time! Create a room, share the code, and discuss together with AI participants.
             </p>
           </Card>
+
+          <section aria-label="Frequently asked questions">
+            <h2 className="text-2xl font-bold mb-4">FREQUENTLY ASKED QUESTIONS</h2>
+            <div className="space-y-4">
+              {HOME_FAQS.map((faq) => (
+                <details key={faq.q} className="border-2 border-border p-5 group">
+                  <summary className="font-bold cursor-pointer list-none flex items-center justify-between">
+                    {faq.q}
+                    <span className="text-muted-foreground group-open:rotate-45 transition-transform duration-200 text-xl">+</span>
+                  </summary>
+                  <p className="mt-3 text-muted-foreground text-sm leading-relaxed">{faq.a}</p>
+                </details>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
 
