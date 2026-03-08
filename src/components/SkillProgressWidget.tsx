@@ -16,7 +16,7 @@ interface SkillData {
 const SKILL_CONFIG: Record<string, { label: string; icon: any; description: string }> = {
   clarity: { label: 'Clarity', icon: Brain, description: 'Speaking clearly and concisely' },
   argument_strength: { label: 'Argument Strength', icon: MessageSquare, description: 'Quality of reasoning' },
-  listening: { label: 'Listening', icon: Ear, description: 'Responding to others' points' },
+  listening: { label: 'Listening', icon: Ear, description: 'Responding to others\' points' },
   rebuttal: { label: 'Rebuttal', icon: Shield, description: 'Counter-argument quality' },
   confidence: { label: 'Confidence', icon: Sparkles, description: 'Presence and delivery' },
 };
