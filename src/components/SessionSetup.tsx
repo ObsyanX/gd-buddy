@@ -46,6 +46,7 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
   const [selectedCustomPersonas, setSelectedCustomPersonas] = useState<string[]>([]);
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [moderatorEnabled, setModeratorEnabled] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('recommended');
   const { user } = useAuth();
   const { toast } = useToast();
