@@ -28,6 +28,7 @@ const webAppJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   name: "GD Buddy",
+  alternateName: ["Group Discussion Buddy", "AI Group Discussion Practice Tool", "GD Practice Platform"],
   url: typeof window !== "undefined" ? window.location.origin : "https://gd-buddy.vercel.app",
   description: "AI-powered group discussion practice platform for students preparing for campus placements. Simulate realistic GDs with AI participants, get real-time feedback on communication skills, and track improvement over time.",
   applicationCategory: "EducationalApplication",
@@ -40,13 +41,13 @@ const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "GD Buddy",
+  alternateName: ["Group Discussion Buddy", "GD Buddy AI"],
   url: typeof window !== "undefined" ? window.location.origin : "https://gd-buddy.vercel.app",
   logo: typeof window !== "undefined" ? `${window.location.origin}/og-image.png` : "https://gd-buddy.vercel.app/og-image.png",
   description: "AI-powered group discussion practice platform for placement preparation.",
   sameAs: [
-    "https://github.com/sayandutta111",
-    "https://www.linkedin.com/in/sayandutta111",
-    "https://x.com/gdbuddy",
+    "https://github.com/ObsyanX",
+    "https://www.linkedin.com/in/sayan-dutta-exceptional98/",
   ],
 };
 
@@ -56,8 +57,8 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SEOHead
-        description="Practice group discussions with AI participants. Get instant feedback on communication skills and crack placement GD rounds. Free GD simulator for students."
-        keywords="GD Buddy, group discussion practice, GD preparation, AI GD simulator, placement preparation tool, communication skills for GD, mock GD online"
+        description="GD Buddy (Group Discussion Buddy) — practice group discussions with AI participants. Free AI GD simulator for placement preparation. Get instant feedback on communication skills."
+        keywords="group discussion buddy, GD Buddy, group discussion practice, AI group discussion practice, GD practice online, group discussion simulator, GD simulator for placements, group discussion preparation, GD preparation, AI GD simulator, placement preparation tool, communication skills for GD, mock GD online"
         path="/"
         jsonLd={[webAppJsonLd, orgJsonLd, faqJsonLd]}
       />
@@ -89,10 +90,10 @@ const Landing = () => {
         {/* Hero */}
         <section className="container mx-auto py-16 md:py-24 px-6 text-center" aria-label="Hero">
           <h1 className="text-display font-bold mb-6 max-w-4xl mx-auto">
-            GD Buddy – AI Group Discussion Practice for Placements
+            AI Group Discussion Practice Platform for Placements
           </h1>
           <p className="text-h2 text-muted-foreground max-w-2xl mx-auto mb-8">
-            GD Buddy is your AI-powered group discussion practice platform. Simulate realistic placement GDs with intelligent AI participants, get real-time feedback on your communication skills, and build the confidence to ace every GD round.
+            GD Buddy — your intelligent group discussion buddy for placement preparation. Simulate realistic GDs with AI participants, get real-time feedback on communication skills, and build confidence to ace every GD round.
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <Button size="lg" className="text-xl px-12 py-8 border-4 border-border shadow-md hover:shadow-lg" onClick={() => navigate("/auth")} aria-label="Start practicing group discussions">

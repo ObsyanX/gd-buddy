@@ -52,7 +52,7 @@ const HowToCrackGD = () => (
     <SEOHead
       title="How to Crack Group Discussion"
       description="Complete guide on how to crack group discussions in placement rounds. Learn GD tips, strategies, dos and don'ts, and practice with AI simulation."
-      keywords="how to crack GD, group discussion tips, GD strategies for placements, GD dos and donts, GD preparation guide"
+      keywords="how to crack GD, group discussion tips, GD strategies for placements, GD dos and donts, GD preparation guide, how to perform well in GD rounds, GD preparation tips"
       path="/how-to-crack-group-discussion"
       jsonLd={faqJsonLd}
     />
@@ -118,7 +118,7 @@ const HowToCrackGD = () => (
             Reading tips is helpful, but nothing beats actual practice. GD Buddy simulates real group discussions with AI participants who have different personalities, speaking styles, and viewpoints. You get real-time feedback on your pace, filler words, body language, and argument structure — metrics that are impossible to track when practicing alone.
           </p>
           <Button asChild size="lg" className="border-4 border-border">
-            <Link to="/home/practice">Start a Practice Session</Link>
+            <Link to="/home/practice">Practice with GD Buddy's AI Simulator</Link>
           </Button>
         </section>
 

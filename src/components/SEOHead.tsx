@@ -13,7 +13,7 @@ interface SEOHeadProps {
 
 const BASE_TITLE = "GD Buddy";
 const DEFAULT_DESC = "Practice group discussions with AI, get instant feedback, improve communication skills, and crack placement GD rounds.";
-const DEFAULT_KEYWORDS = "group discussion practice, GD preparation, AI GD simulator, placement preparation tool, communication skills for GD";
+const DEFAULT_KEYWORDS = "group discussion buddy, group discussion practice, GD practice online, AI group discussion practice, GD simulator for placements, group discussion preparation, GD preparation, AI GD simulator, placement preparation tool, communication skills for GD, group discussion simulator";
 
 const getCanonicalBase = () => {
   if (typeof window !== "undefined") {
@@ -41,7 +41,7 @@ const SEOHead = ({
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "GD Buddy",
-    alternateName: "GD Buddy AI",
+    alternateName: ["Group Discussion Buddy", "GD Buddy AI", "AI Group Discussion Practice Tool", "Group Discussion Simulator", "GD Practice Platform"],
     url: "https://gd-buddy.vercel.app",
     potentialAction: {
       "@type": "SearchAction",
