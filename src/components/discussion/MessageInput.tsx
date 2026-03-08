@@ -29,6 +29,7 @@ const AUTO_SKIP_DELAY = 12;
 
 const MessageInput = ({
   userInput, isListening, isProcessing, isPracticing, isCorrecting, isPaused,
+  isBusy = false,
   autoSendEnabled, autoSkipEnabled,
   onInputChange, onSendMessage, onSendWithVoice, onVoiceInput,
   onStartPractice, onSkipTurn, onOpenMobileMetrics,
