@@ -27,12 +27,13 @@ const jsonLd = [
     "@type": "ItemList",
     name: "GD Topics for Placements",
     description: "Comprehensive list of group discussion topics for campus placement preparation",
-    numberOfItems: topics.reduce((a, c) => a + c.items.length, 0),
-    itemListElement: topics.flatMap((cat, ci) =>
-      cat.items.map((item, i) => ({
+    numberOfItems: categories.reduce((a, [, t]) => a + t.length, 0),
+    itemListElement: categories.flatMap(([, topics], ci) =>
+      topics.map((t, i) => ({
         "@type": "ListItem",
-        position: ci * 5 + i + 1,
-        name: item,
+        position: ci * 10 + i + 1,
+        name: t.title,
+        url: `https://gdbuddy.lovable.app/gd-topic/${t.slug}`,
       }))
     ),
   },
