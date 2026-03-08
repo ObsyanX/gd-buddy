@@ -6,6 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Content moderation: blocked patterns and safety checks
+const BLOCKED_PATTERNS = [
+  /\b(hate\s+speech|kill\s+all|death\s+to)\b/i,
+  /\b(racial\s+slur|ethnic\s+cleansing)\b/i,
+  /\b(bomb\s+threat|shoot\s+up|mass\s+murder)\b/i,
+];
+
+const SENSITIVE_TOPICS_WARNING = [
+  /\b(suicide|self[- ]harm|eating\s+disorder)\b/i,
+  /\b(terrorism|extremism|radicali[sz]ation)\b/i,
+];
+
+function moderateContent(text: string): { blocked: boolean; warning: boolean; reason?: string } {
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(text)) {
+      return { blocked: true, warning: false, reason: 'Content violates safety guidelines' };
+    }
+  }
+  for (const pattern of SENSITIVE_TOPICS_WARNING) {
+    if (pattern.test(text)) {
+      return { blocked: false, warning: true, reason: 'Sensitive topic detected' };
+    }
+  }
+  return { blocked: false, warning: false };
+}
+
 // Input validation schema
 const inputSchema = z.object({
   session_id: z.string().uuid().optional(),
@@ -60,6 +86,30 @@ serve(async (req) => {
       request: request_type = "generate_responses"
     } = body;
 
+    // Content moderation on user input
+    if (latest_user_utterance) {
+      const modResult = moderateContent(latest_user_utterance);
+      if (modResult.blocked) {
+        console.warn(`[Moderation] Blocked input in session ${session_id}: ${modResult.reason}`);
+        return new Response(
+          JSON.stringify({
+            session_id,
+            timestamp_iso: new Date().toISOString(),
+            request_handled: request_type,
+            participant_responses: [],
+            invigilator_signals: {
+              live_hint: "Your message was flagged for inappropriate content. Please rephrase and try again."
+            },
+            moderation: { blocked: true, reason: modResult.reason },
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (modResult.warning) {
+        console.warn(`[Moderation] Sensitive topic in session ${session_id}: ${modResult.reason}`);
+      }
+    }
+
     console.log(`GD-Conductor: Processing ${request_type} for session ${session_id}`);
 
     const moderatorMode = config.moderator_mode || false;
@@ -70,6 +120,8 @@ serve(async (req) => {
 Your job: Accept session state + user input → decide what each AI participant says (or remains silent) → mark interruptions/overlaps → produce concise, persona-consistent replies → provide invigilator feedback → output structured JSON with TTS metadata.
 
 CRITICAL: Output ONLY valid JSON. No prose, no markdown, no explanations.
+
+CONTENT SAFETY: Never generate responses containing hate speech, slurs, threats, or explicit content. Keep all AI participant responses professional and appropriate for an educational discussion context. If a user's input touches sensitive topics, the AI participants should respond thoughtfully and redirect toward constructive discussion.
 
 ${moderatorMode ? `MODERATOR MODE ENABLED:
 You also control a "Moderator" who manages the discussion. The moderator should:
@@ -233,11 +285,9 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
     // Parse JSON from response (handle potential markdown wrapping)
     let parsedResponse;
     try {
-      // Try to extract JSON if wrapped in markdown
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || [null, content];
       parsedResponse = JSON.parse(jsonMatch[1]);
     } catch (e) {
-      // If parsing fails, return a minimal valid response
       console.error('Failed to parse AI response:', e);
       parsedResponse = {
         session_id,
@@ -249,6 +299,18 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
         },
         session_updates: {}
       };
+    }
+
+    // Post-moderation: scan AI-generated responses
+    if (parsedResponse.participant_responses) {
+      parsedResponse.participant_responses = parsedResponse.participant_responses.filter((r: any) => {
+        const check = moderateContent(r.text || '');
+        if (check.blocked) {
+          console.warn(`[Moderation] Filtered AI response from ${r.participant_id}: ${check.reason}`);
+          return false;
+        }
+        return true;
+      });
     }
 
     return new Response(

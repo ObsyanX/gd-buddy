@@ -251,6 +251,12 @@ const SkillDrills = () => {
         );
       }
 
+      // Update practice streak
+      if (user?.id) {
+        const minutes = Math.max(1, Math.round(selectedDrill.timeLimit / 60));
+        await updatePracticeStreak(user.id, minutes);
+      }
+
       toast({ title: "Drill completed!", description: `Score: ${feedbackData.score}%` });
     } catch (error: any) {
       console.error('Error processing drill:', error);

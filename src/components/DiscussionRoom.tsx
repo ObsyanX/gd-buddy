@@ -624,6 +624,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         .update({ status: 'completed', end_time: new Date().toISOString() })
         .eq('id', sessionId);
 
+      // Update practice streak
+      if (currentUserId && session?.start_time) {
+        const durationMin = Math.max(1, Math.round(
+          (Date.now() - new Date(session.start_time).getTime()) / 60000
+        ));
+        await updatePracticeStreak(currentUserId, durationMin);
+      }
+
       onComplete();
     } catch (error: any) {
       console.error('Error ending session:', error);
