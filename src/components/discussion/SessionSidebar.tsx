@@ -24,7 +24,18 @@ interface SessionSidebarProps {
   liveVoiceMetrics: VoiceSessionMetrics | null;
 }
 
-const FeedbackGrid = ({ feedback }: { feedback: any }) => {
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+
+const calculateLiveFluencyScore = (metrics: VoiceSessionMetrics): number => {
+  if (metrics.totalWords < 8 || metrics.estimatedWpm <= 0) return 0;
+
+  const pacePenalty = clamp(Math.abs(metrics.estimatedWpm - 150) * 0.9, 0, 60);
+  const fillerPenalty = clamp(metrics.fillerRate * 100 * 10, 0, 40);
+
+  return clamp(Math.round(100 - pacePenalty - fillerPenalty), 0, 100);
+};
+
+const FeedbackGrid = ({ feedback, liveVoiceMetrics }: { feedback: any; liveVoiceMetrics: VoiceSessionMetrics | null }) => {
   if (feedback) {
     return (
       <div className="space-y-3">
