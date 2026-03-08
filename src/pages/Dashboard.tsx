@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  MessageSquare, LogOut, User, TrendingUp, Target,
-  Clock, Award, Play, ChevronRight, BarChart3, ArrowLeft } from
+  MessageSquare, User, TrendingUp, Target,
+  Clock, Award, Play, BarChart3 } from
 "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import SessionHistoryComparison from "@/components/SessionHistoryComparison";
 import SkillProgressWidget from "@/components/SkillProgressWidget";
 import Leaderboard from "@/components/Leaderboard";
+import PracticeStreakWidget from "@/components/PracticeStreakWidget";
+import PerformanceInsights from "@/components/PerformanceInsights";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -173,10 +175,14 @@ const Dashboard = () => {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             <SkillProgressWidget />
+            <PerformanceInsights />
           </div>
-          <Leaderboard />
+          <div className="space-y-6">
+            <PracticeStreakWidget />
+            <Leaderboard />
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">

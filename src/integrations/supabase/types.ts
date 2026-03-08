@@ -390,6 +390,42 @@ export type Database = {
         }
         Relationships: []
       }
+      practice_streaks: {
+        Row: {
+          current_streak: number
+          daily_goal_minutes: number
+          id: string
+          last_practice_date: string | null
+          longest_streak: number
+          today_minutes: number
+          total_practice_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number
+          daily_goal_minutes?: number
+          id?: string
+          last_practice_date?: string | null
+          longest_streak?: number
+          today_minutes?: number
+          total_practice_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_streak?: number
+          daily_goal_minutes?: number
+          id?: string
+          last_practice_date?: string | null
+          longest_streak?: number
+          today_minutes?: number
+          total_practice_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -413,6 +449,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      session_notes: {
+        Row: {
+          created_at: string
+          id: string
+          note_text: string
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note_text: string
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note_text?: string
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_notes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       skill_drills: {
         Row: {

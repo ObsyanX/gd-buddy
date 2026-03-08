@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import SessionReplay from "@/components/SessionReplay";
+import SessionNotes from "@/components/SessionNotes";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -1177,6 +1178,8 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             <SessionReplay sessionId={sessionId} sessionStartTime={session.start_time} />
           </Card>
         )}
+
+        <SessionNotes sessionId={sessionId} />
 
         <div className="gap-[8px] rounded flex-col flex items-center justify-center shadow-none">
           <Button
