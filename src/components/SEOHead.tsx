@@ -75,6 +75,8 @@ const SEOHead = ({
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
 
+      <script type="application/ld+json">{JSON.stringify(globalWebSiteJsonLd)}</script>
+
       {jsonLd && (
         Array.isArray(jsonLd) && jsonLd.length > 0 && jsonLd[0]["@context"]
           ? jsonLd.map((ld, i) => (
