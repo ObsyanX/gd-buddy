@@ -25,6 +25,15 @@ const jsonLd = [
       { "@type": "Question", name: "How long should a GD summary be?", acceptedAnswer: { "@type": "Answer", text: "Keep your summary to 45-60 seconds. Cover the main arguments from all sides, note the consensus, and end with a brief personal stance or call to action." } },
     ],
   },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://gd-buddy.vercel.app" },
+      { "@type": "ListItem", position: 2, name: "GD Preparation", item: "https://gd-buddy.vercel.app/group-discussion-preparation-guide" },
+      { "@type": "ListItem", position: 3, name: "Conclude GD", item: "https://gd-buddy.vercel.app/how-to-conclude-gd-round" },
+    ],
+  },
 ];
 
 const techniques = [

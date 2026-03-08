@@ -25,6 +25,15 @@ const jsonLd = [
       { "@type": "Question", name: "Does practicing with AI help build GD confidence?", acceptedAnswer: { "@type": "Answer", text: "Yes. AI-simulated GDs let you practice in a judgment-free environment. The more you practice, the more comfortable you become with group speaking dynamics." } },
     ],
   },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://gd-buddy.vercel.app" },
+      { "@type": "ListItem", position: 2, name: "GD Preparation", item: "https://gd-buddy.vercel.app/group-discussion-preparation-guide" },
+      { "@type": "ListItem", position: 3, name: "Speak Confidently", item: "https://gd-buddy.vercel.app/how-to-speak-confidently-in-group-discussion" },
+    ],
+  },
 ];
 
 const techniques = [

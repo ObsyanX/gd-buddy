@@ -46,6 +46,14 @@ const jsonLd = [
       { "@type": "Question", name: "Can I practice GD online?", acceptedAnswer: { "@type": "Answer", text: "Yes! GD Buddy provides AI-powered group discussion simulation where you can practice with realistic AI participants and get instant feedback." } },
     ],
   },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://gd-buddy.vercel.app" },
+      { "@type": "ListItem", position: 2, name: "GD Topics", item: "https://gd-buddy.vercel.app/gd-topics-for-placements" },
+    ],
+  },
 ];
 
 const GDTopics = () => (

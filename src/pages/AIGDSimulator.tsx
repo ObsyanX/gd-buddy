@@ -26,6 +26,14 @@ const jsonLd = [
       { "@type": "Question", name: "Is the AI GD simulator free?", acceptedAnswer: { "@type": "Answer", text: "Yes, GD Buddy is completely free to use. You can practice unlimited GD sessions with AI participants at no cost." } },
     ],
   },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://gd-buddy.vercel.app" },
+      { "@type": "ListItem", position: 2, name: "AI GD Simulator", item: "https://gd-buddy.vercel.app/ai-gd-simulator" },
+    ],
+  },
 ];
 
 const AIGDSimulator = () => {

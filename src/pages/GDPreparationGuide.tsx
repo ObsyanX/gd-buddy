@@ -28,6 +28,14 @@ const jsonLd = [
       { "@type": "Question", name: "Can I practice GD online?", acceptedAnswer: { "@type": "Answer", text: "Yes. GD Buddy is a free AI-powered platform that simulates group discussions with AI participants. You can practice anytime, get real-time feedback, and track your improvement." } },
     ],
   },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://gd-buddy.vercel.app" },
+      { "@type": "ListItem", position: 2, name: "GD Preparation Guide", item: "https://gd-buddy.vercel.app/group-discussion-preparation-guide" },
+    ],
+  },
 ];
 
 const GDPreparationGuide = () => (
