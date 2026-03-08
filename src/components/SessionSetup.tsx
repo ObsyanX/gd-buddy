@@ -484,6 +484,24 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
           </div>
         </div>
 
+        {/* Moderator Toggle */}
+        <Card className="p-4 border-4 border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+              <div>
+                <Label htmlFor="moderator-toggle" className="font-bold text-sm cursor-pointer">AI Moderator</Label>
+                <p className="text-xs text-muted-foreground">AI moderator guides the discussion, manages time, and prompts participation</p>
+              </div>
+            </div>
+            <Switch
+              id="moderator-toggle"
+              checked={moderatorEnabled}
+              onCheckedChange={setModeratorEnabled}
+            />
+          </div>
+        </Card>
+
         <div className="flex justify-end gap-4">
           <Button 
             variant="outline" 
