@@ -29,3 +29,6 @@ verify_jwt = true
 
 [functions.video-analyzer-proxy]
 verify_jwt = true
+
+[functions.session-feedback]
+verify_jwt = false
