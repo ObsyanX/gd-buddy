@@ -35,7 +35,7 @@ interface CohortMember {
 const InstructorDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [selectedCohort, setSelectedCohort] = useState<Cohort | null>(null);
   const [members, setMembers] = useState<CohortMember[]>([]);

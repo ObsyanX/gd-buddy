@@ -69,13 +69,13 @@ class ErrorMonitor {
       const rows = batch.map((entry) => ({
         user_id: user.id,
         error_message: entry.error_message.substring(0, 2000),
-        error_stack: entry.error_stack?.substring(0, 5000),
+        error_stack: entry.error_stack?.substring(0, 5000) ?? null,
         error_source: entry.error_source || 'client',
-        page_url: entry.page_url,
-        metadata: entry.metadata || {},
+        page_url: entry.page_url ?? null,
+        metadata: (entry.metadata || {}) as Record<string, string>,
       }));
 
-      await supabase.from('error_logs').insert(rows);
+      await supabase.from('error_logs').insert(rows as any);
     } catch {
       // Silently fail — don't create error loops
       console.warn('[ErrorMonitor] Failed to flush error logs');
