@@ -46,6 +46,13 @@ const HowToCrackGD = lazy(() => import("./pages/HowToCrackGD"));
 const CommonGDMistakes = lazy(() => import("./pages/CommonGDMistakes"));
 const CommunicationSkills = lazy(() => import("./pages/CommunicationSkills"));
 const About = lazy(() => import("./pages/About"));
+const GDPreparationGuide = lazy(() => import("./pages/GDPreparationGuide"));
+const AIGDSimulator = lazy(() => import("./pages/AIGDSimulator"));
+const SpeakConfidently = lazy(() => import("./pages/SpeakConfidently"));
+const StartGD = lazy(() => import("./pages/StartGD"));
+const ConcludeGD = lazy(() => import("./pages/ConcludeGD"));
+const BodyLanguageTips = lazy(() => import("./pages/BodyLanguageTips"));
+const GDTopicPage = lazy(() => import("./pages/GDTopicPage"));
 
 const queryClient = new QueryClient();
 
