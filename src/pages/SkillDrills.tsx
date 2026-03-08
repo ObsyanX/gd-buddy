@@ -21,7 +21,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
 import { useStreamingTranscription } from "@/hooks/useStreamingTranscription";
-import { BUILT_IN_DRILLS, SAMPLE_TOPICS, getCustomDrills, deleteCustomDrill, type DrillType } from "@/config/drill-types";
+import { BUILT_IN_DRILLS, SAMPLE_TOPICS, getCustomDrills, deleteCustomDrill, getApiDrillType, type DrillType } from "@/config/drill-types";
 import CreateDrillModal from "@/components/CreateDrillModal";
 import DrillHistory from "@/components/DrillHistory";
 
