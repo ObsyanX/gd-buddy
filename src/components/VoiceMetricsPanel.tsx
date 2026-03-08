@@ -227,7 +227,7 @@ const VoiceMetricsPanel = ({
 
   // Update speaking time display periodically
   useEffect(() => {
-    if (!isUserSpeaking) return;
+    if (!stableSpeaking) return;
     
     const interval = setInterval(() => {
       if (speakingStartRef.current) {
