@@ -343,7 +343,7 @@ const VoiceMetricsPanel = ({
   }
 
   return (
-    <Card className="p-3 sm:p-4 border-4 border-border space-y-2 sm:space-y-3 w-full max-w-full overflow-hidden">
+    <Card className="p-3 sm:p-4 border-4 border-border space-y-2 sm:space-y-3 w-full max-w-full overflow-visible shrink-0">
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-bold text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 min-w-0">
           <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
