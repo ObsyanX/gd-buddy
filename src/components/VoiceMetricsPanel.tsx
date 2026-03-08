@@ -158,34 +158,39 @@ const VoiceMetricsPanel = ({
 
   /**
    * Process only FINALIZED transcript text.
-   * Uses content-only hash (no timestamp) to truly deduplicate.
+   * Appends only incremental words to avoid interim/final overlap inflation.
    */
   const finalizeCurrentTranscript = useCallback((text: string) => {
     if (!text || text.trim().length === 0) return;
-    
+
     const cleanedText = cleanStreamingArtifacts(text.trim().toLowerCase());
     if (!cleanedText) return;
-    
-    // Use content-only hash to prevent duplicate counting
-    const contentHash = cleanedText;
-    
-    if (processedTextHashesRef.current.has(contentHash)) {
+
+    // Skip exact duplicate finalize calls
+    if (cleanedText === lastFinalizedTranscriptRef.current) {
       return;
     }
-    
-    processedTextHashesRef.current.add(contentHash);
-    
-    const words = splitNormalizedWords(cleanedText);
-    accumulatedFinalWordsRef.current.push(...words);
-    
-    console.log('[VoiceMetrics] Finalized segment:', {
-      words: words.length,
-      totalAccumulated: accumulatedFinalWordsRef.current.length,
-      text: cleanedText.slice(0, 80)
-    });
-    
-    recalculateMetrics();
-  }, []);
+
+    // Append only the delta vs already finalized words
+    const incrementalWords = getIncrementalTranscriptWords(
+      accumulatedFinalWordsRef.current,
+      cleanedText
+    );
+
+    if (incrementalWords.length > 0) {
+      accumulatedFinalWordsRef.current.push(...incrementalWords);
+
+      console.log('[VoiceMetrics] Finalized incremental segment:', {
+        words: incrementalWords.length,
+        totalAccumulated: accumulatedFinalWordsRef.current.length,
+        text: cleanedText.slice(0, 80)
+      });
+
+      recalculateMetrics();
+    }
+
+    lastFinalizedTranscriptRef.current = cleanedText;
+  }, [recalculateMetrics]);
 
   /**
    * Recalculate all metrics from accumulated finalized words
