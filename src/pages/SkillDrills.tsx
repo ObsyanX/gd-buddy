@@ -45,6 +45,7 @@ const SkillDrills = () => {
   const [customDrills, setCustomDrills] = useState<DrillType[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [drillToDelete, setDrillToDelete] = useState<DrillType | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
