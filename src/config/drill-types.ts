@@ -179,7 +179,7 @@ export function saveCustomDrill(drill: Omit<DrillType, 'icon' | 'type'>): DrillT
   const customs = getCustomDrills();
   const newDrill: DrillType = { ...drill, icon: Target, type: 'custom' };
   customs.push(newDrill);
-  const toStore = customs.map(({ icon, ...rest }) => rest);
+  const toStore = customs.map(({ icon: _icon, ...rest }) => rest);
   localStorage.setItem(CUSTOM_DRILLS_KEY, JSON.stringify(toStore));
   return newDrill;
 }
