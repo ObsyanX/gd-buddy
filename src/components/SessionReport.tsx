@@ -95,6 +95,13 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     loadSessionData();
   }, [sessionId]);
 
+  // Auto-generate AI feedback once session data is loaded
+  useEffect(() => {
+    if (session && calculatedStats && !aiFeedback && !isLoadingFeedback) {
+      loadAiFeedback();
+    }
+  }, [session, calculatedStats]);
+
   const loadSessionData = async () => {
     try {
       // Get current authenticated user
