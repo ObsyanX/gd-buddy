@@ -89,7 +89,7 @@ const FeedbackGrid = ({ feedback, liveVoiceMetrics }: { feedback: any; liveVoice
 const SessionSidebar = ({
   session, participants, feedback, liveVoiceMetrics, isListening, isSpeaking, userInput,
   presenceState, typingParticipants, practiceHistory, currentPlayingId,
-  onVideoMetricsUpdate, onPlayHistory, onDeleteHistory,
+  onVideoMetricsUpdate, onPlayHistory, onDeleteHistory, onVoiceMetricsUpdate,
 }: SessionSidebarProps) => {
   return (
     <div className="hidden lg:flex lg:col-span-4 xl:col-span-3 flex-col gap-3 overflow-y-auto max-h-[calc(100vh-180px)] pr-1 pb-4 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
