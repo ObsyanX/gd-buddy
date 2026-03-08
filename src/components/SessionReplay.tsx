@@ -180,7 +180,7 @@ const SessionReplay = ({ sessionId, sessionStartTime }: SessionReplayProps) => {
       </div>
 
       {/* Messages Timeline */}
-      <ScrollArea className="h-[400px] p-3">
+      <ScrollArea className="h-[280px] sm:h-[350px] lg:h-[450px] p-3">
         <div className="space-y-3">
           {visibleMessages.map((message, idx) => {
             const isUser = message.gd_participants?.is_user &&
