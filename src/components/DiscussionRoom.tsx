@@ -569,6 +569,27 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     }
   };
 
+  const handleTogglePause = async () => {
+    const newPaused = !isPaused;
+    setIsPaused(newPaused);
+
+    if (newPaused) {
+      // Pause: stop mic, TTS, update DB status
+      stopListening();
+      stopSpeaking();
+      await supabase
+        .from('gd_sessions')
+        .update({ status: 'paused' })
+        .eq('id', sessionId);
+    } else {
+      // Resume: update DB status back to active
+      await supabase
+        .from('gd_sessions')
+        .update({ status: 'active' })
+        .eq('id', sessionId);
+    }
+  };
+
   const handleEndSession = async () => {
     try {
       // Stop all ongoing audio/speech activities
