@@ -59,6 +59,18 @@ serve(async (req) => {
 
     log('info', 'Processing drill feedback', { drill_type, topic_length: topic.length, response_length: user_response.length });
 
+    // Content moderation
+    const BLOCKED = [/\b(hate\s+speech|kill\s+all|death\s+to)\b/i, /\b(racial\s+slur|ethnic\s+cleansing)\b/i, /\b(bomb\s+threat|shoot\s+up|mass\s+murder)\b/i];
+    for (const pattern of BLOCKED) {
+      if (pattern.test(user_response) || pattern.test(topic)) {
+        log('warn', 'Content moderation blocked drill input', { drill_type });
+        return new Response(
+          JSON.stringify({ score: 0, strengths: [], improvements: ["Your response was flagged for inappropriate content. Please rephrase."], specific_tip: "Keep responses professional and appropriate." }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     let systemPrompt = '';
     
     switch (drill_type) {
