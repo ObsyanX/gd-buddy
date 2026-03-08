@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Mic, MicVocal, Square, Loader2, SkipForward, BarChart3 } from "lucide-react";
@@ -17,11 +18,36 @@ interface MessageInputProps {
   onOpenMobileMetrics: () => void;
 }
 
+const AUTO_SEND_DELAY = 7000; // 7 seconds
+
 const MessageInput = ({
   userInput, isListening, isProcessing, isPracticing, isCorrecting,
   onInputChange, onSendMessage, onSendWithVoice, onVoiceInput,
   onStartPractice, onSkipTurn, onOpenMobileMetrics,
 }: MessageInputProps) => {
+  const autoSendTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-send after 7s of idle when there's unsent text
+  useEffect(() => {
+    // Clear existing timer on any change
+    if (autoSendTimer.current) {
+      clearTimeout(autoSendTimer.current);
+      autoSendTimer.current = null;
+    }
+
+    // Only auto-send if there's text, not currently processing/practicing/correcting, and not listening
+    if (userInput.trim() && !isProcessing && !isPracticing && !isCorrecting && !isListening) {
+      autoSendTimer.current = setTimeout(() => {
+        onSendMessage();
+      }, AUTO_SEND_DELAY);
+    }
+
+    return () => {
+      if (autoSendTimer.current) {
+        clearTimeout(autoSendTimer.current);
+      }
+    };
+  }, [userInput, isListening, isProcessing, isPracticing, isCorrecting, onSendMessage]);
   return (
     <div className="space-y-1.5 sm:space-y-2">
       {isCorrecting && (
