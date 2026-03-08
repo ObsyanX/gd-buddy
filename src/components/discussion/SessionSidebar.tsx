@@ -36,26 +36,37 @@ const calculateLiveFluencyScore = (metrics: VoiceSessionMetrics): number => {
 };
 
 const FeedbackGrid = ({ feedback, liveVoiceMetrics }: { feedback: any; liveVoiceMetrics: VoiceSessionMetrics | null }) => {
-  if (feedback) {
+  const hasLiveVoiceData = !!liveVoiceMetrics && liveVoiceMetrics.totalWords >= 3;
+
+  const resolvedFeedback = hasLiveVoiceData
+    ? {
+        fluency_score: calculateLiveFluencyScore(liveVoiceMetrics),
+        wpm: liveVoiceMetrics.estimatedWpm,
+        filler_count: liveVoiceMetrics.fillerCount,
+        live_hint: feedback?.live_hint,
+      }
+    : feedback;
+
+  if (resolvedFeedback) {
     return (
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-2">
           <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Fluency</p>
-            <p className="font-bold text-lg tabular-nums">{feedback.fluency_score || 0}<span className="text-xs text-muted-foreground">/100</span></p>
+            <p className="font-bold text-lg tabular-nums">{resolvedFeedback.fluency_score || 0}<span className="text-xs text-muted-foreground">/100</span></p>
           </div>
           <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">WPM</p>
-            <p className="font-bold text-lg tabular-nums">{Math.round(feedback.wpm || 0)}</p>
+            <p className="font-bold text-lg tabular-nums">{Math.round(resolvedFeedback.wpm || 0)}</p>
           </div>
           <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Fillers</p>
-            <p className="font-bold text-lg tabular-nums">{feedback.filler_count || 0}</p>
+            <p className="font-bold text-lg tabular-nums">{resolvedFeedback.filler_count || 0}</p>
           </div>
         </div>
-        {feedback.live_hint && (
+        {resolvedFeedback.live_hint && (
           <div className="pt-2 border-t border-border">
-            <p className="text-xs font-mono text-muted-foreground leading-relaxed">{feedback.live_hint}</p>
+            <p className="text-xs font-mono text-muted-foreground leading-relaxed">{resolvedFeedback.live_hint}</p>
           </div>
         )}
       </div>
