@@ -86,57 +86,65 @@ const VoiceMetricsPanel = ({
   const totalSpeakingTimeRef = useRef(0);
   const lastTranscriptRef = useRef('');
   const lastTranscriptLengthRef = useRef(0);
-  const wasSpeakingRef = useRef(false);
   
-  // CRITICAL FIX: Track finalized transcript segments by unique hash/content
-  // This prevents counting the same text multiple times
-  const processedSegmentsRef = useRef<Set<string>>(new Set());
+  // Track finalized text by content hash to prevent duplicate counting
+  const processedTextHashesRef = useRef<Set<string>>(new Set());
   const accumulatedFinalWordsRef = useRef<string[]>([]);
-  const lastProcessedEndTimeRef = useRef<number>(0);
+  // Debounce speaking state to avoid rapid true/false toggles
+  const stableSpeakingRef = useRef(false);
+  const speakingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [stableSpeaking, setStableSpeaking] = useState(false);
+
+  // Debounce isUserSpeaking to prevent rapid toggling (console shows 10+ toggles/sec)
+  useEffect(() => {
+    if (isUserSpeaking) {
+      // Immediately mark as speaking
+      if (speakingDebounceRef.current) clearTimeout(speakingDebounceRef.current);
+      if (!stableSpeakingRef.current) {
+        stableSpeakingRef.current = true;
+        setStableSpeaking(true);
+      }
+    } else {
+      // Delay marking as not speaking by 500ms to absorb rapid toggles
+      if (speakingDebounceRef.current) clearTimeout(speakingDebounceRef.current);
+      speakingDebounceRef.current = setTimeout(() => {
+        stableSpeakingRef.current = false;
+        setStableSpeaking(false);
+      }, 500);
+    }
+    return () => {
+      if (speakingDebounceRef.current) clearTimeout(speakingDebounceRef.current);
+    };
+  }, [isUserSpeaking]);
 
   /**
-   * Process only FINALIZED transcript text
-   * Called when transcript is cleared/sent (meaning previous text was finalized)
-   * OR when user stops speaking (voice activity ends)
+   * Process only FINALIZED transcript text.
+   * Uses content-only hash (no timestamp) to truly deduplicate.
    */
-  const finalizeCurrentTranscript = useCallback((text: string, endTime: number) => {
+  const finalizeCurrentTranscript = useCallback((text: string) => {
     if (!text || text.trim().length === 0) return;
     
-    // CRITICAL: Check endTime to prevent duplicate processing
-    if (endTime <= lastProcessedEndTimeRef.current) {
-      console.log('[VoiceMetrics] Skipping - already processed up to this time');
-      return;
-    }
-    
-    // Clean streaming artifacts first
     const cleanedText = cleanStreamingArtifacts(text.trim().toLowerCase());
+    if (!cleanedText) return;
     
-    // Generate a unique key for this segment to prevent duplicate counting
-    const segmentKey = `${cleanedText}|${endTime}`;
+    // Use content-only hash to prevent duplicate counting
+    const contentHash = cleanedText;
     
-    // Skip if we've already processed this exact segment
-    if (processedSegmentsRef.current.has(segmentKey)) {
-      console.log('[VoiceMetrics] Skipping duplicate segment:', cleanedText.slice(0, 50));
+    if (processedTextHashesRef.current.has(contentHash)) {
       return;
     }
     
-    // Mark as processed
-    processedSegmentsRef.current.add(segmentKey);
-    lastProcessedEndTimeRef.current = endTime;
+    processedTextHashesRef.current.add(contentHash);
     
-    // Extract words from finalized text
     const words = cleanedText.split(/\s+/).filter(w => w.length > 0);
-    
-    // Add to accumulated final words
     accumulatedFinalWordsRef.current.push(...words);
     
     console.log('[VoiceMetrics] Finalized segment:', {
       words: words.length,
       totalAccumulated: accumulatedFinalWordsRef.current.length,
-      endTime
+      text: cleanedText.slice(0, 80)
     });
     
-    // Recalculate metrics from accumulated words
     recalculateMetrics();
   }, []);
 
@@ -148,7 +156,6 @@ const VoiceMetricsPanel = ({
     const totalWords = allWords.length;
     const allText = allWords.join(' ');
     
-    // Count filler words by type
     const fillersByType: Record<string, number> = {};
     let fillerCount = 0;
     
@@ -160,24 +167,16 @@ const VoiceMetricsPanel = ({
         fillerCount += matches.length;
       }
     });
-    
-    // Calculate speaking time
-    const now = Date.now();
+
     let currentSpeakingTime = totalSpeakingTimeRef.current;
-    
     if (speakingStartRef.current) {
-      currentSpeakingTime += (now - speakingStartRef.current) / 1000;
+      currentSpeakingTime += (Date.now() - speakingStartRef.current) / 1000;
     }
-    
     const speakingTimeSeconds = Math.max(currentSpeakingTime, 1);
-    const speakingTimeMinutes = speakingTimeSeconds / 60;
-    
-    // Calculate WPM - only if we have meaningful speaking time (at least 5 seconds)
     const estimatedWpm = speakingTimeSeconds >= 5
-      ? Math.round(totalWords / speakingTimeMinutes)
+      ? Math.round(totalWords / (speakingTimeSeconds / 60))
       : 0;
     
-    // Calculate filler rate
     const fillerRate = totalWords > 0 ? fillerCount / totalWords : 0;
     
     setMetrics({
@@ -190,42 +189,36 @@ const VoiceMetricsPanel = ({
     });
   }, []);
 
-  // Track speaking time and finalize on stop
+  // Track speaking time using STABLE speaking state
   useEffect(() => {
-    if (isUserSpeaking) {
+    if (stableSpeaking) {
       if (!speakingStartRef.current) {
         speakingStartRef.current = Date.now();
       }
-      wasSpeakingRef.current = true;
     } else {
       if (speakingStartRef.current) {
-        const endTime = Date.now();
-        totalSpeakingTimeRef.current += (endTime - speakingStartRef.current) / 1000;
-        
-        // CRITICAL: Finalize transcript when user STOPS speaking
-        // This catches cases where transcript isn't cleared but speaking ended
-        const currentText = lastTranscriptRef.current;
-        if (wasSpeakingRef.current && currentText && currentText.trim().length > 0) {
-          finalizeCurrentTranscript(currentText, endTime);
-        }
-        
+        totalSpeakingTimeRef.current += (Date.now() - speakingStartRef.current) / 1000;
         speakingStartRef.current = null;
       }
-      wasSpeakingRef.current = false;
+      
+      // Finalize transcript when user truly stops speaking
+      const currentText = lastTranscriptRef.current;
+      if (currentText && currentText.trim().length > 0) {
+        finalizeCurrentTranscript(currentText);
+      }
     }
-  }, [isUserSpeaking, finalizeCurrentTranscript]);
+  }, [stableSpeaking, finalizeCurrentTranscript]);
 
-  // CRITICAL: Also process transcript when it's FINALIZED (cleared/sent)
-  // This is triggered when currentTranscript becomes shorter or empty
+  // Process transcript when it's cleared/sent
   useEffect(() => {
     const prevTranscript = lastTranscriptRef.current;
     const prevLength = lastTranscriptLengthRef.current;
     
-    // If transcript was cleared/sent (length reduced significantly), finalize the previous text
+    // If transcript was cleared/sent (length reduced significantly), finalize previous text
     if (prevTranscript && 
         prevTranscript.trim().length > 0 && 
         (currentTranscript.length < prevLength * 0.5 || currentTranscript === '')) {
-      finalizeCurrentTranscript(prevTranscript, Date.now());
+      finalizeCurrentTranscript(prevTranscript);
     }
     
     lastTranscriptRef.current = currentTranscript;
@@ -234,7 +227,7 @@ const VoiceMetricsPanel = ({
 
   // Update speaking time display periodically
   useEffect(() => {
-    if (!isUserSpeaking) return;
+    if (!stableSpeaking) return;
     
     const interval = setInterval(() => {
       if (speakingStartRef.current) {
@@ -251,7 +244,7 @@ const VoiceMetricsPanel = ({
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [isUserSpeaking]);
+  }, [stableSpeaking]);
 
   // Calculate live preview metrics (including current interim text for display only)
   const getLiveMetrics = useCallback((): VoiceSessionMetrics => {
