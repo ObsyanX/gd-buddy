@@ -212,9 +212,11 @@ const VoiceMetricsPanel = ({
       currentSpeakingTime += (Date.now() - speakingStartRef.current) / 1000;
     }
     const speakingTimeSeconds = Math.max(currentSpeakingTime, 1);
-    const estimatedWpm = speakingTimeSeconds >= 5
+    const rawWpm = speakingTimeSeconds >= 5
       ? Math.round(totalWords / (speakingTimeSeconds / 60))
       : 0;
+    // Sanity cap: human speech cannot exceed ~400 WPM
+    const estimatedWpm = Math.min(400, rawWpm);
     
     const fillerRate = totalWords > 0 ? fillerCount / totalWords : 0;
     
