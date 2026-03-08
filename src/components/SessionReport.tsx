@@ -239,9 +239,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     }
 
     // Calculate actual WPM - require minimum data for meaningful result
-    const actualWpm = sessionDurationMinutes >= 0.5 && totalUserWords >= 10 ?
+    const rawWpm = sessionDurationMinutes >= 0.5 && totalUserWords >= 10 ?
     Math.round(totalUserWords / sessionDurationMinutes) :
-    0; // Return 0 if insufficient data
+    0;
+    // Sanity cap: human speech cannot exceed ~400 WPM
+    const actualWpm = Math.min(400, rawWpm);
 
     // Count actual filler words - use cleaned text from THIS participant only
     const allMyText = myMessages.map((m) => cleanStreamingArtifacts(m.text || '').toLowerCase()).join(' ');
