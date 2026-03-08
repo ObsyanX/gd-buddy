@@ -397,6 +397,12 @@ const SkillDrills = () => {
                   <p className="text-lg font-bold">{topic}</p>
                 </div>
                 <p className="text-sm text-muted-foreground">{selectedDrill.description}</p>
+                {selectedDrill.scenario && (
+                  <div className="p-4 border-2 border-primary/30 bg-primary/5 rounded">
+                    <p className="text-sm font-bold text-primary mb-1">📋 SCENARIO</p>
+                    <p className="text-sm leading-relaxed">{selectedDrill.scenario}</p>
+                  </div>
+                )}
               </div>
             </Card>
 
