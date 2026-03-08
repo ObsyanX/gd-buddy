@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SessionHistoryComparison from "@/components/SessionHistoryComparison";
+import SkillProgressWidget from "@/components/SkillProgressWidget";
 
 const Dashboard = () => {
   const navigate = useNavigate();
