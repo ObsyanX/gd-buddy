@@ -34,6 +34,7 @@ const jsonLd = [
         position: ci * 10 + i + 1,
         name: t.title,
         url: `https://gd-buddy.vercel.app/gd-topic/${t.slug}`,
+
       }))
     ),
   },

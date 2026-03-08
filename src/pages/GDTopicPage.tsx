@@ -23,8 +23,8 @@ const GDTopicPage = () => {
       description: topic.overview.slice(0, 160),
       author: { "@type": "Organization", name: "GD Buddy" },
       publisher: { "@type": "Organization", name: "GD Buddy" },
-      datePublished: "2026-03-08",
-      dateModified: "2026-03-08",
+      datePublished: "2026-03-08T00:00:00+05:30",
+      dateModified: "2026-03-08T00:00:00+05:30",
     },
     {
       "@context": "https://schema.org",
