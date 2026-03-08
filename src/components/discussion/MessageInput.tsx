@@ -90,7 +90,7 @@ const MessageInput = ({
     if (autoSkipTimer.current) clearTimeout(autoSkipTimer.current);
     if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
 
-    const canAutoSkip = autoSkipEnabled && !isPaused && !userInput.trim() && !isProcessing && !isPracticing && !isCorrecting;
+    const canAutoSkip = autoSkipEnabled && !isPaused && !isBusy && !userInput.trim() && !isProcessing && !isPracticing && !isCorrecting;
 
     if (!canAutoSkip) {
       setSkipCountdown(null);
