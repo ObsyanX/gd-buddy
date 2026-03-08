@@ -21,7 +21,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
 import { useStreamingTranscription } from "@/hooks/useStreamingTranscription";
-import { BUILT_IN_DRILLS, SAMPLE_TOPICS, getCustomDrillsFromLocalStorage, clearLocalStorageDrills, getApiDrillType, type DrillType } from "@/config/drill-types";
+import { BUILT_IN_DRILLS, SCENARIO_DRILLS, SAMPLE_TOPICS, getCustomDrillsFromLocalStorage, clearLocalStorageDrills, getApiDrillType, type DrillType } from "@/config/drill-types";
 import { Target } from "lucide-react";
 import CreateDrillModal from "@/components/CreateDrillModal";
 import DrillHistory from "@/components/DrillHistory";
@@ -115,7 +115,7 @@ const SkillDrills = () => {
     loadDrills();
   }, [user]);
 
-  const allDrills = [...BUILT_IN_DRILLS, ...customDrills];
+  const allDrills = [...BUILT_IN_DRILLS, ...SCENARIO_DRILLS, ...customDrills];
 
   const {
     isListening,
@@ -210,7 +210,8 @@ const SkillDrills = () => {
           drill_type: drillTypeForApi,
           topic,
           user_response: userResponse,
-          time_limit_seconds: selectedDrill.timeLimit
+          time_limit_seconds: selectedDrill.timeLimit,
+          ...(selectedDrill.scenario ? { scenario: selectedDrill.scenario } : {}),
         }
       });
 
@@ -337,6 +338,9 @@ const SkillDrills = () => {
                             {drill.type === 'custom' && (
                               <Badge variant="secondary" className="text-[10px] sm:text-xs">Custom</Badge>
                             )}
+                            {drill.type === 'scenario' && (
+                              <Badge variant="default" className="text-[10px] sm:text-xs">Scenario</Badge>
+                            )}
                             {drill.difficulty && (
                               <Badge variant="secondary" className="text-[10px] sm:text-xs capitalize">{drill.difficulty}</Badge>
                             )}
@@ -393,6 +397,12 @@ const SkillDrills = () => {
                   <p className="text-lg font-bold">{topic}</p>
                 </div>
                 <p className="text-sm text-muted-foreground">{selectedDrill.description}</p>
+                {selectedDrill.scenario && (
+                  <div className="p-4 border-2 border-primary/30 bg-primary/5 rounded">
+                    <p className="text-sm font-bold text-primary mb-1">📋 SCENARIO</p>
+                    <p className="text-sm leading-relaxed">{selectedDrill.scenario}</p>
+                  </div>
+                )}
               </div>
             </Card>
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import SessionReplay from "@/components/SessionReplay";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -1162,6 +1163,20 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             </div>
           </Card>
         }
+
+        {/* Session Replay */}
+        {session?.start_time && (
+          <Card className="p-6 border-4 border-border space-y-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <MessageSquare className="w-6 h-6" />
+              SESSION REPLAY
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Replay the discussion with timestamps and coaching annotations.
+            </p>
+            <SessionReplay sessionId={sessionId} sessionStartTime={session.start_time} />
+          </Card>
+        )}
 
         <div className="gap-[8px] rounded flex-col flex items-center justify-center shadow-none">
           <Button

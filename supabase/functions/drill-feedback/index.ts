@@ -12,6 +12,7 @@ const inputSchema = z.object({
   topic: z.string().min(1).max(500, 'Topic too long (max 500 chars)'),
   user_response: z.string().min(1).max(5000, 'Response too long (max 5000 chars)'),
   time_limit_seconds: z.number().min(10).max(600).optional(),
+  scenario: z.string().max(1000).optional(),
 });
 
 serve(async (req) => {
@@ -37,7 +38,7 @@ serve(async (req) => {
       );
     }
 
-    const { drill_type, topic, user_response, time_limit_seconds } = parseResult.data;
+    const { drill_type, topic, user_response, time_limit_seconds, scenario } = parseResult.data;
 
     console.log(`Generating feedback for ${drill_type} drill`);
 
@@ -86,9 +87,11 @@ Provide score (0-100), time management feedback, and pacing tips.`;
         break;
     }
 
+    const scenarioContext = scenario ? `\nScenario Context: ${scenario}\nEvaluate the response specifically in the context of this scenario. Did they address the scenario appropriately?\n` : '';
+
     const userMessage = `Topic: ${topic}
 ${time_limit_seconds ? `Time Limit: ${time_limit_seconds} seconds` : ''}
-
+${scenarioContext}
 User's Response:
 "${user_response}"
 
