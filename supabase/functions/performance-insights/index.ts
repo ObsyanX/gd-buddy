@@ -5,10 +5,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Structured logging helper
+function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>) {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    level,
+    function: 'performance-insights',
+    message,
+    ...data,
+  };
+  if (level === 'error') console.error(JSON.stringify(entry));
+  else if (level === 'warn') console.warn(JSON.stringify(entry));
+  else console.log(JSON.stringify(entry));
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const startTime = performance.now();
 
   try {
     const authHeader = req.headers.get('Authorization');
@@ -22,6 +38,8 @@ Deno.serve(async (req) => {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
+
+    log('info', 'Fetching user data for insights', { user_id: user.id });
 
     // Fetch recent sessions with metrics
     const { data: sessions } = await supabase
@@ -45,6 +63,12 @@ Deno.serve(async (req) => {
       .from('skill_progress')
       .select('*')
       .eq('user_id', user.id);
+
+    log('info', 'Data fetched', { 
+      sessions_count: sessions?.length || 0, 
+      drills_count: drills?.length || 0, 
+      skills_count: skills?.length || 0 
+    });
 
     // Build summary for AI
     const sessionSummary = (sessions || []).map((s: any) => {
@@ -98,7 +122,8 @@ Respond ONLY with a JSON array of objects, each with:
 
 If no data, give general beginner tips. Sort by priority.`;
 
-    const aiResponse = await fetch('https://api.lovable.dev/v1/chat/completions', {
+    const aiStartTime = performance.now();
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -110,18 +135,30 @@ If no data, give general beginner tips. Sort by priority.`;
         temperature: 0.7,
       }),
     });
+    const aiLatencyMs = Math.round(performance.now() - aiStartTime);
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content || '[]';
     
-    // Extract JSON from response
     const jsonMatch = content.match(/\[[\s\S]*\]/);
     const insights = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+
+    const totalLatencyMs = Math.round(performance.now() - startTime);
+    log('info', 'Insights generated', { 
+      insights_count: insights.length, 
+      ai_latency_ms: aiLatencyMs, 
+      total_latency_ms: totalLatencyMs 
+    });
 
     return new Response(JSON.stringify({ insights }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
+    const totalLatencyMs = Math.round(performance.now() - startTime);
+    log('error', 'Performance insights error', { 
+      error: error.message, 
+      total_latency_ms: totalLatencyMs 
+    });
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

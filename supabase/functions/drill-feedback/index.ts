@@ -6,6 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Structured logging helper
+function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>) {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    level,
+    function: 'drill-feedback',
+    message,
+    ...data,
+  };
+  if (level === 'error') console.error(JSON.stringify(entry));
+  else if (level === 'warn') console.warn(JSON.stringify(entry));
+  else console.log(JSON.stringify(entry));
+}
+
 // Input validation schema
 const inputSchema = z.object({
   drill_type: z.enum(['opening_statement', 'star_response', 'rebuttal', 'time_boxed']),
@@ -20,18 +34,20 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = performance.now();
+  let drillType = 'unknown';
+
   try {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    // Validate input
     const rawBody = await req.json();
     const parseResult = inputSchema.safeParse(rawBody);
     
     if (!parseResult.success) {
-      console.error('Input validation failed:', parseResult.error.issues);
+      log('warn', 'Input validation failed', { issues: parseResult.error.issues as unknown as Record<string, unknown> });
       return new Response(
         JSON.stringify({ error: 'Invalid input', details: parseResult.error.issues }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -39,10 +55,10 @@ serve(async (req) => {
     }
 
     const { drill_type, topic, user_response, time_limit_seconds, scenario } = parseResult.data;
+    drillType = drill_type;
 
-    console.log(`Generating feedback for ${drill_type} drill`);
+    log('info', 'Processing drill feedback', { drill_type, topic_length: topic.length, response_length: user_response.length });
 
-    // Build drill-specific system prompt
     let systemPrompt = '';
     
     switch (drill_type) {
@@ -104,6 +120,7 @@ Provide detailed feedback as JSON:
   "example": "example of how to improve (optional)"
 }`;
 
+    const aiStartTime = performance.now();
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -119,10 +136,11 @@ Provide detailed feedback as JSON:
         temperature: 0.7,
       }),
     });
+    const aiLatencyMs = Math.round(performance.now() - aiStartTime);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('AI error:', response.status, errorText);
+      log('error', 'AI Gateway error', { status: response.status, error: errorText, ai_latency_ms: aiLatencyMs });
       throw new Error(`AI failed: ${response.status}`);
     }
 
@@ -133,14 +151,12 @@ Provide detailed feedback as JSON:
       throw new Error('No content in AI response');
     }
 
-    // Parse JSON from response
     let feedback;
     try {
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || [null, content];
       feedback = JSON.parse(jsonMatch[1]);
     } catch (e) {
-      console.error('Failed to parse feedback:', e);
-      // Return basic feedback if parsing fails
+      log('warn', 'Failed to parse AI feedback JSON', { raw_content_length: content.length });
       feedback = {
         score: 70,
         strengths: ["Good attempt at the exercise"],
@@ -149,24 +165,29 @@ Provide detailed feedback as JSON:
       };
     }
 
+    const totalLatencyMs = Math.round(performance.now() - startTime);
+    log('info', 'Drill feedback generated', { 
+      drill_type: drillType, 
+      score: feedback.score, 
+      ai_latency_ms: aiLatencyMs, 
+      total_latency_ms: totalLatencyMs 
+    });
+
     return new Response(
       JSON.stringify(feedback),
-      { 
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Drill feedback error:', error);
+    const totalLatencyMs = Math.round(performance.now() - startTime);
+    log('error', 'Drill feedback error', { 
+      drill_type: drillType, 
+      error: error instanceof Error ? error.message : 'Unknown', 
+      total_latency_ms: totalLatencyMs 
+    });
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

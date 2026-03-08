@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import SessionReplay from "@/components/SessionReplay";
 import SessionNotes from "@/components/SessionNotes";
+import PerTurnAnalysis from "@/components/PerTurnAnalysis";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -1164,6 +1165,15 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             </div>
           </Card>
         }
+
+        {/* Per-Turn Analysis & Comparative Radar */}
+        {hasRealScores && calculatedStats && (
+          <PerTurnAnalysis
+            messages={messages}
+            currentParticipantId={currentParticipant?.id}
+            calculatedStats={calculatedStats}
+          />
+        )}
 
         {/* Session Replay */}
         {session?.start_time && (

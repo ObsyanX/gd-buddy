@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getMediaPipeClient, destroyMediaPipeClient, LandmarkData } from '@/lib/mediapipe-client';
 import { getAnalyzeFrameClient, resetAnalyzeFrameClient, FrameResponse, AnalysisMetrics } from '@/lib/analyze-frame-client';
 import { resetExternalVideoAnalyzer } from '@/lib/external-video-analyzer';
+import VideoCoachingOverlay from '@/components/VideoCoachingOverlay';
 
 interface VideoMonitorProps {
   isActive: boolean;
@@ -806,6 +807,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
               className="absolute inset-0 w-full h-full pointer-events-none"
               style={{ transform: 'scaleX(-1)' }}
             />
+            
+            {/* Coaching overlay - color-coded badges for eye contact, posture, expression */}
+            <VideoCoachingOverlay metrics={metrics} isActive={isVideoReady && !isMinimized} />
             
             {/* Loading overlay - shown during initialization OR when video not ready */}
             {(isInitializingCamera || !isVideoReady) && (
