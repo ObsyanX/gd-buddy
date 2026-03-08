@@ -12,10 +12,12 @@ interface SessionHeaderProps {
   autoMicSetting: boolean;
   autoPlayTTS: boolean;
   usingFallbackTTS?: boolean;
+  isPaused: boolean;
   onToggleAutoMic: () => void;
   onToggleTTS: () => void;
   onResetTutorial: () => void;
   onEndSession: () => void;
+  onTogglePause: () => void;
 }
 
 const SessionHeader = ({
