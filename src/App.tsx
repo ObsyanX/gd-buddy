@@ -46,6 +46,13 @@ const HowToCrackGD = lazy(() => import("./pages/HowToCrackGD"));
 const CommonGDMistakes = lazy(() => import("./pages/CommonGDMistakes"));
 const CommunicationSkills = lazy(() => import("./pages/CommunicationSkills"));
 const About = lazy(() => import("./pages/About"));
+const GDPreparationGuide = lazy(() => import("./pages/GDPreparationGuide"));
+const AIGDSimulator = lazy(() => import("./pages/AIGDSimulator"));
+const SpeakConfidently = lazy(() => import("./pages/SpeakConfidently"));
+const StartGD = lazy(() => import("./pages/StartGD"));
+const ConcludeGD = lazy(() => import("./pages/ConcludeGD"));
+const BodyLanguageTips = lazy(() => import("./pages/BodyLanguageTips"));
+const GDTopicPage = lazy(() => import("./pages/GDTopicPage"));
 
 const queryClient = new QueryClient();
 
@@ -97,6 +104,13 @@ const App = () => (
               <Route path="/common-gd-mistakes" element={<CommonGDMistakes />} />
               <Route path="/communication-skills-for-gd" element={<CommunicationSkills />} />
               <Route path="/about" element={<About />} />
+              <Route path="/group-discussion-preparation-guide" element={<GDPreparationGuide />} />
+              <Route path="/ai-gd-simulator" element={<AIGDSimulator />} />
+              <Route path="/how-to-speak-confidently-in-group-discussion" element={<SpeakConfidently />} />
+              <Route path="/how-to-start-group-discussion" element={<StartGD />} />
+              <Route path="/how-to-conclude-gd-round" element={<ConcludeGD />} />
+              <Route path="/body-language-tips-for-gd" element={<BodyLanguageTips />} />
+              <Route path="/gd-topic/:slug" element={<GDTopicPage />} />
 
               <Route path="/auth" element={<AuthGuard />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />

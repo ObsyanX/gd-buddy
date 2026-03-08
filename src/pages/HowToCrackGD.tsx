@@ -15,7 +15,7 @@ const faqJsonLd = [
     publisher: { "@type": "Organization", name: "GD Buddy" },
     mainEntityOfPage: { "@type": "WebPage" },
     datePublished: "2025-01-15",
-    dateModified: "2026-03-03",
+    dateModified: "2026-03-08",
   },
   {
     "@context": "https://schema.org",
@@ -68,6 +68,21 @@ const HowToCrackGD = () => (
 
       <article>
         <h1 className="text-display font-bold mb-4">How to Crack Group Discussion in Placements</h1>
+
+        {/* LLM-friendly Quick Summary */}
+        <section className="border-2 border-border p-5 mb-8 bg-muted/30" aria-label="Quick summary">
+          <h2 className="font-bold mb-2">🎯 Quick Summary</h2>
+          <p className="text-sm text-muted-foreground mb-3">To crack a GD in placements, you need strong content knowledge, structured arguments, active listening, confident body language, and consistent practice. This guide covers 8 proven strategies used by successful candidates.</p>
+          <h3 className="font-bold text-sm mb-1">Top Tips at a Glance</h3>
+          <ol className="list-decimal list-inside text-sm text-muted-foreground space-y-1">
+            <li>Initiate or summarize — both show leadership</li>
+            <li>Use PREP/STAR frameworks to structure arguments</li>
+            <li>Listen before speaking — build on others' points</li>
+            <li>Back opinions with data, stats, and examples</li>
+            <li>Practice regularly with <Link to="/ai-gd-simulator" className="underline hover:text-foreground">AI GD simulation</Link></li>
+          </ol>
+        </section>
+
         <p className="text-body text-muted-foreground mb-8">
           Group discussions are one of the most common elimination rounds in campus placements. Whether you're appearing for IT companies, consulting firms, or banks, mastering GD skills is essential. This comprehensive guide covers proven strategies, common mistakes, and practical tips to help you clear GD rounds confidently.
         </p>
@@ -97,11 +112,19 @@ const HowToCrackGD = () => (
           <Button asChild size="lg" className="border-4 border-border">
             <Link to="/home/practice">Start a Practice Session</Link>
           </Button>
-          <div className="mt-4 flex gap-4 flex-wrap text-sm">
-            <Link to="/gd-topics-for-placements" className="text-muted-foreground hover:text-foreground underline">Browse 50+ GD topics for placements →</Link>
-            <Link to="/common-gd-mistakes" className="text-muted-foreground hover:text-foreground underline">Common GD mistakes to avoid →</Link>
-            <Link to="/communication-skills-for-gd" className="text-muted-foreground hover:text-foreground underline">Communication skills guide →</Link>
-          </div>
+        </section>
+
+        {/* Related Resources */}
+        <section className="mb-10 border-2 border-border p-5">
+          <h2 className="font-bold mb-3">Related Resources</h2>
+          <ul className="space-y-2 text-sm">
+            <li><Link to="/gd-topics-for-placements" className="text-muted-foreground hover:text-foreground underline">50+ GD topics for placements 2025 →</Link></li>
+            <li><Link to="/common-gd-mistakes" className="text-muted-foreground hover:text-foreground underline">10 common GD mistakes to avoid →</Link></li>
+            <li><Link to="/communication-skills-for-gd" className="text-muted-foreground hover:text-foreground underline">Communication skills for group discussion →</Link></li>
+            <li><Link to="/group-discussion-preparation-guide" className="text-muted-foreground hover:text-foreground underline">Complete GD preparation guide →</Link></li>
+            <li><a href="https://en.wikipedia.org/wiki/Group_discussion" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground underline">Wikipedia: Group Discussion ↗</a></li>
+            <li><a href="https://hbr.org/topic/subject/communication" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground underline">HBR: Communication insights ↗</a></li>
+          </ul>
         </section>
 
         <section>

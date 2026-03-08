@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Github, Linkedin, Twitter } from "lucide-react";
 
 const SEOFooter = () => (
   <footer className="border-t-4 border-border py-8 px-6" role="contentinfo">
@@ -18,13 +19,16 @@ const SEOFooter = () => (
             <li><Link to="/gd-topics-for-placements" className="hover:text-foreground transition-colors">GD Topics</Link></li>
             <li><Link to="/how-to-crack-group-discussion" className="hover:text-foreground transition-colors">How to Crack GD</Link></li>
             <li><Link to="/communication-skills-for-gd" className="hover:text-foreground transition-colors">Communication Skills</Link></li>
+            <li><Link to="/common-gd-mistakes" className="hover:text-foreground transition-colors">Common GD Mistakes</Link></li>
           </ul>
         </div>
         <div>
           <h3 className="font-bold text-sm mb-2">LEARN</h3>
           <ul className="space-y-1 text-sm text-muted-foreground">
-            <li><Link to="/common-gd-mistakes" className="hover:text-foreground transition-colors">Common Mistakes</Link></li>
+            <li><Link to="/group-discussion-preparation-guide" className="hover:text-foreground transition-colors">GD Preparation Guide</Link></li>
+            <li><Link to="/ai-gd-simulator" className="hover:text-foreground transition-colors">AI GD Simulator</Link></li>
             <li><Link to="/home/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link></li>
+            <li><Link to="/about" className="hover:text-foreground transition-colors">About</Link></li>
           </ul>
         </div>
         <div>
@@ -32,8 +36,18 @@ const SEOFooter = () => (
           <ul className="space-y-1 text-sm text-muted-foreground">
             <li><Link to="/home/profile" className="hover:text-foreground transition-colors">Profile</Link></li>
             <li><Link to="/home/settings" className="hover:text-foreground transition-colors">Settings</Link></li>
-            <li><Link to="/about" className="hover:text-foreground transition-colors">About</Link></li>
           </ul>
+          <div className="flex gap-3 mt-4">
+            <a href="https://github.com/sayandutta111" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Github className="w-5 h-5" />
+            </a>
+            <a href="https://www.linkedin.com/in/sayandutta111" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Linkedin className="w-5 h-5" />
+            </a>
+            <a href="https://x.com/gdbuddy" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Twitter className="w-5 h-5" />
+            </a>
+          </div>
         </div>
       </nav>
       <p className="text-center text-sm text-muted-foreground font-mono">

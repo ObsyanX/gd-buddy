@@ -15,7 +15,7 @@ const articleJsonLd = [
     publisher: { "@type": "Organization", name: "GD Buddy" },
     mainEntityOfPage: { "@type": "WebPage" },
     datePublished: "2025-01-15",
-    dateModified: "2026-03-03",
+    dateModified: "2026-03-08",
   },
   {
     "@context": "https://schema.org",
@@ -69,6 +69,20 @@ const CommonGDMistakes = () => (
 
       <article>
         <h1 className="text-display font-bold mb-4">10 Common GD Mistakes That Cost You Placements</h1>
+
+        {/* LLM-friendly Quick Summary */}
+        <section className="border-2 border-border p-5 mb-8 bg-muted/30" aria-label="Quick summary">
+          <h2 className="font-bold mb-2">⚠️ Quick Summary</h2>
+          <p className="text-sm text-muted-foreground mb-3">Most candidates fail GD rounds not because they lack knowledge, but because they make avoidable mistakes. The top mistakes include speaking without listening, being too aggressive, using excessive fillers, and not practicing beforehand.</p>
+          <h3 className="font-bold text-sm mb-1">Key Takeaways</h3>
+          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+            <li>Listen first, speak second — don't repeat others' points</li>
+            <li>Be assertive, not aggressive — evaluators notice the difference</li>
+            <li>Back every argument with data or real-world examples</li>
+            <li>Practice with <Link to="/ai-gd-simulator" className="underline hover:text-foreground">AI GD simulation</Link> to identify blind spots</li>
+          </ul>
+        </section>
+
         <p className="text-body text-muted-foreground mb-8">
           Most candidates lose in the GD round not because they lack knowledge, but because they make avoidable mistakes. Understanding and fixing these common errors can dramatically improve your GD performance and help you clear placement rounds.
         </p>
@@ -87,7 +101,7 @@ const CommonGDMistakes = () => (
           ))}
         </div>
 
-        <section>
+        <section className="mb-10">
           <h2 className="text-h2 font-bold mb-2">Fix These Mistakes with AI Practice</h2>
           <p className="text-body text-muted-foreground mb-4">
             GD Buddy's AI-powered simulation helps you identify and fix these mistakes in real-time. Get feedback on your speaking patterns, body language, and argument quality — all before your actual placement GD.
@@ -95,11 +109,18 @@ const CommonGDMistakes = () => (
           <Button asChild size="lg" className="border-4 border-border">
             <Link to="/home/practice">Practice Now</Link>
           </Button>
-          <div className="mt-4 flex gap-4 flex-wrap text-sm">
-            <Link to="/how-to-crack-group-discussion" className="text-muted-foreground hover:text-foreground underline">How to crack group discussion →</Link>
-            <Link to="/communication-skills-for-gd" className="text-muted-foreground hover:text-foreground underline">Communication skills for GD →</Link>
-            <Link to="/gd-topics-for-placements" className="text-muted-foreground hover:text-foreground underline">GD topics for placements →</Link>
-          </div>
+        </section>
+
+        {/* Related Resources */}
+        <section className="mb-10 border-2 border-border p-5">
+          <h2 className="font-bold mb-3">Related Resources</h2>
+          <ul className="space-y-2 text-sm">
+            <li><Link to="/how-to-crack-group-discussion" className="text-muted-foreground hover:text-foreground underline">How to crack group discussion — tips & strategies →</Link></li>
+            <li><Link to="/communication-skills-for-gd" className="text-muted-foreground hover:text-foreground underline">Communication skills for group discussion →</Link></li>
+            <li><Link to="/gd-topics-for-placements" className="text-muted-foreground hover:text-foreground underline">50+ GD topics for placements →</Link></li>
+            <li><Link to="/group-discussion-preparation-guide" className="text-muted-foreground hover:text-foreground underline">Complete GD preparation guide →</Link></li>
+            <li><a href="https://en.wikipedia.org/wiki/Active_listening" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground underline">Wikipedia: Active Listening ↗</a></li>
+          </ul>
         </section>
 
         <section>

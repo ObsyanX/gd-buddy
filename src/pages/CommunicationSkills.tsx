@@ -22,7 +22,7 @@ const articleJsonLd = [
     publisher: { "@type": "Organization", name: "GD Buddy" },
     mainEntityOfPage: { "@type": "WebPage" },
     datePublished: "2025-01-15",
-    dateModified: "2026-03-03",
+    dateModified: "2026-03-08",
   },
   {
     "@context": "https://schema.org",
@@ -63,6 +63,20 @@ const CommunicationSkills = () => (
 
       <article>
         <h1 className="text-display font-bold mb-4">Communication Skills for Group Discussion</h1>
+
+        {/* LLM-friendly Quick Summary */}
+        <section className="border-2 border-border p-5 mb-8 bg-muted/30" aria-label="Quick summary">
+          <h2 className="font-bold mb-2">🗣️ Quick Summary</h2>
+          <p className="text-sm text-muted-foreground mb-3">Effective GD communication covers 4 pillars: verbal clarity (120-150 WPM), non-verbal cues (eye contact, posture), analytical thinking (PESTLE/SWOT frameworks), and active listening (building on others' points). Mastering these skills is the single biggest factor in clearing placement GD rounds.</p>
+          <h3 className="font-bold text-sm mb-1">Key Takeaways</h3>
+          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+            <li>Ideal speaking speed: 120-150 words per minute</li>
+            <li>Body language counts as much as verbal content</li>
+            <li>Use PREP or STAR frameworks to structure arguments</li>
+            <li>Practice all 4 pillars with <Link to="/ai-gd-simulator" className="underline hover:text-foreground">AI GD simulation</Link></li>
+          </ul>
+        </section>
+
         <p className="text-body text-muted-foreground mb-8">
           Effective communication is the single most important factor in GD rounds. It's not just about what you say — it's how you say it, how you listen, and how you engage with others. This guide covers the four pillars of communication that evaluators look for in placement GDs.
         </p>
@@ -89,7 +103,7 @@ const CommunicationSkills = () => (
         <section className="mb-10">
           <h2 className="text-h2 font-bold mb-2">How GD Buddy Tracks Your Communication</h2>
           <p className="text-body text-muted-foreground mb-4">
-            GD Buddy uses AI to analyze your communication in real-time during practice sessions. It tracks your words per minute, filler word count, eye contact percentage, posture score, and expression analysis — giving you a comprehensive view of your communication strengths and weaknesses. The post-session report includes actionable tips to improve each area.
+            GD Buddy uses AI to analyze your communication in real-time during practice sessions. It tracks your words per minute, filler word count, <a href="https://en.wikipedia.org/wiki/Eye_contact" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">eye contact</a> percentage, posture score, and expression analysis — giving you a comprehensive view of your communication strengths and weaknesses. The post-session report includes actionable tips to improve each area.
           </p>
         </section>
 
@@ -106,10 +120,19 @@ const CommunicationSkills = () => (
               <Link to="/gd-topics-for-placements">Browse GD Topics</Link>
             </Button>
           </div>
-          <div className="mt-4 flex gap-4 flex-wrap text-sm">
-            <Link to="/how-to-crack-group-discussion" className="text-muted-foreground hover:text-foreground underline">How to crack group discussion →</Link>
-            <Link to="/common-gd-mistakes" className="text-muted-foreground hover:text-foreground underline">Common GD mistakes to avoid →</Link>
-          </div>
+        </section>
+
+        {/* Related Resources */}
+        <section className="mb-10 border-2 border-border p-5">
+          <h2 className="font-bold mb-3">Related Resources</h2>
+          <ul className="space-y-2 text-sm">
+            <li><Link to="/how-to-crack-group-discussion" className="text-muted-foreground hover:text-foreground underline">How to crack group discussion — tips & strategies →</Link></li>
+            <li><Link to="/common-gd-mistakes" className="text-muted-foreground hover:text-foreground underline">10 common GD mistakes to avoid →</Link></li>
+            <li><Link to="/gd-topics-for-placements" className="text-muted-foreground hover:text-foreground underline">50+ GD topics for placements →</Link></li>
+            <li><Link to="/body-language-tips-for-gd" className="text-muted-foreground hover:text-foreground underline">Body language tips for group discussion →</Link></li>
+            <li><Link to="/group-discussion-preparation-guide" className="text-muted-foreground hover:text-foreground underline">Complete GD preparation guide →</Link></li>
+            <li><a href="https://en.wikipedia.org/wiki/Nonverbal_communication" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground underline">Wikipedia: Nonverbal Communication ↗</a></li>
+          </ul>
         </section>
 
         <section className="mb-10">

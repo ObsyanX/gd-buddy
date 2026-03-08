@@ -2,45 +2,116 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
   <url>
-    <loc>https://gdbuddy.vercel.app/</loc>
-    <lastmod>2026-03-03</lastmod>
+    <loc>https://gd-buddy.vercel.app/</loc>
+    <lastmod>2026-03-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
-    <loc>https://gdbuddy.vercel.app/gd-topics-for-placements</loc>
-    <lastmod>2026-03-03</lastmod>
+    <loc>https://gd-buddy.vercel.app/gd-topics-for-placements</loc>
+    <lastmod>2026-03-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://gdbuddy.vercel.app/how-to-crack-group-discussion</loc>
-    <lastmod>2026-03-03</lastmod>
+    <loc>https://gd-buddy.vercel.app/how-to-crack-group-discussion</loc>
+    <lastmod>2026-03-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://gdbuddy.vercel.app/common-gd-mistakes</loc>
-    <lastmod>2026-03-03</lastmod>
+    <loc>https://gd-buddy.vercel.app/common-gd-mistakes</loc>
+    <lastmod>2026-03-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://gdbuddy.vercel.app/communication-skills-for-gd</loc>
-    <lastmod>2026-03-03</lastmod>
+    <loc>https://gd-buddy.vercel.app/communication-skills-for-gd</loc>
+    <lastmod>2026-03-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://gdbuddy.vercel.app/auth</loc>
-    <lastmod>2026-03-03</lastmod>
+    <loc>https://gd-buddy.vercel.app/group-discussion-preparation-guide</loc>
+    <lastmod>2026-03-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://gd-buddy.vercel.app/ai-gd-simulator</loc>
+    <lastmod>2026-03-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://gd-buddy.vercel.app/how-to-speak-confidently-in-group-discussion</loc>
+    <lastmod>2026-03-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://gd-buddy.vercel.app/how-to-start-group-discussion</loc>
+    <lastmod>2026-03-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://gd-buddy.vercel.app/how-to-conclude-gd-round</loc>
+    <lastmod>2026-03-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://gd-buddy.vercel.app/body-language-tips-for-gd</loc>
+    <lastmod>2026-03-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://gd-buddy.vercel.app/about</loc>
+    <lastmod>2026-03-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
+
+  <url>
+    <loc>https://gd-buddy.vercel.app/auth</loc>
+    <lastmod>2026-03-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Programmatic GD Topic Pages -->
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/artificial-intelligence-impact-on-jobs</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/social-media-advantages-and-disadvantages</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/online-education-vs-offline-education</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/startup-culture-in-india</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/climate-change-and-indias-role</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/cryptocurrency-boon-or-bane</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/remote-work-future-of-employment</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/mental-health-awareness</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/electric-vehicles-adoption</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/gender-equality-in-workplaces</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/upi-and-digital-payments-revolution</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/data-privacy-concerns</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/gig-economy-and-worker-rights</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/reservation-policy-in-india</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/ethical-ai-development</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/digital-india-success-or-failure</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/work-life-balance</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/5g-and-its-impact</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/education-system-reform</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://gd-buddy.vercel.app/gd-topic/make-in-india-vs-import-dependency</loc><lastmod>2026-03-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
 
 </urlset>
