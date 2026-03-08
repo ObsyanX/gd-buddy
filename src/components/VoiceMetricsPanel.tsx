@@ -258,10 +258,15 @@ const VoiceMetricsPanel = ({
     }
   }, [stableSpeaking, finalizeCurrentTranscript]);
 
-  // Process transcript when it's cleared/sent
+  // Process transcript when it's cleared/sent + track transcript activity
   useEffect(() => {
     const prevTranscript = lastTranscriptRef.current;
     const prevLength = lastTranscriptLengthRef.current;
+    
+    // Track when transcript actually changes (real speech activity)
+    if (currentTranscript.length > prevLength) {
+      lastTranscriptChangeRef.current = Date.now();
+    }
     
     // If transcript was cleared/sent (length reduced significantly), finalize previous text
     if (prevTranscript && 
@@ -274,7 +279,7 @@ const VoiceMetricsPanel = ({
     lastTranscriptLengthRef.current = currentTranscript.length;
   }, [currentTranscript, finalizeCurrentTranscript]);
 
-  // Update speaking time display periodically
+  // Update speaking time display periodically — only count time when transcript is actively growing
   useEffect(() => {
     if (!stableSpeaking) return;
     
