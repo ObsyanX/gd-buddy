@@ -23,6 +23,7 @@ const jsonLd = [
       { "@type": "Question", name: "How important is body language in GD?", acceptedAnswer: { "@type": "Answer", text: "Body language accounts for about 15-20% of your GD evaluation. Evaluators assess eye contact, posture, facial expressions, and gestures. Poor body language can undermine even the best verbal contributions." } },
       { "@type": "Question", name: "What body language mistakes should I avoid in GD?", acceptedAnswer: { "@type": "Answer", text: "Avoid crossing arms, slouching, fidgeting, looking down, pointing fingers at others, and excessive hand movements. These signal defensiveness, disinterest, or aggression." } },
       { "@type": "Question", name: "Can I practice body language with AI?", acceptedAnswer: { "@type": "Answer", text: "Yes. GD Buddy uses webcam-based video analysis to track your eye contact, posture, and facial expressions during practice sessions, giving you objective feedback on your body language." } },
+      { "@type": "Question", name: "How can I practice GD online with body language feedback?", acceptedAnswer: { "@type": "Answer", text: "GD Buddy's AI group discussion simulator includes real-time video analysis. Enable your webcam during practice to get feedback on eye contact, posture, and facial expressions alongside verbal feedback." } },
     ],
   },
   {
@@ -51,7 +52,7 @@ const BodyLanguageTips = () => (
     <SEOHead
       title="Body Language Tips for Group Discussion"
       description="Master body language for group discussions. Learn eye contact, posture, gesture, and facial expression techniques that impress evaluators in placement GD rounds."
-      keywords="body language tips for GD, GD non-verbal communication, eye contact in group discussion, posture for GD, gestures in GD"
+      keywords="body language tips for GD, GD non-verbal communication, eye contact in group discussion, posture for GD, gestures in GD, body language in group discussion"
       path="/body-language-tips-for-gd"
       jsonLd={jsonLd}
     />

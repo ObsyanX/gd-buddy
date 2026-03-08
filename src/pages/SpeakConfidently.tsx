@@ -23,6 +23,7 @@ const jsonLd = [
       { "@type": "Question", name: "Why do I feel nervous in group discussions?", acceptedAnswer: { "@type": "Answer", text: "Nervousness in GDs comes from fear of judgment, lack of preparation, and unfamiliarity with group speaking. Regular mock practice reduces anxiety significantly." } },
       { "@type": "Question", name: "How can I speak more confidently in a GD?", acceptedAnswer: { "@type": "Answer", text: "Prepare talking points in advance, practice with mock GDs, focus on slow breathing, maintain eye contact, and start with simple points before building to complex arguments." } },
       { "@type": "Question", name: "Does practicing with AI help build GD confidence?", acceptedAnswer: { "@type": "Answer", text: "Yes. AI-simulated GDs let you practice in a judgment-free environment. The more you practice, the more comfortable you become with group speaking dynamics." } },
+      { "@type": "Question", name: "Is there an AI tool for group discussion practice?", acceptedAnswer: { "@type": "Answer", text: "Yes! GD Buddy is a free AI-powered group discussion practice platform that lets you simulate realistic GD rounds with AI participants and get instant feedback on your speaking confidence." } },
     ],
   },
   {
@@ -52,7 +53,7 @@ const SpeakConfidently = () => (
     <SEOHead
       title="How to Speak Confidently in Group Discussion"
       description="Learn practical techniques to speak confidently in group discussions. Overcome nervousness, build assertiveness, and make a strong impression in placement GD rounds."
-      keywords="how to speak confidently in GD, confidence in group discussion, overcome nervousness in GD, GD speaking tips, assertive speaking in GD"
+      keywords="how to speak confidently in GD, confidence in group discussion, overcome nervousness in GD, GD speaking tips, assertive speaking in GD, how to speak confidently in group discussion"
       path="/how-to-speak-confidently-in-group-discussion"
       jsonLd={jsonLd}
     />
