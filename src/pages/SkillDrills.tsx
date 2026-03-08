@@ -23,6 +23,7 @@ import { invokeWithAuth } from "@/lib/supabase-auth";
 import { useStreamingTranscription } from "@/hooks/useStreamingTranscription";
 import { BUILT_IN_DRILLS, SAMPLE_TOPICS, getCustomDrills, deleteCustomDrill, type DrillType } from "@/config/drill-types";
 import CreateDrillModal from "@/components/CreateDrillModal";
+import DrillHistory from "@/components/DrillHistory";
 
 const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -44,6 +45,7 @@ const SkillDrills = () => {
   const [customDrills, setCustomDrills] = useState<DrillType[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [drillToDelete, setDrillToDelete] = useState<DrillType | null>(null);
+  
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -212,77 +214,81 @@ const SkillDrills = () => {
         </div>
 
         {!selectedDrill ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-            {allDrills.map((drill, index) => {
-              const Icon = drill.icon;
-              return (
-                <Card
-                  key={`${drill.id}-${index}`}
-                  className="p-4 sm:p-5 lg:p-6 border-2 sm:border-3 lg:border-4 border-border hover:shadow-md transition-shadow cursor-pointer flex flex-col relative group"
-                  onClick={() => handleSelectDrill(drill)}
-                >
-                  {drill.type === 'custom' && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive z-10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDrillToDelete(drill);
-                      }}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  )}
-                  <div className="flex flex-col flex-1 space-y-3 sm:space-y-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-base sm:text-lg lg:text-xl font-bold leading-tight break-words">{drill.name}</h3>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                          <Badge variant="outline" className="border text-[10px] sm:text-xs whitespace-nowrap">
-                            <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
-                            {drill.timeLimit}s
-                          </Badge>
-                          {drill.type === 'custom' && (
-                            <Badge variant="secondary" className="text-[10px] sm:text-xs">Custom</Badge>
-                          )}
-                          {drill.difficulty && (
-                            <Badge variant="secondary" className="text-[10px] sm:text-xs capitalize">{drill.difficulty}</Badge>
-                          )}
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+              {allDrills.map((drill, index) => {
+                const Icon = drill.icon;
+                return (
+                  <Card
+                    key={`${drill.id}-${index}`}
+                    className="p-4 sm:p-5 lg:p-6 border-2 sm:border-3 lg:border-4 border-border hover:shadow-md transition-shadow cursor-pointer flex flex-col relative group"
+                    onClick={() => handleSelectDrill(drill)}
+                  >
+                    {drill.type === 'custom' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDrillToDelete(drill);
+                        }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    <div className="flex flex-col flex-1 space-y-3 sm:space-y-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base sm:text-lg lg:text-xl font-bold leading-tight break-words">{drill.name}</h3>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                            <Badge variant="outline" className="border text-[10px] sm:text-xs whitespace-nowrap">
+                              <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
+                              {drill.timeLimit}s
+                            </Badge>
+                            {drill.type === 'custom' && (
+                              <Badge variant="secondary" className="text-[10px] sm:text-xs">Custom</Badge>
+                            )}
+                            {drill.difficulty && (
+                              <Badge variant="secondary" className="text-[10px] sm:text-xs capitalize">{drill.difficulty}</Badge>
+                            )}
+                          </div>
                         </div>
+                        <Icon className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 flex-shrink-0 mt-0.5" />
                       </div>
-                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed flex-1">{drill.description}</p>
+                      <Button className="w-full border-2 sm:border-3 lg:border-4 border-border shadow-sm text-xs sm:text-sm h-9 sm:h-10">
+                        START DRILL
+                      </Button>
                     </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed flex-1">{drill.description}</p>
-                    <Button className="w-full border-2 sm:border-3 lg:border-4 border-border shadow-sm text-xs sm:text-sm h-9 sm:h-10">
-                      START DRILL
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
+                  </Card>
+                );
+              })}
 
-            {/* Create Custom Drill Card */}
-            <Card
-              className="p-4 sm:p-5 lg:p-6 border-2 sm:border-3 lg:border-4 border-dashed border-muted-foreground/40 hover:border-primary/60 hover:shadow-md transition-all cursor-pointer flex flex-col"
-              onClick={() => setShowCreateModal(true)}
-            >
-              <div className="flex flex-col flex-1 items-center justify-center space-y-3 sm:space-y-4 text-center py-2">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center">
-                  <Plus className="w-6 h-6 sm:w-7 sm:h-7 text-muted-foreground" />
+              {/* Create Custom Drill Card */}
+              <Card
+                className="p-4 sm:p-5 lg:p-6 border-2 sm:border-3 lg:border-4 border-dashed border-muted-foreground/40 hover:border-primary/60 hover:shadow-md transition-all cursor-pointer flex flex-col"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <div className="flex flex-col flex-1 items-center justify-center space-y-3 sm:space-y-4 text-center py-2">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center">
+                    <Plus className="w-6 h-6 sm:w-7 sm:h-7 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg lg:text-xl font-bold leading-tight">Create Custom Drill</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-2">
+                      Design your own speaking drill with a custom topic and time limit.
+                    </p>
+                  </div>
+                  <Button variant="outline" className="w-full border-2 text-xs sm:text-sm h-9 sm:h-10">
+                    CREATE DRILL
+                  </Button>
                 </div>
-                <div>
-                  <h3 className="text-base sm:text-lg lg:text-xl font-bold leading-tight">Create Custom Drill</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-2">
-                    Design your own speaking drill with a custom topic and time limit.
-                  </p>
-                </div>
-                <Button variant="outline" className="w-full border-2 text-xs sm:text-sm h-9 sm:h-10">
-                  CREATE DRILL
-                </Button>
-              </div>
-            </Card>
-          </div>
+              </Card>
+            </div>
+
+            <DrillHistory />
+          </>
         ) : (
           <div className="space-y-6">
             <Card className="p-6 border-4 border-border">
