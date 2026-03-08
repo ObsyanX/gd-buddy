@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Mic, Square, Loader2, SkipForward } from "lucide-react";
+import { Send, Mic, MicVocal, Square, Loader2, SkipForward, BarChart3 } from "lucide-react";
 
 interface MessageInputProps {
   userInput: string;
