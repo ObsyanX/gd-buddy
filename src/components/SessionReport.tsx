@@ -634,6 +634,39 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     }
   };
 
+  const loadAiFeedback = async () => {
+    if (!session || !calculatedStats || aiFeedback) return;
+    setIsLoadingFeedback(true);
+    try {
+      const conversation = messages.map((m) => ({
+        who: m.gd_participants?.persona_name || 'Unknown',
+        is_user: m.gd_participants?.is_user || false,
+        text: m.text,
+      }));
+
+      const { data, error } = await supabase.functions.invoke('session-feedback', {
+        body: {
+          topic: session.topic,
+          conversation,
+          metrics: calculatedStats,
+          videoMetrics: videoMetrics || null,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: "AI Feedback Error", description: data.error, variant: "destructive" });
+      } else if (data) {
+        setAiFeedback(data);
+      }
+    } catch (err: any) {
+      console.error('AI feedback error:', err);
+      toast({ title: "Could not generate AI feedback", description: err.message, variant: "destructive" });
+    } finally {
+      setIsLoadingFeedback(false);
+    }
+  };
+
   const getBenchmarkComparison = (metric: string, value: number): {status: 'excellent' | 'good' | 'needs-work';label: string;} => {
     const benchmark = BENCHMARKS[metric as keyof typeof BENCHMARKS];
     if (!benchmark) return { status: 'good', label: 'Good' };
