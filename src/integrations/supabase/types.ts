@@ -98,6 +98,104 @@ export type Database = {
         }
         Relationships: []
       }
+      error_logs: {
+        Row: {
+          created_at: string
+          error_message: string
+          error_source: string
+          error_stack: string | null
+          id: string
+          metadata: Json | null
+          page_url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message: string
+          error_source?: string
+          error_stack?: string | null
+          id?: string
+          metadata?: Json | null
+          page_url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string
+          error_source?: string
+          error_stack?: string | null
+          id?: string
+          metadata?: Json | null
+          page_url?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      experiment_assignments: {
+        Row: {
+          created_at: string
+          experiment_id: string
+          id: string
+          user_id: string
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          experiment_id: string
+          id?: string
+          user_id: string
+          variant: string
+        }
+        Update: {
+          created_at?: string
+          experiment_id?: string
+          id?: string
+          user_id?: string
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiment_assignments_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "experiments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experiments: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          traffic_percent: number
+          updated_at: string
+          variants: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          traffic_percent?: number
+          updated_at?: string
+          variants?: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          traffic_percent?: number
+          updated_at?: string
+          variants?: Json
+        }
+        Relationships: []
+      }
       gd_feedback: {
         Row: {
           created_at: string
@@ -631,7 +729,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "instructor"
       discussion_status: "setup" | "active" | "paused" | "completed"
       drill_type:
         | "opening_statement"
@@ -774,7 +872,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "instructor"],
       discussion_status: ["setup", "active", "paused", "completed"],
       drill_type: [
         "opening_statement",
