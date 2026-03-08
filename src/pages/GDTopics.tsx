@@ -76,7 +76,7 @@ const GDTopics = () => (
       </nav>
 
       <article>
-        <h1 className="text-display font-bold mb-4">GD Topics for Placements 2025</h1>
+        <h1 className="text-display font-bold mb-4">GD Topics for Placements 2025 — {categories.reduce((a, [, t]) => a + t.length, 0)}+ Topics</h1>
 
         {/* LLM-friendly Quick Summary */}
         <section className="border-2 border-border p-5 mb-8 bg-muted/30" aria-label="Quick summary">
