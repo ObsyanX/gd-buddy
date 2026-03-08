@@ -111,13 +111,19 @@ class ExternalVideoAnalyzer {
       });
 
       if (error) {
-        console.error(`[Analyzer] Edge function error:`, error);
-        throw new Error(error.message || 'Edge function error');
+        // Silently handle auth/network errors - don't crash the app
+        const msg = error.message || '';
+        if (msg.includes('401') || msg.includes('Unauthorized')) {
+          console.warn('[Analyzer] Auth expired, skipping frame');
+        } else {
+          console.warn(`[Analyzer] Edge function error:`, msg);
+        }
+        return null;
       }
 
       if (!data?.success) {
-        console.error(`[Analyzer] Backend error:`, data?.error);
-        throw new Error(data?.error || 'Backend error');
+        console.warn(`[Analyzer] Backend error:`, data?.error);
+        return null;
       }
 
       const analysisData = data.data as ExternalVideoResponse;
