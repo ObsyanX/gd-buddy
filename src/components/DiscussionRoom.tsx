@@ -89,7 +89,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     },
   });
   
-  const { isSpeaking, currentSpeaker, speak, stop: stopSpeaking } = useTextToSpeech();
+  const { isSpeaking, currentSpeaker, usingFallbackTTS, speak, stop: stopSpeaking } = useTextToSpeech();
   const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial();
   const { estimatedWordCount, updateFromAudioLevel, reset: resetWordCount } = useWordCountEstimator();
   
