@@ -9,9 +9,23 @@ createRoot(document.getElementById("root")!).render(
   </HelmetProvider>
 );
 
-// Register service worker for offline caching
+// Service worker strategy:
+// - Production: register SW
+// - Development/preview: aggressively unregister SW + clear caches to prevent stale Vite chunks
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
-  });
+  if (import.meta.env.PROD) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    });
+  } else {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => registration.unregister());
+    });
+
+    if ("caches" in window) {
+      caches.keys().then((keys) => {
+        keys.forEach((key) => caches.delete(key));
+      });
+    }
+  }
 }
