@@ -347,7 +347,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   // Direct send with specific text (used for auto-send after voice)
   const handleSendMessageDirect = async (textToSend: string) => {
-    if (!textToSend.trim() || isProcessing) return;
+    if (!textToSend.trim() || isProcessing || isPaused) return;
 
     setIsProcessing(true);
     // Find the participant that matches the current authenticated user
