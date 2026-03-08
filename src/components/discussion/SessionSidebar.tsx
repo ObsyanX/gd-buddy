@@ -4,7 +4,7 @@ import { Info, User } from "lucide-react";
 import VideoMonitor, { VideoMetrics } from "@/components/VideoMonitor";
 import ParticipantPresence from "@/components/ParticipantPresence";
 import { ParticipantPresence as PresenceType } from "@/hooks/useMultiplayerPresence";
-import VoiceMetricsPanel from "@/components/VoiceMetricsPanel";
+import VoiceMetricsPanel, { VoiceSessionMetrics } from "@/components/VoiceMetricsPanel";
 import { PracticeHistory, PracticeRecording } from "@/components/PracticeHistory";
 
 interface SessionSidebarProps {
