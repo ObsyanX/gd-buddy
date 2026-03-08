@@ -47,7 +47,7 @@ const CommunicationSkills = () => (
     <SEOHead
       title="Communication Skills for Group Discussion"
       description="Master verbal and non-verbal communication skills for group discussions. Learn speaking techniques, body language tips, and analytical frameworks for GD rounds."
-      keywords="communication skills for GD, how to speak in group discussion, GD body language, verbal skills for placements, soft skills for GD"
+      keywords="communication skills for GD, how to speak in group discussion, GD body language, verbal skills for placements, soft skills for GD, speaking skills for GD, how to speak confidently in GD"
       path="/communication-skills-for-gd"
       jsonLd={articleJsonLd}
     />
