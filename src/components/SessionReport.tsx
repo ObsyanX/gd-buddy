@@ -1311,7 +1311,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
 
           {!aiFeedback && !isLoadingFeedback && (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Click "Generate AI Feedback" to get a personalized analysis of your discussion performance.
+              AI feedback will generate automatically…
             </p>
           )}
         </Card>
