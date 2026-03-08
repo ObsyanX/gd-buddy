@@ -4,15 +4,10 @@ import SEOFooter from "@/components/SEOFooter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MessageSquare } from "lucide-react";
+import { getTopicsByCategory } from "@/data/gd-topics";
 
-const topics = [
-  { category: "Current Affairs", items: ["Impact of AI on Employment", "Digital India: Success or Failure?", "Climate Change and India's Role", "Social Media Regulation", "UPI and Digital Payments Revolution", "Can India Become a Global Superpower?", "Farm Laws and Agricultural Reform", "Uniform Civil Code in India"] },
-  { category: "Business & Economy", items: ["Startup Culture in India", "Cryptocurrency: Boon or Bane?", "Make in India vs Import Dependency", "Gig Economy and Worker Rights", "FDI in Indian Retail", "Is India Ready for a Cashless Economy?", "Privatization of Public Sector Enterprises", "India's Untapped Tourism Potential"] },
-  { category: "Social Issues", items: ["Gender Equality in Workplaces", "Education System Reform", "Mental Health Awareness", "Rural vs Urban Development", "Reservation Policy in India", "India's Population: Boon or Bane?", "Nuclear Family vs Joint Family", "Media Trial vs Fair Trial", "India's Obsession with Cricket", "Healthcare Access in India"] },
-  { category: "Technology", items: ["5G and its Impact", "Data Privacy Concerns", "Electric Vehicles Adoption", "Remote Work: Future of Employment?", "Ethical AI Development", "Space Exploration: Worth the Cost?", "Quantum Computing Future", "Cybersecurity Threats to India", "Artificial General Intelligence"] },
-  { category: "Abstract", items: ["Is Necessity the Mother of Invention?", "Change is the Only Constant", "Quality vs Quantity", "Does Money Buy Happiness?", "Leaders are Born, Not Made", "The Pen is Mightier Than the Sword", "Is the Death Penalty Justified?"] },
-  { category: "Education", items: ["Online Education vs Offline Education", "India's Competitive Exam Culture", "Skill-Based Education vs Traditional Degrees"] },
-];
+const categorizedTopics = getTopicsByCategory();
+const categories = Object.entries(categorizedTopics);
 
 const jsonLd = [
   {
