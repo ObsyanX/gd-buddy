@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { label: "DASHBOARD", icon: LayoutDashboard, path: "/home/dashboard" },
   { label: "PROFILE", icon: User, path: "/home/profile" },
   { label: "DRILLS", icon: Dumbbell, path: "/home/drills" },
+  { label: "INSTRUCTOR", icon: GraduationCap, path: "/home/instructor" },
   { label: "SETTINGS", icon: SettingsIcon, path: "/home/settings" },
 ];
 
