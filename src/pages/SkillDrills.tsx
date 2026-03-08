@@ -231,6 +231,24 @@ const SkillDrills = () => {
         });
 
       if (saveError) throw saveError;
+
+      // Update skill progress
+      if (user?.id && feedbackData.score) {
+        const drillApiType = drillTypeForApi;
+        const skillMap: Record<string, string[]> = {
+          opening_statement: ['clarity', 'argument_strength'],
+          star_response: ['argument_strength', 'confidence'],
+          rebuttal: ['rebuttal', 'listening'],
+          time_boxed: ['clarity', 'confidence'],
+        };
+        const skills = skillMap[drillApiType] || ['clarity'];
+        const minutes = Math.round(selectedDrill.timeLimit / 60);
+        await updateSkillProgress(
+          user.id,
+          skills.map(s => ({ skill_name: s, score: feedbackData.score, minutes }))
+        );
+      }
+
       toast({ title: "Drill completed!", description: `Score: ${feedbackData.score}%` });
     } catch (error: any) {
       console.error('Error processing drill:', error);
