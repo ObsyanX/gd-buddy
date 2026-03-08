@@ -285,8 +285,26 @@ const VoiceMetricsPanel = ({
     
     const interval = setInterval(() => {
       if (speakingStartRef.current) {
+        const now = Date.now();
+        const timeSinceLastChange = now - lastTranscriptChangeRef.current;
+        const isActuallySpeaking = timeSinceLastChange < SILENCE_THRESHOLD_MS;
+        
+        // If user hasn't produced new words in 2s, pause speaking time accumulation
+        if (!isActuallySpeaking && speakingStartRef.current) {
+          // Freeze: commit accumulated time up to silence threshold
+          const activeUntil = lastTranscriptChangeRef.current > 0
+            ? Math.min(now, lastTranscriptChangeRef.current + SILENCE_THRESHOLD_MS)
+            : now;
+          const elapsed = Math.max(0, (activeUntil - speakingStartRef.current) / 1000);
+          if (elapsed > 0) {
+            totalSpeakingTimeRef.current += elapsed;
+          }
+          speakingStartRef.current = null; // Pause the clock
+        }
+        
         const currentSpeaking = totalSpeakingTimeRef.current + 
-          (Date.now() - speakingStartRef.current) / 1000;
+          (speakingStartRef.current ? (now - speakingStartRef.current) / 1000 : 0);
+        
         setMetrics(prev => ({
           ...prev,
           speakingTimeSeconds: currentSpeaking,
