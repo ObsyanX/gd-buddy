@@ -28,6 +28,7 @@ const webAppJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   name: "GD Buddy",
+  alternateName: ["Group Discussion Buddy", "AI Group Discussion Practice Tool", "GD Practice Platform"],
   url: typeof window !== "undefined" ? window.location.origin : "https://gd-buddy.vercel.app",
   description: "AI-powered group discussion practice platform for students preparing for campus placements. Simulate realistic GDs with AI participants, get real-time feedback on communication skills, and track improvement over time.",
   applicationCategory: "EducationalApplication",
@@ -40,13 +41,13 @@ const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "GD Buddy",
+  alternateName: ["Group Discussion Buddy", "GD Buddy AI"],
   url: typeof window !== "undefined" ? window.location.origin : "https://gd-buddy.vercel.app",
   logo: typeof window !== "undefined" ? `${window.location.origin}/og-image.png` : "https://gd-buddy.vercel.app/og-image.png",
   description: "AI-powered group discussion practice platform for placement preparation.",
   sameAs: [
-    "https://github.com/sayandutta111",
-    "https://www.linkedin.com/in/sayandutta111",
-    "https://x.com/gdbuddy",
+    "https://github.com/ObsyanX",
+    "https://www.linkedin.com/in/sayan-dutta-exceptional98/",
   ],
 };
 
