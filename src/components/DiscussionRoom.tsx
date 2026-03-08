@@ -620,6 +620,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         .update({ status: 'completed', end_time: new Date().toISOString() })
         .eq('id', sessionId);
 
+      // Enqueue background jobs for training data aggregation
+      try {
+        const { enqueueTrainingDataAggregation } = await import('@/lib/job-queue');
+        await enqueueTrainingDataAggregation(sessionId);
+      } catch (e) {
+        console.warn('[EndSession] Failed to enqueue background job:', e);
+      }
+
       // Update practice streak
       if (currentUserId && session?.start_time) {
         const durationMin = Math.max(1, Math.round(

@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      background_jobs: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          job_type: string
+          max_attempts: number
+          payload: Json
+          result: Json | null
+          scheduled_at: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          job_type: string
+          max_attempts?: number
+          payload?: Json
+          result?: Json | null
+          scheduled_at?: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          job_type?: string
+          max_attempts?: number
+          payload?: Json
+          result?: Json | null
+          scheduled_at?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       cohort_members: {
         Row: {
           cohort_id: string
@@ -610,6 +658,36 @@ export type Database = {
         }
         Relationships: []
       }
+      response_cache: {
+        Row: {
+          cache_key: string
+          created_at: string
+          expires_at: string
+          function_name: string
+          id: string
+          response_data: Json
+          ttl_seconds: number
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          expires_at?: string
+          function_name: string
+          id?: string
+          response_data: Json
+          ttl_seconds?: number
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          expires_at?: string
+          function_name?: string
+          id?: string
+          response_data?: Json
+          ttl_seconds?: number
+        }
+        Relationships: []
+      }
       session_notes: {
         Row: {
           created_at: string
@@ -713,6 +791,104 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      token_usage: {
+        Row: {
+          cached: boolean | null
+          cost_estimate: number | null
+          created_at: string
+          function_name: string
+          id: string
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
+          user_id: string | null
+        }
+        Insert: {
+          cached?: boolean | null
+          cost_estimate?: number | null
+          created_at?: string
+          function_name: string
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          cached?: boolean | null
+          cost_estimate?: number | null
+          created_at?: string
+          function_name?: string
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      training_data: {
+        Row: {
+          ai_word_count: number | null
+          content_score: number | null
+          created_at: string
+          filler_count: number | null
+          fluency_score: number | null
+          id: string
+          improvement_areas: Json | null
+          key_arguments: Json | null
+          session_duration_s: number | null
+          session_id: string
+          structure_score: number | null
+          topic: string
+          transcript_summary: string | null
+          user_id: string
+          user_word_count: number | null
+        }
+        Insert: {
+          ai_word_count?: number | null
+          content_score?: number | null
+          created_at?: string
+          filler_count?: number | null
+          fluency_score?: number | null
+          id?: string
+          improvement_areas?: Json | null
+          key_arguments?: Json | null
+          session_duration_s?: number | null
+          session_id: string
+          structure_score?: number | null
+          topic: string
+          transcript_summary?: string | null
+          user_id: string
+          user_word_count?: number | null
+        }
+        Update: {
+          ai_word_count?: number | null
+          content_score?: number | null
+          created_at?: string
+          filler_count?: number | null
+          fluency_score?: number | null
+          id?: string
+          improvement_areas?: Json | null
+          key_arguments?: Json | null
+          session_duration_s?: number | null
+          session_id?: string
+          structure_score?: number | null
+          topic?: string
+          transcript_summary?: string | null
+          user_id?: string
+          user_word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_data_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_rankings: {
         Row: {
