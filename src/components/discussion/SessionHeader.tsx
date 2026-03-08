@@ -20,7 +20,7 @@ interface SessionHeaderProps {
 
 const SessionHeader = ({
   session, messagesCount, isListening, isCorrecting,
-  autoMicEnabled, autoMicSetting, autoPlayTTS,
+  autoMicEnabled, autoMicSetting, autoPlayTTS, usingFallbackTTS,
   onToggleAutoMic, onToggleTTS, onResetTutorial, onEndSession,
 }: SessionHeaderProps) => {
   return (

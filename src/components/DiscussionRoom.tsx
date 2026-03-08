@@ -721,6 +721,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         onToggleTTS={() => setAutoPlayTTS(!autoPlayTTS)}
         onResetTutorial={resetTutorial}
         onEndSession={handleEndSession}
+        usingFallbackTTS={usingFallbackTTS}
       />
 
       <div className="flex-1 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 p-2 sm:p-3 lg:p-4 overflow-hidden">
