@@ -172,7 +172,12 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        <SkillProgressWidget />
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <SkillProgressWidget />
+          </div>
+          <Leaderboard />
+        </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
