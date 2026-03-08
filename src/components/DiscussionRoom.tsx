@@ -464,6 +464,34 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       // Process AI responses one by one (sequential text + TTS)
       if (aiResponse?.participant_responses) {
         for (const response of aiResponse.participant_responses) {
+          // Handle moderator messages (no real participant_id in DB)
+          if (response.participant_id === 'moderator') {
+            // Show moderator message in UI without DB insert
+            const moderatorMsg = {
+              id: `moderator-${Date.now()}`,
+              session_id: sessionId,
+              participant_id: 'moderator',
+              text: response.text,
+              intent: response.intent,
+              start_ts: new Date().toISOString(),
+              gd_participants: {
+                persona_name: 'Moderator',
+                is_user: false,
+                voice_name: 'alloy',
+              },
+            };
+            setMessages(prev => [...prev, moderatorMsg]);
+            
+            if (autoPlayTTS) {
+              try {
+                await speak(response.text, 'Moderator', 'alloy');
+              } catch (e) {
+                console.error('TTS error:', e);
+              }
+            }
+            continue;
+          }
+
           const { data: aiMsg, error: aiMsgError } = await supabase
             .from('gd_messages')
             .insert({
