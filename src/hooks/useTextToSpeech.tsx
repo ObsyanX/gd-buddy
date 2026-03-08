@@ -110,24 +110,17 @@ export const useTextToSpeech = () => {
           setCurrentSpeaker(null);
           URL.revokeObjectURL(audioUrl);
           
-          // Only fallback to browser TTS if ElevenLabs audio failed to play
-          // and we haven't already started browser TTS
           if (elevenLabsSuccessRef.current) {
             console.warn('Audio playback failed, falling back to browser TTS');
-            elevenLabsSuccessRef.current = false; // Reset before fallback
+            elevenLabsSuccessRef.current = false;
             try {
               await speakWithBrowserTTS(text, speaker);
               resolve();
-            } catch (browserError) {
-              toast({
-                title: "Audio playback failed",
-                description: "Could not play the audio",
-                variant: "destructive",
-              });
-              reject(new Error('Audio playback failed'));
+            } catch {
+              resolve(); // Silently resolve - no popup
             }
           } else {
-            reject(new Error('Audio playback failed'));
+            resolve(); // Silently resolve - no popup
           }
         };
 
@@ -135,22 +128,17 @@ export const useTextToSpeech = () => {
         audio.playbackRate = settings.speed;
         await audio.play();
       } catch (error: any) {
-        console.error('Error generating speech:', error);
+        console.warn('TTS error, falling back to browser TTS:', error?.message || error);
         
-        // Try browser TTS as final fallback
+        // Try browser TTS as final fallback - never show error popup
         try {
           await speakWithBrowserTTS(text, speaker);
           resolve();
           return;
-        } catch (browserError) {
+        } catch {
           setIsSpeaking(false);
           setCurrentSpeaker(null);
-          toast({
-            title: "Text-to-speech failed",
-            description: "Please try again",
-            variant: "destructive",
-          });
-          reject(error);
+          resolve(); // Silently resolve - no popup
         }
       }
     });
