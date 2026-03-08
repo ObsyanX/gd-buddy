@@ -644,37 +644,29 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       if (liveVoiceMetrics && liveVoiceMetrics.totalWords > 0) {
         // Sanity-cap WPM before saving
         const cappedWpm = Math.min(400, liveVoiceMetrics.estimatedWpm);
-        console.log('[EndSession] Saving voice metrics:', {
-          totalWords: liveVoiceMetrics.totalWords,
-          wpm: cappedWpm,
-          fillers: liveVoiceMetrics.fillerCount,
-          speakingTime: liveVoiceMetrics.speakingTimeSeconds
-        });
-        
-        const { data: existingMetrics } = await supabase
-          .from('gd_metrics')
-          .select('id')
-          .eq('session_id', sessionId)
-          .maybeSingle();
-
         const voiceData = {
+          session_id: sessionId,
           total_words: liveVoiceMetrics.totalWords,
           words_per_min: cappedWpm,
           filler_count: liveVoiceMetrics.fillerCount,
           updated_at: new Date().toISOString()
         };
 
-        if (existingMetrics) {
-          await supabase
-            .from('gd_metrics')
-            .update(voiceData)
-            .eq('session_id', sessionId);
-          console.log('[EndSession] Voice metrics updated (preserved other columns)');
+        console.log('[EndSession] Saving voice metrics:', {
+          totalWords: voiceData.total_words,
+          wpm: voiceData.words_per_min,
+          fillers: voiceData.filler_count,
+          speakingTime: liveVoiceMetrics.speakingTimeSeconds
+        });
+
+        const { error: voiceMetricsError } = await supabase
+          .from('gd_metrics')
+          .upsert(voiceData, { onConflict: 'session_id', ignoreDuplicates: false });
+
+        if (voiceMetricsError) {
+          console.error('[EndSession] Failed to save voice metrics:', voiceMetricsError);
         } else {
-          await supabase
-            .from('gd_metrics')
-            .insert({ session_id: sessionId, ...voiceData });
-          console.log('[EndSession] Voice metrics row created');
+          console.log('[EndSession] Voice metrics saved successfully');
         }
       }
 

@@ -126,9 +126,9 @@ const VoiceMetricsPanel = ({
   const lastTranscriptRef = useRef('');
   const lastTranscriptLengthRef = useRef(0);
   
-  // Track finalized text by content hash to prevent duplicate counting
-  const processedTextHashesRef = useRef<Set<string>>(new Set());
+  // Track accumulated finalized words and latest finalized transcript to avoid double-counting
   const accumulatedFinalWordsRef = useRef<string[]>([]);
+  const lastFinalizedTranscriptRef = useRef('');
   // Debounce speaking state to avoid rapid true/false toggles
   const stableSpeakingRef = useRef(false);
   const speakingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -158,33 +158,38 @@ const VoiceMetricsPanel = ({
 
   /**
    * Process only FINALIZED transcript text.
-   * Uses content-only hash (no timestamp) to truly deduplicate.
+   * Appends only incremental words to avoid interim/final overlap inflation.
    */
   const finalizeCurrentTranscript = useCallback((text: string) => {
     if (!text || text.trim().length === 0) return;
-    
+
     const cleanedText = cleanStreamingArtifacts(text.trim().toLowerCase());
     if (!cleanedText) return;
-    
-    // Use content-only hash to prevent duplicate counting
-    const contentHash = cleanedText;
-    
-    if (processedTextHashesRef.current.has(contentHash)) {
+
+    // Skip exact duplicate finalize calls
+    if (cleanedText === lastFinalizedTranscriptRef.current) {
       return;
     }
-    
-    processedTextHashesRef.current.add(contentHash);
-    
-    const words = splitNormalizedWords(cleanedText);
-    accumulatedFinalWordsRef.current.push(...words);
-    
-    console.log('[VoiceMetrics] Finalized segment:', {
-      words: words.length,
-      totalAccumulated: accumulatedFinalWordsRef.current.length,
-      text: cleanedText.slice(0, 80)
-    });
-    
-    recalculateMetrics();
+
+    // Append only the delta vs already finalized words
+    const incrementalWords = getIncrementalTranscriptWords(
+      accumulatedFinalWordsRef.current,
+      cleanedText
+    );
+
+    if (incrementalWords.length > 0) {
+      accumulatedFinalWordsRef.current.push(...incrementalWords);
+
+      console.log('[VoiceMetrics] Finalized incremental segment:', {
+        words: incrementalWords.length,
+        totalAccumulated: accumulatedFinalWordsRef.current.length,
+        text: cleanedText.slice(0, 80)
+      });
+
+      recalculateMetrics();
+    }
+
+    lastFinalizedTranscriptRef.current = cleanedText;
   }, []);
 
   /**
@@ -278,7 +283,7 @@ const VoiceMetricsPanel = ({
           ...prev,
           speakingTimeSeconds: currentSpeaking,
           estimatedWpm: currentSpeaking > 6 && prev.totalWords > 0
-            ? Math.round(prev.totalWords / (currentSpeaking / 60))
+            ? Math.min(400, Math.round(prev.totalWords / (currentSpeaking / 60)))
             : prev.estimatedWpm
         }));
       }
@@ -364,6 +369,7 @@ const VoiceMetricsPanel = ({
 
   const wpmStatus = getWpmStatus(displayMetrics.estimatedWpm);
   const fillerStatus = getFillerStatus(displayMetrics.fillerRate);
+  const isHighWpmWarning = displayMetrics.estimatedWpm > 250;
 
   // Get top fillers
   const topFillers = Object.entries(displayMetrics.fillersByType)
@@ -425,6 +431,12 @@ const VoiceMetricsPanel = ({
         <p className="text-[8px] sm:text-[9px] text-muted-foreground">
           Target: 120-180 WPM for clarity
         </p>
+        {isHighWpmWarning && (
+          <div className="mt-1 rounded-sm border border-destructive/40 bg-destructive/10 px-2 py-1 text-[10px] sm:text-xs text-destructive flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3 shrink-0" />
+            <span>You're speaking very fast (&gt;250 WPM). Slow down for better clarity.</span>
+          </div>
+        )}
       </div>
 
       {/* Filler Words */}
