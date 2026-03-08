@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Info, User } from "lucide-react";
+import { Info, User, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import VideoMonitor, { VideoMetrics } from "@/components/VideoMonitor";
 import ParticipantPresence from "@/components/ParticipantPresence";
 import { ParticipantPresence as PresenceType } from "@/hooks/useMultiplayerPresence";
