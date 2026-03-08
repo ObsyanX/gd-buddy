@@ -334,6 +334,17 @@ const VoiceMetricsPanel = ({
   // Use live metrics for display (includes current interim for responsiveness)
   const displayMetrics = getLiveMetrics();
 
+  useEffect(() => {
+    onMetricsUpdate?.(displayMetrics);
+  }, [
+    onMetricsUpdate,
+    displayMetrics.totalWords,
+    displayMetrics.fillerCount,
+    displayMetrics.fillerRate,
+    displayMetrics.estimatedWpm,
+    displayMetrics.speakingTimeSeconds,
+  ]);
+
   const getWpmStatus = (wpm: number) => {
     if (wpm === 0) return { color: 'text-muted-foreground', label: 'N/A' };
     if (wpm >= 120 && wpm <= 180) return { color: 'text-green-500', label: 'Optimal' };
