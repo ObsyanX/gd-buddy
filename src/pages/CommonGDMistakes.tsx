@@ -53,7 +53,7 @@ const CommonGDMistakes = () => (
     <SEOHead
       title="Common GD Mistakes to Avoid"
       description="Avoid these 10 common group discussion mistakes that cost candidates their placement. Learn what NOT to do in a GD round and how to fix these habits."
-      keywords="common GD mistakes, group discussion mistakes, GD errors in placements, what not to do in GD, GD round tips"
+      keywords="common GD mistakes, group discussion mistakes, GD errors in placements, what not to do in GD, GD round tips, GD mistakes to avoid, common GD errors"
       path="/common-gd-mistakes"
       jsonLd={articleJsonLd}
     />
