@@ -1525,17 +1525,24 @@ export const gdTopicsData: GDTopicData[] = [
   },
 ];
 
+import { expandedTopicsData } from "./gd-topics-expanded";
+
+// Merge base + expanded topics
+const allTopics = [...gdTopicsData, ...expandedTopicsData];
+
 export const getTopicBySlug = (slug: string): GDTopicData | undefined =>
-  gdTopicsData.find((t) => t.slug === slug);
+  allTopics.find((t) => t.slug === slug);
 
 export const getRelatedTopics = (slugs: string[]): GDTopicData[] =>
-  slugs.map((s) => gdTopicsData.find((t) => t.slug === s)).filter(Boolean) as GDTopicData[];
+  slugs.map((s) => allTopics.find((t) => t.slug === s)).filter(Boolean) as GDTopicData[];
 
 export const getTopicsByCategory = (): Record<string, GDTopicData[]> => {
   const map: Record<string, GDTopicData[]> = {};
-  for (const topic of gdTopicsData) {
+  for (const topic of allTopics) {
     if (!map[topic.category]) map[topic.category] = [];
     map[topic.category].push(topic);
   }
   return map;
 };
+
+export const getAllTopics = (): GDTopicData[] => allTopics;
