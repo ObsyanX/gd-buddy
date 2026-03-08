@@ -285,7 +285,9 @@ const SkillDrills = () => {
               </div>
             </Card>
           </div>
-        ) : (
+
+          {/* Drill History */}
+          <DrillHistory />
           <div className="space-y-6">
             <Card className="p-6 border-4 border-border">
               <div className="space-y-4">
