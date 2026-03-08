@@ -6,6 +6,7 @@ import { useVoiceStore } from '@/stores/useVoiceStore';
 export const useTextToSpeech = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentSpeaker, setCurrentSpeaker] = useState<string | null>(null);
+  const [usingFallbackTTS, setUsingFallbackTTS] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const elevenLabsSuccessRef = useRef(false); // Track if ElevenLabs succeeded
   const { toast } = useToast();
