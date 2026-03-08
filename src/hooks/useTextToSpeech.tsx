@@ -128,22 +128,17 @@ export const useTextToSpeech = () => {
         audio.playbackRate = settings.speed;
         await audio.play();
       } catch (error: any) {
-        console.error('Error generating speech:', error);
+        console.warn('TTS error, falling back to browser TTS:', error?.message || error);
         
-        // Try browser TTS as final fallback
+        // Try browser TTS as final fallback - never show error popup
         try {
           await speakWithBrowserTTS(text, speaker);
           resolve();
           return;
-        } catch (browserError) {
+        } catch {
           setIsSpeaking(false);
           setCurrentSpeaker(null);
-          toast({
-            title: "Text-to-speech failed",
-            description: "Please try again",
-            variant: "destructive",
-          });
-          reject(error);
+          resolve(); // Silently resolve - no popup
         }
       }
     });
