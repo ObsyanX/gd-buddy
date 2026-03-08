@@ -5,8 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { saveCustomDrill, type DrillType } from "@/config/drill-types";
+import { Target } from "lucide-react";
+import { type DrillType } from "@/config/drill-types";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CreateDrillModalProps {
   open: boolean;
@@ -31,36 +34,66 @@ const DIFFICULTY_OPTIONS = [
 
 export default function CreateDrillModal({ open, onOpenChange, onDrillCreated }: CreateDrillModalProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [prompt, setPrompt] = useState("");
   const [timeLimit, setTimeLimit] = useState("60");
   const [difficulty, setDifficulty] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim() || !description.trim()) {
       toast({ title: "Missing fields", description: "Name and description are required.", variant: "destructive" });
       return;
     }
 
-    const drill = saveCustomDrill({
-      id: `custom_${Date.now()}`,
-      name: name.trim(),
-      description: description.trim(),
-      prompt: prompt.trim() || undefined,
-      timeLimit: parseInt(timeLimit),
-      difficulty: difficulty || undefined,
-    });
+    if (!user) {
+      toast({ title: "Not authenticated", description: "Please log in to create drills.", variant: "destructive" });
+      return;
+    }
 
-    toast({ title: "Custom drill created!", description: `"${drill.name}" has been added to your drills.` });
-    onDrillCreated(drill);
-    // Reset
-    setName("");
-    setDescription("");
-    setPrompt("");
-    setTimeLimit("60");
-    setDifficulty("");
-    onOpenChange(false);
+    setIsSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from('custom_drills')
+        .insert({
+          user_id: user.id,
+          name: name.trim(),
+          description: description.trim(),
+          prompt: prompt.trim() || null,
+          time_limit: parseInt(timeLimit),
+          difficulty: difficulty || 'medium',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const drill: DrillType = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        prompt: data.prompt || undefined,
+        timeLimit: data.time_limit,
+        difficulty: data.difficulty || undefined,
+        icon: Target,
+        type: 'custom',
+      };
+
+      toast({ title: "Custom drill created!", description: `"${drill.name}" has been added to your drills.` });
+      onDrillCreated(drill);
+      setName("");
+      setDescription("");
+      setPrompt("");
+      setTimeLimit("60");
+      setDifficulty("");
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({ title: "Error creating drill", description: error.message, variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -103,8 +136,8 @@ export default function CreateDrillModal({ open, onOpenChange, onDrillCreated }:
               </Select>
             </div>
           </div>
-          <Button onClick={handleSave} className="w-full border-4 border-border shadow-md font-bold">
-            SAVE DRILL
+          <Button onClick={handleSave} disabled={isSaving} className="w-full border-4 border-border shadow-md font-bold">
+            {isSaving ? "SAVING..." : "SAVE DRILL"}
           </Button>
         </div>
       </DialogContent>
