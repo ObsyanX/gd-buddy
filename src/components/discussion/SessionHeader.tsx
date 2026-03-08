@@ -11,6 +11,7 @@ interface SessionHeaderProps {
   autoMicEnabled: boolean;
   autoMicSetting: boolean;
   autoPlayTTS: boolean;
+  usingFallbackTTS?: boolean;
   onToggleAutoMic: () => void;
   onToggleTTS: () => void;
   onResetTutorial: () => void;
