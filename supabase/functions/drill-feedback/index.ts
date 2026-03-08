@@ -38,7 +38,7 @@ serve(async (req) => {
       );
     }
 
-    const { drill_type, topic, user_response, time_limit_seconds } = parseResult.data;
+    const { drill_type, topic, user_response, time_limit_seconds, scenario } = parseResult.data;
 
     console.log(`Generating feedback for ${drill_type} drill`);
 
