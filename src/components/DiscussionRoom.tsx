@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Mic, Info, Play, RefreshCw, Check, X, Loader2, SkipForward, BarChart3, User, Square, Send } from "lucide-react";
+import { Mic, Info, Play, RefreshCw, Check, X, Loader2, SkipForward, User, Square, Pause } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
@@ -52,6 +52,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const skipWaitRef = useRef<(() => void) | null>(null);
   const [isWaitingForSpeech, setIsWaitingForSpeech] = useState(false);
   const [isMobileMetricsOpen, setIsMobileMetricsOpen] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const { toast } = useToast();
   
   // Load auto-mic setting from Zustand store
@@ -346,7 +347,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   // Direct send with specific text (used for auto-send after voice)
   const handleSendMessageDirect = async (textToSend: string) => {
-    if (!textToSend.trim() || isProcessing) return;
+    if (!textToSend.trim() || isProcessing || isPaused) return;
 
     setIsProcessing(true);
     // Find the participant that matches the current authenticated user
@@ -568,6 +569,27 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     }
   };
 
+  const handleTogglePause = async () => {
+    const newPaused = !isPaused;
+    setIsPaused(newPaused);
+
+    if (newPaused) {
+      // Pause: stop mic, TTS, update DB status
+      stopListening();
+      stopSpeaking();
+      await supabase
+        .from('gd_sessions')
+        .update({ status: 'paused' })
+        .eq('id', sessionId);
+    } else {
+      // Resume: update DB status back to active
+      await supabase
+        .from('gd_sessions')
+        .update({ status: 'active' })
+        .eq('id', sessionId);
+    }
+  };
+
   const handleEndSession = async () => {
     try {
       // Stop all ongoing audio/speech activities
@@ -718,8 +740,10 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         autoMicEnabled={autoMicEnabled}
         autoMicSetting={autoMicSetting}
         autoPlayTTS={autoPlayTTS}
+        isPaused={isPaused}
         onToggleAutoMic={() => setAutoMicEnabled(!autoMicEnabled)}
         onToggleTTS={() => setAutoPlayTTS(!autoPlayTTS)}
+        onTogglePause={handleTogglePause}
         onResetTutorial={resetTutorial}
         onEndSession={handleEndSession}
         usingFallbackTTS={usingFallbackTTS}
@@ -746,6 +770,17 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           />
 
           <VoiceActivityIndicator isActive={isSpeaking} participantName={currentSpeaker || undefined} />
+
+          {isPaused && (
+            <div className="flex items-center justify-center gap-3 py-3 px-4 bg-warning/10 rounded-lg border-2 border-warning/30">
+              <Pause className="w-4 h-4 text-warning" />
+              <span className="text-sm font-bold text-warning">Discussion Paused</span>
+              <Button variant="outline" size="sm" onClick={handleTogglePause} className="border-2 h-7 text-xs">
+                <Play className="w-3 h-3 mr-1" />
+                Continue
+              </Button>
+            </div>
+          )}
 
           {isWaitingForSpeech && (
             <div className="flex items-center justify-center gap-2 sm:gap-3 py-1.5 sm:py-2 px-3 sm:px-4 bg-muted/50 rounded-lg border border-border">

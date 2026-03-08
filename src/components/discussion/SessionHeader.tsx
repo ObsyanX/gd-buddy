@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Mic, Volume2, VolumeX, Square, HelpCircle, Menu, Sparkles } from "lucide-react";
+import { Mic, Volume2, VolumeX, Square, HelpCircle, Menu, Sparkles, Pause, Play } from "lucide-react";
 
 interface SessionHeaderProps {
   session: any;
@@ -12,16 +12,18 @@ interface SessionHeaderProps {
   autoMicSetting: boolean;
   autoPlayTTS: boolean;
   usingFallbackTTS?: boolean;
+  isPaused: boolean;
   onToggleAutoMic: () => void;
   onToggleTTS: () => void;
   onResetTutorial: () => void;
   onEndSession: () => void;
+  onTogglePause: () => void;
 }
 
 const SessionHeader = ({
   session, messagesCount, isListening, isCorrecting,
   autoMicEnabled, autoMicSetting, autoPlayTTS, usingFallbackTTS,
-  onToggleAutoMic, onToggleTTS, onResetTutorial, onEndSession,
+  isPaused, onToggleAutoMic, onToggleTTS, onResetTutorial, onEndSession, onTogglePause,
 }: SessionHeaderProps) => {
   return (
     <header className="border-b-4 border-border p-2 sm:p-4">
@@ -56,6 +58,15 @@ const SessionHeader = ({
                   <SheetTitle>Session Controls</SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col gap-3 mt-6">
+                  <Button
+                    variant={isPaused ? "default" : "outline"}
+                    size="sm"
+                    onClick={onTogglePause}
+                    className={`border-2 justify-start ${isPaused ? '' : ''}`}
+                  >
+                    {isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />}
+                    {isPaused ? 'Continue Discussion' : 'Pause Discussion'}
+                  </Button>
                   <Button
                     variant="outline" size="sm"
                     onClick={onToggleAutoMic}
@@ -141,6 +152,14 @@ const SessionHeader = ({
             <Button variant="outline" onClick={onToggleTTS} className="border-2">
               {autoPlayTTS ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
               TTS {autoPlayTTS ? 'ON' : 'OFF'}
+            </Button>
+            <Button
+              variant={isPaused ? "default" : "outline"}
+              onClick={onTogglePause}
+              className="border-2"
+            >
+              {isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />}
+              {isPaused ? 'CONTINUE' : 'PAUSE'}
             </Button>
             <Button variant="destructive" onClick={onEndSession} className="border-4 border-border">
               <Square className="w-4 h-4 mr-2" />
