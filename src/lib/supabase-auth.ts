@@ -36,9 +36,12 @@ export const invokeWithAuth = async <T = any>(
       return { data: null, error };
     }
     
-    // Check if response indicates a fallback/error scenario
+    // Handle structured payload errors, but allow text-to-speech fallback payloads
     if (data && typeof data === 'object' && 'error' in data && !('audioContent' in data)) {
-      return { data: null, error: new Error((data as any).error || 'Function error') };
+      const isTtsFallback = functionName === 'text-to-speech' && ((data as any).fallback === true);
+      if (!isTtsFallback) {
+        return { data: null, error: new Error((data as any).error || 'Function error') };
+      }
     }
     
     return { data: data as T, error: null };
