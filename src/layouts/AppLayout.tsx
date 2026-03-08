@@ -55,7 +55,7 @@ const AppLayout = () => {
 
           {/* Desktop nav */}
           <nav className="hidden lg:flex gap-1" aria-label="Main navigation">
-            {NAV_ITEMS.slice(1, 5).map((item) => (
+            {NAV_ITEMS.slice(1, 6).map((item) => (
               <Button
                 key={item.path}
                 variant={isActive(item.path) ? "default" : "outline"}
