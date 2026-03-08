@@ -90,10 +90,10 @@ const Landing = () => {
         {/* Hero */}
         <section className="container mx-auto py-16 md:py-24 px-6 text-center" aria-label="Hero">
           <h1 className="text-display font-bold mb-6 max-w-4xl mx-auto">
-            GD Buddy – AI Group Discussion Practice for Placements
+            AI Group Discussion Practice Platform for Placements
           </h1>
           <p className="text-h2 text-muted-foreground max-w-2xl mx-auto mb-8">
-            GD Buddy is your AI-powered group discussion practice platform. Simulate realistic placement GDs with intelligent AI participants, get real-time feedback on your communication skills, and build the confidence to ace every GD round.
+            GD Buddy — your intelligent group discussion buddy for placement preparation. Simulate realistic GDs with AI participants, get real-time feedback on communication skills, and build confidence to ace every GD round.
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <Button size="lg" className="text-xl px-12 py-8 border-4 border-border shadow-md hover:shadow-lg" onClick={() => navigate("/auth")} aria-label="Start practicing group discussions">

@@ -41,7 +41,7 @@ const SEOHead = ({
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "GD Buddy",
-    alternateName: "GD Buddy AI",
+    alternateName: ["Group Discussion Buddy", "GD Buddy AI", "AI Group Discussion Practice Tool", "Group Discussion Simulator", "GD Practice Platform"],
     url: "https://gd-buddy.vercel.app",
     potentialAction: {
       "@type": "SearchAction",
