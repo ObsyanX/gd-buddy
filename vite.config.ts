@@ -14,7 +14,11 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    dedupe: ["react", "react-dom", "react/jsx-runtime", "react-router-dom"],
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "react-router-dom", "@tanstack/react-query"],
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "react-router-dom", "@tanstack/react-query"],
+    force: true,
   },
   build: {
     target: "es2020",
