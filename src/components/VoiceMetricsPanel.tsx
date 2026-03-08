@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Mic, Volume2, AlertTriangle, TrendingUp, Timer } from 'lucide-react';
+import LiveCoachingOverlay from './LiveCoachingOverlay';
 
 // Common filler words to detect
 const FILLER_WORDS = [
