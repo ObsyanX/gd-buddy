@@ -51,7 +51,7 @@ const ConcludeGD = () => (
     <SEOHead
       title="How to Conclude a GD Round"
       description="Learn how to effectively conclude and summarize a group discussion. 6 closing strategies that leave a lasting impression on evaluators in placement GD rounds."
-      keywords="how to conclude GD, GD summarization, group discussion conclusion, how to summarize GD, closing a group discussion"
+      keywords="how to conclude GD, GD summarization, group discussion conclusion, how to summarize GD, closing a group discussion, GD conclusion tips"
       path="/how-to-conclude-gd-round"
       jsonLd={jsonLd}
     />

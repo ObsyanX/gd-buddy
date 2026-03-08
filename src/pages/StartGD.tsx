@@ -52,7 +52,7 @@ const StartGD = () => (
     <SEOHead
       title="How to Start a Group Discussion"
       description="Learn 7 proven techniques to start a group discussion in placement rounds. Opening strategies that create a strong first impression and show leadership."
-      keywords="how to start group discussion, GD opening statement, how to initiate GD, group discussion opening techniques, start GD in placements"
+      keywords="how to start group discussion, GD opening statement, how to initiate GD, group discussion opening techniques, start GD in placements, GD opening tips"
       path="/how-to-start-group-discussion"
       jsonLd={jsonLd}
     />

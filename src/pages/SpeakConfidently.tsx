@@ -53,7 +53,7 @@ const SpeakConfidently = () => (
     <SEOHead
       title="How to Speak Confidently in Group Discussion"
       description="Learn practical techniques to speak confidently in group discussions. Overcome nervousness, build assertiveness, and make a strong impression in placement GD rounds."
-      keywords="how to speak confidently in GD, confidence in group discussion, overcome nervousness in GD, GD speaking tips, assertive speaking in GD"
+      keywords="how to speak confidently in GD, confidence in group discussion, overcome nervousness in GD, GD speaking tips, assertive speaking in GD, how to speak confidently in group discussion"
       path="/how-to-speak-confidently-in-group-discussion"
       jsonLd={jsonLd}
     />

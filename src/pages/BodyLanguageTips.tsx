@@ -52,7 +52,7 @@ const BodyLanguageTips = () => (
     <SEOHead
       title="Body Language Tips for Group Discussion"
       description="Master body language for group discussions. Learn eye contact, posture, gesture, and facial expression techniques that impress evaluators in placement GD rounds."
-      keywords="body language tips for GD, GD non-verbal communication, eye contact in group discussion, posture for GD, gestures in GD"
+      keywords="body language tips for GD, GD non-verbal communication, eye contact in group discussion, posture for GD, gestures in GD, body language in group discussion"
       path="/body-language-tips-for-gd"
       jsonLd={jsonLd}
     />

@@ -46,7 +46,7 @@ const AIGDSimulator = () => {
       <SEOHead
         title="AI GD Simulator – Practice Group Discussions"
         description="Free AI-powered group discussion simulator. Practice GD rounds with realistic AI participants, get instant feedback on communication skills, and prepare for placements."
-        keywords="AI GD simulator, online GD practice, group discussion simulator, mock GD online, AI group discussion practice"
+        keywords="AI GD simulator, online GD practice, group discussion simulator, mock GD online, AI group discussion practice, GD practice platform, group discussion practice tool"
         path="/ai-gd-simulator"
         jsonLd={jsonLd}
       />
