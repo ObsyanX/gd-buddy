@@ -692,168 +692,26 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Onboarding Tutorial */}
       {showTutorial && (
         <OnboardingTutorial onComplete={() => setShowTutorial(false)} />
       )}
 
-      <header className="border-b-4 border-border p-2 sm:p-4">
-        <div className="container mx-auto">
-          {/* Mobile Header */}
-          <div className="flex items-center justify-between gap-2 md:hidden">
-            <div className="flex-1 min-w-0">
-              <h1 
-                className="text-base sm:text-lg font-bold leading-tight line-clamp-2 break-words"
-                style={{ 
-                  wordBreak: 'break-word',
-                  overflowWrap: 'anywhere',
-                  hyphens: 'auto'
-                }}
-                title={session.topic}
-              >
-                {session.topic}
-              </h1>
-              <div className="flex gap-1 mt-1 flex-wrap">
-                <Badge variant="secondary" className="text-[10px]">{session.topic_category}</Badge>
-                <Badge variant="outline" className="border text-[10px]">{messages.length} turns</Badge>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              {isListening && (
-                <Badge variant="outline" className="border animate-pulse bg-destructive/20 text-[10px] px-1.5">🎤</Badge>
-              )}
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="border-2 h-8 w-8 p-0">
-                    <Menu className="w-4 h-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-[280px] sm:w-[320px]">
-                  <SheetHeader>
-                    <SheetTitle>Session Controls</SheetTitle>
-                  </SheetHeader>
-                  <div className="flex flex-col gap-3 mt-6">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAutoMicEnabled(!autoMicEnabled)}
-                      className={`border-2 justify-start ${autoMicEnabled && autoMicSetting ? 'bg-accent/20' : ''}`}
-                      disabled={!autoMicSetting}
-                    >
-                      <Mic className="w-4 h-4 mr-2" />
-                      Auto-mic {autoMicEnabled && autoMicSetting ? 'ON' : 'OFF'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAutoPlayTTS(!autoPlayTTS)}
-                      className="border-2 justify-start"
-                    >
-                      {autoPlayTTS ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
-                      TTS {autoPlayTTS ? 'ON' : 'OFF'}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={resetTutorial}
-                      className="justify-start"
-                    >
-                      <HelpCircle className="w-4 h-4 mr-2" />
-                      Show Tutorial
-                    </Button>
-                    {session.is_multiplayer && session.room_code && (
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-1">Room Code</p>
-                        <p className="font-mono font-bold">🔑 {session.room_code}</p>
-                      </div>
-                    )}
-                    <div className="border-t pt-3 mt-2">
-                      <Button 
-                        variant="destructive" 
-                        onClick={handleEndSession}
-                        className="w-full border-4 border-border"
-                      >
-                        <Square className="w-4 h-4 mr-2" />
-                        END SESSION
-                      </Button>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </div>
-
-          {/* Desktop Header */}
-          <div className="hidden md:flex items-center justify-between">
-            <div>
-              <h1 className="text-xl lg:text-2xl font-bold">{session.topic}</h1>
-              <div className="flex gap-2 mt-1 flex-wrap">
-                <Badge variant="secondary">{session.topic_category}</Badge>
-                <Badge variant="outline" className="border-2">{messages.length} turns</Badge>
-                {isListening && (
-                  <Badge variant="outline" className="border-2 animate-pulse bg-destructive/20">🎤 Listening...</Badge>
-                )}
-                {isCorrecting && (
-                  <Badge variant="outline" className="border-2 animate-pulse bg-primary/20">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    AI Correcting...
-                  </Badge>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setAutoMicEnabled(!autoMicEnabled)}
-                  className={`border-2 text-xs ${autoMicEnabled && autoMicSetting ? 'bg-accent/20' : ''}`}
-                  disabled={!autoMicSetting}
-                  title={autoMicSetting ? "Toggle auto-mic after first message" : "Enable auto-mic in Settings"}
-                >
-                  <Mic className="w-3 h-3 mr-1" />
-                  Auto-mic {autoMicEnabled && autoMicSetting ? 'ON' : 'OFF'}
-                </Button>
-                {session.is_multiplayer && (
-                  <>
-                    <Badge variant="default" className="border-2">Multiplayer</Badge>
-                    {session.room_code && (
-                      <Badge variant="outline" className="border-2 font-mono">
-                        🔑 Room: {session.room_code}
-                      </Badge>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={resetTutorial}
-                title="Show Tutorial"
-              >
-                <HelpCircle className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setAutoPlayTTS(!autoPlayTTS)}
-                className="border-2"
-              >
-                {autoPlayTTS ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
-                TTS {autoPlayTTS ? 'ON' : 'OFF'}
-              </Button>
-              <Button 
-                variant="destructive" 
-                onClick={handleEndSession}
-                className="border-4 border-border"
-              >
-                <Square className="w-4 h-4 mr-2" />
-                END SESSION
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <SessionHeader
+        session={session}
+        messagesCount={messages.length}
+        isListening={isListening}
+        isCorrecting={isCorrecting}
+        autoMicEnabled={autoMicEnabled}
+        autoMicSetting={autoMicSetting}
+        autoPlayTTS={autoPlayTTS}
+        onToggleAutoMic={() => setAutoMicEnabled(!autoMicEnabled)}
+        onToggleTTS={() => setAutoPlayTTS(!autoPlayTTS)}
+        onResetTutorial={resetTutorial}
+        onEndSession={handleEndSession}
+      />
 
       <div className="flex-1 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 p-2 sm:p-3 lg:p-4 overflow-hidden">
-        {/* Mobile/Tablet Video Monitor - Stacked above chat */}
+        {/* Mobile/Tablet Video Monitor */}
         <div className="lg:hidden">
           <VideoMonitor
             isActive={true}
@@ -865,92 +723,22 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
         {/* Main Chat Area */}
         <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-2 sm:gap-3 lg:gap-4 min-w-0 flex-1">
-          <Card className="border-2 sm:border-3 lg:border-4 border-border flex-1 min-h-[180px] max-h-[calc(100vh-240px)] sm:max-h-[calc(100vh-280px)] lg:max-h-[calc(100vh-350px)] flex flex-col">
-            <ScrollArea className="flex-1 p-2 sm:p-3 lg:p-4">
-              <div className="space-y-2 sm:space-y-3 lg:space-y-4">
-                {messages.map((message, index) => {
-                  const messageParticipant = message.gd_participants;
-                  
-                  if (index === messages.length - 1) {
-                    console.log('[Message Attribution]', {
-                      messageId: message.id,
-                      participantName: messageParticipant?.persona_name,
-                      participantRealUserId: messageParticipant?.real_user_id,
-                      currentUserId,
-                      isUser: messageParticipant?.is_user,
-                    });
-                  }
-                  
-                  const isFromCurrentUser = messageParticipant?.is_user && 
-                    messageParticipant?.real_user_id && 
-                    currentUserId && 
-                    messageParticipant.real_user_id === currentUserId;
-                  
-                  const isCurrentlySpeaking = isSpeaking && currentSpeaker === messageParticipant?.persona_name;
-                  const isAI = !messageParticipant?.is_user;
-                  const isOtherHuman = messageParticipant?.is_user && !isFromCurrentUser;
-                  
-                  return (
-                    <div 
-                      key={index}
-                      className={`flex gap-1.5 sm:gap-2 lg:gap-3 ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
-                    >
-                      {!isFromCurrentUser && (
-                        <div className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded border sm:border-2 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1 ${isCurrentlySpeaking ? 'border-primary bg-primary/20 animate-pulse' : 'border-border'}`}>
-                          {isCurrentlySpeaking ? (
-                            <Volume2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 text-primary animate-pulse" />
-                          ) : isAI ? (
-                            <Bot className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
-                          ) : (
-                            <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
-                          )}
-                        </div>
-                      )}
-                      <div className={`max-w-[88%] sm:max-w-[85%] lg:max-w-[80%] space-y-0.5 sm:space-y-1 ${isFromCurrentUser ? 'text-right' : ''}`}>
-                        <p className={`text-[9px] sm:text-[10px] lg:text-xs font-bold ${isCurrentlySpeaking ? 'text-primary' : 'text-muted-foreground'}`}>
-                          {isFromCurrentUser ? 'You' : messageParticipant?.persona_name}
-                          {isOtherHuman && <span className="ml-1 text-muted-foreground">(Player)</span>}
-                          {isCurrentlySpeaking && <span className="ml-1 sm:ml-2 animate-pulse">🔊</span>}
-                        </p>
-                        <div className={`p-1.5 sm:p-2 lg:p-4 border sm:border-2 rounded-sm sm:rounded ${isFromCurrentUser ? 'bg-primary text-primary-foreground border-primary' : isCurrentlySpeaking ? 'bg-primary/10 border-primary' : 'bg-card border-border'}`}>
-                          <p className="text-[11px] sm:text-xs lg:text-sm leading-relaxed">{message.text}</p>
-                        </div>
-                        {message.intent && (
-                          <Badge variant="outline" className="text-[8px] sm:text-[10px] lg:text-xs h-4 sm:h-5">
-                            {message.intent}
-                          </Badge>
-                        )}
-                      </div>
-                      {isFromCurrentUser && (
-                        <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded border sm:border-2 border-border flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1">
-                          <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                <div ref={scrollRef} />
-              </div>
-            </ScrollArea>
-          </Card>
+          <MessageList
+            messages={messages}
+            currentUserId={currentUserId}
+            isSpeaking={isSpeaking}
+            currentSpeaker={currentSpeaker}
+          />
 
-          {/* Voice Activity Indicator */}
           <VoiceActivityIndicator isActive={isSpeaking} participantName={currentSpeaker || undefined} />
 
-          {/* Waiting for Speech Indicator with Skip Button */}
           {isWaitingForSpeech && (
             <div className="flex items-center justify-center gap-2 sm:gap-3 py-1.5 sm:py-2 px-3 sm:px-4 bg-muted/50 rounded-lg border border-border">
               <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-muted-foreground" />
               <span className="text-xs sm:text-sm text-muted-foreground">Waiting for speech...</span>
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (skipWaitRef.current) {
-                    skipWaitRef.current();
-                    console.log('[AI Response Delay] Skipped by user');
-                  }
-                }}
+                variant="outline" size="sm"
+                onClick={() => { if (skipWaitRef.current) { skipWaitRef.current(); } }}
                 className="h-6 sm:h-7 px-2 text-[10px] sm:text-xs"
               >
                 <SkipForward className="w-3 h-3 mr-1" />
@@ -959,259 +747,81 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             </div>
           )}
 
-          <div className="space-y-1.5 sm:space-y-2">
-            {/* AI Correction Indicator */}
-            {isCorrecting && (
-              <div className="flex items-center justify-center gap-2 py-1.5 sm:py-2 text-xs sm:text-sm text-muted-foreground">
-                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-                <span className="font-mono text-[10px] sm:text-sm">Applying AI correction...</span>
-              </div>
-            )}
-            
-            {/* Input Area - Responsive */}
-            <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
-              <Input
-                placeholder={isListening ? "Speaking..." : "Type or use voice..."}
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !isListening) {
-                    handleSendMessage();
-                  }
-                }}
-                className={`border-2 text-sm sm:text-base lg:text-lg flex-1 h-10 sm:h-11 ${isListening ? 'border-destructive bg-destructive/5' : ''}`}
-                disabled={isProcessing || isPracticing}
-                readOnly={isListening}
-              />
-              <div className="flex gap-1 sm:gap-1.5 lg:gap-2 justify-between sm:justify-end">
-                {/* Mobile metrics toggle */}
-                <Sheet open={isMobileMetricsOpen} onOpenChange={setIsMobileMetricsOpen}>
-                  <SheetTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="border-2 h-10 w-10 p-0 lg:hidden"
-                      title="View Metrics"
-                    >
-                      <BarChart3 className="w-4 h-4" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="w-[300px] sm:w-[350px] overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>Session Metrics</SheetTitle>
-                    </SheetHeader>
-                    <div className="space-y-3 mt-4">
-                      {/* Live Feedback Card */}
-                      <Card className="p-3 border-2 border-border">
-                        <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
-                          <Info className="w-4 h-4" />
-                          LIVE FEEDBACK
-                        </h3>
-                        {feedback ? (
-                          <div className="space-y-2">
-                            <div className="grid grid-cols-3 gap-2">
-                              <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
-                                <p className="text-[10px] text-muted-foreground uppercase">Fluency</p>
-                                <p className="font-bold text-sm tabular-nums">{feedback.fluency_score || 0}<span className="text-[10px] text-muted-foreground">/100</span></p>
-                              </div>
-                              <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
-                                <p className="text-[10px] text-muted-foreground uppercase">WPM</p>
-                                <p className="font-bold text-sm tabular-nums">{Math.round(feedback.wpm || 0)}</p>
-                              </div>
-                              <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
-                                <p className="text-[10px] text-muted-foreground uppercase">Fillers</p>
-                                <p className="font-bold text-sm tabular-nums">{feedback.filler_count || 0}</p>
-                              </div>
-                            </div>
-                            {feedback.live_hint && (
-                              <div className="pt-2 border-t border-border">
-                                <p className="text-xs font-mono text-muted-foreground">{feedback.live_hint}</p>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
-                              <p className="text-[10px] text-muted-foreground uppercase">Fluency</p>
-                              <p className="font-bold text-sm text-muted-foreground">--</p>
-                            </div>
-                            <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
-                              <p className="text-[10px] text-muted-foreground uppercase">WPM</p>
-                              <p className="font-bold text-sm text-muted-foreground">--</p>
-                            </div>
-                            <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
-                              <p className="text-[10px] text-muted-foreground uppercase">Fillers</p>
-                              <p className="font-bold text-sm text-muted-foreground">--</p>
-                            </div>
-                          </div>
-                        )}
-                      </Card>
-
-                      {/* Participants Card */}
-                      <Card className="p-3 border-2 border-border">
-                        <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          PARTICIPANTS
-                          <Badge variant="secondary" className="ml-auto text-xs">
-                            {participants.length}
-                          </Badge>
-                        </h3>
-                        <ParticipantPresence
-                          participants={participants}
-                          presenceState={presenceState}
-                          typingParticipants={typingParticipants}
-                          isMultiplayer={session?.is_multiplayer ?? false}
-                        />
-                      </Card>
-
-                      {/* Voice Metrics Panel */}
-                      <VoiceMetricsPanel
-                        isUserSpeaking={isListening && !isSpeaking}
-                        currentTranscript={userInput}
-                        sessionStartTime={session?.start_time ? new Date(session.start_time).getTime() : undefined}
-                      />
-
-                      {/* Practice History */}
-                      <PracticeHistory 
-                        recordings={practiceHistory}
-                        onPlay={playHistoryRecording}
-                        onDelete={deleteHistoryRecording}
-                        currentlyPlaying={currentPlayingId}
-                      />
-                    </div>
-                  </SheetContent>
-                </Sheet>
-                <Button
-                  onClick={startPracticeRecording}
-                  disabled={isProcessing || isListening || isPracticing}
-                  variant="outline"
-                  className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
-                  title="Practice Mode (Ctrl+M)"
-                >
-                  <Mic className="w-4 h-4" />
-                </Button>
-                <Button
-                  onClick={handleVoiceInput}
-                  disabled={isProcessing || isPracticing || isCorrecting}
-                  variant={isListening ? "destructive" : "outline"}
-                  className={`border-2 h-10 w-10 p-0 sm:w-auto sm:px-3 ${isListening ? 'animate-pulse' : ''}`}
-                  title="Voice Input - Real-time (Click to toggle)"
-                >
-                  {isListening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                </Button>
-                <Button 
-                  onClick={handleSendWithVoice}
-                  disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting}
-                  className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
-                  title={isListening ? "Stop & Send" : "Send (Ctrl+Enter)"}
-                >
-                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                </Button>
-                <Button 
-                  onClick={() => handleSendMessageDirect("[Skipped turn]")}
-                  disabled={isProcessing || isPracticing}
-                  variant="outline"
-                  className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3 hidden sm:flex"
-                  title="Skip your turn"
-                >
-                  <SkipForward className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground font-mono text-center hidden sm:block">
-              TIP: Ctrl+M for practice • Ctrl+Enter to send • Esc to stop audio
-            </p>
-          </div>
+          <MessageInput
+            userInput={userInput}
+            isListening={isListening}
+            isProcessing={isProcessing}
+            isPracticing={isPracticing}
+            isCorrecting={isCorrecting}
+            onInputChange={setUserInput}
+            onSendMessage={handleSendMessage}
+            onSendWithVoice={handleSendWithVoice}
+            onVoiceInput={handleVoiceInput}
+            onStartPractice={startPracticeRecording}
+            onSkipTurn={() => handleSendMessageDirect("[Skipped turn]")}
+            onOpenMobileMetrics={() => setIsMobileMetricsOpen(true)}
+          />
         </div>
 
         {/* Right Sidebar - Desktop Only */}
-        <div className="hidden lg:flex lg:col-span-4 xl:col-span-3 flex-col gap-3 overflow-y-auto max-h-[calc(100vh-180px)] pr-1">
-          {/* Video Monitor - Grid Integrated */}
-          <VideoMonitor
-            isActive={true}
-            sessionId={session?.id}
-            isUserMicActive={isListening && !isSpeaking}
-            onMetricsUpdate={handleVideoMetricsUpdate}
-          />
-          <Card className="p-4 border-4 border-border">
-            <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-              <Info className="w-4 h-4" />
-              LIVE FEEDBACK
-            </h3>
-            {feedback ? (
-              <div className="space-y-3">
-                {/* Metrics Grid */}
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Fluency</p>
-                    <p className="font-bold text-lg tabular-nums">{feedback.fluency_score || 0}<span className="text-xs text-muted-foreground">/100</span></p>
-                  </div>
-                  <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">WPM</p>
-                    <p className="font-bold text-lg tabular-nums">{Math.round(feedback.wpm || 0)}</p>
-                  </div>
-                  <div className="text-center p-2 bg-muted/30 rounded-lg border border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Fillers</p>
-                    <p className="font-bold text-lg tabular-nums">{feedback.filler_count || 0}</p>
-                  </div>
-                </div>
-                {feedback.live_hint && (
-                  <div className="pt-2 border-t border-border">
-                    <p className="text-xs font-mono text-muted-foreground leading-relaxed">{feedback.live_hint}</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
-                  <p className="text-[10px] text-muted-foreground uppercase">Fluency</p>
-                  <p className="font-bold text-lg text-muted-foreground">--</p>
-                </div>
-                <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
-                  <p className="text-[10px] text-muted-foreground uppercase">WPM</p>
-                  <p className="font-bold text-lg text-muted-foreground">--</p>
-                </div>
-                <div className="text-center p-2 bg-muted/20 rounded-lg border border-dashed border-border">
-                  <p className="text-[10px] text-muted-foreground uppercase">Fillers</p>
-                  <p className="font-bold text-lg text-muted-foreground">--</p>
-                </div>
-              </div>
-            )}
-          </Card>
-
-          {/* Participants Card */}
-          <Card className="p-4 border-4 border-border">
-            <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-              <User className="w-4 h-4" />
-              PARTICIPANTS
-              <Badge variant="secondary" className="ml-auto text-xs">
-                {participants.length}
-              </Badge>
-            </h3>
-            <ParticipantPresence
-              participants={participants}
-              presenceState={presenceState}
-              typingParticipants={typingParticipants}
-              isMultiplayer={session?.is_multiplayer ?? false}
-            />
-          </Card>
-
-          {/* Voice Metrics Panel - Real-time filler word detection */}
-          <VoiceMetricsPanel
-            isUserSpeaking={isListening && !isSpeaking}
-            currentTranscript={userInput}
-            sessionStartTime={session?.start_time ? new Date(session.start_time).getTime() : undefined}
-          />
-
-          {/* Practice History */}
-          <PracticeHistory 
-            recordings={practiceHistory}
-            onPlay={playHistoryRecording}
-            onDelete={deleteHistoryRecording}
-            currentlyPlaying={currentPlayingId}
-          />
-        </div>
+        <SessionSidebar
+          session={session}
+          participants={participants}
+          feedback={feedback}
+          isListening={isListening}
+          isSpeaking={isSpeaking}
+          userInput={userInput}
+          presenceState={presenceState}
+          typingParticipants={typingParticipants}
+          practiceHistory={practiceHistory}
+          currentPlayingId={currentPlayingId}
+          onVideoMetricsUpdate={handleVideoMetricsUpdate}
+          onPlayHistory={playHistoryRecording}
+          onDeleteHistory={deleteHistoryRecording}
+        />
       </div>
 
+      {/* Mobile Metrics Sheet */}
+      <Sheet open={isMobileMetricsOpen} onOpenChange={setIsMobileMetricsOpen}>
+        <SheetContent side="right" className="w-[300px] sm:w-[350px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Session Metrics</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-3 mt-4">
+            <Card className="p-3 border-2 border-border">
+              <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+                <Info className="w-4 h-4" />
+                LIVE FEEDBACK
+              </h3>
+              <FeedbackGrid feedback={feedback} />
+            </Card>
+            <Card className="p-3 border-2 border-border">
+              <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
+                <User className="w-4 h-4" />
+                PARTICIPANTS
+                <Badge variant="secondary" className="ml-auto text-xs">{participants.length}</Badge>
+              </h3>
+              <ParticipantPresence
+                participants={participants}
+                presenceState={presenceState}
+                typingParticipants={typingParticipants}
+                isMultiplayer={session?.is_multiplayer ?? false}
+              />
+            </Card>
+            <VoiceMetricsPanel
+              isUserSpeaking={isListening && !isSpeaking}
+              currentTranscript={userInput}
+              sessionStartTime={session?.start_time ? new Date(session.start_time).getTime() : undefined}
+            />
+            <PracticeHistory
+              recordings={practiceHistory}
+              onPlay={playHistoryRecording}
+              onDelete={deleteHistoryRecording}
+              currentlyPlaying={currentPlayingId}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Practice Mode Dialog */}
       <Dialog open={isPracticing} onOpenChange={(open) => !open && cancelPractice()}>
@@ -1222,95 +832,51 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               Record your response and review it before sending
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4">
             <AudioWaveform isRecording={isRecordingPractice} stream={practiceStream} />
-            
-            {/* Real-time WPM Display */}
-            <WPMDisplay 
+            <WPMDisplay
               isRecording={isRecordingPractice}
               recordingStartTime={recordingStartTime}
               estimatedWordCount={estimatedWordCount}
             />
-
             {practiceAudioUrl && (
               <div className="flex gap-2 justify-center">
-                <Button
-                  onClick={playPracticeRecording}
-                  disabled={isPlayingPractice}
-                  variant="outline"
-                  className="border-2"
-                >
+                <Button onClick={playPracticeRecording} disabled={isPlayingPractice} variant="outline" className="border-2">
                   <Play className="w-4 h-4 mr-2" />
                   {isPlayingPractice ? 'PLAYING...' : 'PLAY'}
                 </Button>
-                <Button
-                  onClick={stopPracticeRecording}
-                  disabled={!isRecordingPractice}
-                  variant="outline"
-                  className="border-2"
-                >
+                <Button onClick={stopPracticeRecording} disabled={!isRecordingPractice} variant="outline" className="border-2">
                   <Square className="w-4 h-4 mr-2" />
                   STOP
                 </Button>
               </div>
             )}
-
             {!practiceAudioUrl && !isRecordingPractice && (
-              <p className="text-center text-muted-foreground font-mono">
-                Click RECORD to start practicing
-              </p>
+              <p className="text-center text-muted-foreground font-mono">Click RECORD to start practicing</p>
             )}
           </div>
-
           <DialogFooter className="flex gap-2">
             {!practiceAudioUrl && !isRecordingPractice && (
-              <Button
-                onClick={startPracticeRecording}
-                className="border-4 border-border"
-              >
-                <Mic className="w-4 h-4 mr-2" />
-                RECORD
+              <Button onClick={startPracticeRecording} className="border-4 border-border">
+                <Mic className="w-4 h-4 mr-2" /> RECORD
               </Button>
             )}
             {isRecordingPractice && (
-              <Button
-                onClick={stopPracticeRecording}
-                variant="destructive"
-                className="border-4 border-border"
-              >
-                <Square className="w-4 h-4 mr-2" />
-                STOP RECORDING
+              <Button onClick={stopPracticeRecording} variant="destructive" className="border-4 border-border">
+                <Square className="w-4 h-4 mr-2" /> STOP RECORDING
               </Button>
             )}
             {practiceAudioUrl && !isRecordingPractice && (
-              <Button
-                onClick={() => {
-                  cancelPractice();
-                  startPracticeRecording();
-                }}
-                variant="outline"
-                className="border-2"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                RE-RECORD
+              <Button onClick={() => { cancelPractice(); startPracticeRecording(); }} variant="outline" className="border-2">
+                <RefreshCw className="w-4 h-4 mr-2" /> RE-RECORD
               </Button>
             )}
-            <Button
-              onClick={cancelPractice}
-              variant="outline"
-              className="border-2"
-            >
-              <X className="w-4 h-4 mr-2" />
-              CANCEL
+            <Button onClick={cancelPractice} variant="outline" className="border-2">
+              <X className="w-4 h-4 mr-2" /> CANCEL
             </Button>
             {practiceAudioUrl && !isRecordingPractice && (
-              <Button
-                onClick={handlePracticeAccept}
-                className="border-4 border-border"
-              >
-                <Check className="w-4 h-4 mr-2" />
-                ACCEPT
+              <Button onClick={handlePracticeAccept} className="border-4 border-border">
+                <Check className="w-4 h-4 mr-2" /> ACCEPT
               </Button>
             )}
           </DialogFooter>
