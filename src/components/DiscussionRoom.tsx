@@ -53,6 +53,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [isWaitingForSpeech, setIsWaitingForSpeech] = useState(false);
   const [isMobileMetricsOpen, setIsMobileMetricsOpen] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [autoSendEnabled, setAutoSendEnabled] = useState(true);
+  const [autoSkipEnabled, setAutoSkipEnabled] = useState(true);
   const { toast } = useToast();
   
   // Load auto-mic setting from Zustand store
