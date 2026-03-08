@@ -129,6 +129,9 @@ const VoiceMetricsPanel = ({
   // Track accumulated finalized words and latest finalized transcript to avoid double-counting
   const accumulatedFinalWordsRef = useRef<string[]>([]);
   const lastFinalizedTranscriptRef = useRef('');
+  // Track actual voice activity via transcript changes (not just mic-open state)
+  const lastTranscriptChangeRef = useRef<number>(0);
+  const SILENCE_THRESHOLD_MS = 2000; // Stop counting speaking time after 2s of no transcript change
   // Debounce speaking state to avoid rapid true/false toggles
   const stableSpeakingRef = useRef(false);
   const speakingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -255,10 +258,19 @@ const VoiceMetricsPanel = ({
     }
   }, [stableSpeaking, finalizeCurrentTranscript]);
 
-  // Process transcript when it's cleared/sent
+  // Process transcript when it's cleared/sent + track transcript activity
   useEffect(() => {
     const prevTranscript = lastTranscriptRef.current;
     const prevLength = lastTranscriptLengthRef.current;
+    
+    // Track when transcript actually changes (real speech activity)
+    if (currentTranscript.length > prevLength) {
+      lastTranscriptChangeRef.current = Date.now();
+      // Restart speaking clock if it was paused due to silence
+      if (stableSpeaking && !speakingStartRef.current) {
+        speakingStartRef.current = Date.now();
+      }
+    }
     
     // If transcript was cleared/sent (length reduced significantly), finalize previous text
     if (prevTranscript && 
@@ -271,14 +283,32 @@ const VoiceMetricsPanel = ({
     lastTranscriptLengthRef.current = currentTranscript.length;
   }, [currentTranscript, finalizeCurrentTranscript]);
 
-  // Update speaking time display periodically
+  // Update speaking time display periodically — only count time when transcript is actively growing
   useEffect(() => {
     if (!stableSpeaking) return;
     
     const interval = setInterval(() => {
       if (speakingStartRef.current) {
+        const now = Date.now();
+        const timeSinceLastChange = now - lastTranscriptChangeRef.current;
+        const isActuallySpeaking = timeSinceLastChange < SILENCE_THRESHOLD_MS;
+        
+        // If user hasn't produced new words in 2s, pause speaking time accumulation
+        if (!isActuallySpeaking && speakingStartRef.current) {
+          // Freeze: commit accumulated time up to silence threshold
+          const activeUntil = lastTranscriptChangeRef.current > 0
+            ? Math.min(now, lastTranscriptChangeRef.current + SILENCE_THRESHOLD_MS)
+            : now;
+          const elapsed = Math.max(0, (activeUntil - speakingStartRef.current) / 1000);
+          if (elapsed > 0) {
+            totalSpeakingTimeRef.current += elapsed;
+          }
+          speakingStartRef.current = null; // Pause the clock
+        }
+        
         const currentSpeaking = totalSpeakingTimeRef.current + 
-          (Date.now() - speakingStartRef.current) / 1000;
+          (speakingStartRef.current ? (now - speakingStartRef.current) / 1000 : 0);
+        
         setMetrics(prev => ({
           ...prev,
           speakingTimeSeconds: currentSpeaking,
