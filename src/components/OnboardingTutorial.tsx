@@ -143,7 +143,7 @@ export const OnboardingTutorial = ({ onComplete }: OnboardingTutorialProps) => {
   };
 
   const handleComplete = () => {
-    localStorage.setItem('gd-buddy-onboarding-complete', 'true');
+    useUserStore.getState().setOnboardingComplete(true);
     setIsOpen(false);
     onComplete();
   };
