@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   MessageSquare, LayoutDashboard, Dumbbell, Users, User,
-  Settings as SettingsIcon, LogOut, Menu, Play,
+  Settings as SettingsIcon, LogOut, Menu, Play, GraduationCap,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
