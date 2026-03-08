@@ -51,8 +51,8 @@ const jsonLd = [
 const GDTopics = () => (
   <div className="min-h-screen bg-background flex flex-col">
     <SEOHead
-      title="GD Topics for Placements 2025"
-      description="50+ trending group discussion topics for campus placements. Practice with AI on current affairs, business, technology, social issues, and abstract topics."
+      title={`GD Topics for Placements 2025 — ${categories.reduce((a, [, t]) => a + t.length, 0)}+ Topics`}
+      description={`${categories.reduce((a, [, t]) => a + t.length, 0)}+ trending group discussion topics for campus placements. Practice with AI on current affairs, business, technology, social issues, and abstract topics.`}
       keywords="GD topics, group discussion topics for placement, GD topics 2025, current affairs GD topics, abstract GD topics"
       path="/gd-topics-for-placements"
       jsonLd={jsonLd}
