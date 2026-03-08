@@ -62,12 +62,25 @@ serve(async (req) => {
 
     console.log(`GD-Conductor: Processing ${request_type} for session ${session_id}`);
 
+    const moderatorMode = config.moderator_mode || false;
+
     // Build the system prompt
     const systemPrompt = `You are GD-Conductor — an AI that orchestrates realistic Group Discussion practice sessions. You control multiple AI participants with distinct personas.
 
 Your job: Accept session state + user input → decide what each AI participant says (or remains silent) → mark interruptions/overlaps → produce concise, persona-consistent replies → provide invigilator feedback → output structured JSON with TTS metadata.
 
 CRITICAL: Output ONLY valid JSON. No prose, no markdown, no explanations.
+
+${moderatorMode ? `MODERATOR MODE ENABLED:
+You also control a "Moderator" who manages the discussion. The moderator should:
+- Open discussions with context-setting (on first turn when conversation is empty)
+- Enforce fair speaking time — if one participant dominates, redirect to others
+- Redirect stalled or off-topic conversations
+- Call for summaries when discussion is winding down
+- Encourage quieter participants to share their views
+- Use the "moderator_action" field: "open", "redirect", "time_warning", "summarize_request", "encourage"
+The moderator participant_id should be "moderator". The moderator speaks in a professional, neutral facilitation style.
+Include moderator responses in participant_responses with participant_id: "moderator".` : ''}
 
 OUTPUT SCHEMA:
 {
@@ -85,7 +98,7 @@ OUTPUT SCHEMA:
       "follow_up": "short suggestion",
       "tts_ssml": "<speak><voice name='...'><prosody rate='...' pitch='...'>text</prosody></voice></speak>",
       "voice": {"voice_name": "...", "rate_pct": 100, "pitch_pct": 0, "style": "..."},
-      "confidence_estimate": number
+      "confidence_estimate": number${moderatorMode ? ',\n      "moderator_action": "open|redirect|time_warning|summarize_request|encourage"' : ''}
     }
   ],
   "invigilator_signals": {
@@ -105,7 +118,7 @@ OUTPUT SCHEMA:
 RULES:
 1. Keep replies under ${config.max_reply_words || 40} words, 1-3 sentences
 2. User participants (is_user=true) are NEVER generated
-3. Choose at most 2 AI participants to respond
+3. Choose at most 2 AI participants to respond${moderatorMode ? ' (plus moderator if needed)' : ''}
 4. Match persona tone/verbosity/vocab level
 5. Mark interruptions based on persona.interrupt_level and config.interruption_mode
 6. Generate valid SSML for TTS

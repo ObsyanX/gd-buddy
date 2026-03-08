@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, Sparkles, Lightbulb, Trash2 } from "lucide-react";
+import { ArrowLeft, Users, Sparkles, Lightbulb, Trash2, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +46,7 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
   const [selectedCustomPersonas, setSelectedCustomPersonas] = useState<string[]>([]);
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [moderatorEnabled, setModeratorEnabled] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('recommended');
   const { user } = useAuth();
   const { toast } = useToast();
@@ -288,6 +291,11 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
 
       if (metricsError) throw metricsError;
 
+      // Store moderator preference for this session
+      if (moderatorEnabled) {
+        localStorage.setItem(`gd-moderator-${session.id}`, 'true');
+      }
+
       toast({
         title: "Session created",
         description: "Ready to start your practice discussion",
@@ -480,6 +488,24 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
             })}
           </div>
         </div>
+
+        {/* Moderator Toggle */}
+        <Card className="p-4 border-4 border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+              <div>
+                <Label htmlFor="moderator-toggle" className="font-bold text-sm cursor-pointer">AI Moderator</Label>
+                <p className="text-xs text-muted-foreground">AI moderator guides the discussion, manages time, and prompts participation</p>
+              </div>
+            </div>
+            <Switch
+              id="moderator-toggle"
+              checked={moderatorEnabled}
+              onCheckedChange={setModeratorEnabled}
+            />
+          </div>
+        </Card>
 
         <div className="flex justify-end gap-4">
           <Button 

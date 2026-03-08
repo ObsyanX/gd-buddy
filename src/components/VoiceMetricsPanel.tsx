@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Mic, Volume2, AlertTriangle, TrendingUp, Timer } from 'lucide-react';
+import LiveCoachingOverlay from './LiveCoachingOverlay';
 
 // Common filler words to detect
 const FILLER_WORDS = [
@@ -408,6 +409,16 @@ const VoiceMetricsPanel = ({
           </div>
         )}
       </div>
+
+      {/* Live Coaching */}
+      <LiveCoachingOverlay
+        wpm={displayMetrics.estimatedWpm}
+        fillerCount={displayMetrics.fillerCount}
+        fillerRate={displayMetrics.fillerRate}
+        totalWords={displayMetrics.totalWords}
+        speakingTimeSeconds={displayMetrics.speakingTimeSeconds}
+        isUserSpeaking={isUserSpeaking}
+      />
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border text-center">

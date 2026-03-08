@@ -453,6 +453,36 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_progress: {
+        Row: {
+          current_score: number | null
+          id: string
+          level: string | null
+          skill_name: string
+          total_practice_minutes: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          current_score?: number | null
+          id?: string
+          level?: string | null
+          skill_name: string
+          total_practice_minutes?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          current_score?: number | null
+          id?: string
+          level?: string | null
+          skill_name?: string
+          total_practice_minutes?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
