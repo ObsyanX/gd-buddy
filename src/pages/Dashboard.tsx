@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  MessageSquare, LogOut, User, TrendingUp, Target,
-  Clock, Award, Play, ChevronRight, BarChart3, ArrowLeft } from
+  MessageSquare, User, TrendingUp, Target,
+  Clock, Award, Play, BarChart3 } from
 "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
