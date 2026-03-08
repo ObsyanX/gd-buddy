@@ -102,14 +102,17 @@ const GDTopics = () => (
           </p>
         </section>
 
-        {topics.map((cat) => (
-          <section key={cat.category} className="mb-8">
-            <h2 className="text-h2 font-bold mb-4">{cat.category} Topics</h2>
-            <div className="grid gap-3">
-              {cat.items.map((topic) => (
-                <Card key={topic} className="p-4 border-2 border-border">
-                  <h3 className="font-semibold">{topic}</h3>
-                </Card>
+        {categories.map(([category, topicsList]) => (
+          <section key={category} className="mb-8">
+            <h2 className="text-h2 font-bold mb-4">{category} Topics ({topicsList.length})</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {topicsList.map((topic) => (
+                <Link key={topic.slug} to={`/gd-topic/${topic.slug}`} className="block group">
+                  <Card className="p-4 border-2 border-border hover:shadow-md transition-shadow h-full">
+                    <h3 className="font-semibold group-hover:text-primary transition-colors">{topic.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{topic.overview.slice(0, 120)}...</p>
+                  </Card>
+                </Link>
               ))}
             </div>
           </section>
