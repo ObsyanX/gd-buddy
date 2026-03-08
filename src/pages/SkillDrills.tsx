@@ -253,11 +253,18 @@ const SkillDrills = () => {
     setCustomDrills(prev => [...prev, drill]);
   };
 
-  const handleDeleteDrill = () => {
+  const handleDeleteDrill = async () => {
     if (!drillToDelete) return;
-    deleteCustomDrill(drillToDelete.id);
-    setCustomDrills(prev => prev.filter(d => d.id !== drillToDelete.id));
-    toast({ title: "Drill deleted", description: `"${drillToDelete.name}" has been removed.` });
+    const { error } = await supabase
+      .from('custom_drills')
+      .delete()
+      .eq('id', drillToDelete.id);
+    if (error) {
+      toast({ title: "Error deleting drill", description: error.message, variant: "destructive" });
+    } else {
+      setCustomDrills(prev => prev.filter(d => d.id !== drillToDelete.id));
+      toast({ title: "Drill deleted", description: `"${drillToDelete.name}" has been removed.` });
+    }
     setDrillToDelete(null);
   };
 
