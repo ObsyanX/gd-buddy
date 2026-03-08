@@ -103,7 +103,7 @@ const SessionSidebar = ({
           <Info className="w-4 h-4" />
           LIVE FEEDBACK
         </h3>
-        <FeedbackGrid feedback={feedback} />
+        <FeedbackGrid feedback={feedback} liveVoiceMetrics={liveVoiceMetrics} />
       </Card>
 
       <Card className="p-4 border-4 border-border">
