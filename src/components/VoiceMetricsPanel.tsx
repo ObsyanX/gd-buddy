@@ -126,9 +126,9 @@ const VoiceMetricsPanel = ({
   const lastTranscriptRef = useRef('');
   const lastTranscriptLengthRef = useRef(0);
   
-  // Track finalized text by content hash to prevent duplicate counting
-  const processedTextHashesRef = useRef<Set<string>>(new Set());
+  // Track accumulated finalized words and latest finalized transcript to avoid double-counting
   const accumulatedFinalWordsRef = useRef<string[]>([]);
+  const lastFinalizedTranscriptRef = useRef('');
   // Debounce speaking state to avoid rapid true/false toggles
   const stableSpeakingRef = useRef(false);
   const speakingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
