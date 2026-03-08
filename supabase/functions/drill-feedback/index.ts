@@ -12,6 +12,7 @@ const inputSchema = z.object({
   topic: z.string().min(1).max(500, 'Topic too long (max 500 chars)'),
   user_response: z.string().min(1).max(5000, 'Response too long (max 5000 chars)'),
   time_limit_seconds: z.number().min(10).max(600).optional(),
+  scenario: z.string().max(1000).optional(),
 });
 
 serve(async (req) => {
