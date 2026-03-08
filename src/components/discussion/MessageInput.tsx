@@ -115,7 +115,7 @@ const MessageInput = ({
       if (autoSkipTimer.current) clearTimeout(autoSkipTimer.current);
       if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
     };
-  }, [userInput, isProcessing, isPracticing, isCorrecting, autoSkipEnabled, isPaused]);
+  }, [userInput, isProcessing, isPracticing, isCorrecting, autoSkipEnabled, isPaused, isBusy]);
 
   return (
     <div className="space-y-1.5 sm:space-y-2">
