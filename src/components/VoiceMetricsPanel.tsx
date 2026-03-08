@@ -190,7 +190,7 @@ const VoiceMetricsPanel = ({
     }
 
     lastFinalizedTranscriptRef.current = cleanedText;
-  }, [recalculateMetrics]);
+  }, []);
 
   /**
    * Recalculate all metrics from accumulated finalized words
