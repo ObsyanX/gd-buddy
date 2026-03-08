@@ -369,6 +369,7 @@ const VoiceMetricsPanel = ({
 
   const wpmStatus = getWpmStatus(displayMetrics.estimatedWpm);
   const fillerStatus = getFillerStatus(displayMetrics.fillerRate);
+  const isHighWpmWarning = displayMetrics.estimatedWpm > 250;
 
   // Get top fillers
   const topFillers = Object.entries(displayMetrics.fillersByType)
