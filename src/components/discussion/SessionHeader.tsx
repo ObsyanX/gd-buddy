@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Mic, Volume2, VolumeX, Square, HelpCircle, Menu, Sparkles } from "lucide-react";
+import { Mic, Volume2, VolumeX, Square, HelpCircle, Menu, Sparkles, Pause, Play } from "lucide-react";
 
 interface SessionHeaderProps {
   session: any;
