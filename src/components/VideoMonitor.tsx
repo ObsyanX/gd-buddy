@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getMediaPipeClient, destroyMediaPipeClient, LandmarkData } from '@/lib/mediapipe-client';
 import { getAnalyzeFrameClient, resetAnalyzeFrameClient, FrameResponse, AnalysisMetrics } from '@/lib/analyze-frame-client';
 import { resetExternalVideoAnalyzer } from '@/lib/external-video-analyzer';
+import VideoCoachingOverlay from '@/components/VideoCoachingOverlay';
 
 interface VideoMonitorProps {
   isActive: boolean;
