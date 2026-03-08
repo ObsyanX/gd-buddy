@@ -55,6 +55,7 @@ interface VoiceMetricsPanelProps {
   sessionStartTime?: number;
   isMinimized?: boolean;
   onMinimizeToggle?: () => void;
+  onMetricsUpdate?: (metrics: VoiceSessionMetrics) => void;
 }
 
 const splitNormalizedWords = (text: string): string[] => {
@@ -108,7 +109,8 @@ const VoiceMetricsPanel = ({
   currentTranscript,
   sessionStartTime,
   isMinimized = false,
-  onMinimizeToggle
+  onMinimizeToggle,
+  onMetricsUpdate
 }: VoiceMetricsPanelProps) => {
   const [metrics, setMetrics] = useState<VoiceSessionMetrics>({
     totalWords: 0,
@@ -331,6 +333,17 @@ const VoiceMetricsPanel = ({
 
   // Use live metrics for display (includes current interim for responsiveness)
   const displayMetrics = getLiveMetrics();
+
+  useEffect(() => {
+    onMetricsUpdate?.(displayMetrics);
+  }, [
+    onMetricsUpdate,
+    displayMetrics.totalWords,
+    displayMetrics.fillerCount,
+    displayMetrics.fillerRate,
+    displayMetrics.estimatedWpm,
+    displayMetrics.speakingTimeSeconds,
+  ]);
 
   const getWpmStatus = (wpm: number) => {
     if (wpm === 0) return { color: 'text-muted-foreground', label: 'N/A' };

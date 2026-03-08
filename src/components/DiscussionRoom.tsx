@@ -19,7 +19,7 @@ import { OnboardingTutorial, useOnboardingTutorial } from "@/components/Onboardi
 import { VideoMetrics } from "@/components/VideoMonitor";
 import VideoMonitor from "@/components/VideoMonitor";
 import ParticipantPresence from "@/components/ParticipantPresence";
-import VoiceMetricsPanel from "@/components/VoiceMetricsPanel";
+import VoiceMetricsPanel, { VoiceSessionMetrics } from "@/components/VoiceMetricsPanel";
 import { PracticeHistory } from "@/components/PracticeHistory";
 import { useMultiplayerPresence } from "@/hooks/useMultiplayerPresence";
 import { useAppSettingsStore } from "@/stores/useAppSettingsStore";
@@ -41,6 +41,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [userInput, setUserInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [feedback, setFeedback] = useState<any>(null);
+  const [liveVoiceMetrics, setLiveVoiceMetrics] = useState<VoiceSessionMetrics | null>(null);
   const [autoPlayTTS, setAutoPlayTTS] = useState(true);
   const [hasSentFirstMessage, setHasSentFirstMessage] = useState(false);
   const [autoMicEnabled, setAutoMicEnabled] = useState(false);
@@ -782,6 +783,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           session={session}
           participants={participants}
           feedback={feedback}
+          liveVoiceMetrics={liveVoiceMetrics}
           isListening={isListening}
           isSpeaking={isSpeaking}
           userInput={userInput}
@@ -790,6 +792,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           practiceHistory={practiceHistory}
           currentPlayingId={currentPlayingId}
           onVideoMetricsUpdate={handleVideoMetricsUpdate}
+          onVoiceMetricsUpdate={setLiveVoiceMetrics}
           onPlayHistory={playHistoryRecording}
           onDeleteHistory={deleteHistoryRecording}
         />
@@ -807,7 +810,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                 <Info className="w-4 h-4" />
                 LIVE FEEDBACK
               </h3>
-              <FeedbackGrid feedback={feedback} />
+              <FeedbackGrid feedback={feedback} liveVoiceMetrics={liveVoiceMetrics} />
             </Card>
             <Card className="p-3 border-2 border-border">
               <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
@@ -826,6 +829,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               isUserSpeaking={isListening && !isSpeaking}
               currentTranscript={userInput}
               sessionStartTime={session?.start_time ? new Date(session.start_time).getTime() : undefined}
+              onMetricsUpdate={setLiveVoiceMetrics}
             />
             <PracticeHistory
               recordings={practiceHistory}
