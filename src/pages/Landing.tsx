@@ -28,7 +28,7 @@ const webAppJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   name: "GD Buddy",
-  url: typeof window !== "undefined" ? window.location.origin : "https://gdbuddy.lovable.app",
+  url: typeof window !== "undefined" ? window.location.origin : "https://gd-buddy.vercel.app",
   description: "AI-powered group discussion practice platform for students preparing for campus placements. Simulate realistic GDs with AI participants, get real-time feedback on communication skills, and track improvement over time.",
   applicationCategory: "EducationalApplication",
   operatingSystem: "Web",
