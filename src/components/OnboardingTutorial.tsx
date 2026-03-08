@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useUserStore } from "@/stores/useUserStore";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -143,7 +144,7 @@ export const OnboardingTutorial = ({ onComplete }: OnboardingTutorialProps) => {
   };
 
   const handleComplete = () => {
-    localStorage.setItem('gd-buddy-onboarding-complete', 'true');
+    useUserStore.getState().setOnboardingComplete(true);
     setIsOpen(false);
     onComplete();
   };
@@ -217,7 +218,7 @@ export const useOnboardingTutorial = () => {
   const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
-    const completed = localStorage.getItem('gd-buddy-onboarding-complete');
+    const completed = useUserStore.getState().onboardingComplete;
     if (!completed) {
       setShowTutorial(true);
     }

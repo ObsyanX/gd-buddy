@@ -1527,8 +1527,10 @@ export const gdTopicsData: GDTopicData[] = [
 
 import { expandedTopicsData } from "./gd-topics-expanded";
 
+import { expandedTopicsData2 } from "./gd-topics-expanded-2";
+
 // Merge base + expanded topics
-const allTopics = [...gdTopicsData, ...expandedTopicsData];
+const allTopics = [...gdTopicsData, ...expandedTopicsData, ...expandedTopicsData2];
 
 export const getTopicBySlug = (slug: string): GDTopicData | undefined =>
   allTopics.find((t) => t.slug === slug);
