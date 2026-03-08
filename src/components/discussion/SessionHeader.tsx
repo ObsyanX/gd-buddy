@@ -11,6 +11,7 @@ interface SessionHeaderProps {
   autoMicEnabled: boolean;
   autoMicSetting: boolean;
   autoPlayTTS: boolean;
+  usingFallbackTTS?: boolean;
   onToggleAutoMic: () => void;
   onToggleTTS: () => void;
   onResetTutorial: () => void;
@@ -19,7 +20,7 @@ interface SessionHeaderProps {
 
 const SessionHeader = ({
   session, messagesCount, isListening, isCorrecting,
-  autoMicEnabled, autoMicSetting, autoPlayTTS,
+  autoMicEnabled, autoMicSetting, autoPlayTTS, usingFallbackTTS,
   onToggleAutoMic, onToggleTTS, onResetTutorial, onEndSession,
 }: SessionHeaderProps) => {
   return (
@@ -104,6 +105,11 @@ const SessionHeader = ({
                 <Badge variant="outline" className="border-2 animate-pulse bg-primary/20">
                   <Sparkles className="w-3 h-3 mr-1" />
                   AI Correcting...
+                </Badge>
+              )}
+              {usingFallbackTTS && autoPlayTTS && (
+                <Badge variant="outline" className="border-2 text-warning bg-warning/10 text-xs">
+                  🔊 Browser voice
                 </Badge>
               )}
               <Button

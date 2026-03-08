@@ -6,6 +6,7 @@ import { useVoiceStore } from '@/stores/useVoiceStore';
 export const useTextToSpeech = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentSpeaker, setCurrentSpeaker] = useState<string | null>(null);
+  const [usingFallbackTTS, setUsingFallbackTTS] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const elevenLabsSuccessRef = useRef(false); // Track if ElevenLabs succeeded
   const { toast } = useToast();
@@ -73,7 +74,7 @@ export const useTextToSpeech = () => {
 
         if (error || !data?.audioContent) {
           console.warn('ElevenLabs TTS unavailable, using browser TTS:', error?.message || 'No audio content');
-          // Silently fallback to browser TTS
+          setUsingFallbackTTS(true);
           try {
             await speakWithBrowserTTS(text, speaker);
             resolve();
@@ -129,6 +130,7 @@ export const useTextToSpeech = () => {
         await audio.play();
       } catch (error: any) {
         console.warn('TTS error, falling back to browser TTS:', error?.message || error);
+        setUsingFallbackTTS(true);
         
         // Try browser TTS as final fallback - never show error popup
         try {
@@ -160,6 +162,7 @@ export const useTextToSpeech = () => {
   return {
     isSpeaking,
     currentSpeaker,
+    usingFallbackTTS,
     speak,
     stop
   };
