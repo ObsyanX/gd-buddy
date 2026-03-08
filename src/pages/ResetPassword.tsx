@@ -274,9 +274,7 @@ const ResetPassword = () => {
         </Card>
       </main>
 
-      <footer className="border-t-4 border-border p-6 text-center text-sm text-muted-foreground font-mono">
-        <p>SECURE AUTHENTICATION • GD CONDUCTOR</p>
-      </footer>
+      <SEOFooter />
     </div>
   );
 };

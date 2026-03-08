@@ -131,7 +131,7 @@ const Home = () => {
         </div>
       </div>
 
-      <SEOFooter />
+      
     </div>
   );
 };
