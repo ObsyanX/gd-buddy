@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Github, Linkedin, Twitter } from "lucide-react";
+import { Github, Linkedin, Mail } from "lucide-react";
 
 const SEOFooter = () => (
   <footer className="border-t-4 border-border py-8 px-6" role="contentinfo">
@@ -38,15 +38,21 @@ const SEOFooter = () => (
             <li><Link to="/home/settings" className="hover:text-foreground transition-colors">Settings</Link></li>
           </ul>
           <div className="flex gap-3 mt-4">
-            <a href="https://github.com/sayandutta111" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="https://github.com/ObsyanX" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="text-muted-foreground hover:text-foreground transition-colors">
               <Github className="w-5 h-5" />
             </a>
-            <a href="https://www.linkedin.com/in/sayandutta111" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="https://www.linkedin.com/in/sayan-dutta-exceptional98/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-muted-foreground hover:text-foreground transition-colors">
               <Linkedin className="w-5 h-5" />
             </a>
-            <a href="https://x.com/gdbuddy" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X" className="text-muted-foreground hover:text-foreground transition-colors">
-              <Twitter className="w-5 h-5" />
-            </a>
+<a 
+  href="mailto:duttasayan947595@gmail.com" 
+  target="_blank" 
+  rel="noopener noreferrer" 
+  aria-label="Email"
+  className="text-muted-foreground hover:text-foreground transition-colors"
+>
+  <Mail className="w-5 h-5" />
+</a>
           </div>
         </div>
       </nav>
