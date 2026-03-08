@@ -153,6 +153,14 @@ const SessionHeader = ({
               {autoPlayTTS ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
               TTS {autoPlayTTS ? 'ON' : 'OFF'}
             </Button>
+            <Button
+              variant={isPaused ? "default" : "outline"}
+              onClick={onTogglePause}
+              className="border-2"
+            >
+              {isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />}
+              {isPaused ? 'CONTINUE' : 'PAUSE'}
+            </Button>
             <Button variant="destructive" onClick={onEndSession} className="border-4 border-border">
               <Square className="w-4 h-4 mr-2" />
               END SESSION
