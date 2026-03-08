@@ -130,6 +130,7 @@ export const useTextToSpeech = () => {
         await audio.play();
       } catch (error: any) {
         console.warn('TTS error, falling back to browser TTS:', error?.message || error);
+        setUsingFallbackTTS(true);
         
         // Try browser TTS as final fallback - never show error popup
         try {
