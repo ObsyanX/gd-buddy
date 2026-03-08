@@ -338,6 +338,9 @@ const SkillDrills = () => {
                             {drill.type === 'custom' && (
                               <Badge variant="secondary" className="text-[10px] sm:text-xs">Custom</Badge>
                             )}
+                            {drill.type === 'scenario' && (
+                              <Badge variant="default" className="text-[10px] sm:text-xs">Scenario</Badge>
+                            )}
                             {drill.difficulty && (
                               <Badge variant="secondary" className="text-[10px] sm:text-xs capitalize">{drill.difficulty}</Badge>
                             )}
