@@ -6,7 +6,7 @@ import PerTurnAnalysis from "@/components/PerTurnAnalysis";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic, Eye, User, Camera, BarChart3 } from "lucide-react";
+import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic, Eye, User, Camera, BarChart3, Bot, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
@@ -81,6 +81,8 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   const [detailedReport, setDetailedReport] = useState<any>(null);
   const [calculatedStats, setCalculatedStats] = useState<any>(null);
   const [videoMetrics, setVideoMetrics] = useState<any>(null);
+  const [aiFeedback, setAiFeedback] = useState<any>(null);
+  const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
   const [chartData, setChartData] = useState<{
     timeline: any[];
     performance: any[];
@@ -629,6 +631,39 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       console.error('Error generating detailed report:', error);
     } finally {
       setIsGeneratingReport(false);
+    }
+  };
+
+  const loadAiFeedback = async () => {
+    if (!session || !calculatedStats || aiFeedback) return;
+    setIsLoadingFeedback(true);
+    try {
+      const conversation = messages.map((m) => ({
+        who: m.gd_participants?.persona_name || 'Unknown',
+        is_user: m.gd_participants?.is_user || false,
+        text: m.text,
+      }));
+
+      const { data, error } = await supabase.functions.invoke('session-feedback', {
+        body: {
+          topic: session.topic,
+          conversation,
+          metrics: calculatedStats,
+          videoMetrics: videoMetrics || null,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: "AI Feedback Error", description: data.error, variant: "destructive" });
+      } else if (data) {
+        setAiFeedback(data);
+      }
+    } catch (err: any) {
+      console.error('AI feedback error:', err);
+      toast({ title: "Could not generate AI feedback", description: err.message, variant: "destructive" });
+    } finally {
+      setIsLoadingFeedback(false);
     }
   };
 
@@ -1190,6 +1225,90 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         )}
 
         <SessionNotes sessionId={sessionId} />
+
+        {/* AI Overall Feedback Section */}
+        <Card className="p-6 border-4 border-border space-y-5">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-primary" />
+              AI FEEDBACK
+            </h3>
+            {!aiFeedback && !isLoadingFeedback && (
+              <Button onClick={loadAiFeedback} variant="outline" className="border-2">
+                <Bot className="w-4 h-4 mr-2" />
+                Generate AI Feedback
+              </Button>
+            )}
+          </div>
+
+          {isLoadingFeedback && (
+            <div className="flex items-center gap-3 py-8 justify-center">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              <span className="text-muted-foreground font-mono">Analyzing your performance...</span>
+            </div>
+          )}
+
+          {aiFeedback && (
+            <div className="space-y-4">
+              {/* Overall Rating */}
+              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg border border-border">
+                <div className="text-4xl font-bold text-primary">{aiFeedback.overall_rating}<span className="text-lg text-muted-foreground">/10</span></div>
+                <p className="text-sm flex-1">{aiFeedback.summary}</p>
+              </div>
+
+              {/* Feedback Categories */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="p-4 border-2 border-border rounded space-y-1">
+                  <h4 className="font-bold text-sm flex items-center gap-1.5">
+                    <Mic className="w-4 h-4 text-primary" /> Communication
+                  </h4>
+                  <p className="text-sm text-muted-foreground">{aiFeedback.communication}</p>
+                </div>
+                <div className="p-4 border-2 border-border rounded space-y-1">
+                  <h4 className="font-bold text-sm flex items-center gap-1.5">
+                    <Target className="w-4 h-4 text-primary" /> Content Quality
+                  </h4>
+                  <p className="text-sm text-muted-foreground">{aiFeedback.content_quality}</p>
+                </div>
+                <div className="p-4 border-2 border-border rounded space-y-1">
+                  <h4 className="font-bold text-sm flex items-center gap-1.5">
+                    <MessageSquare className="w-4 h-4 text-primary" /> Group Dynamics
+                  </h4>
+                  <p className="text-sm text-muted-foreground">{aiFeedback.group_dynamics}</p>
+                </div>
+                <div className="p-4 border-2 border-border rounded space-y-1">
+                  <h4 className="font-bold text-sm flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-primary" /> Body Language
+                  </h4>
+                  <p className="text-sm text-muted-foreground">{aiFeedback.body_language}</p>
+                </div>
+              </div>
+
+              {/* Actionable Tips */}
+              {aiFeedback.tips?.length > 0 && (
+                <div className="p-4 border-2 border-border rounded space-y-2">
+                  <h4 className="font-bold text-sm flex items-center gap-1.5">
+                    <TrendingUp className="w-4 h-4 text-primary" /> Actionable Tips
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {aiFeedback.tips.map((tip: string, i: number) => (
+                      <li key={i} className="flex gap-2 items-start text-sm">
+                        <span className="text-primary font-bold">{i + 1}.</span>
+                        <span className="text-muted-foreground">{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!aiFeedback && !isLoadingFeedback && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Click "Generate AI Feedback" to get a personalized analysis of your discussion performance.
+            </p>
+          )}
+        </Card>
 
         <div className="gap-[8px] rounded flex-col flex items-center justify-center shadow-none">
           <Button
