@@ -410,6 +410,16 @@ const VoiceMetricsPanel = ({
         )}
       </div>
 
+      {/* Live Coaching */}
+      <LiveCoachingOverlay
+        wpm={displayMetrics.estimatedWpm}
+        fillerCount={displayMetrics.fillerCount}
+        fillerRate={displayMetrics.fillerRate}
+        totalWords={displayMetrics.totalWords}
+        speakingTimeSeconds={displayMetrics.speakingTimeSeconds}
+        isUserSpeaking={isUserSpeaking}
+      />
+
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border text-center">
         <div>
