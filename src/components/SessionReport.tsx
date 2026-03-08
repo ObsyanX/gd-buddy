@@ -1166,6 +1166,15 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           </Card>
         }
 
+        {/* Per-Turn Analysis & Comparative Radar */}
+        {hasRealScores && calculatedStats && (
+          <PerTurnAnalysis
+            messages={messages}
+            currentParticipantId={currentParticipant?.id}
+            calculatedStats={calculatedStats}
+          />
+        )}
+
         {/* Session Replay */}
         {session?.start_time && (
           <Card className="p-6 border-4 border-border space-y-4">
