@@ -115,7 +115,7 @@ const SkillDrills = () => {
     loadDrills();
   }, [user]);
 
-  const allDrills = [...BUILT_IN_DRILLS, ...customDrills];
+  const allDrills = [...BUILT_IN_DRILLS, ...SCENARIO_DRILLS, ...customDrills];
 
   const {
     isListening,
