@@ -172,6 +172,55 @@ export const BUILT_IN_DRILLS: DrillType[] = [
   },
 ];
 
+// Scenario-based drills with contextual situations
+export const SCENARIO_DRILLS: DrillType[] = [
+  {
+    id: 'scenario_disagree_politely',
+    name: 'Polite Disagreement',
+    description: 'Disagree with a flawed argument while maintaining rapport.',
+    timeLimit: 45,
+    icon: MessageSquareReply,
+    type: 'scenario',
+    scenario: 'A colleague just argued that "social media has no educational value whatsoever." You know this is an oversimplification. Politely correct them with evidence while keeping the conversation constructive.',
+  },
+  {
+    id: 'scenario_redirect_topic',
+    name: 'Topic Redirect',
+    description: 'Steer an off-topic discussion back to the main point.',
+    timeLimit: 30,
+    icon: RefreshCw,
+    type: 'scenario',
+    scenario: 'The group has drifted from discussing "AI in healthcare" to talking about their favorite sci-fi movies. As a participant, redirect the conversation back to the original topic smoothly without being rude.',
+  },
+  {
+    id: 'scenario_support_quiet',
+    name: 'Include a Quiet Member',
+    description: 'Encourage a silent participant to share their view.',
+    timeLimit: 30,
+    icon: Users,
+    type: 'scenario',
+    scenario: 'You are in a group discussion about remote work policies. One member, Priya, hasn\'t spoken yet while others have been dominating. Encourage Priya to share her perspective naturally.',
+  },
+  {
+    id: 'scenario_salvage_weak',
+    name: 'Salvage a Weak Point',
+    description: 'Build on someone else\'s weak argument to strengthen it.',
+    timeLimit: 45,
+    icon: Lightbulb,
+    type: 'scenario',
+    scenario: 'A teammate just said "Electric vehicles are good because they\'re cool." The group dismissed it. Build on their point by adding substance, data, and structured reasoning to make it a strong argument.',
+  },
+  {
+    id: 'scenario_conclude_gd',
+    name: 'Conclude the Discussion',
+    description: 'Summarize all viewpoints and propose a balanced conclusion.',
+    timeLimit: 60,
+    icon: Handshake,
+    type: 'scenario',
+    scenario: 'The group has been discussing "Should coding be mandatory in schools?" for 10 minutes. Arguments for: digital literacy, problem-solving. Arguments against: curriculum overload, not all careers need it. Provide a balanced conclusion that acknowledges all perspectives.',
+  },
+];
+
 export const SAMPLE_TOPICS = [
   "Remote work vs office work for productivity",
   "Impact of social media on mental health",
