@@ -431,6 +431,12 @@ const VoiceMetricsPanel = ({
         <p className="text-[8px] sm:text-[9px] text-muted-foreground">
           Target: 120-180 WPM for clarity
         </p>
+        {isHighWpmWarning && (
+          <div className="mt-1 rounded-sm border border-destructive/40 bg-destructive/10 px-2 py-1 text-[10px] sm:text-xs text-destructive flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3 shrink-0" />
+            <span>You're speaking very fast (&gt;250 WPM). Slow down for better clarity.</span>
+          </div>
+        )}
       </div>
 
       {/* Filler Words */}
