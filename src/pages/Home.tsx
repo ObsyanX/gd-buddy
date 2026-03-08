@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Users, BarChart3, Sparkles } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
-import SEOFooter from "@/components/SEOFooter";
+
 
 const HOME_FAQS = [
   { q: "How do I start a solo practice session?", a: "Click 'Start Solo Session', choose a GD topic and AI participants, then begin speaking. The AI will respond in real-time with realistic turn-taking." },
@@ -131,7 +131,7 @@ const Home = () => {
         </div>
       </div>
 
-      <SEOFooter />
+      
     </div>
   );
 };

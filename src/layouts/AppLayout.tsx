@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import SEOFooter from "@/components/SEOFooter";
 
 const NAV_ITEMS = [
   { label: "HOME", icon: MessageSquare, path: "/home" },
@@ -110,6 +111,8 @@ const AppLayout = () => {
       <main className="flex-1" role="main">
         <Outlet />
       </main>
+
+      <SEOFooter />
     </div>
   );
 };

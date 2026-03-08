@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MessageSquare, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { Link } from "react-router-dom";
+import SEOFooter from "@/components/SEOFooter";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
@@ -362,6 +363,8 @@ const Auth = () => {
           </Tabs>
         </Card>
       </main>
+
+      <SEOFooter />
     </div>);
 
 };
