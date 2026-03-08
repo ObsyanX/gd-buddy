@@ -73,7 +73,7 @@ const About = () => (
         "@type": "AboutPage",
         name: "About GD Buddy",
         description: "GD Buddy is a modern SaaS platform designed to help students practice and master group discussions with AI-assisted feedback.",
-        url: typeof window !== "undefined" ? `${window.location.origin}/about` : "https://gdbuddy.lovable.app/about",
+        url: typeof window !== "undefined" ? `${window.location.origin}/about` : "https://gd-buddy.vercel.app/about",
         mainEntity: {
           "@type": "WebApplication",
           name: "GD Buddy",

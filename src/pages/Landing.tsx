@@ -40,8 +40,8 @@ const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "GD Buddy",
-  url: typeof window !== "undefined" ? window.location.origin : "https://gdbuddy.lovable.app",
-  logo: typeof window !== "undefined" ? `${window.location.origin}/favicon.ico` : "https://gdbuddy.lovable.app/favicon.ico",
+  url: typeof window !== "undefined" ? window.location.origin : "https://gd-buddy.vercel.app",
+  logo: typeof window !== "undefined" ? `${window.location.origin}/og-image.png` : "https://gd-buddy.vercel.app/og-image.png",
   description: "AI-powered group discussion practice platform for placement preparation.",
   sameAs: [
     "https://github.com/sayandutta111",
