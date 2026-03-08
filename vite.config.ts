@@ -22,8 +22,7 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          react: ["react", "react-dom"],
-          router: ["react-router-dom"],
+          vendor: ["react", "react-dom", "react-router-dom"],
           radix: [
             "@radix-ui/react-dialog",
             "@radix-ui/react-dropdown-menu",
