@@ -28,6 +28,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        // Load experiments when user authenticates
+        if (session?.user) {
+          useExperimentStore.getState().loadExperiments(session.user.id);
+        }
       }
     );
 
