@@ -28,68 +28,85 @@ const MessageInput = ({
 }: MessageInputProps) => {
   const autoSendTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoSkipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sendCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const skipCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onSendMessageRef = useRef(onSendMessage);
+  const onSkipTurnRef = useRef(onSkipTurn);
+
   const [countdown, setCountdown] = useState<number | null>(null);
   const [skipCountdown, setSkipCountdown] = useState<number | null>(null);
 
+  useEffect(() => {
+    onSendMessageRef.current = onSendMessage;
+  }, [onSendMessage]);
+
+  useEffect(() => {
+    onSkipTurnRef.current = onSkipTurn;
+  }, [onSkipTurn]);
+
   // Auto-send after 7s of idle when there's unsent text
   useEffect(() => {
-    if (autoSendTimer.current) { clearTimeout(autoSendTimer.current); autoSendTimer.current = null; }
-    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
-    setCountdown(null);
+    if (autoSendTimer.current) clearTimeout(autoSendTimer.current);
+    if (sendCountdownRef.current) clearInterval(sendCountdownRef.current);
 
-    const shouldAutoSend = userInput.trim() && !isProcessing && !isPracticing && !isCorrecting && !isListening;
+    const canAutoSend = Boolean(userInput.trim()) && !isProcessing && !isPracticing && !isCorrecting;
 
-    if (shouldAutoSend) {
-      let remaining = AUTO_SEND_DELAY;
-      setCountdown(remaining);
-      countdownRef.current = setInterval(() => {
-        remaining -= 1;
-        if (remaining <= 0) {
-          setCountdown(null);
-        } else {
-          setCountdown(remaining);
-        }
-      }, 1000);
-
-      autoSendTimer.current = setTimeout(() => {
-        if (countdownRef.current) clearInterval(countdownRef.current);
-        setCountdown(null);
-        onSendMessage();
-      }, AUTO_SEND_DELAY * 1000);
+    if (!canAutoSend) {
+      setCountdown(null);
+      return;
     }
+
+    let remaining = AUTO_SEND_DELAY;
+    setCountdown(remaining);
+
+    sendCountdownRef.current = setInterval(() => {
+      remaining -= 1;
+      setCountdown(remaining > 0 ? remaining : null);
+    }, 1000);
+
+    autoSendTimer.current = setTimeout(() => {
+      if (sendCountdownRef.current) clearInterval(sendCountdownRef.current);
+      setCountdown(null);
+      onSendMessageRef.current();
+    }, AUTO_SEND_DELAY * 1000);
 
     return () => {
       if (autoSendTimer.current) clearTimeout(autoSendTimer.current);
-      if (countdownRef.current) clearInterval(countdownRef.current);
+      if (sendCountdownRef.current) clearInterval(sendCountdownRef.current);
     };
-  }, [userInput, isListening, isProcessing, isPracticing, isCorrecting, onSendMessage]);
+  }, [userInput, isProcessing, isPracticing, isCorrecting]);
 
-  // Auto-skip after 12s if no input at all
+  // Auto-skip after 12s when there is still no spoken/typed input
   useEffect(() => {
-    if (autoSkipTimer.current) { clearTimeout(autoSkipTimer.current); autoSkipTimer.current = null; }
-    setSkipCountdown(null);
+    if (autoSkipTimer.current) clearTimeout(autoSkipTimer.current);
+    if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
 
-    const shouldAutoSkip = !userInput.trim() && !isProcessing && !isPracticing && !isCorrecting && !isListening;
+    const canAutoSkip = !userInput.trim() && !isProcessing && !isPracticing && !isCorrecting;
 
-    if (shouldAutoSkip) {
-      let rem = AUTO_SKIP_DELAY;
-      setSkipCountdown(rem);
-      const iv = setInterval(() => {
-        rem -= 1;
-        if (rem <= 0) { setSkipCountdown(null); clearInterval(iv); }
-        else setSkipCountdown(rem);
-      }, 1000);
-
-      autoSkipTimer.current = setTimeout(() => {
-        clearInterval(iv);
-        setSkipCountdown(null);
-        onSkipTurn();
-      }, AUTO_SKIP_DELAY * 1000);
-
-      return () => { clearTimeout(autoSkipTimer.current!); clearInterval(iv); };
+    if (!canAutoSkip) {
+      setSkipCountdown(null);
+      return;
     }
-  }, [userInput, isListening, isProcessing, isPracticing, isCorrecting, onSkipTurn]);
+
+    let remaining = AUTO_SKIP_DELAY;
+    setSkipCountdown(remaining);
+
+    skipCountdownRef.current = setInterval(() => {
+      remaining -= 1;
+      setSkipCountdown(remaining > 0 ? remaining : null);
+    }, 1000);
+
+    autoSkipTimer.current = setTimeout(() => {
+      if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
+      setSkipCountdown(null);
+      onSkipTurnRef.current();
+    }, AUTO_SKIP_DELAY * 1000);
+
+    return () => {
+      if (autoSkipTimer.current) clearTimeout(autoSkipTimer.current);
+      if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
+    };
+  }, [userInput, isProcessing, isPracticing, isCorrecting]);
   return (
     <div className="space-y-1.5 sm:space-y-2">
       {isCorrecting && (
