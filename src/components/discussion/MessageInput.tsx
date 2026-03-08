@@ -113,14 +113,19 @@ const MessageInput = ({
           >
             {isListening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
           </Button>
-          <Button
-            onClick={onSendWithVoice}
-            disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting}
-            className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
-            title={isListening ? "Stop & Send" : "Send (Ctrl+Enter)"}
-          >
-            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </Button>
+          <div className="relative flex flex-col items-center">
+            <Button
+              onClick={onSendWithVoice}
+              disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting}
+              className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
+              title={isListening ? "Stop & Send" : "Send (Ctrl+Enter)"}
+            >
+              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </Button>
+            {countdown !== null && (
+              <span className="absolute -bottom-4 text-[9px] font-mono text-muted-foreground">{countdown}s</span>
+            )}
+          </div>
           <Button
             onClick={onSkipTurn}
             disabled={isProcessing || isPracticing}
