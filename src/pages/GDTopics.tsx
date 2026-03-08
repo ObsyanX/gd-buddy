@@ -4,15 +4,10 @@ import SEOFooter from "@/components/SEOFooter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MessageSquare } from "lucide-react";
+import { getTopicsByCategory } from "@/data/gd-topics";
 
-const topics = [
-  { category: "Current Affairs", items: ["Impact of AI on Employment", "Digital India: Success or Failure?", "Climate Change and India's Role", "Social Media Regulation", "UPI and Digital Payments Revolution", "Can India Become a Global Superpower?", "Farm Laws and Agricultural Reform", "Uniform Civil Code in India"] },
-  { category: "Business & Economy", items: ["Startup Culture in India", "Cryptocurrency: Boon or Bane?", "Make in India vs Import Dependency", "Gig Economy and Worker Rights", "FDI in Indian Retail", "Is India Ready for a Cashless Economy?", "Privatization of Public Sector Enterprises", "India's Untapped Tourism Potential"] },
-  { category: "Social Issues", items: ["Gender Equality in Workplaces", "Education System Reform", "Mental Health Awareness", "Rural vs Urban Development", "Reservation Policy in India", "India's Population: Boon or Bane?", "Nuclear Family vs Joint Family", "Media Trial vs Fair Trial", "India's Obsession with Cricket", "Healthcare Access in India"] },
-  { category: "Technology", items: ["5G and its Impact", "Data Privacy Concerns", "Electric Vehicles Adoption", "Remote Work: Future of Employment?", "Ethical AI Development", "Space Exploration: Worth the Cost?", "Quantum Computing Future", "Cybersecurity Threats to India", "Artificial General Intelligence"] },
-  { category: "Abstract", items: ["Is Necessity the Mother of Invention?", "Change is the Only Constant", "Quality vs Quantity", "Does Money Buy Happiness?", "Leaders are Born, Not Made", "The Pen is Mightier Than the Sword", "Is the Death Penalty Justified?"] },
-  { category: "Education", items: ["Online Education vs Offline Education", "India's Competitive Exam Culture", "Skill-Based Education vs Traditional Degrees"] },
-];
+const categorizedTopics = getTopicsByCategory();
+const categories = Object.entries(categorizedTopics);
 
 const jsonLd = [
   {
@@ -25,18 +20,20 @@ const jsonLd = [
     mainEntityOfPage: { "@type": "WebPage" },
     datePublished: "2025-01-15",
     dateModified: "2026-03-08",
+    numberOfTopics: categories.reduce((a, [, t]) => a + t.length, 0),
   },
   {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: "GD Topics for Placements",
     description: "Comprehensive list of group discussion topics for campus placement preparation",
-    numberOfItems: topics.reduce((a, c) => a + c.items.length, 0),
-    itemListElement: topics.flatMap((cat, ci) =>
-      cat.items.map((item, i) => ({
+    numberOfItems: categories.reduce((a, [, t]) => a + t.length, 0),
+    itemListElement: categories.flatMap(([, topics], ci) =>
+      topics.map((t, i) => ({
         "@type": "ListItem",
-        position: ci * 5 + i + 1,
-        name: item,
+        position: ci * 10 + i + 1,
+        name: t.title,
+        url: `https://gdbuddy.lovable.app/gd-topic/${t.slug}`,
       }))
     ),
   },
@@ -54,8 +51,8 @@ const jsonLd = [
 const GDTopics = () => (
   <div className="min-h-screen bg-background flex flex-col">
     <SEOHead
-      title="GD Topics for Placements 2025"
-      description="50+ trending group discussion topics for campus placements. Practice with AI on current affairs, business, technology, social issues, and abstract topics."
+      title={`GD Topics for Placements 2025 — ${categories.reduce((a, [, t]) => a + t.length, 0)}+ Topics`}
+      description={`${categories.reduce((a, [, t]) => a + t.length, 0)}+ trending group discussion topics for campus placements. Practice with AI on current affairs, business, technology, social issues, and abstract topics.`}
       keywords="GD topics, group discussion topics for placement, GD topics 2025, current affairs GD topics, abstract GD topics"
       path="/gd-topics-for-placements"
       jsonLd={jsonLd}
@@ -79,12 +76,12 @@ const GDTopics = () => (
       </nav>
 
       <article>
-        <h1 className="text-display font-bold mb-4">GD Topics for Placements 2025</h1>
+        <h1 className="text-display font-bold mb-4">GD Topics for Placements 2025 — {categories.reduce((a, [, t]) => a + t.length, 0)}+ Topics</h1>
 
         {/* LLM-friendly Quick Summary */}
         <section className="border-2 border-border p-5 mb-8 bg-muted/30" aria-label="Quick summary">
           <h2 className="font-bold mb-2">📋 Quick Summary</h2>
-          <p className="text-sm text-muted-foreground mb-3">This page contains 50+ curated group discussion topics across 5 categories — Current Affairs, Business, Social Issues, Technology, and Abstract — frequently asked in campus placements at top companies.</p>
+          <p className="text-sm text-muted-foreground mb-3">This page contains {categories.reduce((a, [, t]) => a + t.length, 0)}+ curated group discussion topics across {categories.length} categories — frequently asked in campus placements at top companies. Click any topic for detailed arguments, discussion points, and sample opening statements.</p>
           <h3 className="font-bold text-sm mb-1">Key Takeaways</h3>
           <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
             <li>Prepare 20-30 topics across categories for comprehensive coverage</li>
@@ -105,14 +102,17 @@ const GDTopics = () => (
           </p>
         </section>
 
-        {topics.map((cat) => (
-          <section key={cat.category} className="mb-8">
-            <h2 className="text-h2 font-bold mb-4">{cat.category} Topics</h2>
-            <div className="grid gap-3">
-              {cat.items.map((topic) => (
-                <Card key={topic} className="p-4 border-2 border-border">
-                  <h3 className="font-semibold">{topic}</h3>
-                </Card>
+        {categories.map(([category, topicsList]) => (
+          <section key={category} className="mb-8">
+            <h2 className="text-h2 font-bold mb-4">{category} Topics ({topicsList.length})</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {topicsList.map((topic) => (
+                <Link key={topic.slug} to={`/gd-topic/${topic.slug}`} className="block group">
+                  <Card className="p-4 border-2 border-border hover:shadow-md transition-shadow h-full">
+                    <h3 className="font-semibold group-hover:text-primary transition-colors">{topic.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{topic.overview.slice(0, 120)}...</p>
+                  </Card>
+                </Link>
               ))}
             </div>
           </section>
