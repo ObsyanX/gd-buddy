@@ -3,8 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { Info, User } from "lucide-react";
 import VideoMonitor, { VideoMetrics } from "@/components/VideoMonitor";
 import ParticipantPresence from "@/components/ParticipantPresence";
+import { ParticipantPresence as PresenceType } from "@/hooks/useMultiplayerPresence";
 import VoiceMetricsPanel from "@/components/VoiceMetricsPanel";
-import { PracticeHistory } from "@/components/PracticeHistory";
+import { PracticeHistory, PracticeRecording } from "@/components/PracticeHistory";
 
 interface SessionSidebarProps {
   session: any;
