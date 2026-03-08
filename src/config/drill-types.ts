@@ -169,7 +169,6 @@ export function getCustomDrills(): DrillType[] {
     const stored = localStorage.getItem(CUSTOM_DRILLS_KEY);
     if (!stored) return [];
     const drills = JSON.parse(stored) as DrillType[];
-    // Restore icon (custom drills use Target as default)
     return drills.map(d => ({ ...d, icon: Target, type: 'custom' as const }));
   } catch {
     return [];
@@ -180,8 +179,13 @@ export function saveCustomDrill(drill: Omit<DrillType, 'icon' | 'type'>): DrillT
   const customs = getCustomDrills();
   const newDrill: DrillType = { ...drill, icon: Target, type: 'custom' };
   customs.push(newDrill);
-  // Store without icon (not serializable)
   const toStore = customs.map(({ icon, ...rest }) => rest);
   localStorage.setItem(CUSTOM_DRILLS_KEY, JSON.stringify(toStore));
   return newDrill;
+}
+
+export function deleteCustomDrill(drillId: string): void {
+  const customs = getCustomDrills().filter(d => d.id !== drillId);
+  const toStore = customs.map(({ icon, ...rest }) => rest);
+  localStorage.setItem(CUSTOM_DRILLS_KEY, JSON.stringify(toStore));
 }

@@ -1,18 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Clock, Mic, Square, Send, Loader2, CheckCircle2, XCircle, Plus } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Clock, Mic, Square, Send, Loader2, CheckCircle2, XCircle, Plus, Trash2, TimerIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
 import { useStreamingTranscription } from "@/hooks/useStreamingTranscription";
-import { BUILT_IN_DRILLS, SAMPLE_TOPICS, getCustomDrills, type DrillType } from "@/config/drill-types";
+import { BUILT_IN_DRILLS, SAMPLE_TOPICS, getCustomDrills, deleteCustomDrill, type DrillType } from "@/config/drill-types";
 import CreateDrillModal from "@/components/CreateDrillModal";
+
+const formatTime = (seconds: number) => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+};
 
 const SkillDrills = () => {
   const navigate = useNavigate();
@@ -24,8 +40,11 @@ const SkillDrills = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [feedback, setFeedback] = useState<any>(null);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [timerActive, setTimerActive] = useState(false);
   const [customDrills, setCustomDrills] = useState<DrillType[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [drillToDelete, setDrillToDelete] = useState<DrillType | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     setCustomDrills(getCustomDrills());
@@ -46,12 +65,57 @@ const SkillDrills = () => {
     onFinalResult: (text) => setUserResponse(text)
   });
 
+  // Timer logic
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setTimerActive(false);
+  }, []);
+
+  const startTimer = useCallback((duration: number) => {
+    stopTimer();
+    setTimeRemaining(duration);
+    setTimerActive(true);
+    timerRef.current = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev === null || prev <= 1) {
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [stopTimer]);
+
+  // Auto-stop when timer hits zero
+  useEffect(() => {
+    if (timeRemaining === 0 && timerActive) {
+      stopTimer();
+      if (isListening) {
+        stopListening();
+      }
+      toast({ title: "⏰ Time's up!", description: "Your recording has been stopped automatically." });
+    }
+  }, [timeRemaining, timerActive, stopTimer, isListening, stopListening, toast]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
   const toggleVoiceInput = () => {
     if (isListening) {
       stopListening();
+      stopTimer();
     } else {
       clearTranscription();
       startListening();
+      if (selectedDrill) {
+        startTimer(selectedDrill.timeLimit);
+      }
     }
   };
 
@@ -61,6 +125,8 @@ const SkillDrills = () => {
     setUserResponse("");
     setFeedback(null);
     setTimeRemaining(null);
+    setTimerActive(false);
+    stopTimer();
   };
 
   const handleSubmitResponse = async () => {
@@ -69,6 +135,8 @@ const SkillDrills = () => {
       return;
     }
 
+    stopTimer();
+    if (isListening) stopListening();
     setIsProcessing(true);
     try {
       const drillTypeForApi = selectedDrill.id.startsWith('custom_') ? 'opening_statement' : selectedDrill.id;
@@ -113,11 +181,25 @@ const SkillDrills = () => {
     setUserResponse("");
     setFeedback(null);
     setTimeRemaining(null);
+    setTimerActive(false);
+    stopTimer();
   };
 
   const handleDrillCreated = (drill: DrillType) => {
     setCustomDrills(prev => [...prev, drill]);
   };
+
+  const handleDeleteDrill = () => {
+    if (!drillToDelete) return;
+    deleteCustomDrill(drillToDelete.id);
+    setCustomDrills(prev => prev.filter(d => d.id !== drillToDelete.id));
+    toast({ title: "Drill deleted", description: `"${drillToDelete.name}" has been removed.` });
+    setDrillToDelete(null);
+  };
+
+  const timerProgress = selectedDrill && timeRemaining !== null
+    ? (timeRemaining / selectedDrill.timeLimit) * 100
+    : 100;
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
@@ -136,9 +218,22 @@ const SkillDrills = () => {
               return (
                 <Card
                   key={`${drill.id}-${index}`}
-                  className="p-4 sm:p-5 lg:p-6 border-2 sm:border-3 lg:border-4 border-border hover:shadow-md transition-shadow cursor-pointer flex flex-col"
+                  className="p-4 sm:p-5 lg:p-6 border-2 sm:border-3 lg:border-4 border-border hover:shadow-md transition-shadow cursor-pointer flex flex-col relative group"
                   onClick={() => handleSelectDrill(drill)}
                 >
+                  {drill.type === 'custom' && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive z-10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDrillToDelete(drill);
+                      }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
                   <div className="flex flex-col flex-1 space-y-3 sm:space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -209,6 +304,25 @@ const SkillDrills = () => {
 
             {!feedback ? (
               <Card className="p-6 border-4 border-border space-y-4">
+                {/* Countdown Timer */}
+                {timeRemaining !== null && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TimerIcon className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-bold text-muted-foreground">TIME REMAINING</span>
+                      </div>
+                      <span className={`text-2xl font-mono font-bold ${timeRemaining === 0 ? 'text-destructive' : timeRemaining <= 10 ? 'text-destructive animate-pulse' : ''}`}>
+                        {formatTime(timeRemaining)}
+                      </span>
+                    </div>
+                    <Progress value={timerProgress} className="h-2 border border-border" />
+                    {timeRemaining === 0 && (
+                      <p className="text-sm font-bold text-destructive text-center">⏰ Time&apos;s up!</p>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-bold">YOUR RESPONSE</label>
@@ -228,14 +342,14 @@ const SkillDrills = () => {
                         variant={isListening ? "default" : "outline"}
                         onClick={toggleVoiceInput}
                         className={`absolute right-2 top-2 border-2 ${isListening ? 'bg-destructive hover:bg-destructive/90 animate-pulse' : ''}`}
-                        disabled={isProcessing}
+                        disabled={isProcessing || timeRemaining === 0}
                       >
                         {isListening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                       </Button>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground font-mono">
-                    Aim for {selectedDrill.timeLimit} seconds worth of content
+                    {timerActive ? 'Recording in progress...' : timeRemaining === 0 ? 'Time expired — submit your response' : `Aim for ${selectedDrill.timeLimit} seconds worth of content`}
                   </p>
                 </div>
                 <div className="flex gap-4">
@@ -308,6 +422,8 @@ const SkillDrills = () => {
                     onClick={() => {
                       setFeedback(null);
                       setUserResponse("");
+                      setTimeRemaining(null);
+                      setTimerActive(false);
                       setTopic(SAMPLE_TOPICS[Math.floor(Math.random() * SAMPLE_TOPICS.length)]);
                     }}
                     className="flex-1 border-4 border-border shadow-md"
@@ -326,6 +442,24 @@ const SkillDrills = () => {
         onOpenChange={setShowCreateModal}
         onDrillCreated={handleDrillCreated}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!drillToDelete} onOpenChange={(open) => !open && setDrillToDelete(null)}>
+        <AlertDialogContent className="border-4 border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this custom drill?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{drillToDelete?.name}" will be permanently removed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-2">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteDrill} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
