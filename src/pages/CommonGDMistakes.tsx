@@ -25,6 +25,14 @@ const articleJsonLd = [
       { "@type": "Question", name: "How do I avoid getting nervous in a GD?", acceptedAnswer: { "@type": "Answer", text: "Practice regularly with mock GDs. GD Buddy's AI simulation helps you get comfortable speaking in group settings, reducing anxiety for the real round." } },
     ],
   },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://gd-buddy.vercel.app" },
+      { "@type": "ListItem", position: 2, name: "Common GD Mistakes", item: "https://gd-buddy.vercel.app/common-gd-mistakes" },
+    ],
+  },
 ];
 
 const mistakes = [

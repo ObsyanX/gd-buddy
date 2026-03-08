@@ -25,6 +25,14 @@ const jsonLd = [
       { "@type": "Question", name: "Can I practice body language with AI?", acceptedAnswer: { "@type": "Answer", text: "Yes. GD Buddy uses webcam-based video analysis to track your eye contact, posture, and facial expressions during practice sessions, giving you objective feedback on your body language." } },
     ],
   },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://gd-buddy.vercel.app" },
+      { "@type": "ListItem", position: 2, name: "Body Language Tips", item: "https://gd-buddy.vercel.app/body-language-tips-for-gd" },
+    ],
+  },
 ];
 
 const tips = [

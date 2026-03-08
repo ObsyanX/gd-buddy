@@ -32,6 +32,14 @@ const articleJsonLd = [
       { "@type": "Question", name: "How can I improve my speaking speed for GDs?", acceptedAnswer: { "@type": "Answer", text: "The ideal speaking speed for GDs is 120-150 words per minute. Practice with GD Buddy, which tracks your WPM in real-time and gives feedback." } },
     ],
   },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://gd-buddy.vercel.app" },
+      { "@type": "ListItem", position: 2, name: "Communication Skills", item: "https://gd-buddy.vercel.app/communication-skills-for-gd" },
+    ],
+  },
 ];
 
 const CommunicationSkills = () => (

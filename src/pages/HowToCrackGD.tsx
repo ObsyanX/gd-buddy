@@ -26,6 +26,14 @@ const faqJsonLd = [
       { "@type": "Question", name: "How is GD scored in placements?", acceptedAnswer: { "@type": "Answer", text: "Evaluators score on content quality, communication skills, leadership, body language, and ability to work in a team. GD Buddy provides AI scoring on all these parameters." } },
     ],
   },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://gd-buddy.vercel.app" },
+      { "@type": "ListItem", position: 2, name: "How to Crack GD", item: "https://gd-buddy.vercel.app/how-to-crack-group-discussion" },
+    ],
+  },
 ];
 
 const tips = [
