@@ -216,8 +216,8 @@ const GDPreparationGuide = () => (
 
         {/* CTA */}
         <section className="mb-10 text-center border-4 border-border p-8">
-          <h2 className="text-h2 font-bold mb-3">Start Practicing with AI</h2>
-          <p className="text-muted-foreground mb-4">GD Buddy simulates realistic group discussions with AI participants. Get scored on content, communication, body language, and more.</p>
+          <h2 className="text-h2 font-bold mb-3">Start Practicing with GD Buddy</h2>
+          <p className="text-muted-foreground mb-4">GD Buddy is an AI-powered group discussion practice platform. Simulate realistic GDs with AI participants, get scored on content, communication, body language, and more.</p>
           <Button asChild size="lg" className="border-4 border-border">
             <Link to="/home/practice">Start a Free Practice Session</Link>
           </Button>

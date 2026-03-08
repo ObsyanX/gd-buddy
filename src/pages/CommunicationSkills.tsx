@@ -122,7 +122,7 @@ const CommunicationSkills = () => (
           </p>
           <div className="flex gap-4 flex-wrap">
             <Button asChild size="lg" className="border-4 border-border">
-              <Link to="/home/practice">Start Practicing</Link>
+              <Link to="/home/practice">Practice with GD Buddy's AI Simulator</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="border-4 border-border">
               <Link to="/gd-topics-for-placements">Browse GD Topics</Link>

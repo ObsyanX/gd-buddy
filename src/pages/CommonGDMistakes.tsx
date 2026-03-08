@@ -115,7 +115,7 @@ const CommonGDMistakes = () => (
             GD Buddy's AI-powered simulation helps you identify and fix these mistakes in real-time. Get feedback on your speaking patterns, body language, and argument quality — all before your actual placement GD.
           </p>
           <Button asChild size="lg" className="border-4 border-border">
-            <Link to="/home/practice">Practice Now</Link>
+            <Link to="/home/practice">Practice with GD Buddy's AI Simulator</Link>
           </Button>
         </section>
 
