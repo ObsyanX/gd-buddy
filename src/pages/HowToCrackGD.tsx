@@ -52,7 +52,7 @@ const HowToCrackGD = () => (
     <SEOHead
       title="How to Crack Group Discussion"
       description="Complete guide on how to crack group discussions in placement rounds. Learn GD tips, strategies, dos and don'ts, and practice with AI simulation."
-      keywords="how to crack GD, group discussion tips, GD strategies for placements, GD dos and donts, GD preparation guide"
+      keywords="how to crack GD, group discussion tips, GD strategies for placements, GD dos and donts, GD preparation guide, how to perform well in GD rounds, GD preparation tips"
       path="/how-to-crack-group-discussion"
       jsonLd={faqJsonLd}
     />
