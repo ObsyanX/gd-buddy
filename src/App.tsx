@@ -94,6 +94,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <ErrorBoundary fallbackTitle="Application Error">
           <Suspense fallback={<Loading />}>
             <Routes>
               {/* Public landing page — canonical ranking page */}
@@ -122,12 +123,12 @@ const App = () => (
                 <Route path="dashboard" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Dashboard /></PageTransition></Suspense>} />
                 <Route path="practice" element={<Suspense fallback={<PracticeSkeleton />}><PageTransition><Practice /></PageTransition></Suspense>} />
                 <Route path="practice/setup" element={<Suspense fallback={<SessionSkeleton />}><PageTransition><PracticeSetup /></PageTransition></Suspense>} />
-                <Route path="session/:sessionId" element={<Suspense fallback={<SessionSkeleton />}><PageTransition><Session /></PageTransition></Suspense>} />
-                <Route path="session/:sessionId/report" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><SessionReportPage /></PageTransition></Suspense>} />
+                <Route path="session/:sessionId" element={<ErrorBoundary fallbackTitle="Session Error"><Suspense fallback={<SessionSkeleton />}><PageTransition><Session /></PageTransition></Suspense></ErrorBoundary>} />
+                <Route path="session/:sessionId/report" element={<ErrorBoundary fallbackTitle="Report Error"><Suspense fallback={<DashboardSkeleton />}><PageTransition><SessionReportPage /></PageTransition></Suspense></ErrorBoundary>} />
                 <Route path="multiplayer" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Multiplayer /></PageTransition></Suspense>} />
                 <Route path="multiplayer/topic" element={<Suspense fallback={<PageSkeleton />}><PageTransition><MultiplayerTopic /></PageTransition></Suspense>} />
                 <Route path="multiplayer/setup" element={<Suspense fallback={<SessionSkeleton />}><PageTransition><MultiplayerSetup /></PageTransition></Suspense>} />
-                <Route path="drills" element={<Suspense fallback={<DrillsSkeleton />}><PageTransition><SkillDrills /></PageTransition></Suspense>} />
+                <Route path="drills" element={<ErrorBoundary fallbackTitle="Drills Error"><Suspense fallback={<DrillsSkeleton />}><PageTransition><SkillDrills /></PageTransition></Suspense></ErrorBoundary>} />
                 <Route path="profile" element={<Suspense fallback={<ProfileSkeleton />}><PageTransition><Profile /></PageTransition></Suspense>} />
                 <Route path="settings" element={<Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense>} />
               </Route>
@@ -145,6 +146,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          </ErrorBoundary>
         </TooltipProvider>
       </AuthProvider>
     </BrowserRouter>

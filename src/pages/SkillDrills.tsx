@@ -141,7 +141,7 @@ const SkillDrills = () => {
     if (isListening) stopListening();
     setIsProcessing(true);
     try {
-      const drillTypeForApi = selectedDrill.id.startsWith('custom_') ? 'opening_statement' : selectedDrill.id;
+      const drillTypeForApi = getApiDrillType(selectedDrill.id);
       const { data: feedbackData, error: feedbackError } = await invokeWithAuth('drill-feedback', {
         body: {
           drill_type: drillTypeForApi,
