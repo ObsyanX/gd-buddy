@@ -34,6 +34,12 @@ export const DRILL_API_TYPE_MAP: Record<string, string> = {
   'idea_expansion': 'opening_statement',
   'clarification_drill': 'time_boxed',
   'consensus_builder': 'star_response',
+  // Scenario drills
+  'scenario_disagree_politely': 'rebuttal',
+  'scenario_redirect_topic': 'time_boxed',
+  'scenario_support_quiet': 'opening_statement',
+  'scenario_salvage_weak': 'star_response',
+  'scenario_conclude_gd': 'star_response',
 };
 
 export function getApiDrillType(drillId: string): string {
