@@ -15,6 +15,31 @@ export interface DrillType {
   difficulty?: string;
 }
 
+// Maps unique drill IDs to the 4 API-level drill types for backend compatibility
+export const DRILL_API_TYPE_MAP: Record<string, string> = {
+  'opening_statement': 'opening_statement',
+  'star_response': 'star_response',
+  'rebuttal': 'rebuttal',
+  'time_boxed': 'time_boxed',
+  'elevator_pitch': 'opening_statement',
+  'problem_solution': 'star_response',
+  'devils_advocate': 'rebuttal',
+  'quick_summary': 'time_boxed',
+  'evidence_support': 'opening_statement',
+  'structured_opinion': 'star_response',
+  'counter_argument': 'rebuttal',
+  'moderator_sim': 'time_boxed',
+  'perspective_shift': 'rebuttal',
+  'idea_expansion': 'opening_statement',
+  'clarification_drill': 'time_boxed',
+  'consensus_builder': 'star_response',
+};
+
+export function getApiDrillType(drillId: string): string {
+  if (drillId.startsWith('custom_')) return 'opening_statement';
+  return DRILL_API_TYPE_MAP[drillId] || 'opening_statement';
+}
+
 export const BUILT_IN_DRILLS: DrillType[] = [
   {
     id: 'opening_statement',
@@ -49,7 +74,7 @@ export const BUILT_IN_DRILLS: DrillType[] = [
     type: 'builtin',
   },
   {
-    id: 'opening_statement',
+    id: 'elevator_pitch',
     name: 'Elevator Pitch',
     description: 'Sell yourself or an idea in 60 seconds or less',
     timeLimit: 60,
@@ -57,7 +82,7 @@ export const BUILT_IN_DRILLS: DrillType[] = [
     type: 'builtin',
   },
   {
-    id: 'star_response',
+    id: 'problem_solution',
     name: 'Problem-Solution',
     description: 'Identify a problem and present a clear solution with evidence',
     timeLimit: 90,
@@ -65,7 +90,7 @@ export const BUILT_IN_DRILLS: DrillType[] = [
     type: 'builtin',
   },
   {
-    id: 'rebuttal',
+    id: 'devils_advocate',
     name: "Devil's Advocate",
     description: 'Argue the opposite side of a position you might normally support',
     timeLimit: 60,
@@ -73,16 +98,15 @@ export const BUILT_IN_DRILLS: DrillType[] = [
     type: 'builtin',
   },
   {
-    id: 'time_boxed',
+    id: 'quick_summary',
     name: 'Quick Summary',
     description: 'Summarize a complex topic in exactly 20 seconds',
     timeLimit: 20,
     icon: Clock,
     type: 'builtin',
   },
-  // New drills
   {
-    id: 'opening_statement',
+    id: 'evidence_support',
     name: 'Evidence Support',
     description: 'Support your argument using examples, data, or real-world evidence.',
     timeLimit: 60,
@@ -90,7 +114,7 @@ export const BUILT_IN_DRILLS: DrillType[] = [
     type: 'builtin',
   },
   {
-    id: 'star_response',
+    id: 'structured_opinion',
     name: 'Structured Opinion',
     description: 'Present a clear opinion with reasoning and one supporting example.',
     timeLimit: 60,
@@ -98,7 +122,7 @@ export const BUILT_IN_DRILLS: DrillType[] = [
     type: 'builtin',
   },
   {
-    id: 'rebuttal',
+    id: 'counter_argument',
     name: 'Counter Argument Builder',
     description: 'Respond to an opposing viewpoint with a logical counterargument.',
     timeLimit: 90,
@@ -106,7 +130,7 @@ export const BUILT_IN_DRILLS: DrillType[] = [
     type: 'builtin',
   },
   {
-    id: 'time_boxed',
+    id: 'moderator_sim',
     name: 'Moderator Simulation',
     description: 'Practice guiding a discussion and encouraging participation.',
     timeLimit: 60,
@@ -114,7 +138,7 @@ export const BUILT_IN_DRILLS: DrillType[] = [
     type: 'builtin',
   },
   {
-    id: 'rebuttal',
+    id: 'perspective_shift',
     name: 'Perspective Shift',
     description: 'Argue from a viewpoint different from your own.',
     timeLimit: 45,
@@ -122,7 +146,7 @@ export const BUILT_IN_DRILLS: DrillType[] = [
     type: 'builtin',
   },
   {
-    id: 'opening_statement',
+    id: 'idea_expansion',
     name: 'Idea Expansion',
     description: 'Expand a simple idea into a structured argument.',
     timeLimit: 60,
@@ -130,7 +154,7 @@ export const BUILT_IN_DRILLS: DrillType[] = [
     type: 'builtin',
   },
   {
-    id: 'time_boxed',
+    id: 'clarification_drill',
     name: 'Clarification Drill',
     description: 'Practice asking thoughtful clarification questions.',
     timeLimit: 30,
@@ -138,7 +162,7 @@ export const BUILT_IN_DRILLS: DrillType[] = [
     type: 'builtin',
   },
   {
-    id: 'star_response',
+    id: 'consensus_builder',
     name: 'Consensus Builder',
     description: 'Summarize viewpoints and propose a balanced conclusion.',
     timeLimit: 90,
@@ -162,9 +186,11 @@ export const SAMPLE_TOPICS = [
   "Should universities require standardized testing",
 ];
 
+// Legacy localStorage key (for migration)
 const CUSTOM_DRILLS_KEY = 'gd-buddy-custom-drills';
 
-export function getCustomDrills(): DrillType[] {
+// Legacy: get custom drills from localStorage (kept for migration)
+export function getCustomDrillsFromLocalStorage(): DrillType[] {
   try {
     const stored = localStorage.getItem(CUSTOM_DRILLS_KEY);
     if (!stored) return [];
@@ -175,17 +201,23 @@ export function getCustomDrills(): DrillType[] {
   }
 }
 
+export function clearLocalStorageDrills(): void {
+  localStorage.removeItem(CUSTOM_DRILLS_KEY);
+}
+
+// Keep backward-compatible exports (now just wrappers)
+export function getCustomDrills(): DrillType[] {
+  return getCustomDrillsFromLocalStorage();
+}
+
 export function saveCustomDrill(drill: Omit<DrillType, 'icon' | 'type'>): DrillType {
-  const customs = getCustomDrills();
-  const newDrill: DrillType = { ...drill, icon: Target, type: 'custom' };
-  customs.push(newDrill);
-  const toStore = customs.map(({ icon: _icon, ...rest }) => rest);
-  localStorage.setItem(CUSTOM_DRILLS_KEY, JSON.stringify(toStore));
-  return newDrill;
+  // Legacy fallback — real saves now go through Supabase in the component
+  return { ...drill, icon: Target, type: 'custom' };
 }
 
 export function deleteCustomDrill(drillId: string): void {
-  const customs = getCustomDrills().filter(d => d.id !== drillId);
+  // Legacy fallback — real deletes now go through Supabase in the component
+  const customs = getCustomDrillsFromLocalStorage().filter(d => d.id !== drillId);
   const toStore = customs.map(({ icon: _icon, ...rest }) => rest);
   localStorage.setItem(CUSTOM_DRILLS_KEY, JSON.stringify(toStore));
 }

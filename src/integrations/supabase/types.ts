@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      custom_drills: {
+        Row: {
+          created_at: string
+          description: string | null
+          difficulty: string | null
+          id: string
+          name: string
+          prompt: string | null
+          time_limit: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          name: string
+          prompt?: string | null
+          time_limit?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          name?: string
+          prompt?: string | null
+          time_limit?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       custom_personas: {
         Row: {
           agreeability: number | null

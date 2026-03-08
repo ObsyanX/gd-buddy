@@ -21,7 +21,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
 import { useStreamingTranscription } from "@/hooks/useStreamingTranscription";
-import { BUILT_IN_DRILLS, SAMPLE_TOPICS, getCustomDrills, deleteCustomDrill, type DrillType } from "@/config/drill-types";
+import { BUILT_IN_DRILLS, SAMPLE_TOPICS, getCustomDrillsFromLocalStorage, clearLocalStorageDrills, getApiDrillType, type DrillType } from "@/config/drill-types";
+import { Target } from "lucide-react";
 import CreateDrillModal from "@/components/CreateDrillModal";
 import DrillHistory from "@/components/DrillHistory";
 
@@ -48,9 +49,70 @@ const SkillDrills = () => {
   
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Load custom drills from DB + migrate localStorage drills
   useEffect(() => {
-    setCustomDrills(getCustomDrills());
-  }, []);
+    if (!user) return;
+    const loadDrills = async () => {
+      // Fetch from DB
+      const { data, error } = await supabase
+        .from('custom_drills')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading custom drills:', error);
+        return;
+      }
+
+      const dbDrills: DrillType[] = (data || []).map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        description: d.description || '',
+        prompt: d.prompt || undefined,
+        timeLimit: d.time_limit,
+        difficulty: d.difficulty || undefined,
+        icon: Target,
+        type: 'custom' as const,
+      }));
+
+      // Migrate localStorage drills if any
+      const localDrills = getCustomDrillsFromLocalStorage();
+      if (localDrills.length > 0) {
+        const toInsert = localDrills.map(d => ({
+          user_id: user.id,
+          name: d.name,
+          description: d.description,
+          prompt: d.prompt || null,
+          time_limit: d.timeLimit,
+          difficulty: d.difficulty || 'medium',
+        }));
+        const { data: inserted, error: insertError } = await supabase
+          .from('custom_drills')
+          .insert(toInsert)
+          .select();
+
+        if (!insertError && inserted) {
+          clearLocalStorageDrills();
+          const migratedDrills: DrillType[] = inserted.map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            description: d.description || '',
+            prompt: d.prompt || undefined,
+            timeLimit: d.time_limit,
+            difficulty: d.difficulty || undefined,
+            icon: Target,
+            type: 'custom' as const,
+          }));
+          setCustomDrills([...dbDrills, ...migratedDrills]);
+          return;
+        }
+      }
+
+      setCustomDrills(dbDrills);
+    };
+    loadDrills();
+  }, [user]);
 
   const allDrills = [...BUILT_IN_DRILLS, ...customDrills];
 
@@ -141,7 +203,7 @@ const SkillDrills = () => {
     if (isListening) stopListening();
     setIsProcessing(true);
     try {
-      const drillTypeForApi = selectedDrill.id.startsWith('custom_') ? 'opening_statement' : selectedDrill.id;
+      const drillTypeForApi = getApiDrillType(selectedDrill.id);
       const { data: feedbackData, error: feedbackError } = await invokeWithAuth('drill-feedback', {
         body: {
           drill_type: drillTypeForApi,
@@ -191,11 +253,18 @@ const SkillDrills = () => {
     setCustomDrills(prev => [...prev, drill]);
   };
 
-  const handleDeleteDrill = () => {
+  const handleDeleteDrill = async () => {
     if (!drillToDelete) return;
-    deleteCustomDrill(drillToDelete.id);
-    setCustomDrills(prev => prev.filter(d => d.id !== drillToDelete.id));
-    toast({ title: "Drill deleted", description: `"${drillToDelete.name}" has been removed.` });
+    const { error } = await supabase
+      .from('custom_drills')
+      .delete()
+      .eq('id', drillToDelete.id);
+    if (error) {
+      toast({ title: "Error deleting drill", description: error.message, variant: "destructive" });
+    } else {
+      setCustomDrills(prev => prev.filter(d => d.id !== drillToDelete.id));
+      toast({ title: "Drill deleted", description: `"${drillToDelete.name}" has been removed.` });
+    }
     setDrillToDelete(null);
   };
 
