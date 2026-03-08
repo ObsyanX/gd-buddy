@@ -740,8 +740,10 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         autoMicEnabled={autoMicEnabled}
         autoMicSetting={autoMicSetting}
         autoPlayTTS={autoPlayTTS}
+        isPaused={isPaused}
         onToggleAutoMic={() => setAutoMicEnabled(!autoMicEnabled)}
         onToggleTTS={() => setAutoPlayTTS(!autoPlayTTS)}
+        onTogglePause={handleTogglePause}
         onResetTutorial={resetTutorial}
         onEndSession={handleEndSession}
         usingFallbackTTS={usingFallbackTTS}
