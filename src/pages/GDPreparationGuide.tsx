@@ -43,7 +43,7 @@ const GDPreparationGuide = () => (
     <SEOHead
       title="Group Discussion Preparation Guide"
       description="Complete GD preparation guide for placements. Learn what GD is, how it's evaluated, strategies to crack it, common mistakes, and practice with AI simulation."
-      keywords="group discussion preparation, GD preparation guide, how to prepare for GD, GD round preparation, campus placement GD guide"
+      keywords="group discussion preparation, GD preparation guide, how to prepare for GD, GD round preparation, campus placement GD guide, group discussion practice, GD practice online"
       path="/group-discussion-preparation-guide"
       jsonLd={jsonLd}
     />
