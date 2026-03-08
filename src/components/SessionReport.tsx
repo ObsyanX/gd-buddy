@@ -1179,6 +1179,8 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           </Card>
         )}
 
+        <SessionNotes sessionId={sessionId} />
+
         <div className="gap-[8px] rounded flex-col flex items-center justify-center shadow-none">
           <Button
             size="lg"
