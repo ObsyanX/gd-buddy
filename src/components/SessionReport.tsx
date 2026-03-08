@@ -1243,10 +1243,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
               AI FEEDBACK
             </h3>
             {!aiFeedback && !isLoadingFeedback && (
-              <Button onClick={loadAiFeedback} variant="outline" className="border-2">
-                <Bot className="w-4 h-4 mr-2" />
-                Generate AI Feedback
-              </Button>
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             )}
           </div>
 
