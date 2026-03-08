@@ -283,15 +283,15 @@ const VoiceMetricsPanel = ({
     return () => clearInterval(interval);
   }, [stableSpeaking]);
 
-  // Calculate live preview metrics (including current interim text for display only)
+  // Calculate live preview metrics (finalized words + true incremental interim words)
   const getLiveMetrics = useCallback((): VoiceSessionMetrics => {
-    // Include current interim transcript for live display
-    const currentWords = currentTranscript 
-      ? cleanStreamingArtifacts(currentTranscript.toLowerCase()).split(/\s+/).filter(w => w.length > 0)
-      : [];
+    const incrementalCurrentWords = getIncrementalTranscriptWords(
+      accumulatedFinalWordsRef.current,
+      currentTranscript
+    );
     
-    const totalWords = accumulatedFinalWordsRef.current.length + currentWords.length;
-    const allText = [...accumulatedFinalWordsRef.current, ...currentWords].join(' ');
+    const totalWords = accumulatedFinalWordsRef.current.length + incrementalCurrentWords.length;
+    const allText = [...accumulatedFinalWordsRef.current, ...incrementalCurrentWords].join(' ');
     
     // Count filler words
     let fillerCount = 0;
