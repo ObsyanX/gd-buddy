@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SessionHistoryComparison from "@/components/SessionHistoryComparison";
 import SkillProgressWidget from "@/components/SkillProgressWidget";
+import Leaderboard from "@/components/Leaderboard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
