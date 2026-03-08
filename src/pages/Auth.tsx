@@ -363,6 +363,8 @@ const Auth = () => {
           </Tabs>
         </Card>
       </main>
+
+      <SEOFooter />
     </div>);
 
 };

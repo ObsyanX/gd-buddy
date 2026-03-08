@@ -111,6 +111,8 @@ const AppLayout = () => {
       <main className="flex-1" role="main">
         <Outlet />
       </main>
+
+      <SEOFooter />
     </div>
   );
 };
