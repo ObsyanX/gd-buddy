@@ -42,7 +42,7 @@ const SOCIAL_LINKS = [
   { icon: Github, label: "GitHub", href: "https://github.com/ObsyanX" },
   { icon: Linkedin, label: "LinkedIn", href: "https://www.linkedin.com/in/sayan-dutta-exceptional98/" },
   { icon: Globe, label: "Portfolio", href: "https://sayan-dutta-portfolio.vercel.app/" },
-  { icon: Mail, label: "Email", href: "mailto:duttasayan947595@gmail,com" },
+  { icon: Mail, label: "Email", href: "mailto:duttasayan947595@gmail.com" },
 ];
 
 const revealClasses = "transition-all duration-700 ease-out";
