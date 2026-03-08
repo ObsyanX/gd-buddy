@@ -36,11 +36,18 @@ export const invokeWithAuth = async <T = any>(
       return { data: null, error };
     }
     
+    // Check if response indicates a fallback/error scenario
+    if (data && typeof data === 'object' && 'error' in data && !('audioContent' in data)) {
+      return { data: null, error: new Error((data as any).error || 'Function error') };
+    }
+    
     return { data: data as T, error: null };
-  } catch (err) {
+  } catch (err: any) {
+    // Silently handle all edge function errors - never let them propagate as unhandled
+    const message = err?.message || err?.context?.body || 'Edge function error';
     return { 
       data: null, 
-      error: err instanceof Error ? err : new Error('Unknown error') 
+      error: new Error(typeof message === 'string' ? message : JSON.stringify(message))
     };
   }
 };
