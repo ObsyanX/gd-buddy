@@ -14,12 +14,12 @@ interface SessionSidebarProps {
   isListening: boolean;
   isSpeaking: boolean;
   userInput: string;
-  presenceState: any;
-  typingParticipants: string[];
-  practiceHistory: any[];
+  presenceState: Record<string, PresenceType>;
+  typingParticipants: PresenceType[];
+  practiceHistory: PracticeRecording[];
   currentPlayingId: string | null;
   onVideoMetricsUpdate: (metrics: VideoMetrics) => void;
-  onPlayHistory: (id: string) => void;
+  onPlayHistory: (recording: PracticeRecording) => void;
   onDeleteHistory: (id: string) => void;
 }
 
