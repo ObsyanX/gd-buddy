@@ -85,7 +85,7 @@ const MessageInput = ({
             onClick={onSkipTurn}
             disabled={isProcessing || isPracticing}
             variant="outline"
-            className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3 hidden sm:flex"
+            className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
             title="Skip your turn"
           >
             <SkipForward className="w-4 h-4" />
