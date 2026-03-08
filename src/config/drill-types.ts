@@ -186,6 +186,6 @@ export function saveCustomDrill(drill: Omit<DrillType, 'icon' | 'type'>): DrillT
 
 export function deleteCustomDrill(drillId: string): void {
   const customs = getCustomDrills().filter(d => d.id !== drillId);
-  const toStore = customs.map(({ icon, ...rest }) => rest);
+  const toStore = customs.map(({ icon: _icon, ...rest }) => rest);
   localStorage.setItem(CUSTOM_DRILLS_KEY, JSON.stringify(toStore));
 }

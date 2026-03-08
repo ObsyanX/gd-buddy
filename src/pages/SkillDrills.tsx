@@ -31,7 +31,7 @@ const formatTime = (seconds: number) => {
 };
 
 const SkillDrills = () => {
-  const navigate = useNavigate();
+  
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedDrill, setSelectedDrill] = useState<DrillType | null>(null);
