@@ -810,7 +810,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                 <Info className="w-4 h-4" />
                 LIVE FEEDBACK
               </h3>
-              <FeedbackGrid feedback={feedback} />
+              <FeedbackGrid feedback={feedback} liveVoiceMetrics={liveVoiceMetrics} />
             </Card>
             <Card className="p-3 border-2 border-border">
               <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
