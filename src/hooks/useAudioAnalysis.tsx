@@ -132,7 +132,7 @@ export const useAudioAnalysis = (options: UseAudioAnalysisOptions = {}) => {
       isSpeaking,
       volume,
       pitch: Math.round(pitch),
-      speakingRate: Math.min(200, Math.max(0, speakingRate)),
+      speakingRate: Math.min(400, Math.max(0, speakingRate)),
       pauseCount: pauseCountRef.current,
       totalSpeakingTime: currentSpeaking,
       totalPauseTime: currentPause,
