@@ -171,6 +171,8 @@ const Dashboard = () => {
           </Card>
         </div>
 
+        <SkillProgressWidget />
+
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => navigate("/home/practice")}>
