@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { invokeWithAuth } from '@/lib/supabase-auth';
-import type { VoiceSettings } from '@/pages/Settings';
+import { useVoiceStore } from '@/stores/useVoiceStore';
 
 export const useTextToSpeech = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
