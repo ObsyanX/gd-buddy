@@ -210,7 +210,8 @@ const SkillDrills = () => {
           drill_type: drillTypeForApi,
           topic,
           user_response: userResponse,
-          time_limit_seconds: selectedDrill.timeLimit
+          time_limit_seconds: selectedDrill.timeLimit,
+          ...(selectedDrill.scenario ? { scenario: selectedDrill.scenario } : {}),
         }
       });
 
