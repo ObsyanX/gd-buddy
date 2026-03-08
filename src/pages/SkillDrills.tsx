@@ -25,6 +25,7 @@ import { BUILT_IN_DRILLS, SAMPLE_TOPICS, getCustomDrillsFromLocalStorage, clearL
 import { Target } from "lucide-react";
 import CreateDrillModal from "@/components/CreateDrillModal";
 import DrillHistory from "@/components/DrillHistory";
+import { updateSkillProgress } from "@/components/SkillProgressWidget";
 
 const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60);
