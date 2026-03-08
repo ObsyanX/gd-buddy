@@ -806,6 +806,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             isPracticing={isPracticing}
             isCorrecting={isCorrecting}
             isPaused={isPaused}
+            isBusy={isWaitingForSpeech || isSpeaking}
             autoSendEnabled={autoSendEnabled}
             autoSkipEnabled={autoSkipEnabled}
             onInputChange={setUserInput}
@@ -813,7 +814,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             onSendWithVoice={handleSendWithVoice}
             onVoiceInput={handleVoiceInput}
             onStartPractice={startPracticeRecording}
-            onSkipTurn={() => handleSendMessageDirect("[Skipped turn]")}
+            onSkipTurn={() => {
+              const lastUserMsg = [...messages].reverse().find(m => m.gd_participants?.is_user && m.gd_participants?.real_user_id === currentUserId);
+              if (lastUserMsg?.text === "[Skipped turn]" && isProcessing) return;
+              handleSendMessageDirect("[Skipped turn]");
+            }}
             onOpenMobileMetrics={() => setIsMobileMetricsOpen(true)}
             onToggleAutoSend={() => setAutoSendEnabled(prev => !prev)}
             onToggleAutoSkip={() => setAutoSkipEnabled(prev => !prev)}

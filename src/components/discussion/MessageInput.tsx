@@ -10,6 +10,7 @@ interface MessageInputProps {
   isPracticing: boolean;
   isCorrecting: boolean;
   isPaused: boolean;
+  isBusy?: boolean;
   autoSendEnabled: boolean;
   autoSkipEnabled: boolean;
   onInputChange: (value: string) => void;
@@ -28,6 +29,7 @@ const AUTO_SKIP_DELAY = 12;
 
 const MessageInput = ({
   userInput, isListening, isProcessing, isPracticing, isCorrecting, isPaused,
+  isBusy = false,
   autoSendEnabled, autoSkipEnabled,
   onInputChange, onSendMessage, onSendWithVoice, onVoiceInput,
   onStartPractice, onSkipTurn, onOpenMobileMetrics,
@@ -88,7 +90,7 @@ const MessageInput = ({
     if (autoSkipTimer.current) clearTimeout(autoSkipTimer.current);
     if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
 
-    const canAutoSkip = autoSkipEnabled && !isPaused && !userInput.trim() && !isProcessing && !isPracticing && !isCorrecting;
+    const canAutoSkip = autoSkipEnabled && !isPaused && !isBusy && !userInput.trim() && !isProcessing && !isPracticing && !isCorrecting;
 
     if (!canAutoSkip) {
       setSkipCountdown(null);
@@ -113,7 +115,7 @@ const MessageInput = ({
       if (autoSkipTimer.current) clearTimeout(autoSkipTimer.current);
       if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
     };
-  }, [userInput, isProcessing, isPracticing, isCorrecting, autoSkipEnabled, isPaused]);
+  }, [userInput, isProcessing, isPracticing, isCorrecting, autoSkipEnabled, isPaused, isBusy]);
 
   return (
     <div className="space-y-1.5 sm:space-y-2">
