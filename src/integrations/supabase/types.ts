@@ -483,6 +483,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_rankings: {
+        Row: {
+          best_rating: number
+          elo_rating: number
+          id: string
+          losses: number
+          tier: string
+          total_matches: number
+          updated_at: string
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          best_rating?: number
+          elo_rating?: number
+          id?: string
+          losses?: number
+          tier?: string
+          total_matches?: number
+          updated_at?: string
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          best_rating?: number
+          elo_rating?: number
+          id?: string
+          losses?: number
+          tier?: string
+          total_matches?: number
+          updated_at?: string
+          user_id?: string
+          wins?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

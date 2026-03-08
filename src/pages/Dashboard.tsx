@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SessionHistoryComparison from "@/components/SessionHistoryComparison";
 import SkillProgressWidget from "@/components/SkillProgressWidget";
+import Leaderboard from "@/components/Leaderboard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -171,7 +172,12 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        <SkillProgressWidget />
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <SkillProgressWidget />
+          </div>
+          <Leaderboard />
+        </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="p-6 border-4 border-border hover:shadow-md transition-shadow cursor-pointer"

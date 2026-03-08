@@ -114,7 +114,13 @@ RULES:
 - All topics MUST be ${categoryName} type
 - ${categoryFocus}
 - Topics should be relevant to ${audience}
-- ${tone === 'formal' ? 'Use professional, interview-appropriate language' : 'Use conversational, approachable language'}`;
+- ${tone === 'formal' ? 'Use professional, interview-appropriate language' : 'Use conversational, approachable language'}
+
+DIFFICULTY CALIBRATION:
+${difficulty === 'easy' || difficulty === 'beginner' ? '- BEGINNER: Use familiar, everyday topics (social media, education, environment). Clear arguments on both sides. Avoid jargon.' : ''}
+${difficulty === 'medium' || difficulty === 'intermediate' ? '- INTERMEDIATE: Use nuanced policy topics requiring balanced arguments. Some domain knowledge expected.' : ''}
+${difficulty === 'hard' || difficulty === 'advanced' ? '- ADVANCED: Multi-stakeholder economic/ethical dilemmas. Requires deep analysis, data awareness, and structured reasoning. Ambiguous tradeoffs.' : ''}
+${difficulty === 'expert' ? '- EXPERT: Complex geopolitical, philosophical, or technical topics with no clear answer. Requires domain expertise and sophisticated argumentation.' : ''}`;
 
     const userMessage = `Generate ${count} Group Discussion topics.
 Category: ${categoryName}
