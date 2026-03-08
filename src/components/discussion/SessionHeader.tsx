@@ -23,7 +23,7 @@ interface SessionHeaderProps {
 const SessionHeader = ({
   session, messagesCount, isListening, isCorrecting,
   autoMicEnabled, autoMicSetting, autoPlayTTS, usingFallbackTTS,
-  onToggleAutoMic, onToggleTTS, onResetTutorial, onEndSession,
+  isPaused, onToggleAutoMic, onToggleTTS, onResetTutorial, onEndSession, onTogglePause,
 }: SessionHeaderProps) => {
   return (
     <header className="border-b-4 border-border p-2 sm:p-4">
