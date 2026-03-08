@@ -640,6 +640,44 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         console.log('[EndSession] No valid video metrics to save');
       }
 
+      // Save voice metrics from VoiceMetricsPanel to database
+      if (liveVoiceMetrics && liveVoiceMetrics.totalWords > 0) {
+        // Sanity-cap WPM before saving
+        const cappedWpm = Math.min(400, liveVoiceMetrics.estimatedWpm);
+        console.log('[EndSession] Saving voice metrics:', {
+          totalWords: liveVoiceMetrics.totalWords,
+          wpm: cappedWpm,
+          fillers: liveVoiceMetrics.fillerCount,
+          speakingTime: liveVoiceMetrics.speakingTimeSeconds
+        });
+        
+        const { data: existingMetrics } = await supabase
+          .from('gd_metrics')
+          .select('id')
+          .eq('session_id', sessionId)
+          .maybeSingle();
+
+        const voiceData = {
+          total_words: liveVoiceMetrics.totalWords,
+          words_per_min: cappedWpm,
+          filler_count: liveVoiceMetrics.fillerCount,
+          updated_at: new Date().toISOString()
+        };
+
+        if (existingMetrics) {
+          await supabase
+            .from('gd_metrics')
+            .update(voiceData)
+            .eq('session_id', sessionId);
+          console.log('[EndSession] Voice metrics updated (preserved other columns)');
+        } else {
+          await supabase
+            .from('gd_metrics')
+            .insert({ session_id: sessionId, ...voiceData });
+          console.log('[EndSession] Voice metrics row created');
+        }
+      }
+
       await supabase
         .from('gd_sessions')
         .update({ status: 'completed', end_time: new Date().toISOString() })
