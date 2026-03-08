@@ -447,7 +447,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           config: {
             max_reply_words: 40,
             interruption_mode: 'light',
-            invigilator_mode: 'coaching'
+            invigilator_mode: 'coaching',
+            moderator_mode: localStorage.getItem(`gd-moderator-${sessionId}`) === 'true',
           },
           request: 'generate_responses'
         }
