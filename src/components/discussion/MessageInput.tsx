@@ -141,7 +141,7 @@ const MessageInput = ({
           >
             {isListening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
           </Button>
-          <div className="relative flex flex-col items-center">
+          <div className="flex flex-col items-center">
             <Button
               onClick={onSendWithVoice}
               disabled={isProcessing || (!userInput.trim() && !isListening) || isPracticing || isCorrecting}
@@ -151,21 +151,26 @@ const MessageInput = ({
               {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </Button>
             {countdown !== null && (
-              <span className="absolute -bottom-4 text-[9px] font-mono text-muted-foreground">{countdown}s</span>
+              <span className="text-[10px] font-mono text-destructive font-bold mt-0.5">{countdown}s</span>
             )}
           </div>
-          <Button
-            onClick={onSkipTurn}
-            disabled={isProcessing || isPracticing}
-            variant="outline"
-            className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
-            title="Skip your turn"
-          >
-            <SkipForward className="w-4 h-4" />
-          </Button>
+          <div className="flex flex-col items-center">
+            <Button
+              onClick={onSkipTurn}
+              disabled={isProcessing || isPracticing}
+              variant="outline"
+              className="border-2 h-10 w-10 p-0 sm:w-auto sm:px-3"
+              title="Skip your turn"
+            >
+              <SkipForward className="w-4 h-4" />
+            </Button>
+            {skipCountdown !== null && (
+              <span className="text-[10px] font-mono text-muted-foreground font-bold mt-0.5">{skipCountdown}s</span>
+            )}
+          </div>
         </div>
       </div>
-      <p className="text-[10px] sm:text-xs text-muted-foreground font-mono text-center hidden sm:block">
+      <p className="text-[10px] sm:text-xs text-muted-foreground font-mono text-center hidden sm:block mt-1">
         TIP: Ctrl+M for practice • Ctrl+Enter to send • Esc to stop audio
       </p>
     </div>
