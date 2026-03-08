@@ -163,9 +163,9 @@ const InstructorDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b-4 border-border p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-3xl font-bold">INSTRUCTOR DASHBOARD</h1>
-          <Button onClick={() => setShowCreate(true)} className="border-4 border-border">
+        <div className="container mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold">INSTRUCTOR DASHBOARD</h1>
+          <Button onClick={() => setShowCreate(true)} className="border-4 border-border w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" /> NEW COHORT
           </Button>
         </div>
