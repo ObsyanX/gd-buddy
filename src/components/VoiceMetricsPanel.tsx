@@ -173,7 +173,7 @@ const VoiceMetricsPanel = ({
     
     processedTextHashesRef.current.add(contentHash);
     
-    const words = cleanedText.split(/\s+/).filter(w => w.length > 0);
+    const words = splitNormalizedWords(cleanedText);
     accumulatedFinalWordsRef.current.push(...words);
     
     console.log('[VoiceMetrics] Finalized segment:', {
