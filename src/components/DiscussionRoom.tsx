@@ -771,6 +771,17 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
           <VoiceActivityIndicator isActive={isSpeaking} participantName={currentSpeaker || undefined} />
 
+          {isPaused && (
+            <div className="flex items-center justify-center gap-3 py-3 px-4 bg-warning/10 rounded-lg border-2 border-warning/30">
+              <Pause className="w-4 h-4 text-warning" />
+              <span className="text-sm font-bold text-warning">Discussion Paused</span>
+              <Button variant="outline" size="sm" onClick={handleTogglePause} className="border-2 h-7 text-xs">
+                <Play className="w-3 h-3 mr-1" />
+                Continue
+              </Button>
+            </div>
+          )}
+
           {isWaitingForSpeech && (
             <div className="flex items-center justify-center gap-2 sm:gap-3 py-1.5 sm:py-2 px-3 sm:px-4 bg-muted/50 rounded-lg border border-border">
               <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-muted-foreground" />
