@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, Mic, Square, Send, Loader2, CheckCircle2, XCircle, Plus, Trash2, TimerIcon, History } from "lucide-react";
+import { Clock, Mic, Square, Send, Loader2, CheckCircle2, XCircle, Plus, Trash2, TimerIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
