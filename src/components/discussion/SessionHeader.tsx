@@ -107,6 +107,11 @@ const SessionHeader = ({
                   AI Correcting...
                 </Badge>
               )}
+              {usingFallbackTTS && autoPlayTTS && (
+                <Badge variant="outline" className="border-2 text-warning bg-warning/10 text-xs">
+                  🔊 Browser voice
+                </Badge>
+              )}
               <Button
                 variant="outline" size="sm"
                 onClick={onToggleAutoMic}
