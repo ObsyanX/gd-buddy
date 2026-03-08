@@ -21,7 +21,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
 import { useStreamingTranscription } from "@/hooks/useStreamingTranscription";
-import { BUILT_IN_DRILLS, SAMPLE_TOPICS, getCustomDrills, deleteCustomDrill, getApiDrillType, type DrillType } from "@/config/drill-types";
+import { BUILT_IN_DRILLS, SAMPLE_TOPICS, getCustomDrillsFromLocalStorage, clearLocalStorageDrills, getApiDrillType, type DrillType } from "@/config/drill-types";
+import { Target } from "lucide-react";
 import CreateDrillModal from "@/components/CreateDrillModal";
 import DrillHistory from "@/components/DrillHistory";
 
