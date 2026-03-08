@@ -283,7 +283,7 @@ const VoiceMetricsPanel = ({
           ...prev,
           speakingTimeSeconds: currentSpeaking,
           estimatedWpm: currentSpeaking > 6 && prev.totalWords > 0
-            ? Math.round(prev.totalWords / (currentSpeaking / 60))
+            ? Math.min(400, Math.round(prev.totalWords / (currentSpeaking / 60)))
             : prev.estimatedWpm
         }));
       }
