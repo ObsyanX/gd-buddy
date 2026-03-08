@@ -16,7 +16,9 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    target: "es2020",
     sourcemap: true,
+    cssMinify: true,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -30,6 +32,8 @@ export default defineConfig(({ mode }) => ({
             "@radix-ui/react-tooltip",
           ],
           charts: ["recharts"],
+          supabase: ["@supabase/supabase-js"],
+          query: ["@tanstack/react-query"],
         },
       },
     },
