@@ -81,7 +81,7 @@ const GDTopics = () => (
         {/* LLM-friendly Quick Summary */}
         <section className="border-2 border-border p-5 mb-8 bg-muted/30" aria-label="Quick summary">
           <h2 className="font-bold mb-2">📋 Quick Summary</h2>
-          <p className="text-sm text-muted-foreground mb-3">This page contains 50+ curated group discussion topics across 5 categories — Current Affairs, Business, Social Issues, Technology, and Abstract — frequently asked in campus placements at top companies.</p>
+          <p className="text-sm text-muted-foreground mb-3">This page contains {categories.reduce((a, [, t]) => a + t.length, 0)}+ curated group discussion topics across {categories.length} categories — frequently asked in campus placements at top companies. Click any topic for detailed arguments, discussion points, and sample opening statements.</p>
           <h3 className="font-bold text-sm mb-1">Key Takeaways</h3>
           <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
             <li>Prepare 20-30 topics across categories for comprehensive coverage</li>
