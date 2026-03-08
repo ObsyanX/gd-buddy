@@ -808,6 +808,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
               style={{ transform: 'scaleX(-1)' }}
             />
             
+            {/* Coaching overlay - color-coded badges for eye contact, posture, expression */}
+            <VideoCoachingOverlay metrics={metrics} isActive={isVideoReady && !isMinimized} />
+            
             {/* Loading overlay - shown during initialization OR when video not ready */}
             {(isInitializingCamera || !isVideoReady) && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/80">
