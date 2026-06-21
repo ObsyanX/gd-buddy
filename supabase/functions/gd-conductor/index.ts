@@ -123,6 +123,52 @@ CRITICAL: Output ONLY valid JSON. No prose, no markdown, no explanations.
 
 CONTENT SAFETY: Never generate responses containing hate speech, slurs, threats, or explicit content. Keep all AI participant responses professional and appropriate for an educational discussion context. If a user's input touches sensitive topics, the AI participants should respond thoughtfully and redirect toward constructive discussion.
 
+═══════════════════════════════════════════════════════
+ORIGINALITY ENGINE — THE MOST IMPORTANT RULES
+═══════════════════════════════════════════════════════
+An AI participant in a real Group Discussion does NOT echo, paraphrase, or politely restate what the previous speaker just said. They add something the room did not have a second ago. Your single most important job is to make every AI reply genuinely additive.
+
+BEFORE generating each AI reply, silently do this:
+1. Identify the EXACT claim the user (or last speaker) just made.
+2. List the angles already covered in conversation_history (data, ethics, law, design, ops, economics, tech, lived experience, history, policy, risk, opportunity, etc.).
+3. Pick an UNCOVERED angle that fits this persona's lens.
+4. Form a NEW claim — a counterpoint, a contradiction, a fresh example, a hidden trade-off, a question that exposes a blind spot, a piece of evidence, a reframing, or a "yes-but" with a real new dimension.
+5. Write the reply STARTING from that new claim, not from agreement.
+
+HARD BANS (a reply that does any of these is invalid — regenerate it):
+- Paraphrasing the user's last statement.
+- "I agree", "exactly", "great point", "that's true", "absolutely" as the substance of a reply.
+- Restating the topic.
+- Generic hedging ("it depends", "both sides have merit") without a concrete new claim.
+- Two AI replies in the same turn that make the same point or use the same angle.
+- Quoting back the user's keywords as if they were the AI's own insight.
+
+INTENT DISTRIBUTION (enforce across the session, not just one turn):
+- ~40%  contradict / counterpoint  (push back with a different view)
+- ~30%  elaborate-with-new-evidence / example  (add a stat, study, case, or concrete instance the user did NOT mention)
+- ~20%  ask_question  (a sharp question that exposes a missing dimension — NOT a soft "what do you think?")
+- ~10%  agree-with-addition  (only if the reply contributes a clearly new sub-point)
+Pure "agree" with no addition is FORBIDDEN.
+
+PERSONA LENS LOCK — every AI must argue from its own role's lens:
+- Data Analyst / Researcher / Financial Analyst / Economist → cite a number, trend, study, ratio, or macro indicator (invent plausible figures if needed, framed as "studies suggest", "industry data shows", "roughly X%").
+- Legal Counsel / Policy Advisor → raise a specific risk, regulation, precedent, compliance gap, or governance angle.
+- Software Engineer / Cybersecurity Expert → surface a technical constraint, implementation reality, attack surface, or feasibility limit.
+- Designer / Strategy Consultant → propose a reframing, a user-experience angle, or a long-horizon implication others missed.
+- HR Manager / Psychologist / Team Lead → surface a human/behavioral consequence, motivation, or culture effect.
+- Business Lead / Startup Founder / Operations Manager → push on outcomes, speed, ROI, execution feasibility, opportunity cost.
+- Social Activist / Sustainability Expert / Media Expert → bring an ethical, environmental, equity, or public-perception angle.
+- Student Representative → bring a ground-level / lived / campus / first-job example.
+Every reply must be RECOGNIZABLE as coming from that persona's lens. If a Data Analyst doesn't cite a number, the reply is wrong.
+
+ANGLE DIVERSITY WITHIN A TURN:
+If you generate 2 AI replies in one turn, they must use DIFFERENT intents AND DIFFERENT lenses. Never two "agree" in a row. Never two of the same role's angle.
+
+LANGUAGE FRESHNESS:
+Avoid vocabulary and sentence openers already used in recent conversation_history. Vary opening verbs ("Actually,", "But consider —", "The data tells a different story:", "One thing nobody's said yet:", "From a compliance angle,", "On the ground, though,", etc.). Never start with "I think that" two replies in a row.
+
+═══════════════════════════════════════════════════════
+
 ${moderatorMode ? `MODERATOR MODE ENABLED:
 You also control a "Moderator" who manages the discussion. The moderator should:
 - Open discussions with context-setting (on first turn when conversation is empty)
@@ -142,8 +188,10 @@ OUTPUT SCHEMA:
   "participant_responses": [
     {
       "participant_id": "string",
-      "text": "max ${config.max_reply_words || 40} words",
-      "intent": "agree|elaborate|contradict|ask_question|summarize|counterpoint|example|clarify",
+      "text": "max ${config.max_reply_words || 55} words — must contain a NEW claim, not a restatement",
+      "intent": "contradict|counterpoint|elaborate|example|ask_question|agree-with-addition|clarify|summarize",
+      "lens": "data|legal|technical|design|human|business|ethical|ground-level|policy|economic|other",
+      "novelty_note": "<=10 words describing the new angle this reply introduces",
       "interruption": boolean,
       "overlap_seconds": number,
       "clip_strategy": "mix|fade_previous|cut_previous",
@@ -168,14 +216,15 @@ OUTPUT SCHEMA:
 }
 
 RULES:
-1. Keep replies under ${config.max_reply_words || 40} words, 1-3 sentences
-2. User participants (is_user=true) are NEVER generated
-3. Choose at most 2 AI participants to respond${moderatorMode ? ' (plus moderator if needed)' : ''}
-4. Match persona tone/verbosity/vocab level
-5. Mark interruptions based on persona.interrupt_level and config.interruption_mode
-6. Generate valid SSML for TTS
-7. Provide helpful invigilator feedback for the user
-8. Be concise and interview-realistic`;
+1. Keep replies under ${config.max_reply_words || 55} words, 1-3 sentences, but always contain a NEW claim.
+2. User participants (is_user=true) are NEVER generated.
+3. Choose at most 2 AI participants to respond${moderatorMode ? ' (plus moderator if needed)' : ''}.
+4. Match persona tone/verbosity/vocab — but never at the cost of originality.
+5. Mark interruptions based on persona.interrupt_level and config.interruption_mode.
+6. Generate valid SSML for TTS.
+7. Provide helpful invigilator feedback for the user.
+8. Be interview-realistic: real GD participants COMPETE for airtime by adding value, not by agreeing.
+9. If a draft reply would violate the HARD BANS, rewrite it before emitting.`;
 
     // Build conversation context
     const conversationContext = conversation_history.map((turn: any) => 
@@ -208,15 +257,39 @@ BENCHMARKS:
 INDUSTRY BENCHMARKS PROVIDED:
 ${JSON.stringify(body.benchmarks, null, 2)}` : '';
 
+    // Derive a "must-bring" instruction from each persona's role so the LLM
+    // anchors every reply to that participant's lens (no generic agreement).
+    const mustBringFor = (role: string = ''): string => {
+      const r = role.toLowerCase();
+      if (/(data|research|analyst|economist|financial)/.test(r)) return 'a number, stat, study, ratio, or trend';
+      if (/(legal|policy|counsel|compliance|advisor)/.test(r)) return 'a specific risk, regulation, precedent, or governance gap';
+      if (/(engineer|developer|software|cyber|security|tech)/.test(r)) return 'a technical constraint, feasibility limit, or attack surface';
+      if (/(design|strategy|consultant|creative)/.test(r)) return 'a reframing, UX angle, or long-horizon implication';
+      if (/(hr|psycholog|team lead|coach|people)/.test(r)) return 'a human, behavioral, motivational, or culture consequence';
+      if (/(business|founder|startup|operations|product|manager)/.test(r)) return 'an ROI, speed, execution, or opportunity-cost angle';
+      if (/(activist|sustain|environment|esg|media|public)/.test(r)) return 'an ethical, equity, environmental, or public-perception angle';
+      if (/(student|youth|rep)/.test(r)) return 'a ground-level, lived, campus, or first-job example';
+      return 'a fresh angle the room has NOT yet covered';
+    };
+
     const userMessage = `Topic: ${topic}
 Category: ${topic_meta.category || 'General'}
 Difficulty: ${topic_meta.difficulty || 'Medium'}
 
 Participants:
-${participants.map((p: any) => `- ${p.id} (${p.is_user ? 'USER' : 'AI'}): ${p.persona?.name || 'Participant'} - ${p.persona?.tone || 'neutral'} tone, ${p.persona?.verbosity || 'moderate'} verbosity`).join('\n')}
+${participants.map((p: any) => {
+  if (p.is_user) {
+    return `- ${p.id} (USER): ${p.persona?.name || 'Participant'} — do NOT generate a reply for this participant.`;
+  }
+  const persona = p.persona || {};
+  const role = persona.role || 'Discussant';
+  const must = mustBringFor(role);
+  return `- ${p.id} (AI): ${persona.name || 'Participant'} | Role: ${role} | Tone: ${persona.tone || 'neutral'} | Verbosity: ${persona.verbosity || 'moderate'} | Vocab: ${persona.vocab_level || 'intermediate'} | Agreeability: ${persona.agreeability ?? 0} | Interrupt: ${persona.interrupt_level ?? 0.2}
+  LENS LOCK → every reply from ${persona.name || p.id} MUST bring ${must}. If the draft reply does not, rewrite it.`;
+}).join('\n')}
 
-Recent conversation:
-${conversationContext || 'No previous turns'}
+Recent conversation (most recent last):
+${conversationContext || 'No previous turns — this is the opening of the discussion.'}
 
 Latest user utterance: "${latest_user_utterance}"
 ${metricsContext}
@@ -224,7 +297,15 @@ ${benchmarksInfo}
 
 Request: ${request_type}
 
-${request_type === 'generate_responses' ? 'Generate AI participant responses now.' : ''}
+${request_type === 'generate_responses' ? `Generate AI participant responses now.
+
+REMINDER — apply the ORIGINALITY ENGINE strictly:
+1. Do NOT paraphrase or agree-only with the user's last point.
+2. Each chosen AI must speak from its LENS LOCK above.
+3. If 2 AIs reply, they must use DIFFERENT intents AND DIFFERENT lenses.
+4. Bias toward contradict / counterpoint / new-evidence / sharp-question intents.
+5. Fill the "novelty_note" field for each reply — if you cannot state a new angle in <=10 words, the reply is invalid; rewrite it.
+6. Vary opening phrases; do not reuse openers already in the recent conversation.` : ''}
 ${request_type === 'invigilator_update' ? 'Provide invigilator feedback based on metrics.' : ''}
 ${request_type === 'post_session_report' ? `Generate a detailed post-session analysis using the ACTUAL METRICS provided above. 
 Your response MUST include:
@@ -248,7 +329,10 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
         ],
-        temperature: 0.8,
+        temperature: 0.95,
+        top_p: 0.95,
+        frequency_penalty: 0.6,
+        presence_penalty: 0.6,
       }),
     });
 
@@ -301,12 +385,43 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
       };
     }
 
-    // Post-moderation: scan AI-generated responses
-    if (parsedResponse.participant_responses) {
+    // Post-moderation + originality filter on AI-generated responses
+    if (parsedResponse.participant_responses && request_type === 'generate_responses') {
+      const userUtter = (latest_user_utterance || '').toLowerCase().trim();
+      const userTokens = new Set(
+        userUtter.split(/\W+/).filter(w => w.length > 4)
+      );
+
+      const isEcho = (text: string): boolean => {
+        const t = (text || '').toLowerCase().trim();
+        if (!t) return true;
+        // Pure agreement openers with no substance
+        if (/^(i\s+(totally\s+)?agree|exactly|absolutely|great point|that'?s (true|right)|well said|i second that)[\s.,!]*$/i.test(t)) return true;
+        // Heavy token overlap with the user's utterance (>=70% of user's content words echoed in a short reply)
+        if (userTokens.size >= 3) {
+          const replyTokens = new Set(t.split(/\W+/));
+          let overlap = 0;
+          userTokens.forEach(tok => { if (replyTokens.has(tok)) overlap++; });
+          const ratio = overlap / userTokens.size;
+          if (ratio >= 0.7 && t.length < userUtter.length * 1.4) return true;
+        }
+        return false;
+      };
+
       parsedResponse.participant_responses = parsedResponse.participant_responses.filter((r: any) => {
         const check = moderateContent(r.text || '');
         if (check.blocked) {
           console.warn(`[Moderation] Filtered AI response from ${r.participant_id}: ${check.reason}`);
+          return false;
+        }
+        if (isEcho(r.text || '')) {
+          console.warn(`[Originality] Dropped echo reply from ${r.participant_id}: "${r.text}"`);
+          return false;
+        }
+        // Require novelty_note to be present and non-trivial
+        const note = (r.novelty_note || '').trim();
+        if (!note || note.length < 3) {
+          console.warn(`[Originality] Dropped reply from ${r.participant_id} — missing novelty_note`);
           return false;
         }
         return true;
