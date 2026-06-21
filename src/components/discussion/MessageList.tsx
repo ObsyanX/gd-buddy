@@ -58,12 +58,34 @@ const MessageList = ({ messages, currentUserId, isSpeaking, currentSpeaker }: Me
                   </p>
                   <div className={`p-1.5 sm:p-2 lg:p-4 border sm:border-2 rounded-sm sm:rounded ${isFromCurrentUser ? 'bg-primary text-primary-foreground border-primary' : isCurrentlySpeaking ? 'bg-primary/10 border-primary' : 'bg-card border-border'}`}>
                     <p className="text-[11px] sm:text-xs lg:text-sm leading-relaxed">{message.text}</p>
+                    {isAI && message.citation && (
+                      <p className="mt-1.5 text-[10px] sm:text-[11px] italic text-muted-foreground border-l-2 border-primary/40 pl-2">
+                        📎 {message.citation}
+                      </p>
+                    )}
                   </div>
-                  {message.intent && (
-                    <Badge variant="outline" className="text-[8px] sm:text-[10px] lg:text-xs h-4 sm:h-5">
-                      {message.intent}
-                    </Badge>
-                  )}
+                  <div className="flex flex-wrap items-center gap-1">
+                    {message.intent && (
+                      <Badge variant="outline" className="text-[8px] sm:text-[10px] lg:text-xs h-4 sm:h-5">
+                        {message.intent}
+                      </Badge>
+                    )}
+                    {isAI && message.lens && (
+                      <Badge variant="secondary" className="text-[8px] sm:text-[10px] lg:text-xs h-4 sm:h-5">
+                        {message.lens}
+                      </Badge>
+                    )}
+                    {isAI && message.novelty_note && (
+                      <Badge
+                        variant="outline"
+                        className="text-[8px] sm:text-[10px] lg:text-xs h-4 sm:h-5 border-green-500/60 text-green-700 dark:text-green-400 bg-green-500/10"
+                        title="Fresh angle introduced in this reply"
+                      >
+                        ✨ Fresh · {message.novelty_note}
+                      </Badge>
+                    )}
+                  </div>
+
                 </div>
                 {isFromCurrentUser && (
                   <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded border sm:border-2 border-border flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1">
