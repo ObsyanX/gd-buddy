@@ -337,7 +337,10 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
         ],
-        temperature: 0.8,
+        temperature: 0.95,
+        top_p: 0.95,
+        frequency_penalty: 0.6,
+        presence_penalty: 0.6,
       }),
     });
 
