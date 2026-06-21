@@ -453,6 +453,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             interruption_mode: 'light',
             invigilator_mode: 'coaching',
             moderator_mode: localStorage.getItem(`gd-moderator-${sessionId}`) === 'true',
+            citation_mode: localStorage.getItem(`gd-citation-${sessionId}`) === 'true',
             originality_mode: 'strict',
           },
           request: 'generate_responses'
@@ -507,8 +508,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               interruption: response.interruption,
               overlap_seconds: response.overlap_seconds,
               tts_ssml: response.tts_ssml,
-              confidence_estimate: response.confidence_estimate
-            })
+              confidence_estimate: response.confidence_estimate,
+              novelty_note: response.novelty_note || null,
+              lens: response.lens || null,
+              citation: response.citation || null,
+            } as any)
             .select('*, gd_participants(*)')
             .single();
 

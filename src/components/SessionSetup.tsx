@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, Sparkles, Lightbulb, Trash2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Users, Sparkles, Lightbulb, Trash2, ShieldCheck, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +47,7 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [moderatorEnabled, setModeratorEnabled] = useState(false);
+  const [citationEnabled, setCitationEnabled] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('recommended');
   const { user } = useAuth();
   const { toast } = useToast();
@@ -295,6 +296,9 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
       if (moderatorEnabled) {
         localStorage.setItem(`gd-moderator-${session.id}`, 'true');
       }
+      if (citationEnabled) {
+        localStorage.setItem(`gd-citation-${session.id}`, 'true');
+      }
 
       toast({
         title: "Session created",
@@ -506,6 +510,25 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
             />
           </div>
         </Card>
+
+        {/* Citation Mode Toggle */}
+        <Card className="p-4 border-4 border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-5 h-5 text-primary" />
+              <div>
+                <Label htmlFor="citation-toggle" className="font-bold text-sm cursor-pointer">Citation Mode</Label>
+                <p className="text-xs text-muted-foreground">AI participants must back up every counterpoint with a stat, study, case, or example</p>
+              </div>
+            </div>
+            <Switch
+              id="citation-toggle"
+              checked={citationEnabled}
+              onCheckedChange={setCitationEnabled}
+            />
+          </div>
+        </Card>
+
 
         <div className="flex justify-end gap-4">
           <Button 

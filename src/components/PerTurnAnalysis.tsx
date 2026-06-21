@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, TrendingUp, ArrowRight } from "lucide-react";
+import { MessageSquare, TrendingUp, ArrowRight, Sparkles, BookOpen } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Legend } from 'recharts';
 
 interface TurnAnalysis {
@@ -189,6 +189,122 @@ const PerTurnAnalysis = ({ messages, currentParticipantId, calculatedStats }: Pe
           </div>
         </div>
       </Card>
+
+      {/* AI Originality Breakdown (post-session review) */}
+      {(() => {
+        const aiMsgs = messages.filter(m => !m.gd_participants?.is_user && m.participant_id !== 'moderator');
+        if (aiMsgs.length === 0) return null;
+
+        const withNovelty = aiMsgs.filter(m => (m.novelty_note || '').trim().length > 0);
+        const withCitation = aiMsgs.filter(m => (m.citation || '').trim().length > 0);
+        const lensCounts: Record<string, number> = {};
+        aiMsgs.forEach(m => {
+          const l = (m.lens || 'unspecified').toLowerCase();
+          lensCounts[l] = (lensCounts[l] || 0) + 1;
+        });
+        const counterpointTurns = aiMsgs.filter(m => ['contradict', 'counterpoint'].includes((m.intent || '').toLowerCase()));
+        const counterpointWithCitation = counterpointTurns.filter(m => (m.citation || '').trim().length > 0);
+
+        const noveltyPct = Math.round((withNovelty.length / aiMsgs.length) * 100);
+        const citationPct = aiMsgs.length ? Math.round((withCitation.length / aiMsgs.length) * 100) : 0;
+        const counterpointCitedPct = counterpointTurns.length
+          ? Math.round((counterpointWithCitation.length / counterpointTurns.length) * 100)
+          : null;
+
+        return (
+          <Card className="p-6 border-4 border-border space-y-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <Sparkles className="w-6 h-6" />
+              AI ORIGINALITY REVIEW
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              How often AI participants brought a fresh angle, what lenses they used, and how well counterpoints were backed by citations.
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="p-3 border-2 border-border rounded">
+                <div className="text-2xl font-bold">{aiMsgs.length}</div>
+                <div className="text-[11px] text-muted-foreground uppercase">AI turns</div>
+              </div>
+              <div className="p-3 border-2 border-border rounded">
+                <div className="text-2xl font-bold text-green-600">{noveltyPct}%</div>
+                <div className="text-[11px] text-muted-foreground uppercase">Fresh angle logged</div>
+              </div>
+              <div className="p-3 border-2 border-border rounded">
+                <div className="text-2xl font-bold">{citationPct}%</div>
+                <div className="text-[11px] text-muted-foreground uppercase">Carried a citation</div>
+              </div>
+              <div className="p-3 border-2 border-border rounded">
+                <div className="text-2xl font-bold">
+                  {counterpointCitedPct === null ? '—' : `${counterpointCitedPct}%`}
+                </div>
+                <div className="text-[11px] text-muted-foreground uppercase">Counterpoints cited</div>
+              </div>
+            </div>
+
+            {Object.keys(lensCounts).length > 0 && (
+              <div>
+                <div className="text-xs font-bold uppercase text-muted-foreground mb-2">Lenses used</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(lensCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([lens, n]) => (
+                      <Badge key={lens} variant="secondary" className="text-[10px]">
+                        {lens} · {n}
+                      </Badge>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2 max-h-[420px] overflow-y-auto pr-2">
+              {aiMsgs.map((m, i) => {
+                const note = (m.novelty_note || '').trim();
+                const cite = (m.citation || '').trim();
+                const intent = (m.intent || '').toLowerCase();
+                const isCounter = intent === 'contradict' || intent === 'counterpoint';
+                const ok = note.length > 0;
+                return (
+                  <div
+                    key={m.id || i}
+                    className={`p-3 border-2 border-border rounded border-l-4 ${ok ? 'border-l-green-500' : 'border-l-yellow-500'}`}
+                  >
+                    <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold">{m.gd_participants?.persona_name || 'AI'}</span>
+                        {m.intent && (
+                          <Badge variant={isCounter ? 'destructive' : 'outline'} className="text-[10px]">
+                            {m.intent}
+                          </Badge>
+                        )}
+                        {m.lens && (
+                          <Badge variant="secondary" className="text-[10px]">{m.lens}</Badge>
+                        )}
+                      </div>
+                      {note ? (
+                        <Badge variant="outline" className="text-[10px] border-green-500/60 text-green-600">
+                          ✨ {note}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] border-yellow-500/60 text-yellow-600">
+                          no novelty note
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm leading-relaxed line-clamp-2">{m.text}</p>
+                    {cite && (
+                      <p className="mt-1 text-[11px] italic text-muted-foreground border-l-2 border-primary/40 pl-2 flex items-start gap-1">
+                        <BookOpen className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                        <span>{cite}</span>
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        );
+      })()}
     </div>
   );
 };
