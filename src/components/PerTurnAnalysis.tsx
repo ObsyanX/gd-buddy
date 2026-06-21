@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, TrendingUp, ArrowRight } from "lucide-react";
+import { MessageSquare, TrendingUp, ArrowRight, Sparkles, BookOpen } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Legend } from 'recharts';
 
 interface TurnAnalysis {
