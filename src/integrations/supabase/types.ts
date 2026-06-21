@@ -353,11 +353,14 @@ export type Database = {
       }
       gd_messages: {
         Row: {
+          citation: string | null
           confidence_estimate: number | null
           end_ts: string | null
           id: string
           intent: Database["public"]["Enums"]["participant_intent"] | null
           interruption: boolean | null
+          lens: string | null
+          novelty_note: string | null
           overlap_seconds: number | null
           participant_id: string
           session_id: string
@@ -366,11 +369,14 @@ export type Database = {
           tts_ssml: string | null
         }
         Insert: {
+          citation?: string | null
           confidence_estimate?: number | null
           end_ts?: string | null
           id?: string
           intent?: Database["public"]["Enums"]["participant_intent"] | null
           interruption?: boolean | null
+          lens?: string | null
+          novelty_note?: string | null
           overlap_seconds?: number | null
           participant_id: string
           session_id: string
@@ -379,11 +385,14 @@ export type Database = {
           tts_ssml?: string | null
         }
         Update: {
+          citation?: string | null
           confidence_estimate?: number | null
           end_ts?: string | null
           id?: string
           intent?: Database["public"]["Enums"]["participant_intent"] | null
           interruption?: boolean | null
+          lens?: string | null
+          novelty_note?: string | null
           overlap_seconds?: number | null
           participant_id?: string
           session_id?: string
