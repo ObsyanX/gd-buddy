@@ -428,25 +428,46 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
         return false;
       };
 
+      const originalityReport: any[] = [];
       parsedResponse.participant_responses = parsedResponse.participant_responses.filter((r: any) => {
         const check = moderateContent(r.text || '');
         if (check.blocked) {
           console.warn(`[Moderation] Filtered AI response from ${r.participant_id}: ${check.reason}`);
+          originalityReport.push({ participant_id: r.participant_id, ok: false, reason: 'moderation_blocked' });
           return false;
         }
         if (isEcho(r.text || '')) {
           console.warn(`[Originality] Dropped echo reply from ${r.participant_id}: "${r.text}"`);
+          originalityReport.push({ participant_id: r.participant_id, ok: false, reason: 'echo' });
           return false;
         }
-        // Require novelty_note to be present and non-trivial
         const note = (r.novelty_note || '').trim();
         if (!note || note.length < 3) {
           console.warn(`[Originality] Dropped reply from ${r.participant_id} — missing novelty_note`);
+          originalityReport.push({ participant_id: r.participant_id, ok: false, reason: 'missing_novelty_note' });
           return false;
         }
+        // Citation mode: enforce citation on contradict/counterpoint
+        const intent = (r.intent || '').toLowerCase();
+        const citation = (r.citation || '').trim();
+        if (citationMode && (intent === 'contradict' || intent === 'counterpoint') && citation.length < 4) {
+          console.warn(`[Citation] Dropped ${intent} reply from ${r.participant_id} — citation_mode requires a citation`);
+          originalityReport.push({ participant_id: r.participant_id, ok: false, reason: 'missing_citation' });
+          return false;
+        }
+        originalityReport.push({
+          participant_id: r.participant_id,
+          ok: true,
+          novelty_note: note,
+          lens: r.lens || null,
+          intent: r.intent || null,
+          has_citation: citation.length > 0,
+        });
         return true;
       });
+      parsedResponse.originality_report = originalityReport;
     }
+
 
     return new Response(
       JSON.stringify(parsedResponse),
