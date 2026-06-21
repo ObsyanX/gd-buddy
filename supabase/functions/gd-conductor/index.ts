@@ -315,14 +315,6 @@ Your response MUST include:
 4. "overall_feedback": A 2-3 sentence summary referencing the actual performance numbers
 
 IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statistics. Use the real data provided.` : ''}`;
-${request_type === 'post_session_report' ? `Generate a detailed post-session analysis using the ACTUAL METRICS provided above. 
-Your response MUST include:
-1. "strengths": Array of 3-5 specific strengths based on the real metrics (e.g., if WPM is in ideal range, mention that)
-2. "weaknesses": Array of 2-4 specific areas needing improvement based on the real metrics
-3. "drills": Array of 2-3 improvement exercises, each with "title" and "description"
-4. "overall_feedback": A 2-3 sentence summary referencing the actual performance numbers
-
-IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statistics. Use the real data provided.` : ''}`;
 
     // Call Lovable AI
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
