@@ -113,6 +113,7 @@ serve(async (req) => {
     console.log(`GD-Conductor: Processing ${request_type} for session ${session_id}`);
 
     const moderatorMode = config.moderator_mode || false;
+    const citationMode = config.citation_mode || false;
 
     // Build the system prompt
     const systemPrompt = `You are GD-Conductor — an AI that orchestrates realistic Group Discussion practice sessions. You control multiple AI participants with distinct personas.
