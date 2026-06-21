@@ -296,6 +296,9 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
       if (moderatorEnabled) {
         localStorage.setItem(`gd-moderator-${session.id}`, 'true');
       }
+      if (citationEnabled) {
+        localStorage.setItem(`gd-citation-${session.id}`, 'true');
+      }
 
       toast({
         title: "Session created",
