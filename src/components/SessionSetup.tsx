@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, Sparkles, Lightbulb, Trash2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Users, Sparkles, Lightbulb, Trash2, ShieldCheck, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
