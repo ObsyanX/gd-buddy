@@ -211,6 +211,7 @@ OUTPUT SCHEMA:
       "intent": "contradict|counterpoint|elaborate|example|ask_question|agree-with-addition|clarify|summarize",
       "lens": "data|legal|technical|design|human|business|ethical|ground-level|policy|economic|other",
       "novelty_note": "<=10 words describing the new angle this reply introduces",
+      "citation": "${citationMode ? 'REQUIRED for contradict|counterpoint — a stat, study, case, precedent, or example with plausible hedging. Empty string only if intent is not contradict/counterpoint.' : 'OPTIONAL — include a stat, study, case, or example when one supports the reply; empty string otherwise'}",
       "interruption": boolean,
       "overlap_seconds": number,
       "clip_strategy": "mix|fade_previous|cut_previous",
