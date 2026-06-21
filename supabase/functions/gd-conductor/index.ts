@@ -393,12 +393,43 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
       };
     }
 
-    // Post-moderation: scan AI-generated responses
-    if (parsedResponse.participant_responses) {
+    // Post-moderation + originality filter on AI-generated responses
+    if (parsedResponse.participant_responses && request_type === 'generate_responses') {
+      const userUtter = (latest_user_utterance || '').toLowerCase().trim();
+      const userTokens = new Set(
+        userUtter.split(/\W+/).filter(w => w.length > 4)
+      );
+
+      const isEcho = (text: string): boolean => {
+        const t = (text || '').toLowerCase().trim();
+        if (!t) return true;
+        // Pure agreement openers with no substance
+        if (/^(i\s+(totally\s+)?agree|exactly|absolutely|great point|that'?s (true|right)|well said|i second that)[\s.,!]*$/i.test(t)) return true;
+        // Heavy token overlap with the user's utterance (>=70% of user's content words echoed in a short reply)
+        if (userTokens.size >= 3) {
+          const replyTokens = new Set(t.split(/\W+/));
+          let overlap = 0;
+          userTokens.forEach(tok => { if (replyTokens.has(tok)) overlap++; });
+          const ratio = overlap / userTokens.size;
+          if (ratio >= 0.7 && t.length < userUtter.length * 1.4) return true;
+        }
+        return false;
+      };
+
       parsedResponse.participant_responses = parsedResponse.participant_responses.filter((r: any) => {
         const check = moderateContent(r.text || '');
         if (check.blocked) {
           console.warn(`[Moderation] Filtered AI response from ${r.participant_id}: ${check.reason}`);
+          return false;
+        }
+        if (isEcho(r.text || '')) {
+          console.warn(`[Originality] Dropped echo reply from ${r.participant_id}: "${r.text}"`);
+          return false;
+        }
+        // Require novelty_note to be present and non-trivial
+        const note = (r.novelty_note || '').trim();
+        if (!note || note.length < 3) {
+          console.warn(`[Originality] Dropped reply from ${r.participant_id} — missing novelty_note`);
           return false;
         }
         return true;
