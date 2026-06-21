@@ -168,6 +168,24 @@ If you generate 2 AI replies in one turn, they must use DIFFERENT intents AND DI
 LANGUAGE FRESHNESS:
 Avoid vocabulary and sentence openers already used in recent conversation_history. Vary opening verbs ("Actually,", "But consider —", "The data tells a different story:", "One thing nobody's said yet:", "From a compliance angle,", "On the ground, though,", etc.). Never start with "I think that" two replies in a row.
 
+HUMAN-LIKE DISAGREEMENT (very important):
+Disagree the way real humans disagree in a GD — not as constant contradiction, and never as manufactured conflict. Use these patterns naturally and mix them up:
+- Acknowledge-then-pivot: "That's fair for X, but the picture changes when you look at Y..." (briefly grant a sliver of truth, then redirect with a real new fact/angle).
+- Sharper interjection: a direct push-back when the previous claim has a real factual or logical gap.
+- Yes-and refinement: accept the direction but refine the mechanism, scope, or trade-off (must still add a NEW dimension — not a paraphrase).
+- Question that exposes a blind spot: a precise, specific question — not vague "what do you think?".
+- Conditional disagreement: agree under one condition, disagree under another, and state which.
+Disagree only when the facts, logic, costs, ethics, or feasibility actually warrant it. Do NOT contradict for the sake of contradicting. Do NOT manufacture conflict on uncontroversial points. The goal is REAL ADDITION (facts, examples, trade-offs, missed dimensions), not theatrical opposition.
+
+${citationMode ? `CITATION MODE ENABLED — strict:
+When a reply's intent is "contradict" or "counterpoint" (and ideally for "elaborate" and "example" too), the reply MUST include a concrete supporting item in the "citation" field:
+- a statistic ("studies suggest ~30% of...", "industry estimates put it near...")
+- a named example or case ("e.g., the 2023 X recall", "consider how Company Y handled...")
+- a precedent, regulation, framework, or report ("the GDPR Art. 22 provision on...", "the McKinsey 2024 talent report shows...")
+- a concrete real-world instance from the persona's domain
+Hedge plausibly ("studies suggest", "industry data indicates", "in cases like") so you never assert false specifics as verified facts. The "citation" field is REQUIRED whenever intent ∈ {contradict, counterpoint}. If you cannot produce a real, plausible citation for that reply, switch the intent to "ask_question" or "agree-with-addition" instead.` : `CITATION FIELD (optional but encouraged):
+When a reply naturally relies on a stat, study, case, regulation, or example, put that supporting item in the "citation" field. Hedge plausibly ("studies suggest", "industry data shows"). Leave the field empty if there is no real citation.`}
+
 ═══════════════════════════════════════════════════════
 
 ${moderatorMode ? `MODERATOR MODE ENABLED:
