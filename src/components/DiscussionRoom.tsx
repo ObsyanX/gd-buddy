@@ -453,6 +453,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             interruption_mode: 'light',
             invigilator_mode: 'coaching',
             moderator_mode: localStorage.getItem(`gd-moderator-${sessionId}`) === 'true',
+            citation_mode: localStorage.getItem(`gd-citation-${sessionId}`) === 'true',
             originality_mode: 'strict',
           },
           request: 'generate_responses'
