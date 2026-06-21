@@ -449,10 +449,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           conversation_history: conversationHistory,
           latest_user_utterance: messageText,
           config: {
-            max_reply_words: 40,
+            max_reply_words: 55,
             interruption_mode: 'light',
             invigilator_mode: 'coaching',
             moderator_mode: localStorage.getItem(`gd-moderator-${sessionId}`) === 'true',
+            originality_mode: 'strict',
           },
           request: 'generate_responses'
         }
