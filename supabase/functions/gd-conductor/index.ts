@@ -257,15 +257,39 @@ BENCHMARKS:
 INDUSTRY BENCHMARKS PROVIDED:
 ${JSON.stringify(body.benchmarks, null, 2)}` : '';
 
+    // Derive a "must-bring" instruction from each persona's role so the LLM
+    // anchors every reply to that participant's lens (no generic agreement).
+    const mustBringFor = (role: string = ''): string => {
+      const r = role.toLowerCase();
+      if (/(data|research|analyst|economist|financial)/.test(r)) return 'a number, stat, study, ratio, or trend';
+      if (/(legal|policy|counsel|compliance|advisor)/.test(r)) return 'a specific risk, regulation, precedent, or governance gap';
+      if (/(engineer|developer|software|cyber|security|tech)/.test(r)) return 'a technical constraint, feasibility limit, or attack surface';
+      if (/(design|strategy|consultant|creative)/.test(r)) return 'a reframing, UX angle, or long-horizon implication';
+      if (/(hr|psycholog|team lead|coach|people)/.test(r)) return 'a human, behavioral, motivational, or culture consequence';
+      if (/(business|founder|startup|operations|product|manager)/.test(r)) return 'an ROI, speed, execution, or opportunity-cost angle';
+      if (/(activist|sustain|environment|esg|media|public)/.test(r)) return 'an ethical, equity, environmental, or public-perception angle';
+      if (/(student|youth|rep)/.test(r)) return 'a ground-level, lived, campus, or first-job example';
+      return 'a fresh angle the room has NOT yet covered';
+    };
+
     const userMessage = `Topic: ${topic}
 Category: ${topic_meta.category || 'General'}
 Difficulty: ${topic_meta.difficulty || 'Medium'}
 
 Participants:
-${participants.map((p: any) => `- ${p.id} (${p.is_user ? 'USER' : 'AI'}): ${p.persona?.name || 'Participant'} - ${p.persona?.tone || 'neutral'} tone, ${p.persona?.verbosity || 'moderate'} verbosity`).join('\n')}
+${participants.map((p: any) => {
+  if (p.is_user) {
+    return `- ${p.id} (USER): ${p.persona?.name || 'Participant'} — do NOT generate a reply for this participant.`;
+  }
+  const persona = p.persona || {};
+  const role = persona.role || 'Discussant';
+  const must = mustBringFor(role);
+  return `- ${p.id} (AI): ${persona.name || 'Participant'} | Role: ${role} | Tone: ${persona.tone || 'neutral'} | Verbosity: ${persona.verbosity || 'moderate'} | Vocab: ${persona.vocab_level || 'intermediate'} | Agreeability: ${persona.agreeability ?? 0} | Interrupt: ${persona.interrupt_level ?? 0.2}
+  LENS LOCK → every reply from ${persona.name || p.id} MUST bring ${must}. If the draft reply does not, rewrite it.`;
+}).join('\n')}
 
-Recent conversation:
-${conversationContext || 'No previous turns'}
+Recent conversation (most recent last):
+${conversationContext || 'No previous turns — this is the opening of the discussion.'}
 
 Latest user utterance: "${latest_user_utterance}"
 ${metricsContext}
@@ -273,8 +297,24 @@ ${benchmarksInfo}
 
 Request: ${request_type}
 
-${request_type === 'generate_responses' ? 'Generate AI participant responses now.' : ''}
+${request_type === 'generate_responses' ? `Generate AI participant responses now.
+
+REMINDER — apply the ORIGINALITY ENGINE strictly:
+1. Do NOT paraphrase or agree-only with the user's last point.
+2. Each chosen AI must speak from its LENS LOCK above.
+3. If 2 AIs reply, they must use DIFFERENT intents AND DIFFERENT lenses.
+4. Bias toward contradict / counterpoint / new-evidence / sharp-question intents.
+5. Fill the "novelty_note" field for each reply — if you cannot state a new angle in <=10 words, the reply is invalid; rewrite it.
+6. Vary opening phrases; do not reuse openers already in the recent conversation.` : ''}
 ${request_type === 'invigilator_update' ? 'Provide invigilator feedback based on metrics.' : ''}
+${request_type === 'post_session_report' ? `Generate a detailed post-session analysis using the ACTUAL METRICS provided above. 
+Your response MUST include:
+1. "strengths": Array of 3-5 specific strengths based on the real metrics (e.g., if WPM is in ideal range, mention that)
+2. "weaknesses": Array of 2-4 specific areas needing improvement based on the real metrics
+3. "drills": Array of 2-3 improvement exercises, each with "title" and "description"
+4. "overall_feedback": A 2-3 sentence summary referencing the actual performance numbers
+
+IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statistics. Use the real data provided.` : ''}`;
 ${request_type === 'post_session_report' ? `Generate a detailed post-session analysis using the ACTUAL METRICS provided above. 
 Your response MUST include:
 1. "strengths": Array of 3-5 specific strengths based on the real metrics (e.g., if WPM is in ideal range, mention that)
