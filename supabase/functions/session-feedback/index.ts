@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { callAI, AIProviderError } from "../_shared/ai-with-fallback.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,8 +11,6 @@ serve(async (req) => {
 
   try {
     const { topic, conversation, metrics, videoMetrics } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const systemPrompt = `You are an expert Group Discussion (GD) coach and communication skills evaluator. 
 Analyze the participant's overall performance in this group discussion and provide detailed, personalized feedback.
