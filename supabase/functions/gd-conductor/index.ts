@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { callAI, AIProviderError } from "../_shared/ai-with-fallback.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -336,14 +337,10 @@ Your response MUST include:
 
 IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statistics. Use the real data provided.` : ''}`;
 
-    // Call Lovable AI
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    // Call AI (Lovable AI → Groq fallback)
+    let aiResponse;
+    try {
+      aiResponse = await callAI({
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
@@ -353,38 +350,33 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
         top_p: 0.95,
         frequency_penalty: 0.6,
         presence_penalty: 0.6,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'rate_limit', message: 'AI rate limit exceeded. Please wait a moment.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      });
+    } catch (e) {
+      if (e instanceof AIProviderError) {
+        console.error('AI providers failed:', e.provider, e.status, e.body);
+        if (e.status === 429) {
+          return new Response(
+            JSON.stringify({ error: 'rate_limit', message: 'AI rate limit exceeded. Please wait a moment.' }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        if (e.status === 402) {
+          return new Response(
+            JSON.stringify({ error: 'payment_required', message: 'AI credits depleted. Please add more credits.' }),
+            { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'payment_required', message: 'AI credits depleted. Please add more credits.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      throw new Error(`AI Gateway failed: ${response.status}`);
+      throw e;
     }
 
-    const aiResponse = await response.json();
     const content = aiResponse.choices?.[0]?.message?.content;
 
     if (!content) {
       throw new Error('No content in AI response');
     }
 
-    console.log('AI Response:', content);
+    console.log(`AI Response (provider=${aiResponse._provider}):`, content);
 
     // Parse JSON from response (handle potential markdown wrapping)
     let parsedResponse;
