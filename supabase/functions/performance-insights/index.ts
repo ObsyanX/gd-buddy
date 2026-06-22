@@ -124,21 +124,14 @@ Respond ONLY with a JSON array of objects, each with:
 If no data, give general beginner tips. Sort by priority.`;
 
     const aiStartTime = performance.now();
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-      }),
+    const aiData = await callAI({
+      model: 'google/gemini-2.5-flash',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
     });
     const aiLatencyMs = Math.round(performance.now() - aiStartTime);
+    log('info', 'AI provider used', { provider: aiData._provider, ai_latency_ms: aiLatencyMs });
 
-    const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content || '[]';
     
     const jsonMatch = content.match(/\[[\s\S]*\]/);
