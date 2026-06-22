@@ -1,85 +1,50 @@
-## Problem
+# Plan: Groq Fallback for Lovable AI
 
-Right now AI participants in GD sessions often paraphrase or mildly agree with whatever the user just said. They don't introduce new angles, data, counterpoints, or lived-experience perspectives. The conductor prompt asks for "intent variety" but never forces *novelty*, never tracks what's already been said, and never anchors each persona to a distinct lens. Result: discussion feels like an echo chamber.
+When Lovable AI returns 429/402/5xx or fails, automatically retry the same request against Groq using the existing `GROQ_API_KEY` secret. Behavior stays identical on success — users get the same JSON/tool-call/text responses.
 
-## Root causes (from the current code)
+## Approach
 
-1. `**gd-conductor` system prompt** has no "originality" or "no-echo" rule. It only caps length and lists intents.
-2. **Persona definitions** carry a `corePerspective` string (e.g. "Fact-driven, statistics") but it's not aggressively injected per-turn — the prompt only sends `tone` + `verbosity` for each participant.
-3. **No "covered points" memory.** The conductor sees raw conversation history but isn't told *what angles are already exhausted*, so the LLM defaults to safe restatement.
-4. **Temperature 0.8 + 40-word cap** pushes the model toward short, generic agreement.
-5. **Intent distribution isn't enforced.** `agree` is just as likely as `contradict` / `counterpoint` / `example`.
+Create one shared helper `supabase/functions/_shared/ai-with-fallback.ts` exposing `chatCompletion({ messages, model, temperature, max_tokens, tools, tool_choice, response_format })`. It:
 
-## Plan
+1. Calls Lovable AI Gateway (`https://ai.gateway.lovable.dev/v1/chat/completions`) with `LOVABLE_API_KEY` and the requested model (default `google/gemini-3-flash-preview`).
+2. If response is not ok (429, 402, 5xx) OR the fetch throws, logs and falls back to Groq (`https://api.groq.com/openai/v1/chat/completions`) using `GROQ_API_KEY`.
+3. Maps the model name to a Groq equivalent:
+  - `google/gemini-*flash*` / default → `llama-3.3-70b-versatile`
+  - reasoning/pro tier → `llama-3.3-70b-versatile`
+  - (single map, easy to tune later)
+4. Forwards `tools` / `tool_choice` / `response_format` unchanged (Groq supports OpenAI-compatible tool calling and JSON mode).
+5. Returns the raw OpenAI-format JSON response so existing parsing code works untouched.
 
-### 1. Rewrite the GD-Conductor system prompt (core fix)
+## Files to update
 
-File: `supabase/functions/gd-conductor/index.ts`
+Replace direct `fetch('https://ai.gateway.lovable.dev/...')` calls with `chatCompletion(...)` in:
 
-Add a dedicated **"Originality Engine"** section that mandates:
+- `supabase/functions/gd-conductor/index.ts`
+- `supabase/functions/session-feedback/index.ts` (preserves tool-calling for `provide_feedback`)
+- `supabase/functions/drill-feedback/index.ts`
+- `supabase/functions/performance-insights/index.ts`
+- `supabase/functions/transcription-correction/index.ts`
+- `supabase/functions/gd-topics/index.ts`
 
-- **No-echo rule:** an AI reply must not restate the user's point. If it agrees, it must add a *new* sub-point, data point, example, or caveat the user did NOT mention.
-- **Fresh-angle quota:** across the 1–2 AI responses per turn, at least one must use intent `counterpoint`, `contradict`, `example`, `ask_question`, or `elaborate-with-new-evidence`. Plain `agree` is allowed only if paired with a new dimension.
-- **Persona lens lock:** each AI must argue *from their `corePerspective*` — Aditya cites a statistic or study, Vikram raises a legal/risk angle, Meera proposes a creative reframing, Vikrant (economist) brings a macro number, the student rep brings ground-level experience, etc. Inject `corePerspective` + `role` + `description` into the per-participant block of the user message (not just tone/verbosity).
-- **Angle diversity across turns:** the two chosen AIs in one turn must use *different* intents and *different* lenses (no two analysts back-to-back unless contradicting each other).
+New file:
 
-### 2. Add a "covered ground" tracker
+- `supabase/functions/_shared/ai-with-fallback.ts`
 
-Same file, inside the user message we build for the LLM:
+## Error handling
 
-- Derive a short bulleted list of **angles already raised** from `conversation_history` (the conductor LLM does this itself — we just ask for it in the prompt: "Before responding, internally list angles already covered; do NOT repeat them").
-- Add an explicit instruction: *"Forbidden: paraphrasing, generic agreement, restating the topic, hedging without a new claim."*
+- Lovable 402/429/5xx or network error → fallback to Groq.
+- Lovable 4xx other than 402/429 (bad request) → return error as-is (no point retrying).
+- Groq failure after fallback → throw, caller returns existing error response shape.
+- Each function logs which provider served the response (`provider: 'lovable' | 'groq'`).
+- Use for TTS, STT (separate endpoints) as well if required 
+  &nbsp;
 
-### 3. Strengthen per-participant injection
+## Deployment
 
-Replace the current line:
+Deploy all 6 edited functions after the changes.
 
-```
-- {id} (AI): {name} - {tone} tone, {verbosity} verbosity
-```
+## Out of scope
 
-with a richer block that includes `role`, `corePerspective`, `description`, `vocab_level`, `agreeability`, and a **"must-bring" instruction** derived from the persona (e.g. analyst → "must cite a number, stat, or trend"; legal → "must raise a risk, regulation, or precedent"; designer → "must propose a creative reframe or user-experience angle"; student rep → "must give a ground-level/lived example").
-
-### 4. Add intent weighting + reply-shape guidance
-
-In the prompt rules:
-
-- Bias intent selection: roughly 40% counterpoint/contradict, 30% elaborate-with-new-evidence/example, 20% ask_question, 10% agree-with-addition. Pure `agree` is disallowed.
-- Allow replies up to **55 words** (was 40) so there's room for a new claim + brief support.
-- Keep temperature 0.8 but add `top_p: 0.95` and a small `presence_penalty`-style instruction in the prompt ("avoid vocabulary and phrasing already used in conversation_history").
-
-### 5. Optional: a lightweight "novelty self-check"
-
-Ask the conductor to include, per response, a `novelty_note` field summarizing the new angle in <=8 words. We don't render it in the UI; it forces the model to commit to bringing something new. Drop responses whose `novelty_note` is empty or restates the user.
-
-### 6. Persona file touch-up (small)
-
-File: `src/config/personas.ts`
-
-- Add an optional `mustBring: string` field to `PersonaTemplate` (e.g. Aditya: "a statistic or trend"; Vikram: "a legal/compliance risk"; Karthik: "a technical constraint or implementation reality"; Neha (researcher): "a study or framework"; student rep: "a campus/ground-level example").
-- The conductor reads `mustBring` and injects it into the per-participant block.
-- Backward compatible: personas without `mustBring` fall back to a default derived from `corePerspective`.
-
-### 7. No UI changes required
-
-This is a behavior change in the conductor edge function + persona metadata. The DiscussionRoom UI, TTS pipeline, and turn-taking logic stay the same.
-
-## Files touched
-
-- `supabase/functions/gd-conductor/index.ts` — rewrite system prompt + user-message participant block, add originality rules, intent weighting, novelty self-check, bump word cap to ~55.
-- `src/config/personas.ts` — add optional `mustBring` field + populate for the 20 built-in personas.
-
-## Expected result
-
-- AI participants stop paraphrasing the user.
-- Each AI argument is anchored to its persona's lens (data / law / design / ops / research / student voice / economics / policy / etc.).
-- Within a single turn, the 2 AI responses cover *different* angles with *different* intents.
-- The discussion feels like a real GD: people disagree, add evidence, raise risks, and reframe — instead of nodding along.
-
-## Try to include 
-
-- Retrieval-augmented "real" facts/citations (would need a search tool wired into the conductor).
-- Persona long-term memory across sessions.
-- Per-persona separate LLM calls (current single-call orchestration is preserved for cost/latency).
-- Retraining the model based on the data given everytime based on the data given , found or calculated  or searched, i wanted automatic retraining.
--   
+- Streaming responses (none of the current functions stream).
+- Image generation, TTS, STT (separate endpoints, not affected).
+- Client-side fallback logic (handled entirely server-side, transparent to frontend).

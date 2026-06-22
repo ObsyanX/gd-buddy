@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { callAI } from "../_shared/ai-with-fallback.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -95,13 +96,9 @@ IMPORTANT RULES:
       ? `Context: This is from a group discussion about "${context}"\n\nRaw transcription to correct:\n"${rawTranscription}"`
       : `Raw transcription to correct:\n"${rawTranscription}"`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    let data;
+    try {
+      data = await callAI({
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
@@ -109,20 +106,15 @@ IMPORTANT RULES:
         ],
         temperature: 0.3,
         max_tokens: 500,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI API error:', response.status, errorText);
-      // Return original on error
+      });
+    } catch (err) {
+      console.error('AI providers failed; returning original transcription:', err);
       return new Response(
         JSON.stringify({ correctedText: rawTranscription }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const data = await response.json();
+    console.log(`Transcription correction provider: ${data._provider}`);
     const correctedText = data.choices?.[0]?.message?.content?.trim() || rawTranscription;
 
     console.log('Corrected transcription:', correctedText);
