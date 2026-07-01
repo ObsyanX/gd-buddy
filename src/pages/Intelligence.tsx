@@ -20,39 +20,74 @@ interface SessionSummary {
   replay_events: number;
 }
 
+const RADAR_KEYS = [
+  "clarity",
+  "reasoning",
+  "collaboration",
+  "evidence",
+  "emotional_intelligence",
+  "leadership",
+] as const;
+
 async function loadLatestSummary(userId: string): Promise<SessionSummary | null> {
-  const { data: sess } = await supabase
+  const sessRes = await supabase
     .from("gd_sessions")
     .select("id, topic, created_at")
     .eq("created_by", userId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+  const sess = sessRes.data as { id: string; topic: string | null; created_at: string } | null;
   if (!sess) return null;
 
-  const [health, scores, decisions, facts, fallacies, dups, contras, replay] = await Promise.all([
-    supabase.from("discussion_health").select("score").eq("session_id", sess.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("session_scores").select("clarity, relevance, engagement, evidence, teamwork, leadership").eq("session_id", sess.id).maybeSingle(),
-    supabase.from("moderator_decisions").select("*", { count: "exact", head: true }).eq("session_id", sess.id),
-    supabase.from("fact_checks").select("*", { count: "exact", head: true }).eq("session_id", sess.id),
-    supabase.from("fallacies").select("*", { count: "exact", head: true }).eq("session_id", sess.id),
-    supabase.from("duplicate_ideas").select("*", { count: "exact", head: true }).eq("session_id", sess.id),
-    supabase.from("contradictions").select("*", { count: "exact", head: true }).eq("session_id", sess.id),
-    supabase.from("session_replays").select("event_count").eq("session_id", sess.id).maybeSingle(),
+  const sid = sess.id;
+  const countHead = { count: "exact" as const, head: true };
+
+  const healthRow = await supabase
+    .from("discussion_health")
+    .select("overall_health")
+    .eq("session_id", sid)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const scoresRow = await supabase
+    .from("session_scores")
+    .select("clarity, reasoning, collaboration, evidence, emotional_intelligence, leadership")
+    .eq("session_id", sid)
+    .maybeSingle();
+
+  const [decisions, facts, fallacies, dups, contras, replay] = await Promise.all([
+    supabase.from("moderator_decisions").select("*", countHead).eq("session_id", sid),
+    supabase.from("fact_checks").select("*", countHead).eq("session_id", sid),
+    supabase.from("fallacies").select("*", countHead).eq("session_id", sid),
+    supabase.from("duplicate_ideas").select("*", countHead).eq("session_id", sid),
+    supabase.from("contradictions").select("*", countHead).eq("session_id", sid),
+    supabase.from("session_replays").select("event_count").eq("session_id", sid).maybeSingle(),
   ]);
+
+  const health = healthRow.data ? Number((healthRow.data as { overall_health: number }).overall_health) : null;
+  let radar: Record<string, number> | null = null;
+  if (scoresRow.data) {
+    radar = {};
+    for (const k of RADAR_KEYS) {
+      const v = (scoresRow.data as Record<string, unknown>)[k];
+      if (typeof v === "number") radar[k] = v;
+    }
+  }
 
   return {
     id: sess.id,
     topic: sess.topic,
     created_at: sess.created_at,
-    health: health.data ? Number(health.data.score) : null,
-    radar: scores.data as Record<string, number> | null,
+    health,
+    radar,
     policy_actions: decisions.count ?? 0,
     fact_checks: facts.count ?? 0,
     fallacies: fallacies.count ?? 0,
     duplicates: dups.count ?? 0,
     contradictions: contras.count ?? 0,
-    replay_events: (replay.data?.event_count as number | undefined) ?? 0,
+    replay_events: ((replay.data as { event_count?: number } | null)?.event_count) ?? 0,
   };
 }
 
@@ -64,11 +99,14 @@ export default function Intelligence() {
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       try {
         const [s, l] = await Promise.all([
           loadLatestSummary(user.id),
-          fetchLatencySnapshot(60).catch(() => []),
+          fetchLatencySnapshot(60).catch(() => [] as LatencyBucket[]),
         ]);
         setSummary(s);
         setLatency(l);
@@ -121,8 +159,12 @@ export default function Intelligence() {
             <Card>
               <CardHeader><CardTitle className="text-lg">Radar (6-axis)</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {(["clarity","relevance","engagement","evidence","teamwork","leadership"] as const).map((k) => (
-                  <Stat key={k} label={k} value={summary.radar?.[k] != null ? Number(summary.radar[k]).toFixed(2) : "—"} />
+                {RADAR_KEYS.map((k) => (
+                  <Stat
+                    key={k}
+                    label={k.replace(/_/g, " ")}
+                    value={summary.radar?.[k] != null ? Number(summary.radar[k]).toFixed(2) : "—"}
+                  />
                 ))}
               </CardContent>
             </Card>
