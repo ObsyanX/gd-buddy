@@ -71,6 +71,10 @@ const BottomNav = () => {
 
   const showInstall = !installed && (canInstall || isIOS);
 
+  if (isDiscussionSession) {
+    return null;
+  }
+
   const secondary = [
     { label: "Drills", icon: Dumbbell, onClick: () => go("/home/drills") },
     { label: "Instructor", icon: GraduationCap, onClick: () => go("/home/instructor") },
