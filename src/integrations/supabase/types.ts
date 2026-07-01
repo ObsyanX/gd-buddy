@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          code: string
+          created_at: string
+          criteria: Json | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          xp_reward: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          criteria?: Json | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          xp_reward?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          criteria?: Json | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       background_jobs: {
         Row: {
           attempts: number
@@ -427,11 +460,16 @@ export type Database = {
           eye_contact_score: number | null
           filler_count: number | null
           fluency_score: number | null
+          grammar_score: number | null
           id: string
+          leadership_score: number | null
           posture_score: number | null
+          sentiment_score: number | null
+          sentiment_timeline: Json | null
           session_id: string
           star_analysis: Json | null
           structure_score: number | null
+          teamwork_score: number | null
           total_words: number | null
           updated_at: string
           video_tips: Json | null
@@ -447,11 +485,16 @@ export type Database = {
           eye_contact_score?: number | null
           filler_count?: number | null
           fluency_score?: number | null
+          grammar_score?: number | null
           id?: string
+          leadership_score?: number | null
           posture_score?: number | null
+          sentiment_score?: number | null
+          sentiment_timeline?: Json | null
           session_id: string
           star_analysis?: Json | null
           structure_score?: number | null
+          teamwork_score?: number | null
           total_words?: number | null
           updated_at?: string
           video_tips?: Json | null
@@ -467,11 +510,16 @@ export type Database = {
           eye_contact_score?: number | null
           filler_count?: number | null
           fluency_score?: number | null
+          grammar_score?: number | null
           id?: string
+          leadership_score?: number | null
           posture_score?: number | null
+          sentiment_score?: number | null
+          sentiment_timeline?: Json | null
           session_id?: string
           star_analysis?: Json | null
           structure_score?: number | null
+          teamwork_score?: number | null
           total_words?: number | null
           updated_at?: string
           video_tips?: Json | null
@@ -607,6 +655,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       practice_streaks: {
         Row: {
           current_streak: number
@@ -646,24 +727,36 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
+          email: string | null
           id: string
+          level: number
           updated_at: string
+          xp: number
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           id: string
+          level?: number
           updated_at?: string
+          xp?: number
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           id?: string
+          level?: number
           updated_at?: string
+          xp?: number
         }
         Relationships: []
       }
@@ -894,6 +987,91 @@ export type Database = {
             foreignKeyName: "training_data_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: true
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_feedback: {
+        Row: {
+          ai_accuracy_rating: number | null
+          category_ratings: Json | null
+          comments: string | null
+          created_at: string
+          id: string
+          nps: number | null
+          quality_rating: number | null
+          session_id: string | null
+          stars: number
+          ui_rating: number | null
+          updated_at: string
+          user_id: string
+          would_recommend: boolean | null
+        }
+        Insert: {
+          ai_accuracy_rating?: number | null
+          category_ratings?: Json | null
+          comments?: string | null
+          created_at?: string
+          id?: string
+          nps?: number | null
+          quality_rating?: number | null
+          session_id?: string | null
+          stars: number
+          ui_rating?: number | null
+          updated_at?: string
+          user_id: string
+          would_recommend?: boolean | null
+        }
+        Update: {
+          ai_accuracy_rating?: number | null
+          category_ratings?: Json | null
+          comments?: string | null
+          created_at?: string
+          id?: string
+          nps?: number | null
+          quality_rating?: number | null
+          session_id?: string | null
+          stars?: number
+          ui_rating?: number | null
+          updated_at?: string
+          user_id?: string
+          would_recommend?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_feedback_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
             referencedRelation: "gd_sessions"
             referencedColumns: ["id"]
           },
