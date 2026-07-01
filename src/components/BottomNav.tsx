@@ -190,7 +190,7 @@ const NavBtn = ({
     aria-label={item.label}
     aria-current={active ? "page" : undefined}
     className={cn(
-      "flex-1 min-w-0 h-12 flex flex-col items-center justify-center gap-0.5 rounded-full transition-colors",
+      "flex-1 min-w-0 h-12 flex flex-col items-center justify-center gap-0.5 rounded-full transition-colors tap focus-ring",
       active ? "text-primary-glow" : "text-muted-foreground hover:text-foreground",
     )}
   >
