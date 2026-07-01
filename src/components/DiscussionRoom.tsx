@@ -280,11 +280,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       console.log('[Multiplayer] Cleaning up participants subscription');
       supabase.removeChannel(participantsChannel);
     };
-  }, [sessionId, session?.is_multiplayer]);
+  }, [sessionId, session?.is_multiplayer, isPaused]);
 
   // Realtime subscription for multiplayer message sync
   useEffect(() => {
-    if (!session?.is_multiplayer) return;
+    if (!session?.is_multiplayer || isPaused) return;
 
     console.log('[Multiplayer] Setting up realtime subscription for session:', sessionId);
 
