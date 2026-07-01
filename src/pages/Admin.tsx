@@ -314,8 +314,8 @@ const Admin = () => {
 
       <main className="container mx-auto p-8 space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard icon={Users} label="USERS" value={stats.users} target="users" />
-          <KpiCard icon={MessageSquare} label="SESSIONS" value={stats.sessions} target="sessions" />
+          <KpiCard icon={Users} label="USERS" value={stats.users} sub={`${stats.activeUsers} active (15m)`} target="users" />
+          <KpiCard icon={MessageSquare} label="SESSIONS" value={stats.sessions} sub={`${stats.activeSessions} live`} target="sessions" />
           <KpiCard icon={Star} label="FEEDBACK" value={stats.feedback} sub={`avg ${stats.avgRating || 0}★`} target="feedback" />
           <KpiCard icon={AlertTriangle} label="ERRORS" value={stats.errors} target="errors" />
         </div>
