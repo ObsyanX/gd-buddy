@@ -55,7 +55,7 @@ const AppLayout = () => {
   const showInstall = !installed && (canInstall || isIOS);
 
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="min-h-dvh flex flex-col relative">
       {/* Ambient orbs shared across the app */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10" aria-hidden="true">
         <div className="ambient-orb w-[60vw] h-[60vw] -top-[20%] -left-[15%]" style={{ background: "hsl(29 60% 45% / 0.4)" }} />
@@ -63,8 +63,9 @@ const AppLayout = () => {
       </div>
 
       {/* Glass header */}
-      <header className="sticky top-0 z-40 py-3 md:py-4 px-1.5 sm:px-3 md:px-6" role="banner">
-        <div className="w-full lg:container lg:mx-auto">
+      <header className="sticky top-0 z-40 pt-safe py-3 md:py-4 px-1.5 sm:px-3 md:px-6" role="banner">
+        <div className="w-full container-app">
+
           <div className="glass rounded-full px-2 sm:px-3 md:px-5 py-2.5 flex items-center justify-between">
             <Link to="/home" className="flex items-center gap-2.5 md:gap-3 group min-w-0 tap focus-ring rounded-full" aria-label="GD Buddy Home">
               <div className="relative shrink-0 gpu">
