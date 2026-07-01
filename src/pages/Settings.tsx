@@ -226,6 +226,28 @@ const Settings = () => {
             SAVE ALL PREFERENCES
           </Button>
 
+          {/* Change Password */}
+          <Card className="p-6 border-4 border-border space-y-4">
+            <div className="flex items-center gap-2">
+              <Lock className="w-6 h-6" />
+              <h2 className="text-2xl font-bold">CHANGE PASSWORD</h2>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="newPw">New password</Label>
+                <Input id="newPw" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="border-2" autoComplete="new-password" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="confirmPw">Confirm password</Label>
+                <Input id="confirmPw" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="border-2" autoComplete="new-password" />
+              </div>
+              <Button onClick={handleChangePassword} disabled={changingPw} className="border-2">
+                {changingPw ? 'UPDATING...' : 'UPDATE PASSWORD'}
+              </Button>
+            </div>
+          </Card>
+
+
           {/* Keyboard Shortcuts */}
           <Card className="p-6 border-4 border-border space-y-4">
             <div className="flex items-center gap-2">
