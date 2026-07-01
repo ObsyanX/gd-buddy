@@ -625,39 +625,39 @@ const Admin = () => {
               </Card>
             </div>
 
-            <Card className="p-4 border-4 border-border space-y-3">
-              <h3 className="font-bold">Grouped Errors — Root Cause & Fix</h3>
-              {errorGroups.length === 0 && <p className="text-center text-muted-foreground">No active errors logged in the last 24 hours.</p>}
+            <Card className="p-3 sm:p-4 border-4 border-border space-y-3">
+              <h3 className="font-bold text-sm sm:text-base">Grouped Errors — Root Cause & Fix</h3>
+              {errorGroups.length === 0 && <p className="text-center text-muted-foreground text-sm">No active errors logged in the last 24 hours.</p>}
               {errorGroups.map((g, i) => (
-                <div key={i} className="border-2 border-border p-3 rounded space-y-2">
-                  <div className="flex items-start justify-between gap-2 flex-wrap">
+                <div key={i} className="border-2 border-border p-2 sm:p-3 rounded space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant={severityColor(g.severity) as any}>{g.severity.toUpperCase()}</Badge>
-                        <span className="font-bold">{g.category}</span>
-                        <Badge variant="outline">{g.count}×</Badge>
-                        <span className="text-xs text-muted-foreground">last: {new Date(g.lastSeen).toLocaleString()}</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge variant={severityColor(g.severity) as any} className="text-[10px] sm:text-xs">{g.severity.toUpperCase()}</Badge>
+                        <span className="font-bold text-sm sm:text-base">{g.category}</span>
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">{g.count}×</Badge>
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">last: {new Date(g.lastSeen).toLocaleString()}</span>
                       </div>
-                      <p className="text-sm mt-1 font-mono break-words">{g.sample.error_message}</p>
+                      <p className="text-xs sm:text-sm mt-1 font-mono break-words">{g.sample.error_message}</p>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => clearCategory(g.category)}>
-                      <Trash2 className="w-4 h-4 mr-1" /> Clear all
+                    <Button size="sm" variant="ghost" onClick={() => clearCategory(g.category)} className="self-start shrink-0">
+                      <Trash2 className="w-4 h-4 mr-1" /> <span className="text-xs">Clear all</span>
                     </Button>
                   </div>
-                  <div className="grid md:grid-cols-2 gap-2 text-xs">
-                    <div className="p-2 rounded bg-muted/40">
+                  <div className="grid sm:grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 rounded bg-muted/40 break-words">
                       <p className="font-bold mb-1">🔎 Root cause</p><p>{g.cause}</p>
                     </div>
-                    <div className="p-2 rounded bg-muted/40">
+                    <div className="p-2 rounded bg-muted/40 break-words">
                       <p className="font-bold mb-1">🛠️ Recommended fix</p><p>{g.fix}</p>
                     </div>
                     {g.vuln && (
-                      <div className="p-2 rounded bg-destructive/10 md:col-span-2">
+                      <div className="p-2 rounded bg-destructive/10 sm:col-span-2 break-words">
                         <p className="font-bold mb-1 text-destructive">⚠️ Vulnerability</p><p>{g.vuln}</p>
                       </div>
                     )}
-                    <div className="md:col-span-2 text-muted-foreground">
-                      Affected pages: {[...g.pages].filter(Boolean).slice(0, 3).map((p) => new URL(p).pathname).join(', ') || '—'}
+                    <div className="sm:col-span-2 text-muted-foreground break-all">
+                      Affected pages: {[...g.pages].filter(Boolean).slice(0, 3).map((p) => { try { return new URL(p).pathname; } catch { return p; } }).join(', ') || '—'}
                     </div>
                   </div>
                 </div>
@@ -684,17 +684,17 @@ const RawErrorLog = ({ errors, onDelete }: { errors: any[]; onDelete: (id: strin
   }, [errors, severity]);
 
   return (
-    <Card className="p-4 border-4 border-border max-h-[500px] overflow-auto space-y-2">
-      <div className="flex items-center justify-between sticky top-0 bg-card pb-2 z-10">
-        <h3 className="font-bold">Raw Log ({filtered.length})</h3>
-        <div className="flex gap-1">
+    <Card className="p-3 sm:p-4 border-4 border-border max-h-[500px] overflow-auto space-y-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sticky top-0 bg-card pb-2 z-10">
+        <h3 className="font-bold text-sm sm:text-base">Raw Log ({filtered.length})</h3>
+        <div className="flex gap-1 flex-wrap">
           {(['all', 'critical', 'high', 'medium', 'low'] as const).map((s) => (
             <Button
               key={s}
               size="sm"
               variant={severity === s ? 'default' : 'outline'}
               onClick={() => setSeverity(s)}
-              className="text-xs h-7"
+              className="text-[10px] sm:text-xs h-7 px-2"
             >
               {s.toUpperCase()}
             </Button>
