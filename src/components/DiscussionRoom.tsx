@@ -64,10 +64,34 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     setAutoMicEnabled(setting);
   }, []);
 
-  // ---- 15-minute inactivity auto-close ----
+  // ---- 15-minute inactivity auto-close + heartbeat + centralized cleanup ----
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isInactiveRef = useRef(false);
+  const cleanupCallbacksRef = useRef<Array<() => void>>([]);
   const IDLE_MS = 15 * 60 * 1000;
+  const HEARTBEAT_MS = 60 * 1000; // ping every 60s while active
+
+  const registerCleanup = (cb: () => void) => {
+    cleanupCallbacksRef.current.push(cb);
+  };
+
+  const runCentralizedCleanup = () => {
+    // Stop heartbeat
+    if (heartbeatTimerRef.current) {
+      clearInterval(heartbeatTimerRef.current);
+      heartbeatTimerRef.current = null;
+    }
+    // Clear idle timer
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
+    // Run all registered cleanups (audio contexts, media streams, TTS, etc.)
+    for (const cb of cleanupCallbacksRef.current.splice(0)) {
+      try { cb(); } catch (e) { console.warn('[Cleanup] callback failed', e); }
+    }
+  };
 
   const markSessionInactive = async () => {
     if (isInactiveRef.current) return;
@@ -82,10 +106,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         title: 'Session inactive',
         description: 'Session paused after 15 minutes of inactivity.',
       });
-
     } catch (e) {
       console.warn('[Idle] Failed to mark session inactive', e);
     }
+    // Centralized cleanup: audio, streams, timers, realtime channels
+    runCentralizedCleanup();
   };
 
   const resetIdleTimer = () => {
@@ -105,9 +130,44 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
+  // Heartbeat: update session.updated_at while active (stops when paused/inactive)
+  useEffect(() => {
+    if (!sessionId || isPaused || isInactiveRef.current) {
+      if (heartbeatTimerRef.current) {
+        clearInterval(heartbeatTimerRef.current);
+        heartbeatTimerRef.current = null;
+      }
+      return;
+    }
+    const ping = () => {
+      supabase
+        .from('gd_sessions')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', sessionId)
+        .then(({ error }) => {
+          if (error) console.warn('[Heartbeat] failed', error.message);
+        });
+    };
+    ping();
+    heartbeatTimerRef.current = setInterval(ping, HEARTBEAT_MS);
+    return () => {
+      if (heartbeatTimerRef.current) {
+        clearInterval(heartbeatTimerRef.current);
+        heartbeatTimerRef.current = null;
+      }
+    };
+  }, [sessionId, isPaused]);
+
   // Any new message or transcription counts as activity
   useEffect(() => { resetIdleTimer(); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, userInput]);
+
+  // Ensure central cleanup on unmount
+  useEffect(() => {
+    return () => runCentralizedCleanup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
 
   
@@ -143,6 +203,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const { isSpeaking, currentSpeaker, usingFallbackTTS, speak, stop: stopSpeaking } = useTextToSpeech();
   const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial();
   const { estimatedWordCount, updateFromAudioLevel, reset: resetWordCount } = useWordCountEstimator();
+
+  // Register TTS stop with centralized cleanup so idle/unmount stops any playback
+  useEffect(() => {
+    registerCleanup(() => { try { stopSpeaking(); } catch {} });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   
   // Multiplayer presence
   const { presenceState, typingParticipants, setTyping } = useMultiplayerPresence({
@@ -189,7 +256,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   
   // Realtime subscription for multiplayer participants sync (update when new participants join)
   useEffect(() => {
-    if (!session?.is_multiplayer) return;
+    if (!session?.is_multiplayer || isPaused) return;
 
     console.log('[Multiplayer] Setting up realtime subscription for participants:', sessionId);
 
@@ -220,11 +287,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       console.log('[Multiplayer] Cleaning up participants subscription');
       supabase.removeChannel(participantsChannel);
     };
-  }, [sessionId, session?.is_multiplayer]);
+  }, [sessionId, session?.is_multiplayer, isPaused]);
 
   // Realtime subscription for multiplayer message sync
   useEffect(() => {
-    if (!session?.is_multiplayer) return;
+    if (!session?.is_multiplayer || isPaused) return;
 
     console.log('[Multiplayer] Setting up realtime subscription for session:', sessionId);
 
@@ -308,7 +375,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       console.log('[Multiplayer] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, [sessionId, session?.is_multiplayer, currentUserId, autoPlayTTS, speak]);
+  }, [sessionId, session?.is_multiplayer, currentUserId, autoPlayTTS, speak, isPaused]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -342,10 +409,16 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     checkLevel();
     resetWordCount();
 
-    return () => {
+    const cleanupAudio = () => {
+      try { practiceStream?.getTracks().forEach(t => t.stop()); } catch {}
       if (audioContext && audioContext.state !== 'closed') {
         try { audioContext.close(); } catch (e) { /* already closed */ }
       }
+    };
+    registerCleanup(cleanupAudio);
+
+    return () => {
+      cleanupAudio();
     };
 
   }, [isRecordingPractice, practiceStream]);

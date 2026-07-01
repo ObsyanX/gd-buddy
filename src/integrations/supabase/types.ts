@@ -611,6 +611,7 @@ export type Database = {
           host_user_id: string | null
           id: string
           is_multiplayer: boolean | null
+          last_activity_at: string
           room_code: string | null
           start_time: string | null
           status: Database["public"]["Enums"]["discussion_status"]
@@ -627,6 +628,7 @@ export type Database = {
           host_user_id?: string | null
           id?: string
           is_multiplayer?: boolean | null
+          last_activity_at?: string
           room_code?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["discussion_status"]
@@ -643,6 +645,7 @@ export type Database = {
           host_user_id?: string | null
           id?: string
           is_multiplayer?: boolean | null
+          last_activity_at?: string
           room_code?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["discussion_status"]
