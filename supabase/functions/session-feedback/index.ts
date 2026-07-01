@@ -23,6 +23,10 @@ Your feedback should be structured as a JSON object with these fields:
 - "group_dynamics": Feedback on how well they engaged with others, built on points, and contributed to the discussion flow (string, 2-3 sentences)
 - "body_language": If video metrics are provided, feedback on posture, eye contact, and expressions. Otherwise say "No video data available for this session." (string, 2-3 sentences)
 - "tips": An array of 3-5 specific, actionable improvement tips (string array)
+- "sentiment_score": 0-100 score for emotional positivity/engagement
+- "leadership_score": 0-100 score for leadership (initiating, structuring)
+- "teamwork_score": 0-100 score for collaboration (acknowledging, building on others)
+- "grammar_score": 0-100 grammatical accuracy score
 
 Be encouraging but honest. Reference specific moments from the conversation when possible.`;
 
