@@ -101,7 +101,7 @@ const Admin = () => {
            activeUsersCnt, activeSessionsCnt] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(500),
       supabase.from('gd_sessions').select('id, topic, status, created_at, is_multiplayer, user_id, last_activity_at').order('created_at', { ascending: false }).limit(500),
-      supabase.from('user_feedback').select('*, gd_sessions(topic), profiles!user_feedback_user_id_fkey(display_name)').order('created_at', { ascending: false }).limit(500),
+      supabase.from('user_feedback').select('*, gd_sessions(topic)').order('created_at', { ascending: false }).limit(500),
       supabase.from('error_logs').select('*').order('created_at', { ascending: false }).limit(500),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('gd_sessions').select('*', { count: 'exact', head: true }),
@@ -559,7 +559,7 @@ const Admin = () => {
               {feedback.map((f) => (
                 <div key={f.id} className="border-2 border-border p-3 rounded">
                   <div className="flex justify-between mb-1">
-                    <p className="font-bold">{f.profiles?.display_name || 'User'} — {f.stars}★</p>
+                    <p className="font-bold">{users.find((u) => u.id === f.user_id)?.display_name || 'User'} — {f.stars}★</p>
                     <span className="text-xs">{new Date(f.created_at).toLocaleDateString()}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mb-1">Topic: {f.gd_sessions?.topic || '—'}</p>
