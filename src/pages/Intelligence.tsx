@@ -57,14 +57,12 @@ async function loadLatestSummary(userId: string): Promise<SessionSummary | null>
     .eq("session_id", sid)
     .maybeSingle();
 
-  const [decisions, facts, fallacies, dups, contras, replay] = await Promise.all([
-    supabase.from("moderator_decisions").select("*", countHead).eq("session_id", sid),
-    supabase.from("fact_checks").select("*", countHead).eq("session_id", sid),
-    supabase.from("fallacies").select("*", countHead).eq("session_id", sid),
-    supabase.from("duplicate_ideas").select("*", countHead).eq("session_id", sid),
-    supabase.from("contradictions").select("*", countHead).eq("session_id", sid),
-    supabase.from("session_replays").select("event_count").eq("session_id", sid).maybeSingle(),
-  ]);
+  const decisions = await supabase.from("moderator_decisions").select("*", countHead).eq("session_id", sid);
+  const facts = await supabase.from("fact_checks").select("*", countHead).eq("session_id", sid);
+  const fallacies = await supabase.from("fallacies").select("*", countHead).eq("session_id", sid);
+  const dups = await supabase.from("duplicate_ideas").select("*", countHead).eq("session_id", sid);
+  const contras = await supabase.from("contradictions").select("*", countHead).eq("session_id", sid);
+  const replay = await supabase.from("session_replays").select("event_count").eq("session_id", sid).maybeSingle();
 
   const health = healthRow.data ? Number((healthRow.data as { overall_health: number }).overall_health) : null;
   let radar: Record<string, number> | null = null;
