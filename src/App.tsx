@@ -146,7 +146,7 @@ const App = () => (
                 <Route path="profile" element={<Suspense fallback={<ProfileSkeleton />}><PageTransition><Profile /></PageTransition></Suspense>} />
                 <Route path="settings" element={<Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense>} />
                 <Route path="instructor" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><InstructorDashboard /></PageTransition></Suspense>} />
-                <Route path="admin" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Admin /></PageTransition></Suspense>} />
+                <Route path="admin" element={<AdminGuard><Suspense fallback={<DashboardSkeleton />}><PageTransition><Admin /></PageTransition></Suspense></AdminGuard>} />
                 <Route path="governance" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Governance /></PageTransition></Suspense>} />
                 <Route path="feedback" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackHistory /></PageTransition></Suspense>} />
                 <Route path="health" element={<Suspense fallback={<Loading />}><PageTransition><Health /></PageTransition></Suspense>} />
