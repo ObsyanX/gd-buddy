@@ -612,6 +612,9 @@ export type Database = {
           id: string
           is_multiplayer: boolean | null
           last_activity_at: string
+          mic_lock_expires_at: string | null
+          mic_lock_holder: string | null
+          phase: string
           room_code: string | null
           start_time: string | null
           status: Database["public"]["Enums"]["discussion_status"]
@@ -629,6 +632,9 @@ export type Database = {
           id?: string
           is_multiplayer?: boolean | null
           last_activity_at?: string
+          mic_lock_expires_at?: string | null
+          mic_lock_holder?: string | null
+          phase?: string
           room_code?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["discussion_status"]
@@ -646,6 +652,9 @@ export type Database = {
           id?: string
           is_multiplayer?: boolean | null
           last_activity_at?: string
+          mic_lock_expires_at?: string | null
+          mic_lock_holder?: string | null
+          phase?: string
           room_code?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["discussion_status"]
@@ -657,6 +666,50 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      moderator_decisions: {
+        Row: {
+          action: string
+          applied: boolean
+          confidence: number | null
+          created_at: string
+          evidence: Json
+          id: string
+          reason: string | null
+          session_id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          applied?: boolean
+          confidence?: number | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          reason?: string | null
+          session_id: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          applied?: boolean
+          confidence?: number | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          reason?: string | null
+          session_id?: string
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderator_decisions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -896,6 +949,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      speaking_turns: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          granted_at: string | null
+          id: string
+          participant_id: string | null
+          participant_kind: string
+          priority: number
+          released_at: string | null
+          requested_at: string
+          session_id: string
+          source: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          granted_at?: string | null
+          id?: string
+          participant_id?: string | null
+          participant_kind?: string
+          priority?: number
+          released_at?: string | null
+          requested_at?: string
+          session_id: string
+          source?: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          granted_at?: string | null
+          id?: string
+          participant_id?: string | null
+          participant_kind?: string
+          priority?: number
+          released_at?: string | null
+          requested_at?: string
+          session_id?: string
+          source?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "speaking_turns_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       token_usage: {
         Row: {
@@ -1147,6 +1256,7 @@ export type Database = {
         Args: { _idle_minutes?: number }
         Returns: number
       }
+      expire_stale_turns: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1158,6 +1268,11 @@ export type Database = {
       owns_session: {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
+      }
+      release_mic: { Args: { _session_id: string }; Returns: Json }
+      request_mic: {
+        Args: { _kind?: string; _session_id: string; _source?: string }
+        Returns: Json
       }
     }
     Enums: {
