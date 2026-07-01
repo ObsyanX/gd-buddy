@@ -62,9 +62,9 @@ const AppLayout = () => {
       </div>
 
       {/* Glass header */}
-      <header className="sticky top-0 z-40 py-3 md:py-4 px-3 md:px-6" role="banner">
-        <div className="container mx-auto">
-          <div className="glass rounded-full px-3 md:px-5 py-2.5 flex items-center justify-between">
+      <header className="sticky top-0 z-40 py-3 md:py-4 px-1.5 sm:px-3 md:px-6" role="banner">
+        <div className="w-full lg:container lg:mx-auto">
+          <div className="glass rounded-full px-2 sm:px-3 md:px-5 py-2.5 flex items-center justify-between">
             <Link to="/home" className="flex items-center gap-3 group min-w-0" aria-label="GD Buddy Home">
               <div className="w-9 h-9 rounded-xl bg-gradient-copper flex items-center justify-center shadow-copper group-hover:rotate-6 transition-transform duration-slow ease-editorial shrink-0">
                 <MessageSquare className="w-4 h-4 text-primary-foreground" aria-hidden="true" />
