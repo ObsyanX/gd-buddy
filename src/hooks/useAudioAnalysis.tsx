@@ -183,9 +183,13 @@ export const useAudioAnalysis = (options: UseAudioAnalysisOptions = {}) => {
     }
 
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      const ac = audioContextRef.current;
+      if (ac.state !== 'closed') {
+        try { ac.close(); } catch (e) { /* already closed */ }
+      }
       audioContextRef.current = null;
     }
+
 
     // Don't stop stream if it was provided externally
     analyserRef.current = null;
