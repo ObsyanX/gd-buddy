@@ -337,7 +337,15 @@
   @media (max-width: 1023px) {
     ::-webkit-scrollbar { display: none; }
     html, body { scrollbar-width: none; -ms-overflow-style: none; }
+    /* Ensure native touch scroll works everywhere on mobile/tablet,
+       including Radix ScrollArea viewports (which hide the scrollbar). */
+    [data-radix-scroll-area-viewport] {
+      touch-action: pan-y !important;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
   }
+
 }
 
 /* ============================================================
