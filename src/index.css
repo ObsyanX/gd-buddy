@@ -1,184 +1,168 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* ============================================================
+   GD Buddy — Premium Sienna Glass design system
+   All colors defined as HSL. Never hardcode colors in components.
+   ============================================================ */
 
 @layer base {
   :root {
-    /* === TYPOGRAPHY SCALE (Fluid using clamp) === */
-    --font-size-display: clamp(1.8rem, 3vw, 2.4rem);
-    --font-size-h1: clamp(1.4rem, 2.5vw, 1.8rem);
-    --font-size-h2: clamp(1.2rem, 2vw, 1.5rem);
-    --font-size-h3: clamp(1.05rem, 1.75vw, 1.25rem);
-    --font-size-body: clamp(0.95rem, 1.5vw, 1.1rem);
-    --font-size-caption: clamp(0.8rem, 1.2vw, 0.9rem);
-    --font-size-micro: clamp(0.7rem, 1vw, 0.8rem);
-    
-    /* Line heights */
-    --line-height-heading: 1.2;
-    --line-height-body: 1.5;
+    /* === TYPOGRAPHY SCALE (Fluid) === */
+    --font-size-display: clamp(2.5rem, 5.5vw, 5rem);
+    --font-size-h1: clamp(1.85rem, 3.4vw, 2.75rem);
+    --font-size-h2: clamp(1.4rem, 2.4vw, 1.9rem);
+    --font-size-h3: clamp(1.1rem, 1.8vw, 1.35rem);
+    --font-size-body: clamp(0.95rem, 1.15vw, 1.05rem);
+    --font-size-caption: clamp(0.8rem, 1vw, 0.9rem);
+    --font-size-micro: clamp(0.7rem, 0.85vw, 0.78rem);
+
+    --line-height-heading: 1.08;
+    --line-height-body: 1.6;
     --line-height-caption: 1.4;
-    
-    /* Letter spacing */
-    --tracking-heading: -0.02em;
+
+    --tracking-heading: -0.025em;
     --tracking-body: 0em;
-    --tracking-button: 0.04em;
-    
-    /* === SPACING SYSTEM (8pt grid) === */
+    --tracking-button: 0.02em;
+    --tracking-mono: 0.16em;
+
+    /* === SPACING (8pt grid) === */
     --space-xs: 4px;
     --space-sm: 8px;
     --space-md: 16px;
     --space-lg: 24px;
     --space-xl: 32px;
     --space-2xl: 48px;
-    --space-3xl: 64px;
-    
-    /* === COLOR TOKENS === */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --space-3xl: 80px;
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    /* === CORE PALETTE — Burnt Sienna / Copper / Amber on warm ceramic === */
+    --background: 18 40% 4%;              /* deep ceramic #0F0906 */
+    --foreground: 32 44% 92%;             /* warm ivory */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --surface: 18 32% 7%;                 /* warm charcoal */
+    --surface-elevated: 18 26% 10%;
 
-    --primary: 0 0% 0%;
-    --primary-foreground: 0 0% 100%;
+    --card: 18 30% 8%;
+    --card-foreground: 32 44% 92%;
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 0%;
+    --popover: 18 32% 6%;
+    --popover-foreground: 32 44% 92%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    /* Copper primary */
+    --primary: 29 60% 50%;                /* #CD7F32 */
+    --primary-foreground: 20 40% 8%;
+    --primary-glow: 36 68% 70%;           /* amber #E8C07A */
 
-    --accent: 0 0% 90%;
-    --accent-foreground: 0 0% 0%;
+    /* Burnt sienna secondary */
+    --secondary: 19 57% 40%;              /* #A0522D */
+    --secondary-foreground: 32 44% 96%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --muted: 20 20% 14%;
+    --muted-foreground: 28 18% 68%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
+    --accent: 22 44% 27%;                 /* deep sienna */
+    --accent-foreground: 32 44% 94%;
 
-    --border: 0 0% 0%;
-    --input: 0 0% 0%;
-    --ring: 0 0% 0%;
+    --destructive: 4 74% 55%;
+    --destructive-foreground: 32 44% 96%;
 
-    --radius: 0rem;
+    --success: 152 40% 48%;
+    --success-foreground: 20 40% 8%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 0%;
-    --sidebar-primary: 0 0% 0%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 90%;
-    --sidebar-accent-foreground: 0 0% 0%;
-    --sidebar-border: 0 0% 0%;
-    --sidebar-ring: 0 0% 0%;
+    --warning: 36 90% 58%;
+    --warning-foreground: 20 40% 8%;
 
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --border: 28 30% 18%;                 /* copper hairline */
+    --input: 28 30% 18%;
+    --ring: 29 60% 55%;
 
-    --sidebar: 0 0% 98%;
+    --radius: 1.25rem;
 
-    --font-sans: 'Inter', 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-    --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
-    --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    /* Sidebar */
+    --sidebar-background: 18 34% 6%;
+    --sidebar-foreground: 32 44% 92%;
+    --sidebar-primary: 29 60% 50%;
+    --sidebar-primary-foreground: 20 40% 8%;
+    --sidebar-accent: 22 44% 20%;
+    --sidebar-accent-foreground: 32 44% 92%;
+    --sidebar-border: 28 30% 16%;
+    --sidebar-ring: 29 60% 55%;
+    --sidebar: 18 34% 6%;
 
-    --shadow-2xs: 1px 1px 0px 0px #000000;
-    --shadow-xs: 2px 2px 0px 0px #000000;
-    --shadow-sm: 3px 3px 0px 0px #000000;
-    --shadow: 5px 5px 0px 0px #000000;
-    --shadow-md: 8px 8px 0px 0px #000000;
-    --shadow-lg: 12px 12px 0px 0px #000000;
-    --shadow-xl: 16px 16px 0px 0px #000000;
-    --shadow-2xl: 24px 24px 0px 0px #000000;
+    /* Charts — sienna/copper/amber palette */
+    --chart-1: 29 60% 55%;
+    --chart-2: 36 68% 65%;
+    --chart-3: 19 57% 45%;
+    --chart-4: 12 55% 40%;
+    --chart-5: 42 78% 62%;
 
-    --tracking-normal: 0em;
-    --spacing: 0.25rem;
-    
-    /* === ANIMATION TOKENS === */
-    --transition-fast: 120ms ease-out;
-    --transition-normal: 200ms ease-out;
-    --transition-slow: 300ms ease-out;
+    /* Editorial typography families */
+    --font-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
+    --font-sans: 'Karla', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --font-serif: 'Cormorant Garamond', ui-serif, Georgia, serif;
+
+    /* === GRADIENTS === */
+    --gradient-copper: linear-gradient(135deg, hsl(29 60% 50%), hsl(36 68% 68%));
+    --gradient-ember: linear-gradient(135deg, hsl(12 66% 45%), hsl(29 60% 50%) 55%, hsl(36 68% 70%));
+    --gradient-glow: radial-gradient(circle at 30% 20%, hsl(29 60% 40% / 0.35), transparent 60%);
+    --gradient-surface: linear-gradient(180deg, hsl(18 32% 8% / 0.6), hsl(18 40% 4% / 0.85));
+
+    /* === SHADOWS — soft copper glow, not brutalist === */
+    --shadow-2xs: 0 1px 2px 0 hsl(20 40% 2% / 0.35);
+    --shadow-xs: 0 2px 4px -1px hsl(20 40% 2% / 0.4);
+    --shadow-sm: 0 4px 10px -2px hsl(20 40% 2% / 0.45);
+    --shadow: 0 10px 30px -8px hsl(20 40% 2% / 0.55);
+    --shadow-md: 0 18px 40px -12px hsl(20 40% 2% / 0.6);
+    --shadow-lg: 0 30px 60px -18px hsl(20 40% 2% / 0.7);
+    --shadow-xl: 0 40px 80px -20px hsl(20 40% 2% / 0.75);
+    --shadow-2xl: 0 60px 120px -30px hsl(20 40% 2% / 0.8);
+    --shadow-copper: 0 20px 60px -20px hsl(29 60% 45% / 0.45);
+    --shadow-premium: 0 32px 64px -16px hsl(20 40% 2% / 0.65), 0 0 0 1px hsl(28 40% 30% / 0.35) inset;
+
+    /* === MOTION === */
+    --transition-fast: 140ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 260ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 520ms cubic-bezier(0.22, 1, 0.36, 1);
     --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-    
-    /* === SAFE AREA INSETS === */
+
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
     --safe-area-left: env(safe-area-inset-left, 0px);
     --safe-area-right: env(safe-area-inset-right, 0px);
   }
 
+  /* Dark mode = same palette (this is a dark-first design system) */
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-
-    --card: 0 0% 0%;
-    --card-foreground: 0 0% 100%;
-
-    --popover: 0 0% 0%;
-    --popover-foreground: 0 0% 100%;
-
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 100%;
-    
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
-
-    --border: 0 0% 100%;
-    --input: 0 0% 100%;
-    --ring: 0 0% 100%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 100%;
-    --sidebar-ring: 0 0% 100%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar: 0 0% 5%;
-    --radius: 0rem;
-    --shadow-2xs: 1px 1px 0px 0px #ffffff;
-    --shadow-xs: 2px 2px 0px 0px #ffffff;
-    --shadow-sm: 3px 3px 0px 0px #ffffff;
-    --shadow: 5px 5px 0px 0px #ffffff;
-    --shadow-md: 8px 8px 0px 0px #ffffff;
-    --shadow-lg: 12px 12px 0px 0px #ffffff;
-    --shadow-xl: 16px 16px 0px 0px #ffffff;
-    --shadow-2xl: 24px 24px 0px 0px #ffffff;
+    --background: 18 40% 4%;
+    --foreground: 32 44% 92%;
+    --card: 18 30% 8%;
+    --card-foreground: 32 44% 92%;
+    --popover: 18 32% 6%;
+    --popover-foreground: 32 44% 92%;
+    --primary: 29 60% 50%;
+    --primary-foreground: 20 40% 8%;
+    --secondary: 19 57% 40%;
+    --secondary-foreground: 32 44% 96%;
+    --muted: 20 20% 14%;
+    --muted-foreground: 28 18% 68%;
+    --accent: 22 44% 27%;
+    --accent-foreground: 32 44% 94%;
+    --destructive: 4 74% 55%;
+    --destructive-foreground: 32 44% 96%;
+    --border: 28 30% 18%;
+    --input: 28 30% 18%;
+    --ring: 29 60% 55%;
+    --sidebar-background: 18 34% 6%;
+    --sidebar-foreground: 32 44% 92%;
+    --sidebar-primary: 29 60% 50%;
+    --sidebar-primary-foreground: 20 40% 8%;
+    --sidebar-accent: 22 44% 20%;
+    --sidebar-accent-foreground: 32 44% 92%;
+    --sidebar-border: 28 30% 16%;
+    --sidebar-ring: 29 60% 55%;
+    --sidebar: 18 34% 6%;
   }
 }
 
@@ -186,141 +170,238 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-feature-settings: "ss01", "cv02", "cv03", "cv11";
+    background: hsl(var(--background));
   }
-
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
     font-size: var(--font-size-body);
     line-height: var(--line-height-body);
     letter-spacing: var(--tracking-body);
+    min-height: 100vh;
+    /* Warm ambient background */
+    background:
+      radial-gradient(1200px 700px at 12% -10%, hsl(29 60% 22% / 0.35), transparent 60%),
+      radial-gradient(900px 600px at 90% 10%, hsl(12 55% 28% / 0.28), transparent 55%),
+      radial-gradient(1100px 800px at 60% 110%, hsl(36 68% 32% / 0.22), transparent 60%),
+      hsl(var(--background));
+    background-attachment: fixed;
   }
-  
-  /* Typography classes */
+
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: var(--tracking-heading);
+    line-height: var(--line-height-heading);
+  }
+  .font-mono, code, kbd, pre {
+    font-family: var(--font-mono);
+  }
+
+  /* Typography helpers */
   .text-display {
+    font-family: var(--font-display);
     font-size: var(--font-size-display);
-    line-height: var(--line-height-heading);
-    letter-spacing: var(--tracking-heading);
-    font-weight: 700;
-  }
-  
-  .text-h1 {
-    font-size: var(--font-size-h1);
-    line-height: var(--line-height-heading);
-    letter-spacing: var(--tracking-heading);
-    font-weight: 600;
-  }
-  
-  .text-h2 {
-    font-size: var(--font-size-h2);
-    line-height: var(--line-height-heading);
-    letter-spacing: var(--tracking-heading);
-    font-weight: 600;
-  }
-  
-  .text-h3 {
-    font-size: var(--font-size-h3);
     line-height: var(--line-height-heading);
     letter-spacing: var(--tracking-heading);
     font-weight: 500;
   }
-  
-  .text-body {
-    font-size: var(--font-size-body);
-    line-height: var(--line-height-body);
-    letter-spacing: var(--tracking-body);
-  }
-  
-  .text-caption {
-    font-size: var(--font-size-caption);
-    line-height: var(--line-height-caption);
-  }
-  
-  .text-micro {
-    font-size: var(--font-size-micro);
-    line-height: var(--line-height-caption);
-  }
-  
-  /* Button tracking */
+  .text-h1 { font-family: var(--font-display); font-size: var(--font-size-h1); line-height: var(--line-height-heading); letter-spacing: var(--tracking-heading); font-weight: 500; }
+  .text-h2 { font-family: var(--font-display); font-size: var(--font-size-h2); line-height: var(--line-height-heading); letter-spacing: var(--tracking-heading); font-weight: 500; }
+  .text-h3 { font-family: var(--font-display); font-size: var(--font-size-h3); line-height: var(--line-height-heading); letter-spacing: var(--tracking-heading); font-weight: 500; }
+  .text-body { font-size: var(--font-size-body); line-height: var(--line-height-body); }
+  .text-caption { font-size: var(--font-size-caption); line-height: var(--line-height-caption); }
+  .text-micro { font-size: var(--font-size-micro); line-height: var(--line-height-caption); letter-spacing: var(--tracking-mono); text-transform: uppercase; font-family: var(--font-mono); }
+
   button, [role="button"] {
     letter-spacing: var(--tracking-button);
   }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.35);
+    color: hsl(var(--primary-glow));
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--background)); }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--accent)); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.7); }
 }
 
-/* Reduced motion support */
+/* ============================================================
+   SIGNATURE UTILITIES — glass, orbs, grain, copper effects
+   ============================================================ */
+@layer utilities {
+  /* Frosted glass panel */
+  .glass {
+    background: linear-gradient(180deg, hsl(var(--surface) / 0.55), hsl(var(--surface) / 0.32));
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid hsl(var(--border) / 0.7);
+    box-shadow:
+      inset 0 1px 0 hsl(36 68% 70% / 0.08),
+      0 20px 60px -20px hsl(20 40% 2% / 0.55);
+  }
+  .glass-strong {
+    background: linear-gradient(180deg, hsl(var(--surface) / 0.75), hsl(var(--surface) / 0.5));
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    border: 1px solid hsl(var(--border));
+    box-shadow:
+      inset 0 1px 0 hsl(36 68% 70% / 0.12),
+      inset 0 0 40px hsl(29 60% 30% / 0.12),
+      0 30px 80px -24px hsl(20 40% 2% / 0.7);
+  }
+  .glass-subtle {
+    background: hsl(var(--surface) / 0.35);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid hsl(var(--border) / 0.55);
+  }
+
+  .copper-border { border: 1px solid hsl(var(--primary) / 0.35); }
+  .copper-glow {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.25), 0 20px 60px -18px hsl(var(--primary) / 0.4);
+  }
+  .copper-text {
+    background: var(--gradient-copper);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .ember-text {
+    background: var(--gradient-ember);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .italic-accent {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 500;
+  }
+
+  /* Grain overlay */
+  .grain-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.08;
+    mix-blend-mode: overlay;
+    background-image:
+      radial-gradient(hsl(36 68% 60% / 0.6) 1px, transparent 1px),
+      radial-gradient(hsl(29 60% 40% / 0.5) 1px, transparent 1px);
+    background-size: 3px 3px, 5px 5px;
+    background-position: 0 0, 1px 2px;
+  }
+
+  /* Ambient breathing orbs */
+  .ambient-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(120px);
+    pointer-events: none;
+    will-change: transform, opacity;
+    animation: orb-breathe 12s ease-in-out infinite;
+  }
+
+  /* Safe area helpers */
+  .safe-top { padding-top: var(--safe-area-top); }
+  .safe-bottom { padding-bottom: var(--safe-area-bottom); }
+  .safe-x { padding-left: var(--safe-area-left); padding-right: var(--safe-area-right); }
+  .safe-y { padding-top: var(--safe-area-top); padding-bottom: var(--safe-area-bottom); }
+
+  .story-link {
+    position: relative;
+    display: inline-block;
+  }
+  .story-link::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: -2px;
+    height: 1px; width: 100%;
+    background: var(--gradient-copper);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .story-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .hover-lift {
+    transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 400ms;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 30px 60px -20px hsl(var(--primary) / 0.35);
+  }
+}
+
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
+@keyframes orb-breathe {
+  0%, 100% { transform: translate3d(0,0,0) scale(1); opacity: 0.55; }
+  50% { transform: translate3d(2%, -2%, 0) scale(1.08); opacity: 0.8; }
+}
+@keyframes word-rise {
+  from { transform: translateY(48%); opacity: 0; filter: blur(6px); }
+  to { transform: translateY(0); opacity: 1; filter: blur(0); }
+}
+@keyframes underline-draw {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes copper-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes bar-wave {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
+    animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0.001ms !important;
   }
 }
 
-/* Safe area padding utilities */
-@layer utilities {
-  .safe-top {
-    padding-top: var(--safe-area-top);
-  }
-  .safe-bottom {
-    padding-bottom: var(--safe-area-bottom);
-  }
-  .safe-left {
-    padding-left: var(--safe-area-left);
-  }
-  .safe-right {
-    padding-right: var(--safe-area-right);
-  }
-  .safe-x {
-    padding-left: var(--safe-area-left);
-    padding-right: var(--safe-area-right);
-  }
-  .safe-y {
-    padding-top: var(--safe-area-top);
-    padding-bottom: var(--safe-area-bottom);
-  }
-}
 /* ============================================================
-   Track 9 · Slice 4 — Accessibility utilities
-   Applied by <html> class/attribute toggles from useAccessibility.
+   Accessibility overrides (kept from Track 9)
    ============================================================ */
 :root { --a11y-font-scale: 1; }
 html { font-size: calc(16px * var(--a11y-font-scale)); }
 
 html.a11y-high-contrast {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 0%;
-  --border: 0 0% 0%;
-  --muted-foreground: 0 0% 15%;
-  --primary: 240 100% 30%;
+  --background: 20 40% 3%;
+  --foreground: 36 100% 92%;
+  --border: 36 100% 80%;
+  --muted-foreground: 36 80% 82%;
+  --primary: 36 100% 62%;
 }
-html.a11y-high-contrast.dark,
-.dark html.a11y-high-contrast {
-  --background: 0 0% 0%;
-  --foreground: 60 100% 90%;
-  --border: 60 100% 90%;
-  --muted-foreground: 60 100% 80%;
-}
-
 html.a11y-dyslexia body,
 html.a11y-dyslexia * {
   letter-spacing: 0.04em;
   word-spacing: 0.12em;
   line-height: 1.6;
 }
-
 html[data-cb-palette="protanopia"]   { filter: url('#cb-protanopia'); }
 html[data-cb-palette="deuteranopia"] { filter: url('#cb-deuteranopia'); }
 html[data-cb-palette="tritanopia"]   { filter: url('#cb-tritanopia'); }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    transition-duration: 0.001ms !important;
-  }
-}
