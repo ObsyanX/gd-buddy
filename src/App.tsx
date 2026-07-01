@@ -42,6 +42,8 @@ const SkillDrills = lazy(() => import("./pages/SkillDrills"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
+const Admin = lazy(() => import("./pages/Admin"));
+const FeedbackHistory = lazy(() => import("./pages/FeedbackHistory"));
 
 // SEO content pages (public, indexable)
 const GDTopics = lazy(() => import("./pages/GDTopics"));
@@ -134,7 +136,10 @@ const App = () => (
                 <Route path="profile" element={<Suspense fallback={<ProfileSkeleton />}><PageTransition><Profile /></PageTransition></Suspense>} />
                 <Route path="settings" element={<Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense>} />
                 <Route path="instructor" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><InstructorDashboard /></PageTransition></Suspense>} />
+                <Route path="admin" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Admin /></PageTransition></Suspense>} />
+                <Route path="feedback" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackHistory /></PageTransition></Suspense>} />
               </Route>
+
 
               {/* Legacy redirects: redirect old paths to new /home/* paths */}
               <Route path="/dashboard" element={<Navigate to="/home/dashboard" replace />} />

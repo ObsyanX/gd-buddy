@@ -3,12 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
-  MessageSquare, LayoutDashboard, Dumbbell, Users, User,
-  Settings as SettingsIcon, LogOut, Menu, Play, GraduationCap,
+  MessageSquare, LayoutDashboard, Dumbbell, User,
+  Settings as SettingsIcon, LogOut, Menu, GraduationCap, Shield,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import SEOFooter from "@/components/SEOFooter";
+import NotificationBell from "@/components/NotificationBell";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const NAV_ITEMS = [
   { label: "HOME", icon: MessageSquare, path: "/home" },
@@ -23,6 +25,7 @@ const AppLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
@@ -68,6 +71,12 @@ const AppLayout = () => {
                 {item.label}
               </Button>
             ))}
+            {isAdmin && (
+              <Button variant={isActive('/home/admin') ? 'default' : 'outline'} size="sm" onClick={() => navigate('/home/admin')} className="border-2 border-destructive">
+                <Shield className="w-4 h-4 mr-1.5" /> ADMIN
+              </Button>
+            )}
+            <NotificationBell />
             <Button variant="outline" size="sm" onClick={handleSignOut} className="border-2" aria-label="Sign out">
               <LogOut className="w-4 h-4 mr-1.5" aria-hidden="true" />
               SIGN OUT
@@ -94,6 +103,11 @@ const AppLayout = () => {
                     {item.label}
                   </Button>
                 ))}
+                {isAdmin && (
+                  <Button variant="outline" onClick={() => handleNav('/home/admin')} className="border-2 border-destructive justify-start w-full">
+                    <Shield className="w-4 h-4 mr-2" /> ADMIN
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => { setMobileMenuOpen(false); handleSignOut(); }}

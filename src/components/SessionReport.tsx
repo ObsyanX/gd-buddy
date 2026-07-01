@@ -3,10 +3,13 @@ import { Button } from "@/components/ui/button";
 import SessionReplay from "@/components/SessionReplay";
 import SessionNotes from "@/components/SessionNotes";
 import PerTurnAnalysis from "@/components/PerTurnAnalysis";
+import FeedbackForm from "@/components/report/FeedbackForm";
+import ReportActions from "@/components/report/ReportActions";
+import RoomRanking from "@/components/report/RoomRanking";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic, Eye, User, Camera, BarChart3, Bot, Loader2, Sparkles } from "lucide-react";
+import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic, Eye, User, Camera, BarChart3, Bot, Loader2, Sparkles, Heart, Crown, Users as UsersIcon, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
@@ -667,6 +670,17 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         toast({ title: "AI Feedback Error", description: data.error, variant: "destructive" });
       } else if (data) {
         setAiFeedback(data);
+        // Persist AI sub-scores into gd_metrics for analytics
+        try {
+          await supabase.from('gd_metrics').update({
+            sentiment_score: data.sentiment_score ?? null,
+            leadership_score: data.leadership_score ?? null,
+            teamwork_score: data.teamwork_score ?? null,
+            grammar_score: data.grammar_score ?? null,
+          }).eq('session_id', sessionId);
+        } catch (persistErr) {
+          console.warn('Could not persist sub-scores', persistErr);
+        }
       }
     } catch (err: any) {
       console.error('AI feedback error:', err);
@@ -749,7 +763,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         </div>
       </header>
 
-      <main className="container mx-auto py-8 px-6 max-w-5xl space-y-8">
+      <div className="container mx-auto pt-4 px-6 max-w-5xl">
+        <ReportActions sessionId={sessionId} />
+      </div>
+
+      <main id="report-print" className="container mx-auto py-8 px-6 max-w-5xl space-y-8">
         {/* Overall Score - Show N/A if no real data */}
         <Card className="p-8 border-4 border-border text-center space-y-4">
           {hasRealScores ?
@@ -1315,6 +1333,36 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             </p>
           )}
         </Card>
+
+        {/* AI Sub-scores (sentiment/leadership/teamwork/grammar) */}
+        {aiFeedback && (aiFeedback.sentiment_score != null || aiFeedback.leadership_score != null) && (
+          <Card className="p-6 border-4 border-border space-y-4">
+            <h3 className="text-xl font-bold">AI SUB-SCORES</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'Sentiment', value: aiFeedback.sentiment_score, icon: Heart },
+                { label: 'Leadership', value: aiFeedback.leadership_score, icon: Crown },
+                { label: 'Teamwork', value: aiFeedback.teamwork_score, icon: UsersIcon },
+                { label: 'Grammar', value: aiFeedback.grammar_score, icon: BookOpen },
+              ].map(({ label, value, icon: Icon }) => (
+                <div key={label} className="p-4 border-2 border-border rounded text-center space-y-1">
+                  <Icon className="w-5 h-5 mx-auto text-primary" />
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <p className="text-2xl font-bold">{value ?? '—'}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Ranking within the multiplayer room */}
+        {session.is_multiplayer && (
+          <RoomRanking sessionId={sessionId} myParticipantId={currentParticipant?.id} />
+        )}
+
+        {/* Post-session Feedback Form */}
+        <FeedbackForm sessionId={sessionId} />
+
 
         <div className="gap-[8px] rounded flex-col flex items-center justify-center shadow-none">
           <Button

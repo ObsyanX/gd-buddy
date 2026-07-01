@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { Volume2, Keyboard, Play, Mic } from 'lucide-react';
+import { Volume2, Keyboard, Play, Mic, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { invokeWithAuth } from '@/lib/supabase-auth';
 import { useVoiceStore } from '@/stores/useVoiceStore';
 import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
@@ -38,6 +40,29 @@ const Settings = () => {
   const { voice, speed, setVoice, setSpeed } = useVoiceStore();
   const { autoMicEnabled, setAutoMicEnabled } = useAppSettingsStore();
   const [isTesting, setIsTesting] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPw, setChangingPw] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 8) {
+      toast({ title: 'Weak password', description: 'Use at least 8 characters.', variant: 'destructive' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: 'Passwords do not match', variant: 'destructive' });
+      return;
+    }
+    setChangingPw(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setChangingPw(false);
+    if (error) {
+      toast({ title: 'Could not update password', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setNewPassword(''); setConfirmPassword('');
+    toast({ title: 'Password updated' });
+  };
 
   const handleSave = () => {
     // Zustand persist handles saving automatically, but we show confirmation
@@ -200,6 +225,28 @@ const Settings = () => {
             size="lg">
             SAVE ALL PREFERENCES
           </Button>
+
+          {/* Change Password */}
+          <Card className="p-6 border-4 border-border space-y-4">
+            <div className="flex items-center gap-2">
+              <Lock className="w-6 h-6" />
+              <h2 className="text-2xl font-bold">CHANGE PASSWORD</h2>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="newPw">New password</Label>
+                <Input id="newPw" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="border-2" autoComplete="new-password" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="confirmPw">Confirm password</Label>
+                <Input id="confirmPw" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="border-2" autoComplete="new-password" />
+              </div>
+              <Button onClick={handleChangePassword} disabled={changingPw} className="border-2">
+                {changingPw ? 'UPDATING...' : 'UPDATE PASSWORD'}
+              </Button>
+            </div>
+          </Card>
+
 
           {/* Keyboard Shortcuts */}
           <Card className="p-6 border-4 border-border space-y-4">
