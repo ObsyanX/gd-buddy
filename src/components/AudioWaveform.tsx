@@ -81,11 +81,10 @@ export const AudioWaveform = ({ isRecording, stream }: AudioWaveformProps) => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
+      safeCloseAudio();
     };
   }, [isRecording, stream]);
+
 
   if (!isRecording) {
     return (
