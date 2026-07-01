@@ -45,6 +45,7 @@ const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
 const Admin = lazy(() => import("./pages/Admin"));
 const FeedbackHistory = lazy(() => import("./pages/FeedbackHistory"));
 const Health = lazy(() => import("./pages/Health"));
+const Intelligence = lazy(() => import("./pages/Intelligence"));
 
 // SEO content pages (public, indexable)
 const GDTopics = lazy(() => import("./pages/GDTopics"));
@@ -140,6 +141,7 @@ const App = () => (
                 <Route path="admin" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Admin /></PageTransition></Suspense>} />
                 <Route path="feedback" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackHistory /></PageTransition></Suspense>} />
                 <Route path="health" element={<Suspense fallback={<Loading />}><PageTransition><Health /></PageTransition></Suspense>} />
+                <Route path="intelligence" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Intelligence /></PageTransition></Suspense>} />
               </Route>
 
 
