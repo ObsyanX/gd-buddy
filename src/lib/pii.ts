@@ -9,8 +9,8 @@ export function maskPII(input: string | null | undefined): string {
   if (!input) return "";
   return input
     .replace(EMAIL, "[email]")
-    .replace(AADHAAR, "[id]")
     .replace(CREDIT, "[card]")
+    .replace(AADHAAR, "[id]")
     .replace(PHONE, "[phone]");
 }
 
