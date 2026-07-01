@@ -6,7 +6,7 @@ import {
   Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import gdLogo from "@/assets/gd-buddy-logo.png.asset.json";
+import gdLogo from "@/assets/gd-buddy-logo-v2.png.asset.json";
 import SEOFooter from "@/components/SEOFooter";
 import NotificationBell from "@/components/NotificationBell";
 import BottomNav from "@/components/BottomNav";
@@ -66,14 +66,39 @@ const AppLayout = () => {
       <header className="sticky top-0 z-40 py-3 md:py-4 px-1.5 sm:px-3 md:px-6" role="banner">
         <div className="w-full lg:container lg:mx-auto">
           <div className="glass rounded-full px-2 sm:px-3 md:px-5 py-2.5 flex items-center justify-between">
-            <Link to="/home" className="flex items-center gap-3 group min-w-0" aria-label="GD Buddy Home">
-              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-copper group-hover:rotate-6 transition-transform duration-slow ease-editorial shrink-0">
-                <img src={gdLogo.url} alt="GD Buddy logo" className="w-full h-full object-cover" />
+            <Link to="/home" className="flex items-center gap-2.5 md:gap-3 group min-w-0" aria-label="GD Buddy Home">
+              <div className="relative shrink-0">
+                {/* Pulsing copper halo */}
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-0 rounded-2xl bg-gradient-copper opacity-40 blur-md animate-pulse-soft"
+                />
+                <div className="relative w-10 h-10 md:w-11 md:h-11 rounded-2xl overflow-hidden shadow-copper ring-1 ring-primary/40 group-hover:ring-primary-glow/70 transition-all duration-slow ease-editorial group-hover:-rotate-6 group-hover:scale-105">
+                  <img
+                    src={gdLogo.url}
+                    srcSet={`${gdLogo.url}?w=80 80w, ${gdLogo.url}?w=160 160w, ${gdLogo.url}?w=240 240w`}
+                    sizes="(min-width: 768px) 44px, 40px"
+                    width={44}
+                    height={44}
+                    decoding="async"
+                    fetchPriority="high"
+                    alt="GD Buddy logo"
+                    className="w-full h-full object-contain transition-transform duration-slow ease-editorial group-hover:scale-110"
+                  />
+                  {/* Sheen sweep on hover */}
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000 ease-editorial"
+                  />
+                </div>
               </div>
-              <div className="min-w-0">
-                <span className="font-display text-lg md:text-xl tracking-tight text-foreground truncate block">GD Buddy</span>
+              <div className="min-w-0 overflow-hidden">
+                <span className="font-display text-lg md:text-xl tracking-tight bg-gradient-copper bg-clip-text text-transparent truncate block animate-shimmer-slow bg-[length:200%_auto]">
+                  GD Buddy
+                </span>
               </div>
             </Link>
+
 
             {/* Desktop nav */}
             <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
@@ -138,8 +163,49 @@ const AppLayout = () => {
               </Button>
             </div>
           </div>
+
+          {/* Mobile horizontal snap chip strip */}
+          <nav
+            aria-label="Quick sections"
+            className="lg:hidden mt-2 -mx-1 px-1 flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-px-1 [scroll-behavior:smooth]"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            {NAV_ITEMS.map((item) => {
+              const active = isActive(item.path);
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={cn(
+                    "snap-start shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs font-medium",
+                    "transition-all duration-normal ease-editorial active:scale-95",
+                    active
+                      ? "bg-gradient-copper text-primary-foreground shadow-copper"
+                      : "glass text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <item.icon className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+            {isAdmin && (
+              <button
+                onClick={() => navigate("/home/admin")}
+                className={cn(
+                  "snap-start shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs font-medium transition-all duration-normal ease-editorial active:scale-95",
+                  isActive("/home/admin")
+                    ? "bg-gradient-copper text-primary-foreground shadow-copper"
+                    : "glass text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Shield className="w-3.5 h-3.5" /> Admin
+              </button>
+            )}
+          </nav>
         </div>
       </header>
+
 
       <main className="flex-1 relative z-10" role="main">
         <Outlet />
