@@ -87,6 +87,7 @@ const SessionHeader = ({
                 {formatTimer(elapsedSeconds)}
               </Badge>
               <TurnQueueBadge sessionId={session?.id ?? null} />
+              <DiscussionHealthMeter sessionId={session?.id ?? null} compact />
             </div>
           </div>
           <div className="flex items-center gap-1">
