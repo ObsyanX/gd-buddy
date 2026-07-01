@@ -59,6 +59,8 @@ const AppLayout = () => {
 
   return (
     <div className="min-h-dvh flex flex-col relative">
+      <SkipLink />
+      <Announcer />
       {/* Ambient orbs shared across the app */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10" aria-hidden="true">
         <div className="ambient-orb w-[60vw] h-[60vw] -top-[20%] -left-[15%]" style={{ background: "hsl(29 60% 45% / 0.4)" }} />
@@ -178,7 +180,7 @@ const AppLayout = () => {
       </header>
 
 
-      <main className="flex-1 relative z-10" role="main">
+      <main id="main-content" tabIndex={-1} className="flex-1 relative z-10 focus:outline-none" role="main">
         <Outlet />
       </main>
 
