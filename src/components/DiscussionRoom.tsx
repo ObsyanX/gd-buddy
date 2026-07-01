@@ -368,7 +368,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       console.log('[Multiplayer] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, [sessionId, session?.is_multiplayer, currentUserId, autoPlayTTS, speak]);
+  }, [sessionId, session?.is_multiplayer, currentUserId, autoPlayTTS, speak, isPaused]);
 
   useEffect(() => {
     if (scrollRef.current) {
