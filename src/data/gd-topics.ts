@@ -1530,7 +1530,11 @@ import { expandedTopicsData } from "./gd-topics-expanded";
 import { expandedTopicsData2 } from "./gd-topics-expanded-2";
 
 // Merge base + expanded topics
-const allTopics = [...gdTopicsData, ...expandedTopicsData, ...expandedTopicsData2];
+const _mergedTopics = [...gdTopicsData, ...expandedTopicsData, ...expandedTopicsData2];
+// Dedupe by slug (first occurrence wins) to keep React keys unique across pages.
+const allTopics: GDTopicData[] = Array.from(
+  new Map(_mergedTopics.map((t) => [t.slug, t])).values(),
+);
 
 export const getTopicBySlug = (slug: string): GDTopicData | undefined =>
   allTopics.find((t) => t.slug === slug);
