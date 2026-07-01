@@ -402,10 +402,16 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     checkLevel();
     resetWordCount();
 
-    return () => {
+    const cleanupAudio = () => {
+      try { practiceStream?.getTracks().forEach(t => t.stop()); } catch {}
       if (audioContext && audioContext.state !== 'closed') {
         try { audioContext.close(); } catch (e) { /* already closed */ }
       }
+    };
+    registerCleanup(cleanupAudio);
+
+    return () => {
+      cleanupAudio();
     };
 
   }, [isRecordingPractice, practiceStream]);
