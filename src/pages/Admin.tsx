@@ -559,7 +559,7 @@ const Admin = () => {
               {feedback.map((f) => (
                 <div key={f.id} className="border-2 border-border p-3 rounded">
                   <div className="flex justify-between mb-1">
-                    <p className="font-bold">{f.profiles?.display_name || 'User'} — {f.stars}★</p>
+                    <p className="font-bold">{users.find((u) => u.id === f.user_id)?.display_name || 'User'} — {f.stars}★</p>
                     <span className="text-xs">{new Date(f.created_at).toLocaleDateString()}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mb-1">Topic: {f.gd_sessions?.topic || '—'}</p>
