@@ -114,16 +114,22 @@ Deno.serve(async (req) => {
 
     try {
       const ai = await callAI({
-        system:
-          "You audit a group discussion. Reply ONLY as compact JSON: " +
-          `{"drift_score":0..1,"drift_reason":"","consensus_score":0..1,"consensus_summary":""}. ` +
-          "drift_score=1 means fully off-topic; consensus_score=1 means participants agree on a shared conclusion.",
-        user: `TOPIC: ${session.topic}\n\nTRANSCRIPT:\n${transcript}`,
+        model: "google/gemini-2.5-flash",
         temperature: 0.2,
-        maxTokens: 250,
-        json: true,
+        max_tokens: 250,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              "You audit a group discussion. Reply ONLY as compact JSON: " +
+              `{"drift_score":0..1,"drift_reason":"","consensus_score":0..1,"consensus_summary":""}. ` +
+              "drift_score=1 means fully off-topic; consensus_score=1 means participants agree on a shared conclusion.",
+          },
+          { role: "user", content: `TOPIC: ${session.topic}\n\nTRANSCRIPT:\n${transcript}` },
+        ],
       });
-      const parsedAI = safeJson(ai.text);
+      const parsedAI = safeJson(ai.choices?.[0]?.message?.content ?? "");
       if (parsedAI) {
         if (run("drift", "drift") && typeof parsedAI.drift_score === "number" && parsedAI.drift_score > 0.6) {
           decisions.push({
