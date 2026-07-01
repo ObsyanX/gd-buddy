@@ -44,6 +44,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
 const Admin = lazy(() => import("./pages/Admin"));
 const FeedbackHistory = lazy(() => import("./pages/FeedbackHistory"));
+const Health = lazy(() => import("./pages/Health"));
 
 // SEO content pages (public, indexable)
 const GDTopics = lazy(() => import("./pages/GDTopics"));
