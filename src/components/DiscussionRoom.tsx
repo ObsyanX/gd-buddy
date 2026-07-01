@@ -203,6 +203,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const { isSpeaking, currentSpeaker, usingFallbackTTS, speak, stop: stopSpeaking } = useTextToSpeech();
   const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial();
   const { estimatedWordCount, updateFromAudioLevel, reset: resetWordCount } = useWordCountEstimator();
+
+  // Register TTS stop with centralized cleanup so idle/unmount stops any playback
+  useEffect(() => {
+    registerCleanup(() => { try { stopSpeaking(); } catch {} });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   
   // Multiplayer presence
   const { presenceState, typingParticipants, setTyping } = useMultiplayerPresence({
