@@ -71,6 +71,12 @@ const AppLayout = () => {
                 {item.label}
               </Button>
             ))}
+            {isAdmin && (
+              <Button variant={isActive('/home/admin') ? 'default' : 'outline'} size="sm" onClick={() => navigate('/home/admin')} className="border-2 border-destructive">
+                <Shield className="w-4 h-4 mr-1.5" /> ADMIN
+              </Button>
+            )}
+            <NotificationBell />
             <Button variant="outline" size="sm" onClick={handleSignOut} className="border-2" aria-label="Sign out">
               <LogOut className="w-4 h-4 mr-1.5" aria-hidden="true" />
               SIGN OUT
