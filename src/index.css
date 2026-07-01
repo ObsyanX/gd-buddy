@@ -363,6 +363,33 @@
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
     }
+
+    /* Discussion Room has a locked body to prevent message auto-scroll from
+       moving the page. The session content itself still needs a native mobile
+       scroll lane so video, chat, and controls remain reachable. */
+    .session-scroll-container {
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y !important;
+      overscroll-behavior: contain;
+    }
+
+    .chat-scroll-panel,
+    .chat-scroll-panel [data-radix-scroll-area-viewport] {
+      min-height: 0;
+      touch-action: pan-y !important;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      pointer-events: auto;
+    }
+
+    .chat-scroll-panel [data-radix-scroll-area-viewport] {
+      overflow-y: scroll !important;
+    }
+
+    .chat-scroll-panel [data-radix-scroll-area-scrollbar] {
+      pointer-events: none;
+    }
   }
 
 }
