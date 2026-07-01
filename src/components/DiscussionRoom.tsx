@@ -296,8 +296,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     resetWordCount();
 
     return () => {
-      audioContext.close();
+      if (audioContext && audioContext.state !== 'closed') {
+        try { audioContext.close(); } catch (e) { /* already closed */ }
+      }
     };
+
   }, [isRecordingPractice, practiceStream]);
 
   const loadSession = async () => {
