@@ -632,24 +632,76 @@ const Admin = () => {
               ))}
             </Card>
 
-            <Card className="p-4 border-4 border-border max-h-[400px] overflow-auto space-y-2">
-              <h3 className="font-bold mb-2">Raw Log</h3>
-              {errors.map((e) => (
-                <div key={e.id} className="border border-border p-2 rounded flex justify-between gap-2 text-xs">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-mono truncate">{e.error_message}</p>
-                    <p className="text-muted-foreground">{new Date(e.created_at).toLocaleString()} · {e.error_source}</p>
-                  </div>
-                  <Button size="sm" variant="ghost" onClick={() => deleteError(e.id)}>
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              ))}
-            </Card>
+            <RawErrorLog errors={errors} onDelete={deleteError} />
           </TabsContent>
         </Tabs>
       </main>
     </div>
+  );
+};
+
+// ---------- Raw log with severity filter + expandable stack traces ----------
+const RawErrorLog = ({ errors, onDelete }: { errors: any[]; onDelete: (id: string) => void }) => {
+  const [severity, setSeverity] = useState<'all' | Severity>('all');
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const filtered = useMemo(() => {
+    return errors.filter((e) => {
+      const s: Severity = e.metadata?.severity || classify(e.error_message || '').severity;
+      return severity === 'all' || s === severity;
+    });
+  }, [errors, severity]);
+
+  return (
+    <Card className="p-4 border-4 border-border max-h-[500px] overflow-auto space-y-2">
+      <div className="flex items-center justify-between sticky top-0 bg-card pb-2 z-10">
+        <h3 className="font-bold">Raw Log ({filtered.length})</h3>
+        <div className="flex gap-1">
+          {(['all', 'critical', 'high', 'medium', 'low'] as const).map((s) => (
+            <Button
+              key={s}
+              size="sm"
+              variant={severity === s ? 'default' : 'outline'}
+              onClick={() => setSeverity(s)}
+              className="text-xs h-7"
+            >
+              {s.toUpperCase()}
+            </Button>
+          ))}
+        </div>
+      </div>
+      {filtered.map((e) => {
+        const sev: Severity = e.metadata?.severity || classify(e.error_message || '').severity;
+        const isOpen = !!expanded[e.id];
+        return (
+          <div key={e.id} className="border border-border p-2 rounded text-xs space-y-1">
+            <div className="flex justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant={severityColor(sev) as any} className="uppercase text-[10px]">{sev}</Badge>
+                  <span className="text-muted-foreground">{new Date(e.created_at).toLocaleString()}</span>
+                  <span className="text-muted-foreground">· {e.error_source}</span>
+                </div>
+                <p className="font-mono truncate mt-1">{e.error_message}</p>
+              </div>
+              <div className="flex gap-1">
+                {e.error_stack && (
+                  <Button size="sm" variant="ghost" onClick={() => setExpanded((p) => ({ ...p, [e.id]: !isOpen }))} className="h-7 text-xs">
+                    {isOpen ? 'Hide' : 'Stack'}
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={() => onDelete(e.id)}>
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+            {isOpen && e.error_stack && (
+              <pre className="p-2 rounded bg-muted/40 overflow-auto whitespace-pre-wrap text-[10px] max-h-48">{e.error_stack}</pre>
+            )}
+          </div>
+        );
+      })}
+      {filtered.length === 0 && <p className="text-center text-muted-foreground text-xs">No errors at this severity.</p>}
+    </Card>
   );
 };
 
