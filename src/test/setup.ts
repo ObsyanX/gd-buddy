@@ -35,13 +35,11 @@ class MockAudioContext {
     this.state = "closed";
   }
 }
-// @ts-expect-error – test shim
-globalThis.AudioContext = MockAudioContext;
+(globalThis as any).AudioContext = MockAudioContext;
 
 // requestAnimationFrame shim
 if (!globalThis.requestAnimationFrame) {
-  // @ts-expect-error – test shim
-  globalThis.requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(() => cb(performance.now()), 16) as any;
+  (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(() => cb(performance.now()), 16) as any;
   // @ts-expect-error – test shim
   globalThis.cancelAnimationFrame = (id: number) => clearTimeout(id);
 }
