@@ -11,16 +11,23 @@ export const AudioWaveform = ({ isRecording, stream }: AudioWaveformProps) => {
   const analyserRef = useRef<AnalyserNode>();
   const audioContextRef = useRef<AudioContext>();
 
+  const safeCloseAudio = () => {
+    const ac = audioContextRef.current;
+    if (ac && ac.state !== 'closed') {
+      try { ac.close(); } catch (e) { /* already closed */ }
+    }
+    audioContextRef.current = undefined;
+  };
+
   useEffect(() => {
     if (!isRecording || !stream) {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
+      safeCloseAudio();
       return;
     }
+
 
     const canvas = canvasRef.current;
     if (!canvas) return;
