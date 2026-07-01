@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -20,9 +20,21 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
   const { user } = useAuth();
   const [presenceState, setPresenceState] = useState<Record<string, ParticipantPresence>>({});
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    if (!enabled || !sessionId || !user) return;
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!enabled || !sessionId || !user) {
+      setPresenceState({});
+      setChannel(null);
+      return;
+    }
+
+    let cancelled = false;
 
     const presenceChannel = supabase.channel(`presence_${sessionId}`, {
       config: {
@@ -50,12 +62,12 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
           }
         });
         
-        setPresenceState(newPresenceState);
+        if (!cancelled && mountedRef.current) setPresenceState(newPresenceState);
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         const presence = newPresences[0];
         if (presence) {
-          setPresenceState(prev => ({
+          if (!cancelled && mountedRef.current) setPresenceState(prev => ({
             ...prev,
             [key]: {
               oderId: key,
@@ -68,6 +80,7 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
         }
       })
       .on('presence', { event: 'leave' }, ({ key }) => {
+        if (cancelled || !mountedRef.current) return;
         setPresenceState(prev => {
           const newState = { ...prev };
           if (newState[key]) {
@@ -86,10 +99,14 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
         }
       });
 
-    setChannel(presenceChannel);
+    if (!cancelled && mountedRef.current) setChannel(presenceChannel);
 
     return () => {
-      presenceChannel.unsubscribe();
+      cancelled = true;
+      setChannel((current) => current === presenceChannel ? null : current);
+      setPresenceState({});
+      void presenceChannel.untrack().catch(() => {});
+      void supabase.removeChannel(presenceChannel).catch(() => {});
     };
   }, [sessionId, user, enabled]);
 

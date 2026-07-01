@@ -1,6 +1,7 @@
-import { useState, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { PracticeRecording } from '@/components/PracticeHistory';
+import { safeStopMediaStream } from '@/lib/audio-utils';
 
 export const usePracticeMode = () => {
   const [isPracticing, setIsPracticing] = useState(false);
@@ -16,7 +17,17 @@ export const usePracticeMode = () => {
   const chunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const practiceAudioUrlRef = useRef<string | null>(null);
+  const practiceHistoryRef = useRef<PracticeRecording[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    practiceAudioUrlRef.current = practiceAudioUrl;
+  }, [practiceAudioUrl]);
+
+  useEffect(() => {
+    practiceHistoryRef.current = practiceHistory;
+  }, [practiceHistory]);
 
   const startPracticeRecording = async () => {
     try {
@@ -58,7 +69,7 @@ export const usePracticeMode = () => {
         setRecordingStartTime(null);
 
         // Stop all tracks
-        stream.getTracks().forEach((track) => track.stop());
+        safeStopMediaStream(stream);
         streamRef.current = null;
       };
 
@@ -158,7 +169,7 @@ export const usePracticeMode = () => {
 
     // Stop stream if still active
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      safeStopMediaStream(streamRef.current);
       streamRef.current = null;
     }
   };
@@ -202,6 +213,23 @@ export const usePracticeMode = () => {
     });
     setPracticeHistory([]);
   }, [practiceHistory]);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try { mediaRecorderRef.current.stop(); } catch (error) { console.warn('[Practice] stop failed during cleanup', error); }
+      }
+      safeStopMediaStream(streamRef.current);
+      streamRef.current = null;
+      if (practiceAudioUrlRef.current) URL.revokeObjectURL(practiceAudioUrlRef.current);
+      practiceHistoryRef.current.forEach((recording) => URL.revokeObjectURL(recording.audioUrl));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     isPracticing,

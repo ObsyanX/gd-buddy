@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Minus, Maximize2, X, Camera, Move, Eye, Activity } from 'lucide-react';
 import { useDraggable } from '@/hooks/useDraggable';
 import { cn } from '@/lib/utils';
+import VideoMonitor from '@/components/VideoMonitor';
 
 interface FloatingVideoPanelProps {
   sessionId?: string;
@@ -508,7 +509,6 @@ const FloatingVideoPanel = ({
   );
 };
 
-// MiniVideoView - Lightweight component for PiP mode (no metric bars)
 const MiniVideoView = ({ 
   isActive, 
   onMetricsUpdate 
@@ -516,19 +516,13 @@ const MiniVideoView = ({
   isActive: boolean; 
   onMetricsUpdate?: (metrics: VideoMetrics) => void;
 }) => {
-  // This is a lazy wrapper that imports VideoMonitor but only renders video
-  // For now, we use the full VideoMonitor but could optimize later
-  const VideoMonitor = React.lazy(() => import('@/components/VideoMonitor'));
-  
   return (
-    <React.Suspense fallback={<div className="w-full h-full bg-muted animate-pulse" />}>
-      <div className="[&_.space-y-1\.5]:hidden [&_.space-y-2]:hidden [&_[class*='pt-1.5']]:hidden [&_[class*='border-t']]:hidden">
-        <VideoMonitor 
-          isActive={isActive} 
-          onMetricsUpdate={onMetricsUpdate}
-        />
-      </div>
-    </React.Suspense>
+    <div className="[&_.space-y-1\.5]:hidden [&_.space-y-2]:hidden [&_[class*='pt-1.5']]:hidden [&_[class*='border-t']]:hidden">
+      <VideoMonitor 
+        isActive={isActive} 
+        onMetricsUpdate={onMetricsUpdate}
+      />
+    </div>
   );
 };
 
@@ -544,21 +538,14 @@ const FullVideoView = ({
   isUserMicActive?: boolean;
   onMetricsUpdate?: (metrics: VideoMetrics) => void;
 }) => {
-  const VideoMonitor = React.lazy(() => import('@/components/VideoMonitor'));
-  
   return (
-    <React.Suspense fallback={<div className="w-full h-full min-h-[200px] bg-muted animate-pulse" />}>
-      <VideoMonitor 
-        isActive={isActive}
-        sessionId={sessionId}
-        isUserMicActive={isUserMicActive}
-        onMetricsUpdate={onMetricsUpdate}
-      />
-    </React.Suspense>
+    <VideoMonitor 
+      isActive={isActive}
+      sessionId={sessionId}
+      isUserMicActive={isUserMicActive}
+      onMetricsUpdate={onMetricsUpdate}
+    />
   );
 };
-
-// Need to import React for lazy/Suspense
-import React from 'react';
 
 export default FloatingVideoPanel;

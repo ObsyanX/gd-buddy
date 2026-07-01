@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { safeCloseAudioContext, safeDisconnectAudioNode, safeStopMediaStream } from '@/lib/audio-utils';
 
 export interface AudioMetrics {
   isSpeaking: boolean;
@@ -38,8 +39,11 @@ export const useAudioAnalysis = (options: UseAudioAnalysisOptions = {}) => {
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationRef = useRef<number | null>(null);
+  const ownsStreamRef = useRef(false);
+  const stoppingRef = useRef(false);
   
   // Tracking refs
   const speakingStartRef = useRef<number | null>(null);
@@ -51,7 +55,7 @@ export const useAudioAnalysis = (options: UseAudioAnalysisOptions = {}) => {
   const lastVolumeRef = useRef(0);
 
   const analyze = useCallback(() => {
-    if (!analyserRef.current) return;
+    if (stoppingRef.current || !analyserRef.current || audioContextRef.current?.state === 'closed') return;
 
     const analyser = analyserRef.current;
     const bufferLength = analyser.frequencyBinCount;
@@ -147,9 +151,25 @@ export const useAudioAnalysis = (options: UseAudioAnalysisOptions = {}) => {
 
   const startAnalysis = useCallback(async (existingStream?: MediaStream) => {
     try {
+      if (audioContextRef.current || animationRef.current || analyserRef.current) {
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+          animationRef.current = null;
+        }
+        safeDisconnectAudioNode(sourceRef.current);
+        safeDisconnectAudioNode(analyserRef.current);
+        sourceRef.current = null;
+        analyserRef.current = null;
+        const previousContext = audioContextRef.current;
+        audioContextRef.current = null;
+        void safeCloseAudioContext(previousContext);
+      }
+
+      stoppingRef.current = false;
       // Use existing stream or create new one
       const stream = existingStream || await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
+      ownsStreamRef.current = !existingStream;
 
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       analyserRef.current = audioContextRef.current.createAnalyser();
@@ -157,6 +177,7 @@ export const useAudioAnalysis = (options: UseAudioAnalysisOptions = {}) => {
       analyserRef.current.smoothingTimeConstant = 0.8;
 
       const source = audioContextRef.current.createMediaStreamSource(stream);
+      sourceRef.current = source;
       source.connect(analyserRef.current);
 
       // Reset tracking
@@ -177,22 +198,35 @@ export const useAudioAnalysis = (options: UseAudioAnalysisOptions = {}) => {
   }, [analyze]);
 
   const stopAnalysis = useCallback(() => {
+    if (stoppingRef.current) return;
+    stoppingRef.current = true;
+
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
     }
 
+    safeDisconnectAudioNode(sourceRef.current);
+    safeDisconnectAudioNode(analyserRef.current);
+    sourceRef.current = null;
+    analyserRef.current = null;
+
+    if (ownsStreamRef.current) {
+      safeStopMediaStream(streamRef.current);
+    }
+    streamRef.current = null;
+    ownsStreamRef.current = false;
+
     if (audioContextRef.current) {
       const ac = audioContextRef.current;
-      if (ac.state !== 'closed') {
-        try { ac.close(); } catch (e) { /* already closed */ }
-      }
       audioContextRef.current = null;
+      void safeCloseAudioContext(ac).finally(() => {
+        stoppingRef.current = false;
+      });
+    } else {
+      stoppingRef.current = false;
     }
 
-
-    // Don't stop stream if it was provided externally
-    analyserRef.current = null;
     setIsActive(false);
     
     console.log('Audio analysis stopped');

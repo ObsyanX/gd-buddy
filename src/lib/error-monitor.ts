@@ -11,8 +11,13 @@ interface ErrorLogEntry {
 class ErrorMonitor {
   private queue: ErrorLogEntry[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private recent = new Map<string, number>();
   private readonly FLUSH_INTERVAL = 5000;
   private readonly MAX_QUEUE_SIZE = 20;
+  private readonly DEDUPE_MS = 60_000;
+  private readonly IGNORED_MESSAGES = [
+    'cannot close a closed audiocontext',
+  ];
 
   constructor() {
     // Listen for unhandled errors
@@ -39,6 +44,17 @@ class ErrorMonitor {
   }
 
   capture(entry: ErrorLogEntry) {
+    const normalized = (entry.error_message || '').toLowerCase();
+    if (this.IGNORED_MESSAGES.some((msg) => normalized.includes(msg))) {
+      return;
+    }
+
+    const key = `${entry.error_source || 'client'}|${entry.page_url || ''}|${entry.error_message}`;
+    const now = Date.now();
+    const lastSeen = this.recent.get(key) || 0;
+    if (now - lastSeen < this.DEDUPE_MS) return;
+    this.recent.set(key, now);
+
     this.queue.push({
       ...entry,
       page_url: entry.page_url || (typeof window !== 'undefined' ? window.location.href : undefined),

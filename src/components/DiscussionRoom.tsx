@@ -28,6 +28,7 @@ import MessageList from "@/components/discussion/MessageList";
 import MessageInput from "@/components/discussion/MessageInput";
 import SessionSidebar, { FeedbackGrid } from "@/components/discussion/SessionSidebar";
 import { updatePracticeStreak } from "@/lib/streak-updater";
+import { safeCloseAudioContext, safeDisconnectAudioNode, safeStopMediaStream } from "@/lib/audio-utils";
 
 interface DiscussionRoomProps {
   sessionId: string;
@@ -69,14 +70,34 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isInactiveRef = useRef(false);
   const cleanupCallbacksRef = useRef<Array<() => void>>([]);
+  const pendingTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const mountedRef = useRef(true);
   const IDLE_MS = 15 * 60 * 1000;
   const HEARTBEAT_MS = 60 * 1000; // ping every 60s while active
 
   const registerCleanup = (cb: () => void) => {
     cleanupCallbacksRef.current.push(cb);
+    return () => {
+      cleanupCallbacksRef.current = cleanupCallbacksRef.current.filter((fn) => fn !== cb);
+    };
+  };
+
+  const scheduleSessionTimeout = (cb: () => void, delayMs: number) => {
+    const id = setTimeout(() => {
+      pendingTimersRef.current.delete(id);
+      if (!isInactiveRef.current && mountedRef.current) cb();
+    }, delayMs);
+    pendingTimersRef.current.add(id);
+    return id;
   };
 
   const runCentralizedCleanup = () => {
+    pendingTimersRef.current.forEach((id) => clearTimeout(id));
+    pendingTimersRef.current.clear();
+    if (skipWaitRef.current) {
+      try { skipWaitRef.current(); } catch {}
+      skipWaitRef.current = null;
+    }
     // Stop heartbeat
     if (heartbeatTimerRef.current) {
       clearInterval(heartbeatTimerRef.current);
@@ -88,7 +109,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       idleTimerRef.current = null;
     }
     // Run all registered cleanups (audio contexts, media streams, TTS, etc.)
-    for (const cb of cleanupCallbacksRef.current.splice(0)) {
+    for (const cb of [...cleanupCallbacksRef.current]) {
       try { cb(); } catch (e) { console.warn('[Cleanup] callback failed', e); }
     }
   };
@@ -142,7 +163,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     const ping = () => {
       supabase
         .from('gd_sessions')
-        .update({ updated_at: new Date().toISOString() })
+        .update({ updated_at: new Date().toISOString(), last_activity_at: new Date().toISOString() })
         .eq('id', sessionId)
         .then(({ error }) => {
           if (error) console.warn('[Heartbeat] failed', error.message);
@@ -164,7 +185,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   // Ensure central cleanup on unmount
   useEffect(() => {
-    return () => runCentralizedCleanup();
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      runCentralizedCleanup();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -189,7 +214,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       if (pendingSendRef.current && text.trim()) {
         pendingSendRef.current = false;
         // Small delay to ensure state is updated
-        setTimeout(() => handleSendMessageDirect(text), 100);
+        scheduleSessionTimeout(() => handleSendMessageDirect(text), 100);
       }
     },
     onCorrectionStart: () => {
@@ -206,7 +231,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   // Register TTS stop with centralized cleanup so idle/unmount stops any playback
   useEffect(() => {
-    registerCleanup(() => { try { stopSpeaking(); } catch {} });
+    return registerCleanup(() => { try { stopSpeaking(); } catch {} });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -214,7 +239,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   // Multiplayer presence
   const { presenceState, typingParticipants, setTyping } = useMultiplayerPresence({
     sessionId,
-    enabled: session?.is_multiplayer ?? false,
+    enabled: (session?.is_multiplayer ?? false) && !isPaused,
   });
   const {
     isPracticing,
@@ -391,33 +416,40 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     const analyser = audioContext.createAnalyser();
     const source = audioContext.createMediaStreamSource(practiceStream);
     source.connect(analyser);
+    let stopped = false;
+    let animationId: number | null = null;
     
     analyser.fftSize = 256;
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
     const checkLevel = () => {
-      if (!isRecordingPractice) return;
+      if (!isRecordingPractice || stopped || audioContext.state === 'closed') return;
       
       analyser.getByteFrequencyData(dataArray);
       const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
       const normalizedLevel = average / 255;
       updateFromAudioLevel(normalizedLevel);
       
-      requestAnimationFrame(checkLevel);
+      animationId = requestAnimationFrame(checkLevel);
     };
     
     checkLevel();
     resetWordCount();
 
     const cleanupAudio = () => {
-      try { practiceStream?.getTracks().forEach(t => t.stop()); } catch {}
-      if (audioContext && audioContext.state !== 'closed') {
-        try { audioContext.close(); } catch (e) { /* already closed */ }
-      }
+      if (stopped) return;
+      stopped = true;
+      if (animationId) cancelAnimationFrame(animationId);
+      animationId = null;
+      safeDisconnectAudioNode(source);
+      safeDisconnectAudioNode(analyser);
+      safeStopMediaStream(practiceStream);
+      void safeCloseAudioContext(audioContext);
     };
-    registerCleanup(cleanupAudio);
+    const unregister = registerCleanup(cleanupAudio);
 
     return () => {
+      unregister();
       cleanupAudio();
     };
 
@@ -517,7 +549,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       
       setIsWaitingForSpeech(true);
       await new Promise<void>(resolve => {
-        const timeoutId = setTimeout(() => {
+        const timeoutId = scheduleSessionTimeout(() => {
           skipWaitRef.current = null;
           resolve();
         }, humanSpeechDelay);
@@ -530,6 +562,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         };
       });
       setIsWaitingForSpeech(false);
+      if (isInactiveRef.current || isPaused) return;
       console.log('[AI Response Delay] Proceeding with AI response generation');
 
       // Get AI responses
@@ -667,7 +700,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       // Auto-reopen mic after AI responses complete (if enabled and setting allows)
       if (autoMicEnabled && autoMicSetting && isSpeechSupported) {
-        setTimeout(() => {
+        scheduleSessionTimeout(() => {
           startListening();
         }, 500);
       }
@@ -707,11 +740,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       // Pause: stop mic, TTS, update DB status
       stopListening();
       stopSpeaking();
+      cancelPractice();
+      runCentralizedCleanup();
       await supabase
         .from('gd_sessions')
         .update({ status: 'paused' })
         .eq('id', sessionId);
     } else {
+      isInactiveRef.current = false;
+      resetIdleTimer();
       // Resume: update DB status back to active
       await supabase
         .from('gd_sessions')
@@ -726,6 +763,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       stopSpeaking();
       stopListening();
       cancelPractice();
+      runCentralizedCleanup();
       
       // Get video metrics if available
       const getVideoMetrics = (window as any).__getVideoSessionMetrics;

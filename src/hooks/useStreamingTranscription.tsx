@@ -33,6 +33,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
   const recognitionRef = useRef<any>(null);
   const finalTextRef = useRef('');
   const hasSpokenRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   // Check browser support
   useEffect(() => {
@@ -91,6 +92,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
     recognition.lang = 'en-IN'; // Indian English handles code-switching better
 
     recognition.onstart = () => {
+      if (!isMountedRef.current) return;
       setIsListening(true);
       finalTextRef.current = '';
       setFinalText('');
@@ -100,6 +102,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
     };
 
     recognition.onresult = (event: any) => {
+      if (!isMountedRef.current) return;
       // Build full transcript from all results to avoid duplication
       let fullFinal = '';
       let latestInterim = '';
@@ -134,18 +137,20 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
 
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
-      if (event.error !== 'no-speech' && event.error !== 'aborted') {
+      if (isMountedRef.current && event.error !== 'no-speech' && event.error !== 'aborted') {
         setIsListening(false);
       }
     };
 
     recognition.onend = async () => {
+      if (!isMountedRef.current) return;
       setIsListening(false);
       setInterimText('');
       
       // Apply AI correction to final text
       if (finalTextRef.current.trim()) {
         const corrected = await correctTranscription(finalTextRef.current.trim());
+        if (!isMountedRef.current) return;
         setFinalText(corrected);
         onFinalResult?.(corrected);
         
@@ -158,14 +163,39 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
       console.log('Speech recognition ended');
     };
 
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (error) {
+      console.warn('Speech recognition start failed:', error);
+      recognitionRef.current = null;
+      setIsListening(false);
+    }
   }, [onInterimResult, onFinalResult, correctTranscription, autoSend, onAutoSend]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch (error) {
+        console.warn('Speech recognition stop failed:', error);
+      }
       recognitionRef.current = null;
     }
+  }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort?.();
+        } catch {
+          try { recognitionRef.current.stop?.(); } catch {}
+        }
+        recognitionRef.current = null;
+      }
+    };
   }, []);
 
   const toggleListening = useCallback(() => {
