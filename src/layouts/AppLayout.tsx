@@ -66,14 +66,39 @@ const AppLayout = () => {
       <header className="sticky top-0 z-40 py-3 md:py-4 px-1.5 sm:px-3 md:px-6" role="banner">
         <div className="w-full lg:container lg:mx-auto">
           <div className="glass rounded-full px-2 sm:px-3 md:px-5 py-2.5 flex items-center justify-between">
-            <Link to="/home" className="flex items-center gap-3 group min-w-0" aria-label="GD Buddy Home">
-              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-copper group-hover:rotate-6 transition-transform duration-slow ease-editorial shrink-0">
-                <img src={gdLogo.url} alt="GD Buddy logo" className="w-full h-full object-cover" />
+            <Link to="/home" className="flex items-center gap-2.5 md:gap-3 group min-w-0" aria-label="GD Buddy Home">
+              <div className="relative shrink-0">
+                {/* Pulsing copper halo */}
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-0 rounded-2xl bg-gradient-copper opacity-40 blur-md animate-pulse-soft"
+                />
+                <div className="relative w-10 h-10 md:w-11 md:h-11 rounded-2xl overflow-hidden shadow-copper ring-1 ring-primary/40 group-hover:ring-primary-glow/70 transition-all duration-slow ease-editorial group-hover:-rotate-6 group-hover:scale-105">
+                  <img
+                    src={gdLogo.url}
+                    srcSet={`${gdLogo.url}?w=80 80w, ${gdLogo.url}?w=160 160w, ${gdLogo.url}?w=240 240w`}
+                    sizes="(min-width: 768px) 44px, 40px"
+                    width={44}
+                    height={44}
+                    decoding="async"
+                    fetchPriority="high"
+                    alt="GD Buddy logo"
+                    className="w-full h-full object-contain transition-transform duration-slow ease-editorial group-hover:scale-110"
+                  />
+                  {/* Sheen sweep on hover */}
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000 ease-editorial"
+                  />
+                </div>
               </div>
-              <div className="min-w-0">
-                <span className="font-display text-lg md:text-xl tracking-tight text-foreground truncate block">GD Buddy</span>
+              <div className="min-w-0 overflow-hidden">
+                <span className="font-display text-lg md:text-xl tracking-tight bg-gradient-copper bg-clip-text text-transparent truncate block animate-shimmer-slow bg-[length:200%_auto]">
+                  GD Buddy
+                </span>
               </div>
             </Link>
+
 
             {/* Desktop nav */}
             <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
