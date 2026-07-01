@@ -101,7 +101,7 @@ const Admin = () => {
            activeUsersCnt, activeSessionsCnt] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(500),
       supabase.from('gd_sessions').select('id, topic, status, created_at, is_multiplayer, user_id, last_activity_at').order('created_at', { ascending: false }).limit(500),
-      supabase.from('user_feedback').select('*, gd_sessions(topic), profiles!user_feedback_user_id_fkey(display_name)').order('created_at', { ascending: false }).limit(500),
+      supabase.from('user_feedback').select('*, gd_sessions(topic)').order('created_at', { ascending: false }).limit(500),
       supabase.from('error_logs').select('*').order('created_at', { ascending: false }).limit(500),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('gd_sessions').select('*', { count: 'exact', head: true }),
