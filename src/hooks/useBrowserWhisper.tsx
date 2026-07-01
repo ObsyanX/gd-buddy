@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { pipeline } from '@huggingface/transformers';
 import { useToast } from '@/hooks/use-toast';
 import { invokeWithAuth } from '@/lib/supabase-auth';
+import { safeCloseAudioContext } from '@/lib/audio-utils';
 
 let whisperPipeline: any = null;
 let pipelineLoading = false;
@@ -87,9 +88,11 @@ export const useBrowserWhisper = () => {
       // Convert blob to array buffer
       const arrayBuffer = await audioBlob.arrayBuffer();
       
-      // Create audio context to decode the audio
+      // Create audio context to decode the audio, then always close it safely
       const audioContext = new AudioContext({ sampleRate: 16000 });
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer).finally(() => {
+        void safeCloseAudioContext(audioContext);
+      });
       
       // Get audio data as float32 array
       const audioData = audioBuffer.getChannelData(0);
@@ -137,7 +140,9 @@ export const useBrowserWhisper = () => {
       // Convert to array buffer and decode
       const arrayBuffer = await audioBlob.arrayBuffer();
       const audioContext = new AudioContext({ sampleRate: 16000 });
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer).finally(() => {
+        void safeCloseAudioContext(audioContext);
+      });
       const audioData = audioBuffer.getChannelData(0);
 
       console.log('Transcribing audio from URL with multilingual support...');

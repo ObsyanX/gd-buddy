@@ -1,13 +1,26 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useBrowserWhisper } from '@/hooks/useBrowserWhisper';
+import { safeStopMediaStream } from '@/lib/audio-utils';
 
 export const useAudioRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const stopPromiseRef = useRef<Promise<string | null> | null>(null);
   const { toast } = useToast();
   const { isTranscribing, isModelLoading, transcribeAudio } = useBrowserWhisper();
+
+  const cleanupRecorder = () => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') {
+      try { recorder.stop(); } catch (error) { console.warn('[Recorder] stop failed during cleanup', error); }
+    }
+    safeStopMediaStream(streamRef.current || recorder?.stream || null);
+    streamRef.current = null;
+    mediaRecorderRef.current = null;
+  };
 
   const startRecording = async () => {
     try {
@@ -20,6 +33,7 @@ export const useAudioRecorder = () => {
           autoGainControl: true
         }
       });
+      streamRef.current = stream;
 
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
@@ -47,12 +61,16 @@ export const useAudioRecorder = () => {
   };
 
   const stopRecording = async (): Promise<string | null> => {
-    return new Promise((resolve) => {
-      if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
-        resolve(null);
-        return;
-      }
+    if (stopPromiseRef.current) return stopPromiseRef.current;
 
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
+      safeStopMediaStream(streamRef.current);
+      streamRef.current = null;
+      mediaRecorderRef.current = null;
+      return null;
+    }
+
+    stopPromiseRef.current = new Promise<string | null>((resolve) => {
       mediaRecorderRef.current.onstop = async () => {
         setIsRecording(false);
 
@@ -62,14 +80,30 @@ export const useAudioRecorder = () => {
         const transcription = await transcribeAudio(audioBlob);
         
         // Stop all tracks
-        mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+        safeStopMediaStream(streamRef.current || mediaRecorderRef.current?.stream || null);
+        streamRef.current = null;
+        mediaRecorderRef.current = null;
+        stopPromiseRef.current = null;
         
         resolve(transcription);
       };
 
-      mediaRecorderRef.current.stop();
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (error) {
+        console.warn('[Recorder] stop failed', error);
+        safeStopMediaStream(streamRef.current || mediaRecorderRef.current?.stream || null);
+        streamRef.current = null;
+        mediaRecorderRef.current = null;
+        stopPromiseRef.current = null;
+        resolve(null);
+      }
     });
+
+    return stopPromiseRef.current;
   };
+
+  useEffect(() => cleanupRecorder, []);
 
   return {
     isRecording,

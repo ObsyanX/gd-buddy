@@ -74,6 +74,14 @@ const classify = (msg: string): ErrCat => {
 const severityColor = (s: Severity) =>
   s === 'critical' ? 'destructive' : s === 'high' ? 'destructive' : s === 'medium' ? 'default' : 'secondary';
 
+const RESOLVED_ERROR_PATTERNS = [
+  'Cannot close a closed AudioContext.',
+  "Cannot access 'recalculateMetrics' before initialization",
+  'Should have a queue. This is likely a bug in React.',
+];
+
+const RECENT_ERROR_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 const Admin = () => {
   const { isAdmin, loading } = useIsAdmin();
   const { toast } = useToast();
@@ -135,7 +143,9 @@ const Admin = () => {
   // Error categorization
   const errorGroups = useMemo(() => {
     const groups = new Map<string, { category: string; severity: Severity; count: number; sample: any; cause: string; fix: string; vuln?: string; lastSeen: string; pages: Set<string> }>();
+    const cutoff = Date.now() - RECENT_ERROR_WINDOW_MS;
     for (const e of errors) {
+      if (new Date(e.created_at).getTime() < cutoff) continue;
       const c = classify(e.error_message || '');
       const key = c.category + '|' + (e.error_message || '').slice(0, 80);
       const g = groups.get(key);
@@ -234,6 +244,19 @@ const Admin = () => {
     await supabase.from('error_logs').delete().in('id', ids);
     setErrors((prev) => prev.filter((e) => !ids.includes(e.id)));
     toast({ title: `Cleared ${ids.length} ${category} errors` });
+  };
+
+  const clearResolvedErrors = async () => {
+    const ids = errors
+      .filter((e) => RESOLVED_ERROR_PATTERNS.some((pattern) => (e.error_message || '').includes(pattern)))
+      .map((e) => e.id);
+    if (!ids.length) {
+      toast({ title: 'No resolved historical errors to clear' });
+      return;
+    }
+    await supabase.from('error_logs').delete().in('id', ids);
+    setErrors((prev) => prev.filter((e) => !ids.includes(e.id)));
+    toast({ title: `Cleared ${ids.length} resolved historical errors` });
   };
 
   if (loading) return <div className="p-8">Checking admin access…</div>;
@@ -402,7 +425,7 @@ const Admin = () => {
               const cutoff = Date.now() - 15 * 60 * 1000;
               const activeUserIds = new Set(
                 sessions
-                  .filter((s) => s.status === 'active' && new Date(s.created_at).getTime() > cutoff)
+                  .filter((s) => s.status === 'active' && new Date(s.last_activity_at || s.updated_at || s.created_at).getTime() > cutoff)
                   .map((s) => s.user_id)
               );
               const activeUsers = users.filter((u) => activeUserIds.has(u.id));
@@ -534,6 +557,15 @@ const Admin = () => {
 
           {/* ---------- ERRORS ---------- */}
           <TabsContent value="errors" className="space-y-4">
+            <div className="flex items-center justify-between gap-3 p-3 border-2 border-border rounded bg-muted/20">
+              <div>
+                <p className="font-bold text-sm">Active error window: last 24 hours</p>
+                <p className="text-xs text-muted-foreground">Historical fixed React/Audio errors are kept out of active vulnerability grouping.</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={clearResolvedErrors}>
+                <Trash2 className="w-4 h-4 mr-1" /> Clear resolved old logs
+              </Button>
+            </div>
             <div className="grid md:grid-cols-2 gap-4">
               <Card className="p-4 border-4 border-border">
                 <h3 className="font-bold mb-2">Errors by Category</h3>
@@ -563,7 +595,7 @@ const Admin = () => {
 
             <Card className="p-4 border-4 border-border space-y-3">
               <h3 className="font-bold">Grouped Errors — Root Cause & Fix</h3>
-              {errorGroups.length === 0 && <p className="text-center text-muted-foreground">No errors logged.</p>}
+              {errorGroups.length === 0 && <p className="text-center text-muted-foreground">No active errors logged in the last 24 hours.</p>}
               {errorGroups.map((g, i) => (
                 <div key={i} className="border-2 border-border p-3 rounded space-y-2">
                   <div className="flex items-start justify-between gap-2 flex-wrap">

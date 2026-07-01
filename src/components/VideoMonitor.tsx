@@ -11,6 +11,7 @@ import { getMediaPipeClient, destroyMediaPipeClient, LandmarkData } from '@/lib/
 import { getAnalyzeFrameClient, resetAnalyzeFrameClient, FrameResponse, AnalysisMetrics } from '@/lib/analyze-frame-client';
 import { resetExternalVideoAnalyzer } from '@/lib/external-video-analyzer';
 import VideoCoachingOverlay from '@/components/VideoCoachingOverlay';
+import { safeStopMediaStream } from '@/lib/audio-utils';
 
 interface VideoMonitorProps {
   isActive: boolean;
@@ -54,6 +55,8 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   const streamRef = useRef<MediaStream | null>(null);
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveMetricsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const warmupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const stoppingCameraRef = useRef(false);
   const isCameraOnRef = useRef(false);
   const lastValidMetricsRef = useRef<VideoMetrics | null>(null); // Store last valid backend metrics
   const hasReceivedBackendDataRef = useRef(false); // Track if backend ever returned valid data
@@ -244,6 +247,8 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
       setTimeout(startAnalysis, 300);
     } catch (error: any) {
       console.error('Camera access error:', error);
+      safeStopMediaStream(streamRef.current);
+      streamRef.current = null;
       setHasPermission(false);
       setIsInitializingCamera(false);
       setIsVideoReady(false);
@@ -256,6 +261,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
   };
 
   const stopCamera = () => {
+    if (stoppingCameraRef.current) return;
+    stoppingCameraRef.current = true;
+
     isCameraOnRef.current = false;
     stopAudioAnalysis();
     
@@ -264,7 +272,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     }
     
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      safeStopMediaStream(streamRef.current);
       streamRef.current = null;
     }
     if (videoRef.current) {
@@ -273,6 +281,14 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     if (analysisTimeoutRef.current) {
       clearTimeout(analysisTimeoutRef.current);
       analysisTimeoutRef.current = null;
+    }
+    if (saveMetricsTimeoutRef.current) {
+      clearInterval(saveMetricsTimeoutRef.current);
+      saveMetricsTimeoutRef.current = null;
+    }
+    if (warmupTimeoutRef.current) {
+      clearTimeout(warmupTimeoutRef.current);
+      warmupTimeoutRef.current = null;
     }
     
     // Cleanup MediaPipe
@@ -286,6 +302,8 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     
     setIsCameraOn(false);
     setIsVideoReady(false);
+    setIsAnalyzing(false);
+    stoppingCameraRef.current = false;
   };
 
   const drawLandmarks = useCallback((
@@ -582,7 +600,8 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
     
     // Start warm-up period (3 seconds) - don't show "No Face" during this time
     setIsWarmingUp(true);
-    setTimeout(() => {
+    if (warmupTimeoutRef.current) clearTimeout(warmupTimeoutRef.current);
+    warmupTimeoutRef.current = setTimeout(() => {
       setIsWarmingUp(false);
       console.log('Warm-up period ended');
     }, 3000);

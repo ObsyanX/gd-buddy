@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { safeCloseAudioContext, safeDisconnectAudioNode } from '@/lib/audio-utils';
 
 interface AudioWaveformProps {
   isRecording: boolean;
@@ -10,20 +11,32 @@ export const AudioWaveform = ({ isRecording, stream }: AudioWaveformProps) => {
   const animationRef = useRef<number>();
   const analyserRef = useRef<AnalyserNode>();
   const audioContextRef = useRef<AudioContext>();
+  const sourceRef = useRef<MediaStreamAudioSourceNode>();
+  const cleanupStartedRef = useRef(false);
 
   const safeCloseAudio = () => {
-    const ac = audioContextRef.current;
-    if (ac && ac.state !== 'closed') {
-      try { ac.close(); } catch (e) { /* already closed */ }
+    if (cleanupStartedRef.current) return;
+    cleanupStartedRef.current = true;
+
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = undefined;
     }
+
+    safeDisconnectAudioNode(sourceRef.current);
+    safeDisconnectAudioNode(analyserRef.current);
+    sourceRef.current = undefined;
+    analyserRef.current = undefined;
+
+    const ac = audioContextRef.current;
     audioContextRef.current = undefined;
+    void safeCloseAudioContext(ac).finally(() => {
+      cleanupStartedRef.current = false;
+    });
   };
 
   useEffect(() => {
     if (!isRecording || !stream) {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
       safeCloseAudio();
       return;
     }
@@ -44,13 +57,14 @@ export const AudioWaveform = ({ isRecording, stream }: AudioWaveformProps) => {
     analyser.fftSize = 256;
     
     const source = audioContext.createMediaStreamSource(stream);
+    sourceRef.current = source;
     source.connect(analyser);
 
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
     const draw = () => {
-      if (!isRecording) return;
+      if (!isRecording || audioContextRef.current?.state === 'closed') return;
 
       animationRef.current = requestAnimationFrame(draw);
 
@@ -78,9 +92,6 @@ export const AudioWaveform = ({ isRecording, stream }: AudioWaveformProps) => {
     draw();
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
       safeCloseAudio();
     };
   }, [isRecording, stream]);
