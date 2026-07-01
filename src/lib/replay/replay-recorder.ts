@@ -104,7 +104,7 @@ export class ReplayRecorder {
         .update({
           duration_seconds: Math.floor((Date.now() - this.startedAt) / 1000),
           event_count: this.eventCount,
-          summary,
+          summary: summary as never,
         })
         .eq("id", this.replayId);
     }
