@@ -1268,6 +1268,10 @@ export type Database = {
         Returns: boolean
       }
       is_joinable_session: { Args: { _session_id: string }; Returns: boolean }
+      migrate_session_host: {
+        Args: { _idle_seconds?: number; _session_id: string }
+        Returns: Json
+      }
       owns_session: {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
