@@ -76,12 +76,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     try {
       await supabase
         .from('gd_sessions')
-        .update({ status: 'inactive' })
+        .update({ status: 'paused' })
         .eq('id', sessionId);
       toast({
-        title: 'Session paused',
-        description: 'Session set to inactive after 15 minutes of no activity.',
+        title: 'Session inactive',
+        description: 'Session paused after 15 minutes of inactivity.',
       });
+
     } catch (e) {
       console.warn('[Idle] Failed to mark session inactive', e);
     }
