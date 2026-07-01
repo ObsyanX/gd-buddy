@@ -50,9 +50,9 @@ Deno.serve(async (req) => {
 
   const { data: messages = [] } = await supabase
     .from("gd_messages")
-    .select("id,user_id,participant_kind,content,end_ts,created_at")
+    .select("id,participant_id,text,end_ts,start_ts")
     .eq("session_id", session_id)
-    .order("created_at", { ascending: false })
+    .order("start_ts", { ascending: false })
     .limit(30);
 
   const recent = (messages ?? []).slice().reverse();
