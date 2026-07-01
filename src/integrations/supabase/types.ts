@@ -169,6 +169,50 @@ export type Database = {
         }
         Relationships: []
       }
+      coaching_tips: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          evidence: Json
+          headline: string
+          id: string
+          priority: number
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          category: string
+          created_at?: string
+          evidence?: Json
+          headline: string
+          id?: string
+          priority?: number
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          evidence?: Json
+          headline?: string
+          id?: string
+          priority?: number
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_tips_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cohort_members: {
         Row: {
           cohort_id: string
@@ -1172,6 +1216,103 @@ export type Database = {
           },
         ]
       }
+      knowledge_edges: {
+        Row: {
+          created_at: string
+          from_node: string
+          id: string
+          relation: string
+          session_id: string
+          strength: number
+          to_node: string
+        }
+        Insert: {
+          created_at?: string
+          from_node: string
+          id?: string
+          relation: string
+          session_id: string
+          strength?: number
+          to_node: string
+        }
+        Update: {
+          created_at?: string
+          from_node?: string
+          id?: string
+          relation?: string
+          session_id?: string
+          strength?: number
+          to_node?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_edges_from_node_fkey"
+            columns: ["from_node"]
+            isOneToOne: false
+            referencedRelation: "knowledge_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_edges_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_edges_to_node_fkey"
+            columns: ["to_node"]
+            isOneToOne: false
+            referencedRelation: "knowledge_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_nodes: {
+        Row: {
+          created_at: string
+          first_message_id: string | null
+          id: string
+          label: string
+          node_type: string
+          salience: number
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_message_id?: string | null
+          id?: string
+          label: string
+          node_type: string
+          salience?: number
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          first_message_id?: string | null
+          id?: string
+          label?: string
+          node_type?: string
+          salience?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_nodes_first_message_id_fkey"
+            columns: ["first_message_id"]
+            isOneToOne: false
+            referencedRelation: "gd_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_nodes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moderation_policies: {
         Row: {
           confidence_floor: number
@@ -1609,6 +1750,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "session_notes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_scores: {
+        Row: {
+          clarity: number
+          collaboration: number
+          computed_at: string
+          created_at: string
+          emotional_intelligence: number
+          evidence: number
+          id: string
+          leadership: number
+          overall: number
+          reasoning: number
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          clarity?: number
+          collaboration?: number
+          computed_at?: string
+          created_at?: string
+          emotional_intelligence?: number
+          evidence?: number
+          id?: string
+          leadership?: number
+          overall?: number
+          reasoning?: number
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          clarity?: number
+          collaboration?: number
+          computed_at?: string
+          created_at?: string
+          emotional_intelligence?: number
+          evidence?: number
+          id?: string
+          leadership?: number
+          overall?: number
+          reasoning?: number
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_scores_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "gd_sessions"
