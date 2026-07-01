@@ -13,13 +13,13 @@ export interface InputProps extends React.ComponentProps<"input"> {
 
 const stateRing: Record<InputState, string> = {
   default:
-    "border-input focus-visible:border-primary/60 focus-visible:ring-[color:var(--focus-ring)]",
+    "border-input focus-visible:border-primary/60 focus-visible:ring-[color:var(--focus-ring-color)]",
   error:
     "border-destructive/70 focus-visible:border-destructive focus-visible:ring-destructive/40",
   success:
     "border-emerald-500/60 focus-visible:border-emerald-500 focus-visible:ring-emerald-500/30",
   loading:
-    "border-input focus-visible:border-primary/60 focus-visible:ring-[color:var(--focus-ring)]",
+    "border-input focus-visible:border-primary/60 focus-visible:ring-[color:var(--focus-ring-color)]",
 };
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(

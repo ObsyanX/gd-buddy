@@ -10,7 +10,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
 
 const stateRing: Record<TextareaState, string> = {
   default:
-    "border-input focus-visible:border-primary/60 focus-visible:ring-[color:var(--focus-ring)]",
+    "border-input focus-visible:border-primary/60 focus-visible:ring-[color:var(--focus-ring-color)]",
   error:
     "border-destructive/70 focus-visible:border-destructive focus-visible:ring-destructive/40",
   success:
