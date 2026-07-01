@@ -384,7 +384,10 @@ const Admin = () => {
                 <div className="space-y-2">
                   {vulnerabilities.map((v, i) => (
                     <div key={i} className="border-2 border-border p-3 rounded">
-                      <p className="font-bold">{v.title} <Badge variant="destructive" className="ml-2">{v.count}</Badge></p>
+                      <div className="font-bold flex items-center gap-2">
+                        <span>{v.title}</span>
+                        <Badge variant="destructive">{v.count}</Badge>
+                      </div>
                       <p className="text-xs text-muted-foreground mt-1">{v.note}</p>
                     </div>
                   ))}
