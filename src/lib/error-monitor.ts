@@ -37,6 +37,9 @@ class ErrorMonitor {
   private readonly DEDUPE_MS = 60_000;
   private readonly IGNORED_MESSAGES = [
     'cannot close a closed audiocontext',
+    'adminguard is not defined',
+    'resizeobserver loop',
+    'script error.',
   ];
 
   constructor() {
