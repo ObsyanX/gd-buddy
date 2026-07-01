@@ -11,7 +11,10 @@
     "audit:high": "npm audit --omit=dev --audit-level=high",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "ci": "npm run lint && npm run typecheck && npm run build && npm run audit:high",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "ci": "npm run lint && npm run typecheck && npm run test && npm run build && npm run audit:high",
     "preview": "vite preview"
   },
   "dependencies": {
