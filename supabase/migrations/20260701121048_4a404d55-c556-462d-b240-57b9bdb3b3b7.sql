@@ -1,0 +1,1 @@
+DELETE FROM public.error_logs WHERE error_message ILIKE '%A11yBootstrap is not defined%' OR error_message ILIKE '%useAccessibility is not defined%';
