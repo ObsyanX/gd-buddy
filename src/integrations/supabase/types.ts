@@ -662,6 +662,53 @@ export type Database = {
           },
         ]
       }
+      enterprise_metrics_daily: {
+        Row: {
+          avg_health: number | null
+          avg_radar: Json
+          created_at: string
+          day: string
+          id: string
+          org_id: string
+          participants_count: number
+          sessions_count: number
+          tokens_used: number
+          updated_at: string
+        }
+        Insert: {
+          avg_health?: number | null
+          avg_radar?: Json
+          created_at?: string
+          day: string
+          id?: string
+          org_id: string
+          participants_count?: number
+          sessions_count?: number
+          tokens_used?: number
+          updated_at?: string
+        }
+        Update: {
+          avg_health?: number | null
+          avg_radar?: Json
+          created_at?: string
+          day?: string
+          id?: string
+          org_id?: string
+          participants_count?: number
+          sessions_count?: number
+          tokens_used?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enterprise_metrics_daily_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       error_logs: {
         Row: {
           created_at: string
@@ -1429,6 +1476,65 @@ export type Database = {
           },
         ]
       }
+      moderator_personalities: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          encouragement: number
+          id: string
+          intervention_rate: number
+          is_default: boolean
+          name: string
+          org_id: string | null
+          policy_overrides: Json
+          prompt_template: string | null
+          strictness: number
+          tone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          encouragement?: number
+          id?: string
+          intervention_rate?: number
+          is_default?: boolean
+          name: string
+          org_id?: string | null
+          policy_overrides?: Json
+          prompt_template?: string | null
+          strictness?: number
+          tone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          encouragement?: number
+          id?: string
+          intervention_rate?: number
+          is_default?: boolean
+          name?: string
+          org_id?: string | null
+          policy_overrides?: Json
+          prompt_template?: string | null
+          strictness?: number
+          tone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderator_personalities_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -1692,6 +1798,47 @@ export type Database = {
         }
         Relationships: []
       }
+      replay_events: {
+        Row: {
+          actor_id: string | null
+          actor_kind: string
+          created_at: string
+          event_type: string
+          id: string
+          offset_ms: number
+          payload: Json
+          replay_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_kind?: string
+          created_at?: string
+          event_type: string
+          id?: string
+          offset_ms: number
+          payload?: Json
+          replay_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_kind?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          offset_ms?: number
+          payload?: Json
+          replay_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "replay_events_replay_id_fkey"
+            columns: ["replay_id"]
+            isOneToOne: false
+            referencedRelation: "session_replays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       response_cache: {
         Row: {
           cache_key: string
@@ -1752,6 +1899,47 @@ export type Database = {
             foreignKeyName: "session_notes_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_replays: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          event_count: number
+          id: string
+          owner_id: string
+          session_id: string
+          summary: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number
+          event_count?: number
+          id?: string
+          owner_id: string
+          session_id: string
+          summary?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          event_count?: number
+          id?: string
+          owner_id?: string
+          session_id?: string
+          summary?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_replays_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
             referencedRelation: "gd_sessions"
             referencedColumns: ["id"]
           },
