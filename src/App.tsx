@@ -8,7 +8,7 @@ import { lazy, Suspense, useEffect } from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import '@/lib/error-monitor'; // Initialize global error monitoring
 import { OfflineBanner } from "@/components/OfflineBanner";
-import { useAccessibility } from "@/hooks/useAccessibility";
+import A11yBootstrap from "@/components/A11yBootstrap";
 import {
   HomeSkeleton,
   DashboardSkeleton,
