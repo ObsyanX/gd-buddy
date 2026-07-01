@@ -945,7 +945,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         usingFallbackTTS={usingFallbackTTS}
       />
 
-      <div className="flex-1 min-h-0 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 p-2 sm:p-3 lg:p-4 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-4 overflow-hidden">
+      <div className="flex-1 min-h-0 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-1.5 sm:gap-3 lg:gap-4 p-1.5 sm:p-3 lg:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3 lg:pb-4 overflow-hidden">
         {/* Mobile/Tablet Video Monitor */}
         <div className="block lg:hidden shrink-0">
           <VideoMonitor
@@ -957,7 +957,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         </div>
 
         {/* Main Chat Area */}
-        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-2 sm:gap-3 lg:gap-4 min-w-0 min-h-0 flex-1 overflow-hidden">
+        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-1.5 sm:gap-3 lg:gap-4 min-w-0 min-h-[50dvh] sm:min-h-0 flex-1 overflow-hidden">
           <MessageList
             messages={messages}
             currentUserId={currentUserId}
