@@ -3,14 +3,15 @@
   "short_name": "GD Buddy",
   "description": "Practice group discussions with AI, get instant feedback, and crack placement GD rounds.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1a1a1a",
+  "orientation": "portrait",
+  "background_color": "#0F0906",
+  "theme_color": "#0F0906",
+  "categories": ["education", "productivity"],
   "icons": [
-    {
-      "src": "/favicon.ico",
-      "sizes": "64x64",
-      "type": "image/x-icon"
-    }
+    { "src": "/favicon.ico", "sizes": "64x64", "type": "image/x-icon" },
+    { "src": "/og-image.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/og-image.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

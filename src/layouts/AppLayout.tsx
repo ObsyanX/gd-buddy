@@ -1,16 +1,17 @@
 import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   MessageSquare, LayoutDashboard, Dumbbell, User,
-  Settings as SettingsIcon, LogOut, Menu, GraduationCap, Shield, Home as HomeIcon,
+  Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2,
 } from "lucide-react";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import SEOFooter from "@/components/SEOFooter";
 import NotificationBell from "@/components/NotificationBell";
+import BottomNav from "@/components/BottomNav";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { toast } from "@/hooks/use-toast";
 
 const NAV_ITEMS = [
   { label: "Home", icon: HomeIcon, path: "/home" },
@@ -26,22 +27,31 @@ const AppLayout = () => {
   const location = useLocation();
   const { signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { canInstall, installed, isIOS, install } = usePWAInstall();
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
   };
 
-  const handleNav = (path: string) => {
-    setMobileMenuOpen(false);
-    navigate(path);
+  const handleInstall = async () => {
+    if (isIOS) {
+      toast({
+        title: "Install on iOS",
+        description: "Tap the Share icon, then choose “Add to Home Screen”.",
+      });
+      return;
+    }
+    const ok = await install();
+    if (ok) toast({ title: "GD Buddy installed", description: "Launch it from your home screen." });
   };
 
   const isActive = (path: string) => {
     if (path === "/home") return location.pathname === "/home";
     return location.pathname.startsWith(path);
   };
+
+  const showInstall = !installed && (canInstall || isIOS);
 
   return (
     <div className="min-h-screen flex flex-col relative">
@@ -102,53 +112,29 @@ const AppLayout = () => {
               )}
             </nav>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              {showInstall && (
+                <Button
+                  variant="glass"
+                  size="sm"
+                  onClick={handleInstall}
+                  className="hidden md:inline-flex gap-1.5"
+                  aria-label={isIOS ? "Add to Home Screen" : "Install GD Buddy"}
+                >
+                  {isIOS ? <Share2 className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                  <span className="hidden xl:inline">{isIOS ? "Add to Home" : "Install"}</span>
+                </Button>
+              )}
               <NotificationBell />
-              <Button variant="ghost" size="icon" onClick={handleSignOut} className="hidden lg:inline-flex" aria-label="Sign out">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSignOut}
+                className="hidden lg:inline-flex"
+                aria-label="Sign out"
+              >
                 <LogOut className="w-4 h-4" />
               </Button>
-
-              {/* Mobile menu */}
-              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetTrigger asChild className="lg:hidden">
-                  <Button variant="glass" size="icon" aria-label="Open menu">
-                    <Menu className="w-5 h-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-80 glass-strong border-l border-border">
-                  <nav className="flex flex-col gap-2 mt-8" aria-label="Mobile navigation">
-                    {NAV_ITEMS.map((item) => (
-                      <button
-                        key={item.path}
-                        onClick={() => handleNav(item.path)}
-                        className={cn(
-                          "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm transition-all",
-                          isActive(item.path)
-                            ? "bg-primary/15 text-primary-glow"
-                            : "text-muted-foreground hover:text-foreground hover:bg-primary/5",
-                        )}
-                      >
-                        <item.icon className="w-4 h-4" aria-hidden="true" />
-                        {item.label}
-                      </button>
-                    ))}
-                    {isAdmin && (
-                      <button
-                        onClick={() => handleNav("/home/admin")}
-                        className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5"
-                      >
-                        <Shield className="w-4 h-4" /> Admin
-                      </button>
-                    )}
-                    <button
-                      onClick={() => { setMobileMenuOpen(false); handleSignOut(); }}
-                      className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 mt-4"
-                    >
-                      <LogOut className="w-4 h-4" /> Sign out
-                    </button>
-                  </nav>
-                </SheetContent>
-              </Sheet>
             </div>
           </div>
         </div>
@@ -159,6 +145,9 @@ const AppLayout = () => {
       </main>
 
       <SEOFooter />
+
+      {/* Mobile-first bottom navigation with expand tray + install */}
+      <BottomNav />
     </div>
   );
 };
