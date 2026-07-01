@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { lazy, Suspense, useEffect } from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import '@/lib/error-monitor'; // Initialize global error monitoring
+import { OfflineBanner } from "@/components/OfflineBanner";
+import { useAccessibility } from "@/hooks/useAccessibility";
 import {
   HomeSkeleton,
   DashboardSkeleton,
@@ -100,6 +102,8 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <OfflineBanner />
+          <A11yBootstrap />
           <ErrorBoundary fallbackTitle="Application Error">
           <Suspense fallback={<Loading />}>
             <Routes>
