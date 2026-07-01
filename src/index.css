@@ -393,6 +393,95 @@
     font-weight: 500;
   }
 
+  /* === GLASS TIERS === structured hierarchy of frosted surfaces */
+  .glass-0 { /* ambient — barely there */
+    background: hsl(var(--surface) / 0.22);
+    backdrop-filter: blur(8px) saturate(130%);
+    -webkit-backdrop-filter: blur(8px) saturate(130%);
+    border: 1px solid hsl(var(--border) / 0.35);
+  }
+  .glass-1 { /* card / secondary panel */
+    background: linear-gradient(180deg, hsl(var(--surface) / 0.5), hsl(var(--surface) / 0.3));
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: inset 0 1px 0 hsl(36 68% 70% / 0.06), var(--shadow-sm);
+  }
+  .glass-2 { /* primary content surface */
+    background: linear-gradient(180deg, hsl(var(--surface) / 0.7), hsl(var(--surface) / 0.45));
+    backdrop-filter: blur(26px) saturate(170%);
+    -webkit-backdrop-filter: blur(26px) saturate(170%);
+    border: 1px solid hsl(var(--border) / 0.8);
+    box-shadow: inset 0 1px 0 hsl(36 68% 70% / 0.1), var(--shadow-md);
+  }
+  .glass-3 { /* modals, drawers, dialogs — highest tier */
+    background: linear-gradient(180deg, hsl(var(--surface) / 0.85), hsl(var(--surface) / 0.6));
+    backdrop-filter: blur(36px) saturate(190%);
+    -webkit-backdrop-filter: blur(36px) saturate(190%);
+    border: 1px solid hsl(var(--primary) / 0.28);
+    box-shadow:
+      inset 0 1px 0 hsl(36 68% 70% / 0.14),
+      inset 0 0 60px hsl(29 60% 32% / 0.14),
+      var(--shadow-xl);
+  }
+  /* Tinted glass — copper wash */
+  .glass-copper {
+    background:
+      linear-gradient(180deg, hsl(29 60% 32% / 0.28), hsl(19 57% 22% / 0.18)),
+      hsl(var(--surface) / 0.5);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid hsl(var(--primary) / 0.35);
+    box-shadow: inset 0 1px 0 hsl(36 68% 70% / 0.14), var(--shadow-md);
+  }
+
+  /* === ELEVATION SCALE === named shadows for consistent depth */
+  .elev-0 { box-shadow: none; }
+  .elev-1 { box-shadow: var(--shadow-xs); }
+  .elev-2 { box-shadow: var(--shadow-sm); }
+  .elev-3 { box-shadow: var(--shadow); }
+  .elev-4 { box-shadow: var(--shadow-md); }
+  .elev-5 { box-shadow: var(--shadow-lg); }
+  .elev-6 { box-shadow: var(--shadow-xl); }
+  .elev-max { box-shadow: var(--shadow-2xl); }
+  .elev-copper { box-shadow: var(--shadow-copper); }
+  .elev-premium { box-shadow: var(--shadow-premium); }
+
+  /* Interactive elevation — lifts on hover */
+  .lift {
+    transition:
+      transform var(--duration-normal, 200ms) var(--ease-editorial, cubic-bezier(0.22, 1, 0.36, 1)),
+      box-shadow var(--duration-normal, 200ms) var(--ease-editorial, cubic-bezier(0.22, 1, 0.36, 1));
+    will-change: transform;
+  }
+  .lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .lift:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
+
+  /* === GRADIENT SURFACE UTILITIES === */
+  .bg-gradient-copper { background: var(--gradient-copper); }
+  .bg-gradient-ember { background: var(--gradient-ember); }
+  .bg-gradient-glow { background: var(--gradient-glow); }
+  .bg-gradient-surface { background: var(--gradient-surface); }
+  .bg-mesh-copper {
+    background:
+      radial-gradient(600px 400px at 20% 10%, hsl(29 60% 40% / 0.3), transparent 60%),
+      radial-gradient(500px 400px at 90% 30%, hsl(12 66% 40% / 0.24), transparent 55%),
+      radial-gradient(700px 500px at 50% 100%, hsl(36 68% 40% / 0.22), transparent 60%),
+      hsl(var(--surface));
+  }
+
+  /* Hairline border — 1px semi-transparent copper */
+  .hairline { border: 1px solid hsl(var(--border) / 0.6); }
+  .hairline-t { border-top: 1px solid hsl(var(--border) / 0.6); }
+  .hairline-b { border-bottom: 1px solid hsl(var(--border) / 0.6); }
+
+  /* Inner glow — subtle amber rim light inside a panel */
+  .inner-glow {
+    box-shadow:
+      inset 0 1px 0 hsl(36 68% 70% / 0.12),
+      inset 0 0 40px hsl(29 60% 30% / 0.14);
+  }
+
   /* Grain overlay */
   .grain-overlay::after {
     content: "";
