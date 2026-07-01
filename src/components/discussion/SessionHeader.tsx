@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Mic, Volume2, VolumeX, Square, HelpCircle, Menu, Sparkles, Pause, Play, Clock } from "lucide-react";
 
 import TurnQueueBadge from "@/components/TurnQueueBadge";
+import DiscussionHealthMeter from "@/components/DiscussionHealthMeter";
 
 interface SessionHeaderProps {
   session: any;
@@ -86,6 +87,7 @@ const SessionHeader = ({
                 {formatTimer(elapsedSeconds)}
               </Badge>
               <TurnQueueBadge sessionId={session?.id ?? null} />
+              <DiscussionHealthMeter sessionId={session?.id ?? null} compact />
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -196,6 +198,7 @@ const SessionHeader = ({
                   )}
                 </>
               )}
+              <DiscussionHealthMeter sessionId={session?.id ?? null} />
             </div>
           </div>
           <div className="flex gap-2">

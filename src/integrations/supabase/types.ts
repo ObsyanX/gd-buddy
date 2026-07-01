@@ -271,6 +271,104 @@ export type Database = {
         }
         Relationships: []
       }
+      discussion_health: {
+        Row: {
+          created_at: string
+          energy: number
+          interruption_rate: number
+          overall_health: number
+          participation_gini: number
+          sentiment_index: number
+          session_id: string
+          topic_focus: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          energy?: number
+          interruption_rate?: number
+          overall_health?: number
+          participation_gini?: number
+          sentiment_index?: number
+          session_id: string
+          topic_focus?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          energy?: number
+          interruption_rate?: number
+          overall_health?: number
+          participation_gini?: number
+          sentiment_index?: number
+          session_id?: string
+          topic_focus?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discussion_health_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emotion_events: {
+        Row: {
+          arousal: number
+          confidence: number
+          created_at: string
+          evidence: Json
+          id: string
+          label: string
+          participant_id: string | null
+          session_id: string
+          source: string
+          valence: number
+        }
+        Insert: {
+          arousal?: number
+          confidence?: number
+          created_at?: string
+          evidence?: Json
+          id?: string
+          label: string
+          participant_id?: string | null
+          session_id: string
+          source: string
+          valence?: number
+        }
+        Update: {
+          arousal?: number
+          confidence?: number
+          created_at?: string
+          evidence?: Json
+          id?: string
+          label?: string
+          participant_id?: string | null
+          session_id?: string
+          source?: string
+          valence?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emotion_events_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "gd_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emotion_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       error_logs: {
         Row: {
           created_at: string
@@ -930,6 +1028,75 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      participant_behaviour: {
+        Row: {
+          avg_turn_ms: number
+          created_at: string
+          dominance_score: number
+          emotion_label: string | null
+          engagement_score: number
+          id: string
+          interruption_count: number
+          last_spoke_at: string | null
+          participant_id: string
+          sentiment_avg: number
+          sentiment_trend: number
+          session_id: string
+          talk_time_ms: number
+          turn_count: number
+          updated_at: string
+        }
+        Insert: {
+          avg_turn_ms?: number
+          created_at?: string
+          dominance_score?: number
+          emotion_label?: string | null
+          engagement_score?: number
+          id?: string
+          interruption_count?: number
+          last_spoke_at?: string | null
+          participant_id: string
+          sentiment_avg?: number
+          sentiment_trend?: number
+          session_id: string
+          talk_time_ms?: number
+          turn_count?: number
+          updated_at?: string
+        }
+        Update: {
+          avg_turn_ms?: number
+          created_at?: string
+          dominance_score?: number
+          emotion_label?: string | null
+          engagement_score?: number
+          id?: string
+          interruption_count?: number
+          last_spoke_at?: string | null
+          participant_id?: string
+          sentiment_avg?: number
+          sentiment_trend?: number
+          session_id?: string
+          talk_time_ms?: number
+          turn_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_behaviour_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "gd_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_behaviour_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       perf_events: {
         Row: {
