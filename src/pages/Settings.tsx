@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { invokeWithAuth } from '@/lib/supabase-auth';
 import { useVoiceStore } from '@/stores/useVoiceStore';
 import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
+import { AccessibilityCenter } from '@/components/AccessibilityCenter';
 
 const VOICE_OPTIONS = [
   { value: 'sarah', label: 'Sarah', description: 'Clear female voice' },
@@ -217,6 +218,9 @@ const Settings = () => {
               </div>
             </div>
           </Card>
+
+          {/* Accessibility & Language */}
+          <AccessibilityCenter />
 
           {/* Save Button */}
           <Button
