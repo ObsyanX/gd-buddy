@@ -32,7 +32,7 @@ const RADAR_KEYS = [
 async function loadLatestSummary(userId: string): Promise<SessionSummary | null> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb: any = supabase;
-  const sessRes = await supabase
+  const sessRes = await sb
     .from("gd_sessions")
     .select("id, topic, created_at")
     .eq("created_by", userId)
@@ -45,7 +45,7 @@ async function loadLatestSummary(userId: string): Promise<SessionSummary | null>
   const sid = sess.id;
   const countHead = { count: "exact" as const, head: true };
 
-  const healthRow = await supabase
+  const healthRow = await sb
     .from("discussion_health")
     .select("overall_health")
     .eq("session_id", sid)
@@ -53,7 +53,7 @@ async function loadLatestSummary(userId: string): Promise<SessionSummary | null>
     .limit(1)
     .maybeSingle();
 
-  const scoresRow = await supabase
+  const scoresRow = await sb
     .from("session_scores")
     .select("clarity, reasoning, collaboration, evidence, emotional_intelligence, leadership")
     .eq("session_id", sid)
