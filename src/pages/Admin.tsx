@@ -704,11 +704,5 @@ const RawErrorLog = ({ errors, onDelete }: { errors: any[]; onDelete: (id: strin
     </Card>
   );
 };
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
-  );
-};
 
 export default Admin;
