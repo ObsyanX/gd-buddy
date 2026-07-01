@@ -142,23 +142,21 @@ const BottomNav = () => {
             <NavBtn key={item.path} item={item} active={isActive(item.path)} onClick={() => go(item.path)} />
           ))}
 
-          {/* Center expand */}
+          {/* Center expand — static, no micro-interaction */}
           <button
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-label={open ? "Close more menu" : "Open more menu"}
             className={cn(
-              "absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 rounded-full tap focus-ring gpu",
+              "absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full focus-ring",
               "bg-gradient-copper shadow-copper flex items-center justify-center",
-              "text-primary-foreground transition-transform duration-normal ease-editorial",
-              "hover:scale-105 active:scale-95",
-              open && "rotate-180",
+              "text-primary-foreground",
             )}
           >
-            {open ? <ChevronDown className="w-6 h-6" /> : <ChevronUp className="w-6 h-6" />}
+            {open ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
           </button>
           {/* Spacer for the FAB */}
-          <div className="w-14 shrink-0" aria-hidden="true" />
+          <div className="w-12 shrink-0" aria-hidden="true" />
 
           {PRIMARY.slice(2).map((item) => (
             <NavBtn key={item.path} item={item} active={isActive(item.path)} onClick={() => go(item.path)} />

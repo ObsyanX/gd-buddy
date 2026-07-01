@@ -300,20 +300,20 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b-4 border-border p-4">
-        <div className="container mx-auto flex items-center justify-between">
-          <h1 className="text-4xl font-bold">ADMIN DASHBOARD</h1>
-          <div className="flex items-center gap-2">
+      <header className="border-b-4 border-border p-3 sm:p-4">
+        <div className="container mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">ADMIN DASHBOARD</h1>
+          <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" variant="outline" onClick={load} disabled={refreshing}>
               <RefreshCw className={`w-4 h-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
             </Button>
-            <Badge variant="destructive">RESTRICTED ACCESS</Badge>
+            <Badge variant="destructive" className="text-[10px] sm:text-xs">RESTRICTED ACCESS</Badge>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto p-8 space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <main className="container mx-auto p-3 sm:p-6 md:p-8 space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <KpiCard icon={Users} label="USERS" value={stats.users} sub={`${stats.activeUsers} active (15m)`} target="users" />
           <KpiCard icon={MessageSquare} label="SESSIONS" value={stats.sessions} sub={`${stats.activeSessions} live`} target="sessions" />
           <KpiCard icon={Star} label="FEEDBACK" value={stats.feedback} sub={`avg ${stats.avgRating || 0}★`} target="feedback" />
@@ -321,13 +321,15 @@ const Admin = () => {
         </div>
 
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
-            <TabsTrigger value="errors">Errors ({errors.length})</TabsTrigger>
-          </TabsList>
+          <div className="-mx-3 sm:mx-0 overflow-x-auto no-scrollbar">
+            <TabsList className="inline-flex w-max sm:w-full sm:grid sm:grid-cols-5 px-3 sm:px-0">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="sessions">Sessions</TabsTrigger>
+              <TabsTrigger value="feedback">Feedback</TabsTrigger>
+              <TabsTrigger value="errors">Errors ({errors.length})</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* ---------- OVERVIEW ---------- */}
           <TabsContent value="overview" className="space-y-6">
