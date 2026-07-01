@@ -2,7 +2,7 @@
 // Optional adapters resolved at runtime via `org_configs`. Every adapter
 // implements the same contract, so Moderator/Reasoning agents can dispatch
 // notifications, roster syncs, LMS grade posts, etc. through a single API.
-import { pluginRegistry, type Plugin } from "@/lib/plugins/registry";
+import { pluginRegistry } from "@/lib/plugins/registry";
 
 export type IntegrationKind =
   | "conferencing" // Teams / Meet / Zoom
@@ -10,20 +10,17 @@ export type IntegrationKind =
   | "lms" // Moodle / Canvas
   | "hr"; // Workday / Greenhouse
 
-export interface IntegrationPlugin extends Plugin {
-  kind: "moderator"; // reused slot for typed registry
+export interface IntegrationPlugin {
+  kind: "moderator";
   id: string;
   integration: IntegrationKind;
   displayName: string;
-  /** Sync roster into gd_participants (optional). */
   syncRoster?(sessionId: string): Promise<{ imported: number }>;
-  /** Post a session summary / grade back to the source system. */
   postSummary?(sessionId: string, payload: {
     scoreOutOf100?: number;
     reportUrl?: string;
     transcriptUrl?: string;
   }): Promise<{ ok: boolean; externalId?: string }>;
-  /** Send a moderator notification (mic granted, phase change). */
   notify?(channel: string, message: string): Promise<void>;
 }
 
