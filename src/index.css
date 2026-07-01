@@ -443,6 +443,35 @@ html[data-cb-palette="tritanopia"]   { filter: url('#cb-tritanopia'); }
 @layer utilities {
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  /* GPU compositor hint for iOS Safari smoothness */
+  .gpu {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform, opacity;
+  }
+  /* Touch tap hardening (iOS/Android) */
+  .tap {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+  /* Consistent focus ring across all interactive surfaces */
+  .focus-ring:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 var(--focus-ring-offset) hsl(var(--background)),
+      0 0 0 calc(var(--focus-ring-offset) + var(--focus-ring-width)) var(--focus-ring-color);
+    border-radius: inherit;
+  }
+  /* Motion stagger helpers */
+  .delay-40  { animation-delay: 40ms;  transition-delay: 40ms; }
+  .delay-80  { animation-delay: 80ms;  transition-delay: 80ms; }
+  .delay-120 { animation-delay: 120ms; transition-delay: 120ms; }
+  .delay-160 { animation-delay: 160ms; transition-delay: 160ms; }
+  .delay-200 { animation-delay: 200ms; transition-delay: 200ms; }
 }
 
 @keyframes pulse-soft {
@@ -453,8 +482,8 @@ html[data-cb-palette="tritanopia"]   { filter: url('#cb-tritanopia'); }
   0%   { background-position: 0% 50%; }
   100% { background-position: 200% 50%; }
 }
-.animate-pulse-soft  { animation: pulse-soft 3.2s ease-in-out infinite; }
-.animate-shimmer-slow{ animation: shimmer-slow 6s linear infinite; }
+.animate-pulse-soft  { animation: pulse-soft 3.2s ease-in-out infinite; will-change: opacity, transform; }
+.animate-shimmer-slow{ animation: shimmer-slow 6s linear infinite; will-change: background-position; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse-soft, .animate-shimmer-slow { animation: none !important; }
