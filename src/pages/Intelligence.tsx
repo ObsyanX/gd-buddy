@@ -30,6 +30,8 @@ const RADAR_KEYS = [
 ] as const;
 
 async function loadLatestSummary(userId: string): Promise<SessionSummary | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb: any = supabase;
   const sessRes = await supabase
     .from("gd_sessions")
     .select("id, topic, created_at")
