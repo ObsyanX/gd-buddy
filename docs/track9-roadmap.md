@@ -40,15 +40,11 @@ Reasoning → Calibration → Policy → Safety Validator → Dispatcher (auto |
 - Calibrated confidence: raw model confidence is mapped through `calibration_bins` and only decisions ≥ `AUTO_ACTION_THRESHOLD` (0.75) auto-act; lower ones are dispatched as `recommendation`.
 - Every pipeline step writes to `event_log` (`policy.triggered`, `safety.blocked`, `override.applied`).
 
-## Slice 3 — AI Benchmarking (9.1)
+## Slice 3 — AI Benchmarking ✅ (this commit)
 
-Independent evaluation harness that reads recorded sessions + human labels and
-writes to `benchmark_reports`. Ships with:
-
-- Precision / Recall / F1 / FP / FN per action.
-- AI ↔ Human agreement (Cohen's κ).
-- Calibration error (ECE, reliability diagram).
-- Consistency score across replays.
+- `src/lib/governance/benchmarking.ts` — pure, dependency-free metric functions: per-class + macro precision / recall / F1, FP/FN counts, Cohen's κ (AI ↔ human agreement), Expected Calibration Error (ECE, 10 bins).
+- Edge function `benchmark-runner` — admin-only, joins `moderator_decisions` with `overrides` to build a labelled dataset (predicted = AI action, expected = manual override action; unmodified decisions are treated as agreement), then writes to `benchmark_reports`.
+- Unit tests in `src/test/track9-benchmarking.test.ts` cover perfect prediction, FP/FN accounting, ECE detection of overconfidence, and above-chance κ.
 
 ## Slice 4 — Accessibility, i18n, Offline Resilience (9.4 / 9.5 / 9.6)
 
