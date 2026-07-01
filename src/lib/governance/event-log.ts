@@ -32,12 +32,14 @@ export interface LogEventInput {
 
 export async function logEvent(input: LogEventInput): Promise<void> {
   try {
-    await supabase.from("event_log").insert({
-      session_id: input.sessionId,
-      kind: input.kind,
-      payload: input.payload ?? {},
-      actor_user_id: input.actorUserId ?? null,
-    });
+    await supabase.from("event_log").insert([
+      {
+        session_id: input.sessionId ?? undefined,
+        kind: input.kind,
+        payload: (input.payload ?? {}) as never,
+        actor_user_id: input.actorUserId ?? undefined,
+      },
+    ]);
   } catch {
     // swallow — telemetry must never break real-time flows
   }
