@@ -249,7 +249,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   
   // Realtime subscription for multiplayer participants sync (update when new participants join)
   useEffect(() => {
-    if (!session?.is_multiplayer) return;
+    if (!session?.is_multiplayer || isPaused) return;
 
     console.log('[Multiplayer] Setting up realtime subscription for participants:', sessionId);
 
