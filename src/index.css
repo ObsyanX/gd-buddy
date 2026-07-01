@@ -482,6 +482,39 @@ html[data-cb-palette="tritanopia"]   { filter: url('#cb-tritanopia'); }
   .delay-120 { animation-delay: 120ms; transition-delay: 120ms; }
   .delay-160 { animation-delay: 160ms; transition-delay: 160ms; }
   .delay-200 { animation-delay: 200ms; transition-delay: 200ms; }
+
+  /* === P2 — Viewport-aware heights with iOS Safari fallback === */
+  .h-dvh     { height: 100vh; height: 100dvh; }
+  .min-h-dvh { min-height: 100vh; min-height: 100dvh; }
+  .max-h-dvh { max-height: 100vh; max-height: 100dvh; }
+  .h-svh     { height: 100vh; height: 100svh; }
+  .min-h-svh { min-height: 100vh; min-height: 100svh; }
+  .h-lvh     { height: 100vh; height: 100lvh; }
+
+  /* === P2 — Safe-area padding utilities (composable) === */
+  .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
+  .pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+  .pl-safe { padding-left: max(env(safe-area-inset-left), 0px); }
+  .pr-safe { padding-right: max(env(safe-area-inset-right), 0px); }
+  .px-safe { padding-left: max(env(safe-area-inset-left), 0px); padding-right: max(env(safe-area-inset-right), 0px); }
+  .py-safe { padding-top: max(env(safe-area-inset-top), 0px); padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+  .mb-safe { margin-bottom: max(env(safe-area-inset-bottom), 0px); }
+  .inset-safe {
+    padding-top: max(env(safe-area-inset-top), 0px);
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+    padding-left: max(env(safe-area-inset-left), 0px);
+    padding-right: max(env(safe-area-inset-right), 0px);
+  }
+
+  /* === P2 — Standard page gutters (mobile-first, fluid) === */
+  .gutter-x { padding-left: var(--gutter-x); padding-right: var(--gutter-x); }
+  .gutter-y { padding-top: var(--gutter-y); padding-bottom: var(--gutter-y); }
+
+  /* === P2 — Container widths === */
+  .container-prose { max-width: var(--container-prose); margin-inline: auto; }
+  .container-app   { max-width: var(--container-app);   margin-inline: auto; }
+  .container-wide  { max-width: var(--container-wide);  margin-inline: auto; }
+  .container-ultra { max-width: var(--container-ultra); margin-inline: auto; }
 }
 
 @keyframes pulse-soft {
