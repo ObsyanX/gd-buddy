@@ -66,14 +66,14 @@ const AppLayout = () => {
       <header className="sticky top-0 z-40 py-3 md:py-4 px-1.5 sm:px-3 md:px-6" role="banner">
         <div className="w-full lg:container lg:mx-auto">
           <div className="glass rounded-full px-2 sm:px-3 md:px-5 py-2.5 flex items-center justify-between">
-            <Link to="/home" className="flex items-center gap-2.5 md:gap-3 group min-w-0" aria-label="GD Buddy Home">
-              <div className="relative shrink-0">
+            <Link to="/home" className="flex items-center gap-2.5 md:gap-3 group min-w-0 tap focus-ring rounded-full" aria-label="GD Buddy Home">
+              <div className="relative shrink-0 gpu">
                 {/* Pulsing copper halo */}
                 <span
                   aria-hidden="true"
-                  className="absolute inset-0 rounded-2xl bg-gradient-copper opacity-40 blur-md animate-pulse-soft"
+                  className="absolute inset-0 rounded-2xl bg-gradient-copper opacity-40 blur-md animate-pulse-soft gpu"
                 />
-                <div className="relative w-10 h-10 md:w-11 md:h-11 rounded-2xl overflow-hidden shadow-copper ring-1 ring-primary/40 group-hover:ring-primary-glow/70 transition-all duration-slow ease-editorial group-hover:-rotate-6 group-hover:scale-105">
+                <div className="relative w-10 h-10 md:w-11 md:h-11 rounded-2xl overflow-hidden shadow-copper ring-1 ring-primary/40 group-hover:ring-primary-glow/70 transition-all duration-slow ease-editorial group-hover:-rotate-6 group-hover:scale-105 gpu">
                   <img
                     src={gdLogo.url}
                     srcSet={`${gdLogo.url}?w=80 80w, ${gdLogo.url}?w=160 160w, ${gdLogo.url}?w=240 240w`}
@@ -83,12 +83,12 @@ const AppLayout = () => {
                     decoding="async"
                     fetchPriority="high"
                     alt="GD Buddy logo"
-                    className="w-full h-full object-contain transition-transform duration-slow ease-editorial group-hover:scale-110"
+                    className="w-full h-full object-contain transition-transform duration-slow ease-editorial group-hover:scale-110 gpu"
                   />
                   {/* Sheen sweep on hover */}
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000 ease-editorial"
+                    className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000 ease-editorial gpu"
                   />
                 </div>
               </div>
@@ -100,6 +100,7 @@ const AppLayout = () => {
             </Link>
 
 
+
             {/* Desktop nav */}
             <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
               {NAV_ITEMS.slice(1).map((item) => (
@@ -107,8 +108,10 @@ const AppLayout = () => {
                   key={item.path}
                   onClick={() => navigate(item.path)}
                   aria-label={`Go to ${item.label}`}
+                  aria-current={isActive(item.path) ? "page" : undefined}
                   className={cn(
-                    "relative px-4 py-2 rounded-full text-sm transition-all duration-normal",
+                    "relative px-4 py-2 rounded-full text-sm transition-all duration-normal tap focus-ring gpu",
+                    "hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
                     isActive(item.path)
                       ? "text-primary-glow bg-primary/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-primary/5",
@@ -124,8 +127,10 @@ const AppLayout = () => {
                 <button
                   onClick={() => navigate("/home/admin")}
                   aria-label="Admin"
+                  aria-current={isActive("/home/admin") ? "page" : undefined}
                   className={cn(
-                    "relative px-4 py-2 rounded-full text-sm transition-all",
+                    "relative px-4 py-2 rounded-full text-sm transition-all tap focus-ring gpu",
+                    "hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
                     isActive("/home/admin")
                       ? "text-primary-glow bg-primary/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-primary/5",
