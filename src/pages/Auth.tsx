@@ -219,70 +219,64 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-    <header className="border-b-4 border-border p-6">
-  <div className="container mx-auto">
-    <Link
-      to="/"
-      className="flex items-center gap-2 md:gap-4 hover:opacity-80 transition-opacity"
-      aria-label="GD Buddy Home"
-    >
-      <MessageSquare
-        className="w-8 h-8 md:w-10 md:h-10"
-        aria-hidden="true"
-      />
-
-      <div>
-        <span className="text-2xl md:text-4xl font-bold tracking-tight">
-          GD BUDDY
-        </span>
-
-        <p className="text-xs md:text-sm font-mono text-muted-foreground hidden sm:block">
-          AUTHENTICATION
-        </p>
+    <div className="min-h-screen flex flex-col relative overflow-hidden">
+      {/* Ambient orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10" aria-hidden="true">
+        <div className="ambient-orb w-[60vw] h-[60vw] -top-[20%] -left-[10%]" style={{ background: "hsl(29 60% 45% / 0.5)" }} />
+        <div className="ambient-orb w-[46vw] h-[46vw] bottom-[-20%] -right-[10%]" style={{ background: "hsl(12 55% 40% / 0.4)", animationDelay: "3s" }} />
       </div>
-    </Link>
-  </div>
-</header>
-      
 
+      <header className="relative z-20 py-6 px-4 md:px-6">
+        <div className="container mx-auto">
+          <Link to="/" className="inline-flex items-center gap-3 group" aria-label="GD Buddy Home">
+            <div className="w-10 h-10 rounded-xl bg-gradient-copper flex items-center justify-center shadow-copper group-hover:rotate-6 transition-transform duration-slow ease-editorial">
+              <MessageSquare className="w-4 h-4 text-primary-foreground" aria-hidden="true" />
+            </div>
+            <div>
+              <span className="font-display text-2xl tracking-tight">GD Buddy</span>
+              <p className="text-micro text-muted-foreground">Authenticate</p>
+            </div>
+          </Link>
+        </div>
+      </header>
 
-
-
-
-
-      
-      <main className="flex-1 container mx-auto py-12 px-6 flex items-center justify-center">
-        <Card className="w-full max-w-md p-8 border-4 border-border">
+      <main className="flex-1 container mx-auto py-8 md:py-12 px-4 md:px-6 flex items-center justify-center relative z-10">
+        <Card className="w-full max-w-md p-8 glass-strong shadow-premium">
+          <div className="mb-6 text-center">
+            <h1 className="font-display text-h1">
+              Welcome <span className="italic-accent copper-text">back.</span>
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2">Rehearse. Refine. Return sharper.</p>
+          </div>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 border-2">
-              <TabsTrigger value="login">LOGIN</TabsTrigger>
-              <TabsTrigger value="signup">SIGN UP</TabsTrigger>
-              <TabsTrigger value="reset">FORGOT</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 glass-subtle rounded-full p-1">
+              <TabsTrigger value="login" className="rounded-full">Login</TabsTrigger>
+              <TabsTrigger value="signup" className="rounded-full">Sign up</TabsTrigger>
+              <TabsTrigger value="reset" className="rounded-full">Forgot</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="space-y-4 mt-6">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">EMAIL</Label>
-                  <Input id="login-email" type="email" placeholder="your@email.com" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="border-2" required />
+                  <Label htmlFor="login-email" className="text-micro text-muted-foreground">Email</Label>
+                  <Input id="login-email" type="email" placeholder="your@email.com" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">PASSWORD</Label>
-                  <Input id="login-password" type="password" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="border-2" required />
+                  <Label htmlFor="login-password" className="text-micro text-muted-foreground">Password</Label>
+                  <Input id="login-password" type="password" placeholder="••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
                 </div>
-                <Button type="submit" className="w-full border-4 border-border shadow-md" disabled={isLoading}>
-                  {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />LOGGING IN...</> : "LOGIN"}
+                <Button type="submit" variant="premium" size="lg" className="w-full" disabled={isLoading}>
+                  {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Signing in…</> : "Sign in"}
                 </Button>
               </form>
 
               <div className="relative my-4">
-                <Separator className="border-2" />
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground font-mono">OR</span>
+                <Separator />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-micro text-muted-foreground">or</span>
               </div>
 
-              <Button type="button" variant="outline" className="w-full border-2 border-border" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
-                {isGoogleLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />CONNECTING...</> :
+              <Button type="button" variant="glass" size="lg" className="w-full" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+                {isGoogleLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Connecting…</> :
                 <>
                     <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                       <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -290,7 +284,7 @@ const Auth = () => {
                       <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                       <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
-                    CONTINUE WITH GOOGLE
+                    Continue with Google
                   </>
                 }
               </Button>
@@ -299,30 +293,30 @@ const Auth = () => {
             <TabsContent value="signup" className="space-y-4 mt-6">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">DISPLAY NAME</Label>
-                  <Input id="signup-name" type="text" placeholder="Your Name" value={signupDisplayName} onChange={(e) => setSignupDisplayName(e.target.value)} className="border-2" required />
+                  <Label htmlFor="signup-name" className="text-micro text-muted-foreground">Display name</Label>
+                  <Input id="signup-name" type="text" placeholder="Your name" value={signupDisplayName} onChange={(e) => setSignupDisplayName(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">EMAIL</Label>
-                  <Input id="signup-email" type="email" placeholder="your@email.com" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} className="border-2" required />
+                  <Label htmlFor="signup-email" className="text-micro text-muted-foreground">Email</Label>
+                  <Input id="signup-email" type="email" placeholder="your@email.com" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">PASSWORD</Label>
-                  <Input id="signup-password" type="password" placeholder="••••••••" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} className="border-2" required />
-                  <p className="text-xs text-muted-foreground font-mono">Minimum 6 characters</p>
+                  <Label htmlFor="signup-password" className="text-micro text-muted-foreground">Password</Label>
+                  <Input id="signup-password" type="password" placeholder="••••••••" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required />
+                  <p className="text-micro text-muted-foreground">Minimum 6 characters</p>
                 </div>
-                <Button type="submit" className="w-full border-4 border-border shadow-md" disabled={isLoading}>
-                  {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />CREATING ACCOUNT...</> : "CREATE ACCOUNT"}
+                <Button type="submit" variant="premium" size="lg" className="w-full" disabled={isLoading}>
+                  {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating…</> : "Create account"}
                 </Button>
               </form>
 
               <div className="relative my-4">
-                <Separator className="border-2" />
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground font-mono">OR</span>
+                <Separator />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-micro text-muted-foreground">or</span>
               </div>
 
-              <Button type="button" variant="outline" className="w-full border-2 border-border" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
-                {isGoogleLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />CONNECTING...</> :
+              <Button type="button" variant="glass" size="lg" className="w-full" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+                {isGoogleLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Connecting…</> :
                 <>
                     <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                       <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -330,7 +324,7 @@ const Auth = () => {
                       <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                       <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
-                    SIGN UP WITH GOOGLE
+                    Sign up with Google
                   </>
                 }
               </Button>
@@ -339,23 +333,22 @@ const Auth = () => {
             <TabsContent value="reset" className="space-y-4 mt-6">
               {resetSent ?
               <div className="space-y-4 text-center py-6">
-                  <p className="text-lg font-bold">CHECK YOUR EMAIL</p>
+                  <p className="font-display text-h2">Check your email</p>
                   <p className="text-sm text-muted-foreground">
-                    We've sent a password reset link to <strong>{resetEmail}</strong>. Click the link in your email to set a new password.
+                    We've sent a reset link to <strong className="text-foreground">{resetEmail}</strong>.
                   </p>
-                  <Button onClick={() => {setResetSent(false);setResetEmail("");}} variant="outline" className="w-full border-2">
-                    SEND ANOTHER EMAIL
+                  <Button onClick={() => {setResetSent(false);setResetEmail("");}} variant="glass" className="w-full">
+                    Send another
                   </Button>
                 </div> :
-
               <form onSubmit={handleResetPassword} className="space-y-4">
-                  <p className="text-sm text-muted-foreground mb-4">Enter your email address and we'll send you a link to reset your password.</p>
+                  <p className="text-sm text-muted-foreground">Enter your email and we'll send a link to reset your password.</p>
                   <div className="space-y-2">
-                    <Label htmlFor="reset-email">EMAIL</Label>
-                    <Input id="reset-email" type="email" placeholder="your@email.com" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className="border-2" required />
+                    <Label htmlFor="reset-email" className="text-micro text-muted-foreground">Email</Label>
+                    <Input id="reset-email" type="email" placeholder="your@email.com" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} required />
                   </div>
-                  <Button type="submit" className="w-full border-4 border-border shadow-md" disabled={isLoading}>
-                    {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />SENDING...</> : "SEND RESET LINK"}
+                  <Button type="submit" variant="premium" size="lg" className="w-full" disabled={isLoading}>
+                    {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending…</> : "Send reset link"}
                   </Button>
                 </form>
               }
