@@ -9,6 +9,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import AdminGuard from "@/components/AdminGuard";
 import '@/lib/error-monitor'; // Initialize global error monitoring
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { LazyMotionProvider } from "@/components/motion/LazyMotionProvider";
 import A11yBootstrap from "@/components/A11yBootstrap";
 import {
   HomeSkeleton,
@@ -104,6 +105,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
+        <LazyMotionProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -171,6 +173,7 @@ const App = () => (
           </Suspense>
           </ErrorBoundary>
         </TooltipProvider>
+        </LazyMotionProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
