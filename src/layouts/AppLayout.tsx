@@ -30,6 +30,7 @@ const AppLayout = () => {
   const { signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { canInstall, installed, isIOS, install } = usePWAInstall();
+  const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
 
   const handleSignOut = async () => {
     await signOut();
