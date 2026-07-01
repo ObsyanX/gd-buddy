@@ -47,13 +47,13 @@ describe("Chat touch-scroll regression guard", () => {
     expect(src).toMatch(/-webkit-overflow-scrolling:touch/);
   });
 
-  it("ScrollArea does not force-mount a touch-swallowing scrollbar on mobile", () => {
+  it("ScrollArea keeps the scrollbar visible and non-blocking on mobile", () => {
     const src = read("src/components/ui/scroll-area.tsx");
-    // forceMount would keep the `touch-none` scrollbar overlay alive on mobile.
-    expect(src).not.toMatch(/ScrollBar\s+forceMount/);
-    // Scrollbar must be hidden and pointer-events disabled below the lg breakpoint.
-    expect(src).toMatch(/max-lg:hidden/);
-    expect(src).toMatch(/max-lg:pointer-events-none/);
+    // Scrollbar is force-mounted so it renders on mobile too (ChatGPT-style visible bar)
+    expect(src).toMatch(/ScrollBar\s+forceMount/);
+    // The scrollbar container must not use `touch-none` on mobile — that would
+    // swallow swipes over the right edge. `touch-auto` on mobile, `lg:touch-none` on desktop.
+    expect(src).toMatch(/touch-auto\s+lg:touch-none/);
   });
 
   it("Global CSS enables pan-y touch on Radix viewports at mobile/tablet widths", () => {
