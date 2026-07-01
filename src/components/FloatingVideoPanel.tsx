@@ -497,6 +497,7 @@ const FloatingVideoPanel = ({
               snapToCorner(corner);
             }}
             title={`Snap to ${corner.replace('-', ' ')}`}
+            aria-label={`Snap to ${corner.replace('-', ' ')}`}
           >
             {corner === 'bottom-right' && '↘'}
             {corner === 'bottom-left' && '↙'}
