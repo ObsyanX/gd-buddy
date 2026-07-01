@@ -285,3 +285,42 @@ All colors MUST be HSL.
     padding-bottom: var(--safe-area-bottom);
   }
 }
+/* ============================================================
+   Track 9 · Slice 4 — Accessibility utilities
+   Applied by <html> class/attribute toggles from useAccessibility.
+   ============================================================ */
+:root { --a11y-font-scale: 1; }
+html { font-size: calc(16px * var(--a11y-font-scale)); }
+
+html.a11y-high-contrast {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 0%;
+  --border: 0 0% 0%;
+  --muted-foreground: 0 0% 15%;
+  --primary: 240 100% 30%;
+}
+html.a11y-high-contrast.dark,
+.dark html.a11y-high-contrast {
+  --background: 0 0% 0%;
+  --foreground: 60 100% 90%;
+  --border: 60 100% 90%;
+  --muted-foreground: 60 100% 80%;
+}
+
+html.a11y-dyslexia body,
+html.a11y-dyslexia * {
+  letter-spacing: 0.04em;
+  word-spacing: 0.12em;
+  line-height: 1.6;
+}
+
+html[data-cb-palette="protanopia"]   { filter: url('#cb-protanopia'); }
+html[data-cb-palette="deuteranopia"] { filter: url('#cb-deuteranopia'); }
+html[data-cb-palette="tritanopia"]   { filter: url('#cb-tritanopia'); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
