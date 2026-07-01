@@ -144,7 +144,7 @@ const AIGDSimulator = () => {
           <div className="max-w-2xl mx-auto border-4 border-border p-8">
             <h2 className="text-3xl font-bold mb-4">Ready to Practice?</h2>
             <p className="text-muted-foreground mb-6">Start your first AI-simulated group discussion in under a minute. No payment required.</p>
-            <Button size="lg" className="text-xl px-12 py-8 border-4 border-border" onClick={() => navigate("/auth")}>
+            <Button size="lg" className="w-full sm:w-auto whitespace-normal text-base sm:text-xl px-6 sm:px-12 py-6 sm:py-8 border-4 border-border" onClick={() => navigate("/auth")}>
               START PRACTICING FREE
             </Button>
           </div>
