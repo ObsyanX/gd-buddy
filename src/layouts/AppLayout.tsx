@@ -6,7 +6,7 @@ import {
   Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import gdLogo from "@/assets/gd-buddy-logo.png.asset.json";
+import gdLogo from "@/assets/gd-buddy-logo-v2.png.asset.json";
 import SEOFooter from "@/components/SEOFooter";
 import NotificationBell from "@/components/NotificationBell";
 import BottomNav from "@/components/BottomNav";
