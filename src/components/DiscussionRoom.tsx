@@ -107,7 +107,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   // Any new message or transcription counts as activity
   useEffect(() => { resetIdleTimer(); // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length, isListening, userInput]);
+  }, [messages.length, userInput]);
+
 
   
   // Streaming transcription for real-time voice input (like Google Keyboard)
