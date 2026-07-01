@@ -70,7 +70,7 @@ const AIGDSimulator = () => {
             GD Buddy's AI simulator creates realistic placement GD rounds with intelligent participants who debate, challenge, and respond to your arguments in real-time. Get scored on everything evaluators look for.
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
-            <Button size="lg" className="text-xl px-12 py-8 border-4 border-border" onClick={() => navigate("/auth")}>
+            <Button size="lg" className="w-full sm:w-auto whitespace-normal text-base sm:text-xl px-6 sm:px-12 py-6 sm:py-8 border-4 border-border" onClick={() => navigate("/auth")}>
               TRY THE SIMULATOR FREE
             </Button>
           </div>
