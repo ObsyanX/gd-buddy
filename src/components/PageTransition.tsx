@@ -29,7 +29,7 @@ const PageTransition = ({ children }: PageTransitionProps) => {
 
   return (
     <div
-      className={`transition-all duration-200 ease-out ${isDiscussionSession ? "h-full min-h-0 overflow-hidden" : ""} ${
+      className={`transition-all duration-200 ease-out ${isDiscussionSession ? "min-h-full lg:h-full lg:min-h-0 lg:overflow-hidden" : ""} ${
         transitionState === "enter"
           ? "opacity-100 translate-y-0"
           : "opacity-0 translate-y-1"

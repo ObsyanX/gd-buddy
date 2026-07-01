@@ -923,7 +923,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   }
 
   return (
-    <div className="h-full min-h-0 bg-background flex flex-col overflow-hidden">
+    <div className="min-h-full bg-background flex flex-col overflow-visible lg:h-full lg:min-h-0 lg:overflow-hidden">
       {showTutorial && (
         <OnboardingTutorial onComplete={() => setShowTutorial(false)} />
       )}
@@ -947,7 +947,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       <div
         data-session-scroll-container
-        className="session-scroll-container flex-1 min-h-0 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-1.5 sm:gap-3 lg:gap-4 p-1.5 sm:p-3 lg:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3 lg:pb-4 overflow-y-auto lg:overflow-hidden"
+        className="session-scroll-container flex-1 min-h-0 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-1.5 sm:gap-3 lg:gap-4 p-1.5 sm:p-3 lg:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3 lg:pb-4 overflow-visible lg:overflow-hidden"
       >
         {/* Mobile/Tablet Video Monitor */}
         <div className="block lg:hidden shrink-0">
