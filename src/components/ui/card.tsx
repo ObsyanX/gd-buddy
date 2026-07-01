@@ -1,17 +1,51 @@
 import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "glass rounded-lg text-card-foreground transition-all duration-normal ease-editorial",
-      className,
-    )}
-    {...props}
-  />
-));
+const cardVariants = cva(
+  "rounded-lg text-card-foreground transition-[transform,box-shadow,background-color,border-color] duration-normal ease-editorial",
+  {
+    variants: {
+      variant: {
+        default: "glass-1",
+        elevated: "glass-2 elev-md",
+        premium: "glass-3 elev-copper",
+        outline: "border border-border/60 bg-background/40 backdrop-blur-sm",
+        subtle: "glass-0",
+      },
+      interactive: {
+        true: "lift cursor-pointer focus-ring hover:border-primary/40 active:scale-[0.995]",
+        false: "",
+      },
+      loading: {
+        true: "animate-pulse-soft pointer-events-none",
+        false: "",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      interactive: false,
+      loading: false,
+    },
+  },
+);
+
+export interface CardProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardVariants> {}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant, interactive, loading, tabIndex, ...props }, ref) => (
+    <div
+      ref={ref}
+      tabIndex={interactive ? tabIndex ?? 0 : tabIndex}
+      aria-busy={loading || undefined}
+      className={cn(cardVariants({ variant, interactive, loading }), className)}
+      {...props}
+    />
+  ),
+);
 Card.displayName = "Card";
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
@@ -25,7 +59,7 @@ const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HT
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn("font-display text-2xl font-medium leading-none tracking-tight", className)}
+      className={cn("font-display text-2xl font-medium leading-none tracking-tight text-balance", className)}
       {...props}
     />
   ),
@@ -34,7 +68,7 @@ CardTitle.displayName = "CardTitle";
 
 const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({ className, ...props }, ref) => (
-    <p ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} />
+    <p ref={ref} className={cn("text-sm text-muted-foreground text-pretty", className)} {...props} />
   ),
 );
 CardDescription.displayName = "CardDescription";
@@ -51,4 +85,4 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, cardVariants };
