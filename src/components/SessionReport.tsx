@@ -763,7 +763,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         </div>
       </header>
 
-      <main className="container mx-auto py-8 px-6 max-w-5xl space-y-8">
+      <div className="container mx-auto pt-4 px-6 max-w-5xl">
+        <ReportActions sessionId={sessionId} />
+      </div>
+
+      <main id="report-print" className="container mx-auto py-8 px-6 max-w-5xl space-y-8">
         {/* Overall Score - Show N/A if no real data */}
         <Card className="p-8 border-4 border-border text-center space-y-4">
           {hasRealScores ?
