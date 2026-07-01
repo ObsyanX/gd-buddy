@@ -46,7 +46,7 @@ Reasoning → Calibration → Policy → Safety Validator → Dispatcher (auto |
 - Edge function `benchmark-runner` — admin-only, joins `moderator_decisions` with `overrides` to build a labelled dataset (predicted = AI action, expected = manual override action; unmodified decisions are treated as agreement), then writes to `benchmark_reports`.
 - Unit tests in `src/test/track9-benchmarking.test.ts` cover perfect prediction, FP/FN accounting, ECE detection of overconfidence, and above-chance κ.
 
-## Slice 4 — Accessibility, i18n, Offline Resilience (9.4 / 9.5 / 9.6)
+## Slice 4 — Accessibility, i18n, Offline Resilience ✅ (this commit)
 
 - `useAccessibility()` hook reading `accessibility_prefs`.
 - `AccessibilityCenter` in Settings.
