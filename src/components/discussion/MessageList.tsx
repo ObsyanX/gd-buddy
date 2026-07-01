@@ -32,7 +32,7 @@ const MessageList = ({ messages, currentUserId, isSpeaking, currentSpeaker }: Me
 
 
   return (
-    <Card className="border-2 sm:border-3 lg:border-4 border-border flex-1 min-h-[50dvh] sm:min-h-0 overflow-hidden flex flex-col">
+    <Card className="border-2 sm:border-3 lg:border-4 border-border h-[50dvh] min-h-[50dvh] flex-none sm:h-auto sm:flex-1 sm:min-h-0 overflow-hidden flex flex-col">
       <ScrollArea className="chat-scroll-panel flex-1 min-h-0">
         <div className="space-y-2 sm:space-y-3 lg:space-y-4 p-2 sm:p-3 lg:p-4 pr-3 sm:pr-4 lg:pr-5">
           {messages.map((message, index) => {
