@@ -272,6 +272,118 @@ export type Database = {
           },
         ]
       }
+      contradictions: {
+        Row: {
+          confidence: number
+          created_at: string
+          detected_at: string
+          earlier_message_id: string | null
+          explanation: string | null
+          id: string
+          later_message_id: string | null
+          same_speaker: boolean
+          session_id: string
+        }
+        Insert: {
+          confidence: number
+          created_at?: string
+          detected_at?: string
+          earlier_message_id?: string | null
+          explanation?: string | null
+          id?: string
+          later_message_id?: string | null
+          same_speaker?: boolean
+          session_id: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          detected_at?: string
+          earlier_message_id?: string | null
+          explanation?: string | null
+          id?: string
+          later_message_id?: string | null
+          same_speaker?: boolean
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contradictions_earlier_message_id_fkey"
+            columns: ["earlier_message_id"]
+            isOneToOne: false
+            referencedRelation: "gd_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contradictions_later_message_id_fkey"
+            columns: ["later_message_id"]
+            isOneToOne: false
+            referencedRelation: "gd_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contradictions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_memory: {
+        Row: {
+          content: string
+          created_at: string
+          embedding: string | null
+          id: string
+          message_id: string | null
+          participant_id: string | null
+          salience: number
+          session_id: string
+          ts: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          message_id?: string | null
+          participant_id?: string | null
+          salience?: number
+          session_id: string
+          ts?: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          message_id?: string | null
+          participant_id?: string | null
+          salience?: number
+          session_id?: string
+          ts?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_memory_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "gd_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_memory_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_drills: {
         Row: {
           created_at: string
@@ -395,6 +507,58 @@ export type Database = {
             foreignKeyName: "discussion_health_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: true
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      duplicate_ideas: {
+        Row: {
+          created_at: string
+          detected_at: string
+          duplicate_message_id: string | null
+          id: string
+          original_message_id: string | null
+          session_id: string
+          similarity: number
+        }
+        Insert: {
+          created_at?: string
+          detected_at?: string
+          duplicate_message_id?: string | null
+          id?: string
+          original_message_id?: string | null
+          session_id: string
+          similarity: number
+        }
+        Update: {
+          created_at?: string
+          detected_at?: string
+          duplicate_message_id?: string | null
+          id?: string
+          original_message_id?: string | null
+          session_id?: string
+          similarity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "duplicate_ideas_duplicate_message_id_fkey"
+            columns: ["duplicate_message_id"]
+            isOneToOne: false
+            referencedRelation: "gd_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duplicate_ideas_original_message_id_fkey"
+            columns: ["original_message_id"]
+            isOneToOne: false
+            referencedRelation: "gd_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duplicate_ideas_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
             referencedRelation: "gd_sessions"
             referencedColumns: ["id"]
           },
@@ -551,6 +715,108 @@ export type Database = {
           variants?: Json
         }
         Relationships: []
+      }
+      fact_checks: {
+        Row: {
+          checked_at: string
+          claim: string
+          confidence: number
+          created_at: string
+          explanation: string | null
+          id: string
+          message_id: string | null
+          session_id: string
+          sources: Json
+          verdict: string
+        }
+        Insert: {
+          checked_at?: string
+          claim: string
+          confidence: number
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          message_id?: string | null
+          session_id: string
+          sources?: Json
+          verdict: string
+        }
+        Update: {
+          checked_at?: string
+          claim?: string
+          confidence?: number
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          message_id?: string | null
+          session_id?: string
+          sources?: Json
+          verdict?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fact_checks_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "gd_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_checks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fallacies: {
+        Row: {
+          confidence: number
+          created_at: string
+          detected_at: string
+          explanation: string | null
+          fallacy_type: string
+          id: string
+          message_id: string | null
+          session_id: string
+        }
+        Insert: {
+          confidence: number
+          created_at?: string
+          detected_at?: string
+          explanation?: string | null
+          fallacy_type: string
+          id?: string
+          message_id?: string | null
+          session_id: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          detected_at?: string
+          explanation?: string | null
+          fallacy_type?: string
+          id?: string
+          message_id?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fallacies_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "gd_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fallacies_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gd_feedback: {
         Row: {
