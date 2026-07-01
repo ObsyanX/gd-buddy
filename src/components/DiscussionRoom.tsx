@@ -402,11 +402,9 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     };
   }, [sessionId, session?.is_multiplayer, currentUserId, autoPlayTTS, speak, isPaused]);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+  // Auto-scroll is handled inside MessageList via the ScrollArea viewport's
+  // scrollTop. Do NOT call scrollIntoView here — it bubbles and scrolls the
+  // document/window on mobile, hijacking the whole page.
 
   // Audio level monitoring for WPM estimation
   useEffect(() => {
@@ -949,7 +947,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       <div className="flex-1 min-h-0 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 p-2 sm:p-3 lg:p-4 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-4 overflow-hidden">
         {/* Mobile/Tablet Video Monitor */}
-        <div className="hidden sm:block lg:hidden shrink-0">
+        <div className="block lg:hidden shrink-0">
           <VideoMonitor
             isActive={true}
             sessionId={session?.id}
