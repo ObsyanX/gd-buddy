@@ -16,11 +16,11 @@ describe("evaluatePolicies", () => {
   });
 
   it("skips rules whose confidence floor is not met", () => {
-    const d = evaluatePolicies(rules, { silence_ms: 45000 }, 0.6);
+    // Floor for silence_engage is 0.7 — confidence 0.75 clears it, 0.65 does not.
+    const d = evaluatePolicies(rules, { silence_ms: 45000 }, 0.75);
     expect(d?.matched_rule).toBe("silence_engage");
     const d2 = evaluatePolicies(rules, { silence_ms: 45000 }, 0.65);
-    expect(d2?.matched_rule).toBe("silence_engage"); // floor 0.7 not met → skipped
-    expect(evaluatePolicies(rules, { silence_ms: 45000 }, 0.5)?.matched_rule).not.toBe("silence_engage");
+    expect(d2?.matched_rule).not.toBe("silence_engage");
   });
 
   it("requires all keys in when_expr to match (AND)", () => {

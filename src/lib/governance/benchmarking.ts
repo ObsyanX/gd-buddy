@@ -79,8 +79,8 @@ export function computeBenchmark(rows: LabelledPrediction[]): BenchmarkMetrics {
   if (withConf.length) {
     const bins = Array.from({ length: 10 }, () => ({ n: 0, correct: 0, conf: 0 }));
     for (const r of withConf) {
-      const c = Math.min(0.9999, Math.max(0, r.confidence!));
-      const idx = Math.floor(c * 10);
+      const c = Math.min(1, Math.max(0, r.confidence!));
+      const idx = c >= 1 ? 9 : Math.floor(c * 10);
       const bin = bins[idx];
       bin.n += 1;
       bin.conf += c;
