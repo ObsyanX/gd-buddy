@@ -60,7 +60,7 @@ export const ErrorState = React.forwardRef<HTMLDivElement, ErrorStateProps>(
           variant === "compact" ? "px-6 py-8 gap-3" : "px-8 py-12 gap-4",
           className,
         )}
-        {...(props as never)}
+        {...(props as React.HTMLAttributes<HTMLDivElement>)}
       >
         <div
           aria-hidden

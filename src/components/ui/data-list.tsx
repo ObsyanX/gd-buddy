@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyState, type EmptyStateProps } from "@/components/ui/empty-state";
 import { ErrorState, type ErrorStateProps } from "@/components/ui/error-state";
-import { staggerContainer, staggerItem } from "@/lib/motion";
+import { staggerBase, fadeRise } from "@/lib/motion";
 
 /**
  * Phase 10 — DataList
@@ -77,7 +77,7 @@ export function DataList<T>({
         {state === "ready" && items && (
           <motion.div
             key="ready"
-            variants={staggerContainer}
+            variants={staggerBase}
             initial="hidden"
             animate="show"
             exit={{ opacity: 0 }}
@@ -93,7 +93,7 @@ export function DataList<T>({
               {items.map((item, i) => (
                 <motion.li
                   key={keyExtractor ? keyExtractor(item, i) : i}
-                  variants={staggerItem}
+                  variants={fadeRise}
                   className={cn(
                     Wrapper === "div" ? "list-none" : "",
                     itemClassName,

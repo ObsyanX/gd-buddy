@@ -35,7 +35,7 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
         variant === "hero" && "px-10 py-16 gap-5",
         className,
       )}
-      {...(props as never)}
+      {...(props as React.HTMLAttributes<HTMLDivElement>)}
     >
       {icon && (
         <div
