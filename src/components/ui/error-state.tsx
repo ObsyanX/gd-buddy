@@ -1,6 +1,6 @@
 import * as React from "react";
 import { AlertTriangle, RefreshCcw } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { fadeRise } from "@/lib/motion";
@@ -8,9 +8,8 @@ import { fadeRise } from "@/lib/motion";
 /**
  * Phase 10 — ErrorState
  * Failure surface for lists, tables, and data-fetch panels.
- * Distinct from EmptyState: signals recoverability with a Retry affordance.
  */
-export interface ErrorStateProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface ErrorStateProps extends Omit<HTMLMotionProps<"div">, "title"> {
   title?: string;
   description?: React.ReactNode;
   error?: unknown;
@@ -48,7 +47,7 @@ export const ErrorState = React.forwardRef<HTMLDivElement, ErrorStateProps>(
     const detail = hideDetails ? null : extractMessage(error);
     return (
       <motion.div
-        ref={ref as never}
+        ref={ref}
         variants={fadeRise}
         initial="hidden"
         animate="show"
@@ -60,7 +59,7 @@ export const ErrorState = React.forwardRef<HTMLDivElement, ErrorStateProps>(
           variant === "compact" ? "px-6 py-8 gap-3" : "px-8 py-12 gap-4",
           className,
         )}
-        {...(props as React.HTMLAttributes<HTMLDivElement>)}
+        {...props}
       >
         <div
           aria-hidden

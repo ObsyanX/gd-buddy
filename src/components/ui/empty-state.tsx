@@ -1,5 +1,5 @@
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { fadeRise } from "@/lib/motion";
@@ -7,9 +7,8 @@ import { fadeRise } from "@/lib/motion";
 /**
  * Phase 10 — EmptyState
  * Communicative empty slot for lists, tables, searches, and dashboards.
- * Composes with copper elevation + editorial typography.
  */
-export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface EmptyStateProps extends Omit<HTMLMotionProps<"div">, "title"> {
   icon?: React.ReactNode;
   title: string;
   description?: React.ReactNode;
@@ -21,7 +20,7 @@ export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
 export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
   ({ icon, title, description, action, secondaryAction, variant = "default", className, ...props }, ref) => (
     <motion.div
-      ref={ref as never}
+      ref={ref}
       variants={fadeRise}
       initial="hidden"
       animate="show"
@@ -35,7 +34,7 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
         variant === "hero" && "px-10 py-16 gap-5",
         className,
       )}
-      {...(props as React.HTMLAttributes<HTMLDivElement>)}
+      {...props}
     >
       {icon && (
         <div
