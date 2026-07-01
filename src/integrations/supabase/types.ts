@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      accessibility_prefs: {
+        Row: {
+          captions: boolean
+          colorblind_palette: string
+          created_at: string
+          dyslexia_font: boolean
+          font_scale: number
+          high_contrast: boolean
+          id: string
+          locale: string
+          metadata: Json
+          org_id: string | null
+          speech_rate: number
+          timer_visibility: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          captions?: boolean
+          colorblind_palette?: string
+          created_at?: string
+          dyslexia_font?: boolean
+          font_scale?: number
+          high_contrast?: boolean
+          id?: string
+          locale?: string
+          metadata?: Json
+          org_id?: string | null
+          speech_rate?: number
+          timer_visibility?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          captions?: boolean
+          colorblind_palette?: string
+          created_at?: string
+          dyslexia_font?: boolean
+          font_scale?: number
+          high_contrast?: boolean
+          id?: string
+          locale?: string
+          metadata?: Json
+          org_id?: string | null
+          speech_rate?: number
+          timer_visibility?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accessibility_prefs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       achievements: {
         Row: {
           code: string
@@ -91,6 +150,150 @@ export type Database = {
           },
         ]
       }
+      adr_docs: {
+        Row: {
+          alternatives: string | null
+          consequences: string | null
+          created_at: string
+          decision: string | null
+          id: string
+          md_body: string | null
+          problem: string | null
+          slug: string
+          status: string
+          title: string
+          tradeoffs: string | null
+          updated_at: string
+        }
+        Insert: {
+          alternatives?: string | null
+          consequences?: string | null
+          created_at?: string
+          decision?: string | null
+          id?: string
+          md_body?: string | null
+          problem?: string | null
+          slug: string
+          status?: string
+          title: string
+          tradeoffs?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alternatives?: string | null
+          consequences?: string | null
+          created_at?: string
+          decision?: string | null
+          id?: string
+          md_body?: string | null
+          problem?: string | null
+          slug?: string
+          status?: string
+          title?: string
+          tradeoffs?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_costs: {
+        Row: {
+          cost_estimate: number
+          created_at: string
+          function_name: string
+          id: string
+          input_tokens: number
+          metadata: Json
+          model_id: string | null
+          org_id: string | null
+          output_tokens: number
+          request_id: string | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cost_estimate?: number
+          created_at?: string
+          function_name: string
+          id?: string
+          input_tokens?: number
+          metadata?: Json
+          model_id?: string | null
+          org_id?: string | null
+          output_tokens?: number
+          request_id?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cost_estimate?: number
+          created_at?: string
+          function_name?: string
+          id?: string
+          input_tokens?: number
+          metadata?: Json
+          model_id?: string | null
+          org_id?: string | null
+          output_tokens?: number
+          request_id?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_costs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_costs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_models: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          model_id: string
+          notes: string | null
+          params: Json
+          purpose: string
+          updated_at: string
+          vendor: string
+          version: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          model_id: string
+          notes?: string | null
+          params?: Json
+          purpose: string
+          updated_at?: string
+          vendor: string
+          version?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          model_id?: string
+          notes?: string | null
+          params?: Json
+          purpose?: string
+          updated_at?: string
+          vendor?: string
+          version?: string
+        }
+        Relationships: []
+      }
       audit_events: {
         Row: {
           action: string
@@ -166,6 +369,93 @@ export type Database = {
           scheduled_at?: string
           started_at?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      benchmark_reports: {
+        Row: {
+          ai_human_agreement: number | null
+          calibration_ece: number | null
+          created_at: string
+          dataset_ref: string | null
+          f1: number | null
+          false_negatives: number | null
+          false_positives: number | null
+          id: string
+          metrics: Json
+          model_versions: Json
+          name: string
+          precision: number | null
+          recall: number | null
+          scope: string
+        }
+        Insert: {
+          ai_human_agreement?: number | null
+          calibration_ece?: number | null
+          created_at?: string
+          dataset_ref?: string | null
+          f1?: number | null
+          false_negatives?: number | null
+          false_positives?: number | null
+          id?: string
+          metrics?: Json
+          model_versions?: Json
+          name: string
+          precision?: number | null
+          recall?: number | null
+          scope: string
+        }
+        Update: {
+          ai_human_agreement?: number | null
+          calibration_ece?: number | null
+          created_at?: string
+          dataset_ref?: string | null
+          f1?: number | null
+          false_negatives?: number | null
+          false_positives?: number | null
+          id?: string
+          metrics?: Json
+          model_versions?: Json
+          name?: string
+          precision?: number | null
+          recall?: number | null
+          scope?: string
+        }
+        Relationships: []
+      }
+      calibration_bins: {
+        Row: {
+          action: string
+          bin_hi: number
+          bin_lo: number
+          correct: number
+          empirical_accuracy: number
+          id: string
+          samples: number
+          updated_at: string
+          window_days: number
+        }
+        Insert: {
+          action: string
+          bin_hi: number
+          bin_lo: number
+          correct?: number
+          empirical_accuracy?: number
+          id?: string
+          samples?: number
+          updated_at?: string
+          window_days?: number
+        }
+        Update: {
+          action?: string
+          bin_hi?: number
+          bin_lo?: number
+          correct?: number
+          empirical_accuracy?: number
+          id?: string
+          samples?: number
+          updated_at?: string
+          window_days?: number
         }
         Relationships: []
       }
@@ -741,6 +1031,44 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      event_log: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          payload: Json
+          seq: number
+          session_id: string | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          payload?: Json
+          seq?: number
+          session_id?: string | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          seq?: number
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_log_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       experiment_assignments: {
         Row: {
@@ -1627,6 +1955,57 @@ export type Database = {
         }
         Relationships: []
       }
+      overrides: {
+        Row: {
+          actor_role: string
+          actor_user_id: string | null
+          created_at: string
+          decision_id: string | null
+          id: string
+          manual_decision: Json
+          original_decision: Json
+          reason: string | null
+          session_id: string | null
+        }
+        Insert: {
+          actor_role: string
+          actor_user_id?: string | null
+          created_at?: string
+          decision_id?: string | null
+          id?: string
+          manual_decision?: Json
+          original_decision?: Json
+          reason?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          actor_role?: string
+          actor_user_id?: string | null
+          created_at?: string
+          decision_id?: string | null
+          id?: string
+          manual_decision?: Json
+          original_decision?: Json
+          reason?: string | null
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "overrides_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "moderator_decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "overrides_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_behaviour: {
         Row: {
           avg_turn_ms: number
@@ -1695,6 +2074,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      perf_budgets: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          p50_ms: number | null
+          p90_ms: number | null
+          p95_ms: number | null
+          p99_ms: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          p50_ms?: number | null
+          p90_ms?: number | null
+          p95_ms?: number | null
+          p99_ms?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          p50_ms?: number | null
+          p90_ms?: number | null
+          p95_ms?: number | null
+          p99_ms?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       perf_events: {
         Row: {
@@ -1798,6 +2216,59 @@ export type Database = {
         }
         Relationships: []
       }
+      prompts: {
+        Row: {
+          ab_flag: string | null
+          active: boolean
+          body: string
+          category: string
+          created_at: string
+          id: string
+          language: string
+          metadata: Json
+          org_id: string | null
+          owner: string | null
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          ab_flag?: string | null
+          active?: boolean
+          body: string
+          category: string
+          created_at?: string
+          id?: string
+          language?: string
+          metadata?: Json
+          org_id?: string | null
+          owner?: string | null
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          ab_flag?: string | null
+          active?: boolean
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          language?: string
+          metadata?: Json
+          org_id?: string | null
+          owner?: string | null
+          updated_at?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       replay_events: {
         Row: {
           actor_id: string | null
@@ -1839,6 +2310,56 @@ export type Database = {
           },
         ]
       }
+      research_exports: {
+        Row: {
+          anonymized_at: string | null
+          created_at: string
+          download_url: string | null
+          expires_at: string | null
+          id: string
+          metadata: Json
+          org_id: string | null
+          requested_by: string | null
+          scope: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          anonymized_at?: string | null
+          created_at?: string
+          download_url?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          org_id?: string | null
+          requested_by?: string | null
+          scope?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          anonymized_at?: string | null
+          created_at?: string
+          download_url?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          org_id?: string | null
+          requested_by?: string | null
+          scope?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_exports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       response_cache: {
         Row: {
           cache_key: string
@@ -1868,6 +2389,50 @@ export type Database = {
           ttl_seconds?: number
         }
         Relationships: []
+      }
+      safety_incidents: {
+        Row: {
+          created_at: string
+          function_name: string | null
+          id: string
+          kind: string
+          metadata: Json
+          request_id: string | null
+          session_id: string | null
+          snippet_hash: string | null
+          verdict: string
+        }
+        Insert: {
+          created_at?: string
+          function_name?: string | null
+          id?: string
+          kind: string
+          metadata?: Json
+          request_id?: string | null
+          session_id?: string | null
+          snippet_hash?: string | null
+          verdict: string
+        }
+        Update: {
+          created_at?: string
+          function_name?: string | null
+          id?: string
+          kind?: string
+          metadata?: Json
+          request_id?: string | null
+          session_id?: string | null
+          snippet_hash?: string | null
+          verdict?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_incidents_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       session_notes: {
         Row: {
@@ -2160,6 +2725,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "speaking_turns_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subsystem_versions: {
+        Row: {
+          created_at: string
+          graph_version: string | null
+          id: string
+          model_versions: Json
+          policy_version: string | null
+          prompt_version: string | null
+          reasoning_version: string | null
+          scope: string
+          scoring_version: string | null
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          graph_version?: string | null
+          id?: string
+          model_versions?: Json
+          policy_version?: string | null
+          prompt_version?: string | null
+          reasoning_version?: string | null
+          scope?: string
+          scoring_version?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          graph_version?: string | null
+          id?: string
+          model_versions?: Json
+          policy_version?: string | null
+          prompt_version?: string | null
+          reasoning_version?: string | null
+          scope?: string
+          scoring_version?: string | null
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subsystem_versions_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "gd_sessions"
