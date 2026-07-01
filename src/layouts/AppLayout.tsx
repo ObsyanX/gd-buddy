@@ -103,6 +103,11 @@ const AppLayout = () => {
                     {item.label}
                   </Button>
                 ))}
+                {isAdmin && (
+                  <Button variant="outline" onClick={() => handleNav('/home/admin')} className="border-2 border-destructive justify-start w-full">
+                    <Shield className="w-4 h-4 mr-2" /> ADMIN
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => { setMobileMenuOpen(false); handleSignOut(); }}
