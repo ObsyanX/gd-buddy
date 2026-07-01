@@ -40,6 +40,29 @@ const Settings = () => {
   const { voice, speed, setVoice, setSpeed } = useVoiceStore();
   const { autoMicEnabled, setAutoMicEnabled } = useAppSettingsStore();
   const [isTesting, setIsTesting] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPw, setChangingPw] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 8) {
+      toast({ title: 'Weak password', description: 'Use at least 8 characters.', variant: 'destructive' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: 'Passwords do not match', variant: 'destructive' });
+      return;
+    }
+    setChangingPw(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setChangingPw(false);
+    if (error) {
+      toast({ title: 'Could not update password', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setNewPassword(''); setConfirmPassword('');
+    toast({ title: 'Password updated' });
+  };
 
   const handleSave = () => {
     // Zustand persist handles saving automatically, but we show confirmation
