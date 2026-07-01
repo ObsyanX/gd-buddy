@@ -95,6 +95,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const A11yBootstrap = () => { useAccessibility(); return null; };
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
