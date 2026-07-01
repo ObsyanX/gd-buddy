@@ -119,7 +119,7 @@ const BottomNav = () => {
               onClick={item.onClick}
               role="menuitem"
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm transition-colors text-left",
+                "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm transition-colors text-left tap focus-ring",
                 "destructive" in item && item.destructive
                   ? "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                   : "text-foreground/90 hover:text-primary-glow hover:bg-primary/10",
