@@ -14,6 +14,7 @@ import CommandPalette, { useCommandPalette } from "@/components/CommandPalette";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { toast } from "@/hooks/use-toast";
+import { SkipLink, Announcer } from "@/components/a11y";
 
 const NAV_ITEMS = [
   { label: "Home", icon: HomeIcon, path: "/home" },
