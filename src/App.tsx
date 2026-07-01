@@ -49,6 +49,7 @@ const Governance = lazy(() => import("./pages/Governance"));
 const FeedbackHistory = lazy(() => import("./pages/FeedbackHistory"));
 const Health = lazy(() => import("./pages/Health"));
 const Intelligence = lazy(() => import("./pages/Intelligence"));
+const ADRs = lazy(() => import("./pages/ADRs"));
 
 // SEO content pages (public, indexable)
 const GDTopics = lazy(() => import("./pages/GDTopics"));
@@ -150,6 +151,7 @@ const App = () => (
                 <Route path="feedback" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackHistory /></PageTransition></Suspense>} />
                 <Route path="health" element={<Suspense fallback={<Loading />}><PageTransition><Health /></PageTransition></Suspense>} />
                 <Route path="intelligence" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Intelligence /></PageTransition></Suspense>} />
+                <Route path="adrs" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><ADRs /></PageTransition></Suspense>} />
               </Route>
 
 
