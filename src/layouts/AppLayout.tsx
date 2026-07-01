@@ -3,12 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
-  MessageSquare, LayoutDashboard, Dumbbell, Users, User,
-  Settings as SettingsIcon, LogOut, Menu, Play, GraduationCap,
+  MessageSquare, LayoutDashboard, Dumbbell, User,
+  Settings as SettingsIcon, LogOut, Menu, GraduationCap, Shield,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import SEOFooter from "@/components/SEOFooter";
+import NotificationBell from "@/components/NotificationBell";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const NAV_ITEMS = [
   { label: "HOME", icon: MessageSquare, path: "/home" },
