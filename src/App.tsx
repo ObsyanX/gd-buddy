@@ -45,6 +45,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
 const Admin = lazy(() => import("./pages/Admin"));
+const Governance = lazy(() => import("./pages/Governance"));
 const FeedbackHistory = lazy(() => import("./pages/FeedbackHistory"));
 const Health = lazy(() => import("./pages/Health"));
 const Intelligence = lazy(() => import("./pages/Intelligence"));
@@ -145,6 +146,7 @@ const App = () => (
                 <Route path="settings" element={<Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense>} />
                 <Route path="instructor" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><InstructorDashboard /></PageTransition></Suspense>} />
                 <Route path="admin" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Admin /></PageTransition></Suspense>} />
+                <Route path="governance" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Governance /></PageTransition></Suspense>} />
                 <Route path="feedback" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackHistory /></PageTransition></Suspense>} />
                 <Route path="health" element={<Suspense fallback={<Loading />}><PageTransition><Health /></PageTransition></Suspense>} />
                 <Route path="intelligence" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Intelligence /></PageTransition></Suspense>} />

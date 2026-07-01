@@ -53,7 +53,9 @@ Reasoning → Calibration → Policy → Safety Validator → Dispatcher (auto |
 - `src/i18n/*.json` catalogs and `useI18n()` — no hardcoded strings on new screens.
 - Offline queue: IndexedDB buffer for participant events, mic queue, local transcript; auto-flush on reconnect.
 
-## Slice 5 — Governance Dashboards (9.10 / 9.13 / 9.14)
+## Slice 5 — Governance Dashboards ✅ (this commit)
+
+Admin-only route `/home/governance` with tabs: Costs · Prompts · Models · Performance · Experiments · Events · Safety.
 
 Admin-only screens:
 
