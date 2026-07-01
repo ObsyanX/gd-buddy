@@ -119,7 +119,7 @@ const BottomNav = () => {
               onClick={item.onClick}
               role="menuitem"
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm transition-colors text-left",
+                "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm transition-colors text-left tap focus-ring",
                 "destructive" in item && item.destructive
                   ? "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                   : "text-foreground/90 hover:text-primary-glow hover:bg-primary/10",
@@ -134,8 +134,7 @@ const BottomNav = () => {
 
       {/* Primary bottom bar */}
       <nav
-        className="lg:hidden fixed left-1/2 -translate-x-1/2 z-50 bottom-3 w-[calc(100%-1rem)] max-w-md"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="lg:hidden fixed left-1/2 -translate-x-1/2 z-50 bottom-3 w-[calc(100%-1rem)] max-w-md pb-safe"
         aria-label="Primary"
       >
         <div className="glass-strong rounded-full h-16 px-2 flex items-center justify-between shadow-premium relative">
@@ -149,10 +148,10 @@ const BottomNav = () => {
             aria-expanded={open}
             aria-label={open ? "Close more menu" : "Open more menu"}
             className={cn(
-              "absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 rounded-full",
+              "absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 rounded-full tap focus-ring gpu",
               "bg-gradient-copper shadow-copper flex items-center justify-center",
               "text-primary-foreground transition-transform duration-normal ease-editorial",
-              "hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-glow",
+              "hover:scale-105 active:scale-95",
               open && "rotate-180",
             )}
           >
@@ -167,8 +166,12 @@ const BottomNav = () => {
         </div>
       </nav>
 
-      {/* Content spacer so page bottom isn't hidden under the bar */}
-      <div className="lg:hidden h-24" aria-hidden="true" />
+      {/* Content spacer so page bottom isn't hidden under the bar (includes safe-area) */}
+      <div
+        className="lg:hidden"
+        style={{ height: "calc(6rem + env(safe-area-inset-bottom))" }}
+        aria-hidden="true"
+      />
     </>
   );
 };
@@ -187,7 +190,7 @@ const NavBtn = ({
     aria-label={item.label}
     aria-current={active ? "page" : undefined}
     className={cn(
-      "flex-1 min-w-0 h-12 flex flex-col items-center justify-center gap-0.5 rounded-full transition-colors",
+      "flex-1 min-w-0 h-12 flex flex-col items-center justify-center gap-0.5 rounded-full transition-colors tap focus-ring",
       active ? "text-primary-glow" : "text-muted-foreground hover:text-foreground",
     )}
   >

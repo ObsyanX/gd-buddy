@@ -104,7 +104,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <header className="border-b-4 border-border p-6">
         <div className="container mx-auto items-center justify-between flex flex-col">
           <div className="items-center justify-center flex flex-row gap-0 mx-0">
