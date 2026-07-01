@@ -163,8 +163,49 @@ const AppLayout = () => {
               </Button>
             </div>
           </div>
+
+          {/* Mobile horizontal snap chip strip */}
+          <nav
+            aria-label="Quick sections"
+            className="lg:hidden mt-2 -mx-1 px-1 flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-px-1 [scroll-behavior:smooth]"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            {NAV_ITEMS.map((item) => {
+              const active = isActive(item.path);
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={cn(
+                    "snap-start shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs font-medium",
+                    "transition-all duration-normal ease-editorial active:scale-95",
+                    active
+                      ? "bg-gradient-copper text-primary-foreground shadow-copper"
+                      : "glass text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <item.icon className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+            {isAdmin && (
+              <button
+                onClick={() => navigate("/home/admin")}
+                className={cn(
+                  "snap-start shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs font-medium transition-all duration-normal ease-editorial active:scale-95",
+                  isActive("/home/admin")
+                    ? "bg-gradient-copper text-primary-foreground shadow-copper"
+                    : "glass text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Shield className="w-3.5 h-3.5" /> Admin
+              </button>
+            )}
+          </nav>
         </div>
       </header>
+
 
       <main className="flex-1 relative z-10" role="main">
         <Outlet />
