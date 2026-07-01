@@ -397,25 +397,97 @@ const Admin = () => {
           </TabsContent>
 
           {/* ---------- USERS ---------- */}
-          <TabsContent value="users">
-            <Card className="p-4 border-4 border-border max-h-[600px] overflow-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left border-b-2 border-border sticky top-0 bg-card">
-                  <tr><th className="p-2">Name</th><th className="p-2">Email</th><th className="p-2">XP</th><th className="p-2">Joined</th></tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id} className="border-b border-border">
-                      <td className="p-2">{u.display_name}</td>
-                      <td className="p-2 font-mono text-xs">{u.email || '—'}</td>
-                      <td className="p-2">{u.xp || 0}</td>
-                      <td className="p-2 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Card>
+          <TabsContent value="users" className="space-y-4">
+            {(() => {
+              const cutoff = Date.now() - 15 * 60 * 1000;
+              const activeUserIds = new Set(
+                sessions
+                  .filter((s) => s.status === 'active' && new Date(s.created_at).getTime() > cutoff)
+                  .map((s) => s.user_id)
+              );
+              const activeUsers = users.filter((u) => activeUserIds.has(u.id));
+              const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
+              const newSignups = users.filter((u) => new Date(u.created_at).getTime() > dayAgo);
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-3 border-2 border-border rounded">
+                      <p className="text-xs text-muted-foreground">TOTAL SIGN-UPS</p>
+                      <p className="text-2xl font-bold">{users.length}</p>
+                    </div>
+                    <div className="p-3 border-2 border-green-500 rounded">
+                      <p className="text-xs text-muted-foreground">CURRENTLY ACTIVE</p>
+                      <p className="text-2xl font-bold text-green-500">{activeUsers.length}</p>
+                      <p className="text-[10px] text-muted-foreground">in a live session (15m)</p>
+                    </div>
+                    <div className="p-3 border-2 border-primary rounded">
+                      <p className="text-xs text-muted-foreground">NEW (24H)</p>
+                      <p className="text-2xl font-bold text-primary">{newSignups.length}</p>
+                    </div>
+                  </div>
+
+                  {activeUsers.length > 0 && (
+                    <Card className="p-4 border-4 border-green-500">
+                      <h3 className="font-bold mb-2 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Currently Active Users
+                      </h3>
+                      <table className="w-full text-sm">
+                        <thead className="text-left border-b-2 border-border">
+                          <tr><th className="p-2">Name</th><th className="p-2">XP</th><th className="p-2">Joined</th></tr>
+                        </thead>
+                        <tbody>
+                          {activeUsers.map((u) => (
+                            <tr key={u.id} className="border-b border-border">
+                              <td className="p-2">{u.display_name}</td>
+                              <td className="p-2">{u.xp || 0}</td>
+                              <td className="p-2 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </Card>
+                  )}
+
+                  <Card className="p-4 border-4 border-border max-h-[500px] overflow-auto">
+                    <h3 className="font-bold mb-2">All Sign-ups ({users.length})</h3>
+                    <table className="w-full text-sm">
+                      <thead className="text-left border-b-2 border-border sticky top-0 bg-card">
+                        <tr>
+                          <th className="p-2">Status</th>
+                          <th className="p-2">Name</th>
+                          <th className="p-2">XP</th>
+                          <th className="p-2">Joined</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users.map((u) => {
+                          const isActive = activeUserIds.has(u.id);
+                          const isNew = new Date(u.created_at).getTime() > dayAgo;
+                          return (
+                            <tr key={u.id} className="border-b border-border">
+                              <td className="p-2">
+                                {isActive ? (
+                                  <Badge className="bg-green-500 hover:bg-green-500">LIVE</Badge>
+                                ) : isNew ? (
+                                  <Badge variant="default">NEW</Badge>
+                                ) : (
+                                  <Badge variant="outline">—</Badge>
+                                )}
+                              </td>
+                              <td className="p-2">{u.display_name}</td>
+                              <td className="p-2">{u.xp || 0}</td>
+                              <td className="p-2 text-xs">{new Date(u.created_at).toLocaleString()}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </Card>
+                </>
+              );
+            })()}
           </TabsContent>
+
 
           {/* ---------- SESSIONS ---------- */}
           <TabsContent value="sessions">
