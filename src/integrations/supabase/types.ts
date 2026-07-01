@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_events: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+        }
+        Relationships: []
+      }
       background_jobs: {
         Row: {
           attempts: number
@@ -538,6 +568,8 @@ export type Database = {
       }
       gd_participants: {
         Row: {
+          consent_analytics: boolean
+          consent_recording: boolean
           created_at: string
           id: string
           is_user: boolean
@@ -557,6 +589,8 @@ export type Database = {
           voice_style: string | null
         }
         Insert: {
+          consent_analytics?: boolean
+          consent_recording?: boolean
           created_at?: string
           id?: string
           is_user?: boolean
@@ -576,6 +610,8 @@ export type Database = {
           voice_style?: string | null
         }
         Update: {
+          consent_analytics?: boolean
+          consent_recording?: boolean
           created_at?: string
           id?: string
           is_user?: boolean
@@ -615,10 +651,13 @@ export type Database = {
           last_activity_at: string
           mic_lock_expires_at: string | null
           mic_lock_holder: string | null
+          org_id: string | null
           phase: string
           room_code: string | null
+          silence_meta: Json | null
           start_time: string | null
           status: Database["public"]["Enums"]["discussion_status"]
+          termination_reason: string | null
           topic: string
           topic_category: string | null
           topic_difficulty: string | null
@@ -636,10 +675,13 @@ export type Database = {
           last_activity_at?: string
           mic_lock_expires_at?: string | null
           mic_lock_holder?: string | null
+          org_id?: string | null
           phase?: string
           room_code?: string | null
+          silence_meta?: Json | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["discussion_status"]
+          termination_reason?: string | null
           topic: string
           topic_category?: string | null
           topic_difficulty?: string | null
@@ -657,10 +699,13 @@ export type Database = {
           last_activity_at?: string
           mic_lock_expires_at?: string | null
           mic_lock_holder?: string | null
+          org_id?: string | null
           phase?: string
           room_code?: string | null
+          silence_meta?: Json | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["discussion_status"]
+          termination_reason?: string | null
           topic?: string
           topic_category?: string | null
           topic_difficulty?: string | null
@@ -668,39 +713,119 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gd_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderation_policies: {
+        Row: {
+          confidence_floor: number
+          created_at: string
+          enabled: boolean
+          id: string
+          org_id: string | null
+          priority: number
+          rule_id: string
+          scope: string
+          session_id: string | null
+          then_action: Json
+          updated_at: string
+          when_expr: Json
+        }
+        Insert: {
+          confidence_floor?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          org_id?: string | null
+          priority?: number
+          rule_id: string
+          scope: string
+          session_id?: string | null
+          then_action: Json
+          updated_at?: string
+          when_expr: Json
+        }
+        Update: {
+          confidence_floor?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          org_id?: string | null
+          priority?: number
+          rule_id?: string
+          scope?: string
+          session_id?: string | null
+          then_action?: Json
+          updated_at?: string
+          when_expr?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_policies_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_policies_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       moderator_decisions: {
         Row: {
           action: string
+          alternatives: Json | null
           applied: boolean
+          chosen_because: string | null
           confidence: number | null
           created_at: string
           evidence: Json
           id: string
+          matched_rule: string | null
           reason: string | null
+          reasoning_trace: Json | null
           session_id: string
           target_user_id: string | null
         }
         Insert: {
           action: string
+          alternatives?: Json | null
           applied?: boolean
+          chosen_because?: string | null
           confidence?: number | null
           created_at?: string
           evidence?: Json
           id?: string
+          matched_rule?: string | null
           reason?: string | null
+          reasoning_trace?: Json | null
           session_id: string
           target_user_id?: string | null
         }
         Update: {
           action?: string
+          alternatives?: Json | null
           applied?: boolean
+          chosen_because?: string | null
           confidence?: number | null
           created_at?: string
           evidence?: Json
           id?: string
+          matched_rule?: string | null
           reason?: string | null
+          reasoning_trace?: Json | null
           session_id?: string
           target_user_id?: string | null
         }
@@ -744,6 +869,95 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      org_configs: {
+        Row: {
+          id: string
+          key: string
+          org_id: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          org_id: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          org_id?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_configs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_user_id: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_user_id: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_user_id?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      perf_events: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          id: string
+          metadata: Json | null
+          name: string
+          ok: boolean
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms: number
+          id?: string
+          metadata?: Json | null
+          name: string
+          ok?: boolean
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          metadata?: Json | null
+          name?: string
+          ok?: boolean
+          session_id?: string | null
         }
         Relationships: []
       }
@@ -1259,7 +1473,9 @@ export type Database = {
         Args: { _idle_minutes?: number }
         Returns: number
       }
+      delete_user_data: { Args: { _user_id: string }; Returns: undefined }
       expire_stale_turns: { Args: never; Returns: number }
+      export_user_data: { Args: { _user_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
