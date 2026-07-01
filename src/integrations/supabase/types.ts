@@ -608,6 +608,7 @@ export type Database = {
         Row: {
           created_at: string
           end_time: string | null
+          extension_used: boolean
           host_user_id: string | null
           id: string
           is_multiplayer: boolean | null
@@ -628,6 +629,7 @@ export type Database = {
         Insert: {
           created_at?: string
           end_time?: string | null
+          extension_used?: boolean
           host_user_id?: string | null
           id?: string
           is_multiplayer?: boolean | null
@@ -648,6 +650,7 @@ export type Database = {
         Update: {
           created_at?: string
           end_time?: string | null
+          extension_used?: boolean
           host_user_id?: string | null
           id?: string
           is_multiplayer?: boolean | null
