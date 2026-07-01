@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Mic, Volume2, VolumeX, Square, HelpCircle, Menu, Sparkles, Pause, Play, Clock } from "lucide-react";
 
+import TurnQueueBadge from "@/components/TurnQueueBadge";
+
 interface SessionHeaderProps {
   session: any;
   messagesCount: number;
@@ -83,6 +85,7 @@ const SessionHeader = ({
                 <Clock className="w-2.5 h-2.5 mr-0.5" />
                 {formatTimer(elapsedSeconds)}
               </Badge>
+              <TurnQueueBadge sessionId={session?.id ?? null} />
             </div>
           </div>
           <div className="flex items-center gap-1">
