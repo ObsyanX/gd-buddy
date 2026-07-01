@@ -47,6 +47,50 @@ export type Database = {
         }
         Relationships: []
       }
+      adaptive_speaking_allowances: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string | null
+          recommended_seconds: number
+          session_id: string
+          updated_at: string
+          used_seconds: number
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          recommended_seconds?: number
+          session_id: string
+          updated_at?: string
+          used_seconds?: number
+          user_id: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          recommended_seconds?: number
+          session_id?: string
+          updated_at?: string
+          used_seconds?: number
+          user_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adaptive_speaking_allowances_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -186,6 +230,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      completion_signals: {
+        Row: {
+          acted_on: boolean
+          confidence: number
+          created_at: string
+          detected_at: string
+          evidence: Json
+          id: string
+          reason: string
+          session_id: string
+        }
+        Insert: {
+          acted_on?: boolean
+          confidence: number
+          created_at?: string
+          detected_at?: string
+          evidence?: Json
+          id?: string
+          reason: string
+          session_id: string
+        }
+        Update: {
+          acted_on?: boolean
+          confidence?: number
+          created_at?: string
+          detected_at?: string
+          evidence?: Json
+          id?: string
+          reason?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "completion_signals_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       custom_drills: {
         Row: {
@@ -1258,6 +1343,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "session_notes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      silence_events: {
+        Row: {
+          created_at: string
+          fired_at: string
+          id: string
+          prompt_text: string | null
+          session_id: string
+          silence_seconds: number
+          stage: number
+          target_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fired_at?: string
+          id?: string
+          prompt_text?: string | null
+          session_id: string
+          silence_seconds: number
+          stage: number
+          target_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fired_at?: string
+          id?: string
+          prompt_text?: string | null
+          session_id?: string
+          silence_seconds?: number
+          stage?: number
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "silence_events_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "gd_sessions"
