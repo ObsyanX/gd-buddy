@@ -8,13 +8,16 @@ const ScrollArea = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
 >(({ className, children, ...props }, ref) => (
   <ScrollAreaPrimitive.Root ref={ref} className={cn("relative overflow-hidden", className)} {...props}>
-    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+    <ScrollAreaPrimitive.Viewport
+      className="h-full w-full rounded-[inherit] [-webkit-overflow-scrolling:touch] [touch-action:pan-y] [overscroll-behavior:contain]"
+    >
       {children}
     </ScrollAreaPrimitive.Viewport>
-    <ScrollBar forceMount />
+    <ScrollBar />
     <ScrollAreaPrimitive.Corner />
   </ScrollAreaPrimitive.Root>
 ));
+
 ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName;
 
 const ScrollBar = React.forwardRef<
@@ -26,12 +29,15 @@ const ScrollBar = React.forwardRef<
     orientation={orientation}
     className={cn(
       "flex touch-none select-none transition-colors data-[state=visible]:animate-in data-[state=hidden]:animate-out",
+      // Hide scrollbars entirely on mobile/tablet so they never intercept swipe touches
+      "max-lg:hidden max-lg:pointer-events-none",
       orientation === "vertical" && "h-full w-2 border-l border-l-transparent p-[1px]",
       orientation === "horizontal" && "h-2 flex-col border-t border-t-transparent p-[1px]",
       className,
     )}
     {...props}
   >
+
     <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50 transition-colors" />
   </ScrollAreaPrimitive.ScrollAreaScrollbar>
 ));
