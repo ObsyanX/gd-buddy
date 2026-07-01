@@ -6,6 +6,7 @@ import {
   Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import gdLogo from "@/assets/gd-buddy-logo.png.asset.json";
 import SEOFooter from "@/components/SEOFooter";
 import NotificationBell from "@/components/NotificationBell";
 import BottomNav from "@/components/BottomNav";
@@ -66,8 +67,8 @@ const AppLayout = () => {
         <div className="w-full lg:container lg:mx-auto">
           <div className="glass rounded-full px-2 sm:px-3 md:px-5 py-2.5 flex items-center justify-between">
             <Link to="/home" className="flex items-center gap-3 group min-w-0" aria-label="GD Buddy Home">
-              <div className="w-9 h-9 rounded-xl bg-gradient-copper flex items-center justify-center shadow-copper group-hover:rotate-6 transition-transform duration-slow ease-editorial shrink-0">
-                <MessageSquare className="w-4 h-4 text-primary-foreground" aria-hidden="true" />
+              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-copper group-hover:rotate-6 transition-transform duration-slow ease-editorial shrink-0">
+                <img src={gdLogo.url} alt="GD Buddy logo" className="w-full h-full object-cover" />
               </div>
               <div className="min-w-0">
                 <span className="font-display text-lg md:text-xl tracking-tight text-foreground truncate block">GD Buddy</span>
