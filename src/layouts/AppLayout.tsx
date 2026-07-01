@@ -3,13 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquare, LayoutDashboard, Dumbbell, User,
-  Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2,
+  Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2, Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import gdLogo from "@/assets/gd-buddy-logo-v2.png.asset.json";
 import SEOFooter from "@/components/SEOFooter";
 import NotificationBell from "@/components/NotificationBell";
 import BottomNav from "@/components/BottomNav";
+import CommandPalette, { useCommandPalette } from "@/components/CommandPalette";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { toast } from "@/hooks/use-toast";
