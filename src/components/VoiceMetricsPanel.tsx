@@ -160,6 +160,49 @@ const VoiceMetricsPanel = ({
   }, [isUserSpeaking]);
 
   /**
+   * Recalculate all metrics from accumulated finalized words
+   */
+  const recalculateMetrics = useCallback(() => {
+    const allWords = accumulatedFinalWordsRef.current;
+    const totalWords = allWords.length;
+    const allText = allWords.join(' ');
+
+    const fillersByType: Record<string, number> = {};
+    let fillerCount = 0;
+
+    FILLER_WORDS.forEach(filler => {
+      const regex = new RegExp(`\\b${filler}\\b`, 'gi');
+      const matches = allText.match(regex);
+      if (matches) {
+        fillersByType[filler] = matches.length;
+        fillerCount += matches.length;
+      }
+    });
+
+    let currentSpeakingTime = totalSpeakingTimeRef.current;
+    if (speakingStartRef.current) {
+      currentSpeakingTime += (Date.now() - speakingStartRef.current) / 1000;
+    }
+    const speakingTimeSeconds = Math.max(currentSpeakingTime, 1);
+    const rawWpm = speakingTimeSeconds >= 5
+      ? Math.round(totalWords / (speakingTimeSeconds / 60))
+      : 0;
+    // Sanity cap: human speech cannot exceed ~400 WPM
+    const estimatedWpm = Math.min(400, rawWpm);
+
+    const fillerRate = totalWords > 0 ? fillerCount / totalWords : 0;
+
+    setMetrics({
+      totalWords,
+      fillerCount,
+      fillerRate,
+      estimatedWpm,
+      speakingTimeSeconds: currentSpeakingTime,
+      fillersByType,
+    });
+  }, []);
+
+  /**
    * Process only FINALIZED transcript text.
    * Appends only incremental words to avoid interim/final overlap inflation.
    */
@@ -193,50 +236,8 @@ const VoiceMetricsPanel = ({
     }
 
     lastFinalizedTranscriptRef.current = cleanedText;
-  }, []);
+  }, [recalculateMetrics]);
 
-  /**
-   * Recalculate all metrics from accumulated finalized words
-   */
-  const recalculateMetrics = useCallback(() => {
-    const allWords = accumulatedFinalWordsRef.current;
-    const totalWords = allWords.length;
-    const allText = allWords.join(' ');
-    
-    const fillersByType: Record<string, number> = {};
-    let fillerCount = 0;
-    
-    FILLER_WORDS.forEach(filler => {
-      const regex = new RegExp(`\\b${filler}\\b`, 'gi');
-      const matches = allText.match(regex);
-      if (matches) {
-        fillersByType[filler] = matches.length;
-        fillerCount += matches.length;
-      }
-    });
-
-    let currentSpeakingTime = totalSpeakingTimeRef.current;
-    if (speakingStartRef.current) {
-      currentSpeakingTime += (Date.now() - speakingStartRef.current) / 1000;
-    }
-    const speakingTimeSeconds = Math.max(currentSpeakingTime, 1);
-    const rawWpm = speakingTimeSeconds >= 5
-      ? Math.round(totalWords / (speakingTimeSeconds / 60))
-      : 0;
-    // Sanity cap: human speech cannot exceed ~400 WPM
-    const estimatedWpm = Math.min(400, rawWpm);
-    
-    const fillerRate = totalWords > 0 ? fillerCount / totalWords : 0;
-    
-    setMetrics({
-      totalWords,
-      fillerCount,
-      fillerRate,
-      estimatedWpm,
-      speakingTimeSeconds: currentSpeakingTime,
-      fillersByType,
-    });
-  }, []);
 
   // Track speaking time using STABLE speaking state
   useEffect(() => {
