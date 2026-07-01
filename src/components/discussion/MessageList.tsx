@@ -13,12 +13,23 @@ interface MessageListProps {
 
 const MessageList = ({ messages, currentUserId, isSpeaking, currentSpeaker }: MessageListProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    // Resolve the Radix ScrollArea viewport once and only scroll THAT container.
+    // Never use scrollIntoView here — it bubbles up and scrolls the document/window,
+    // which causes the whole Discussion Room page to jump to the footer on each new message.
+    if (!viewportRef.current && scrollRef.current) {
+      viewportRef.current = scrollRef.current.closest(
+        "[data-radix-scroll-area-viewport]"
+      ) as HTMLDivElement | null;
+    }
+    const vp = viewportRef.current;
+    if (vp) {
+      vp.scrollTop = vp.scrollHeight;
     }
   }, [messages]);
+
 
   return (
     <Card className="border-2 sm:border-3 lg:border-4 border-border flex-1 min-h-[180px] max-h-[calc(100vh-240px)] sm:max-h-[calc(100vh-280px)] lg:max-h-[calc(100vh-350px)] flex flex-col">
