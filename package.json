@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "npm run audit:high || echo '[postbuild] HIGH/CRITICAL vulnerabilities detected — review above'",
     "build:dev": "vite build --mode development",
+    "audit:high": "npm audit --omit=dev --audit-level=high",
     "lint": "eslint .",
     "preview": "vite preview"
   },
