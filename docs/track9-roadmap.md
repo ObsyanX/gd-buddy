@@ -25,19 +25,20 @@ Database + client SDK for every governance concern.
 Client libraries: `src/lib/registry/models.ts`, `src/lib/registry/prompts.ts`,
 `src/lib/governance/calibration.ts`, `src/lib/governance/event-log.ts`.
 
-## Slice 2 — Pipeline Wiring (next)
+## Slice 2 — Pipeline Wiring ✅ (this commit)
 
-Insert `safety-validator` and `override-layer` into the pipeline:
+The client-side `intelligence-pipeline.ts` is now:
 
 ```
-Reasoning → Policy → Calibration → Safety Validator → Human Override → Dispatcher
+Reasoning → Calibration → Policy → Safety Validator → Dispatcher (auto | recommendation)
                                                                   ↓
                                                              event_log
 ```
 
-- New edge function: `safety-validator` (prompt-injection heuristics + LLM guard + Groq fallback).
-- Extend `intelligence-pipeline.ts` to call `calibrate()` and `shouldAutoAct()`.
-- Add `applyOverride()` UI action for Host/Teacher/Recruiter/Admin roles.
+- New edge function `safety-validator` — heuristic (prompt-injection / toxic / PII regexes) + LLM classifier (Gemini via Lovable AI Gateway, Groq `llama-3.3-70b-versatile` fallback). Fails open. Records every non-allowed verdict in `safety_incidents`.
+- `src/lib/governance/override-layer.ts` — `applyOverride()` audit helper for Host / Teacher / Recruiter / Admin actions on `moderator_decisions`.
+- Calibrated confidence: raw model confidence is mapped through `calibration_bins` and only decisions ≥ `AUTO_ACTION_THRESHOLD` (0.75) auto-act; lower ones are dispatched as `recommendation`.
+- Every pipeline step writes to `event_log` (`policy.triggered`, `safety.blocked`, `override.applied`).
 
 ## Slice 3 — AI Benchmarking (9.1)
 
