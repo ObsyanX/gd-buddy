@@ -75,7 +75,7 @@ export class ReplayRecorder {
       event_type: e.type,
       actor_id: e.actor_id ?? null,
       actor_kind: e.actor_kind ?? "human",
-      payload: e.payload ?? {},
+      payload: (e.payload ?? {}) as never,
     }));
     const { error } = await supabase.from("replay_events").insert(rows);
     if (error) {
