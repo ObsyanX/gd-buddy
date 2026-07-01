@@ -108,8 +108,10 @@ const AppLayout = () => {
                   key={item.path}
                   onClick={() => navigate(item.path)}
                   aria-label={`Go to ${item.label}`}
+                  aria-current={isActive(item.path) ? "page" : undefined}
                   className={cn(
-                    "relative px-4 py-2 rounded-full text-sm transition-all duration-normal",
+                    "relative px-4 py-2 rounded-full text-sm transition-all duration-normal tap focus-ring gpu",
+                    "hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
                     isActive(item.path)
                       ? "text-primary-glow bg-primary/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-primary/5",
@@ -125,8 +127,10 @@ const AppLayout = () => {
                 <button
                   onClick={() => navigate("/home/admin")}
                   aria-label="Admin"
+                  aria-current={isActive("/home/admin") ? "page" : undefined}
                   className={cn(
-                    "relative px-4 py-2 rounded-full text-sm transition-all",
+                    "relative px-4 py-2 rounded-full text-sm transition-all tap focus-ring gpu",
+                    "hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
                     isActive("/home/admin")
                       ? "text-primary-glow bg-primary/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-primary/5",
