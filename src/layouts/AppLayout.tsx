@@ -206,6 +206,9 @@ const AppLayout = () => {
 
       {/* Mobile-first bottom navigation with expand tray + install */}
       <BottomNav />
+
+      {/* ⌘K command palette */}
+      <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
     </div>
   );
 };
