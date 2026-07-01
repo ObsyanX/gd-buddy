@@ -63,6 +63,51 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     setAutoMicSetting(setting);
     setAutoMicEnabled(setting);
   }, []);
+
+  // ---- 15-minute inactivity auto-close ----
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInactiveRef = useRef(false);
+  const IDLE_MS = 15 * 60 * 1000;
+
+  const markSessionInactive = async () => {
+    if (isInactiveRef.current) return;
+    isInactiveRef.current = true;
+    setIsPaused(true);
+    try {
+      await supabase
+        .from('gd_sessions')
+        .update({ status: 'inactive' })
+        .eq('id', sessionId);
+      toast({
+        title: 'Session paused',
+        description: 'Session set to inactive after 15 minutes of no activity.',
+      });
+    } catch (e) {
+      console.warn('[Idle] Failed to mark session inactive', e);
+    }
+  };
+
+  const resetIdleTimer = () => {
+    if (isInactiveRef.current) return;
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(markSessionInactive, IDLE_MS);
+  };
+
+  useEffect(() => {
+    resetIdleTimer();
+    const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'click', 'touchstart'];
+    events.forEach(ev => window.addEventListener(ev, resetIdleTimer, { passive: true } as any));
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      events.forEach(ev => window.removeEventListener(ev, resetIdleTimer));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
+  // Any new message or transcription counts as activity
+  useEffect(() => { resetIdleTimer(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length, isListening, userInput]);
+
   
   // Streaming transcription for real-time voice input (like Google Keyboard)
   const { 
