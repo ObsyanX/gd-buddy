@@ -688,3 +688,18 @@ html[data-cb-palette="tritanopia"]   { filter: url('#cb-tritanopia'); }
   .animate-pulse-soft, .animate-shimmer-slow { animation: none !important; }
   [class*="animate-[shimmer"] { animation: none !important; }
 }
+
+/* === Phase 14 — Rendering budgets ===
+   `content-visibility: auto` lets the browser skip layout/paint for
+   off-screen sections. Pair with `contain-intrinsic-size` to reserve
+   space and avoid scrollbar jump / CLS. Apply to long-scroll pages
+   (SEO articles, dashboards, replay timelines). */
+@layer utilities {
+  .cv-auto      { content-visibility: auto; contain-intrinsic-size: 1px 800px; }
+  .cv-auto-sm   { content-visibility: auto; contain-intrinsic-size: 1px 320px; }
+  .cv-auto-lg   { content-visibility: auto; contain-intrinsic-size: 1px 1200px; }
+  .contain-paint   { contain: paint; }
+  .contain-layout  { contain: layout; }
+  .contain-strict  { contain: strict; }
+}
+
