@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { lazy, Suspense, useEffect } from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import AdminGuard from "@/components/AdminGuard";
 import '@/lib/error-monitor'; // Initialize global error monitoring
 import { OfflineBanner } from "@/components/OfflineBanner";
 import A11yBootstrap from "@/components/A11yBootstrap";
