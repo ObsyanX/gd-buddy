@@ -2,15 +2,15 @@
 // and any text that leaves the app boundary. Not a substitute for real DLP.
 const EMAIL = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 const PHONE = /(\+?\d[\d\s().-]{7,}\d)/g;
-const CREDIT = /\b(?:\d[ -]*?){13,16}\b/g;
+const CREDIT = /\b\d(?:[ -]?\d){12,18}\b/g;
 const AADHAAR = /\b\d{4}\s?\d{4}\s?\d{4}\b/g; // India
 
 export function maskPII(input: string | null | undefined): string {
   if (!input) return "";
   return input
     .replace(EMAIL, "[email]")
-    .replace(AADHAAR, "[id]")
     .replace(CREDIT, "[card]")
+    .replace(AADHAAR, "[id]")
     .replace(PHONE, "[phone]");
 }
 
