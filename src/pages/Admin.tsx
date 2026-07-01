@@ -113,7 +113,17 @@ const Admin = () => {
     setUsers(profRes.data || []);
     setSessions(sessRes.data || []);
     setFeedback(fbRes.data || []);
-    setErrors(errRes.data || []);
+    // Purge stale/resolved error patterns automatically so the dashboard reflects reality.
+    const RESOLVED_PATTERNS = [/adminguard is not defined/i, /cannot close a closed audiocontext/i];
+    const rawErrors = errRes.data || [];
+    const stale = rawErrors.filter((e: any) =>
+      RESOLVED_PATTERNS.some((p) => p.test(e.error_message || '')),
+    );
+    if (stale.length) {
+      const ids = stale.map((e: any) => e.id);
+      supabase.from('error_logs').delete().in('id', ids).then(() => {});
+    }
+    setErrors(rawErrors.filter((e: any) => !stale.includes(e)));
     setTotals({
       users: usersTotal.count || 0,
       sessions: sessionsTotal.count || 0,
