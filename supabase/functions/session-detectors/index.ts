@@ -50,9 +50,9 @@ Deno.serve(async (req) => {
 
   const { data: messages = [] } = await supabase
     .from("gd_messages")
-    .select("id,user_id,participant_kind,content,end_ts,created_at")
+    .select("id,participant_id,text,end_ts,start_ts")
     .eq("session_id", session_id)
-    .order("created_at", { ascending: false })
+    .order("start_ts", { ascending: false })
     .limit(30);
 
   const recent = (messages ?? []).slice().reverse();
@@ -62,7 +62,9 @@ Deno.serve(async (req) => {
 
   // --- 1. Silence watchdog -------------------------------------------------
   if (run("silence", "silence")) {
-    const lastMsgAt = recent.length ? new Date(recent[recent.length - 1].created_at).getTime() : 0;
+    const lastMsgAt = recent.length
+      ? new Date(recent[recent.length - 1].end_ts ?? recent[recent.length - 1].start_ts).getTime()
+      : 0;
     const lastActivity = session.last_activity_at ? new Date(session.last_activity_at).getTime() : lastMsgAt;
     const idleMs = Date.now() - Math.max(lastMsgAt, lastActivity);
     if (session.status === "active" && session.phase === "discussion" && idleMs > SILENCE_THRESHOLD_MS) {
@@ -78,12 +80,12 @@ Deno.serve(async (req) => {
   // --- 2. Escalation / tone ------------------------------------------------
   if (run("escalation", "escalation")) {
     for (const m of recent.slice(-6)) {
-      if (m?.content && ESCALATION_WORDS.test(m.content)) {
+      if (m?.text && ESCALATION_WORDS.test(m.text)) {
         decisions.push({
           kind: "escalation",
           rationale: `Heated language detected in recent turn`,
           action: "cool_down_prompt",
-          target_user: m.user_id,
+          target_user: m.participant_id,
           score: 0.7,
         });
         break;
@@ -94,12 +96,12 @@ Deno.serve(async (req) => {
   // --- 3. Abuse classifier -------------------------------------------------
   if (run("abuse", "abuse")) {
     for (const m of recent.slice(-10)) {
-      if (m?.content && ABUSE_WORDS.test(m.content)) {
+      if (m?.text && ABUSE_WORDS.test(m.text)) {
         decisions.push({
           kind: "abuse",
           rationale: `Policy-violating content detected`,
           action: "mute_and_flag",
-          target_user: m.user_id,
+          target_user: m.participant_id,
           score: 1,
         });
       }
@@ -109,7 +111,7 @@ Deno.serve(async (req) => {
   // --- 4. Drift + consensus (LLM, only when we have enough content) --------
   if ((run("drift", "drift") || run("consensus", "consensus")) && recent.length >= 6 && session.topic) {
     const transcript = recent
-      .map((m) => `- ${m.participant_kind}:${(m.content ?? "").slice(0, 200)}`)
+      .map((m) => `- ${m.participant_id?.slice(0, 8) ?? "?"}: ${(m.text ?? "").slice(0, 200)}`)
       .join("\n");
 
     try {
