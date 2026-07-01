@@ -947,7 +947,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       <div className="flex-1 min-h-0 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 p-2 sm:p-3 lg:p-4 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-4 overflow-hidden">
         {/* Mobile/Tablet Video Monitor */}
-        <div className="hidden sm:block lg:hidden shrink-0">
+        <div className="block lg:hidden shrink-0">
           <VideoMonitor
             isActive={true}
             sessionId={session?.id}
