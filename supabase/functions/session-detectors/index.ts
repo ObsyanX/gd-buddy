@@ -158,12 +158,12 @@ Deno.serve(async (req) => {
     await supabase.from("moderator_decisions").insert(
       decisions.map((d) => ({
         session_id,
-        kind: d.kind,
-        rationale: d.rationale,
-        action: d.action ?? null,
-        target_user: d.target_user ?? null,
-        score: d.score ?? null,
-        source: "session-detectors",
+        action: d.action ?? d.kind,
+        target_user_id: d.target_user ?? null,
+        reason: d.rationale,
+        confidence: d.score ?? null,
+        evidence: { kind: d.kind, source: "session-detectors" },
+        applied: false,
       })),
     );
   }
