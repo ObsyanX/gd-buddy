@@ -198,6 +198,7 @@ const SessionHeader = ({
                   )}
                 </>
               )}
+              <DiscussionHealthMeter sessionId={session?.id ?? null} />
             </div>
           </div>
           <div className="flex gap-2">
