@@ -90,20 +90,38 @@ const Admin = () => {
   const [sessions, setSessions] = useState<any[]>([]);
   const [feedback, setFeedback] = useState<any[]>([]);
   const [errors, setErrors] = useState<any[]>([]);
+  const [totals, setTotals] = useState({ users: 0, sessions: 0, feedback: 0, errors: 0, activeUsers: 0, activeSessions: 0 });
   const [refreshing, setRefreshing] = useState(false);
 
   const load = async () => {
     setRefreshing(true);
-    const [profRes, sessRes, fbRes, errRes] = await Promise.all([
+    const activeCutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const [profRes, sessRes, fbRes, errRes,
+           usersTotal, sessionsTotal, feedbackTotal, errorsTotal,
+           activeUsersCnt, activeSessionsCnt] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(500),
-      supabase.from('gd_sessions').select('id, topic, status, created_at, is_multiplayer, user_id').order('created_at', { ascending: false }).limit(500),
+      supabase.from('gd_sessions').select('id, topic, status, created_at, is_multiplayer, user_id, last_activity_at').order('created_at', { ascending: false }).limit(500),
       supabase.from('user_feedback').select('*, gd_sessions(topic), profiles!user_feedback_user_id_fkey(display_name)').order('created_at', { ascending: false }).limit(500),
       supabase.from('error_logs').select('*').order('created_at', { ascending: false }).limit(500),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('gd_sessions').select('*', { count: 'exact', head: true }),
+      supabase.from('user_feedback').select('*', { count: 'exact', head: true }),
+      supabase.from('error_logs').select('*', { count: 'exact', head: true }),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('updated_at', activeCutoff),
+      supabase.from('gd_sessions').select('*', { count: 'exact', head: true }).in('status', ['active', 'setup']).gte('last_activity_at', activeCutoff),
     ]);
     setUsers(profRes.data || []);
     setSessions(sessRes.data || []);
     setFeedback(fbRes.data || []);
     setErrors(errRes.data || []);
+    setTotals({
+      users: usersTotal.count || 0,
+      sessions: sessionsTotal.count || 0,
+      feedback: feedbackTotal.count || 0,
+      errors: errorsTotal.count || 0,
+      activeUsers: activeUsersCnt.count || 0,
+      activeSessions: activeSessionsCnt.count || 0,
+    });
     setRefreshing(false);
   };
 
@@ -112,13 +130,15 @@ const Admin = () => {
   const stats = useMemo(() => {
     const avg = feedback.reduce((s, f) => s + (f.stars || 0), 0) / Math.max(1, feedback.length);
     return {
-      users: users.length,
-      sessions: sessions.length,
-      feedback: feedback.length,
+      users: totals.users || users.length,
+      sessions: totals.sessions || sessions.length,
+      feedback: totals.feedback || feedback.length,
       avgRating: Math.round(avg * 10) / 10,
-      errors: errors.length,
+      errors: totals.errors || errors.length,
+      activeUsers: totals.activeUsers,
+      activeSessions: totals.activeSessions,
     };
-  }, [users, sessions, feedback, errors]);
+  }, [users, sessions, feedback, errors, totals]);
 
   // 14-day timeseries
   const timeseries = useMemo(() => {
