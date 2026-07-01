@@ -667,6 +667,17 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
         toast({ title: "AI Feedback Error", description: data.error, variant: "destructive" });
       } else if (data) {
         setAiFeedback(data);
+        // Persist AI sub-scores into gd_metrics for analytics
+        try {
+          await supabase.from('gd_metrics').update({
+            sentiment_score: data.sentiment_score ?? null,
+            leadership_score: data.leadership_score ?? null,
+            teamwork_score: data.teamwork_score ?? null,
+            grammar_score: data.grammar_score ?? null,
+          }).eq('session_id', sessionId);
+        } catch (persistErr) {
+          console.warn('Could not persist sub-scores', persistErr);
+        }
       }
     } catch (err: any) {
       console.error('AI feedback error:', err);
