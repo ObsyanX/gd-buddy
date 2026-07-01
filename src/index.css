@@ -677,9 +677,14 @@ html[data-cb-palette="tritanopia"]   { filter: url('#cb-tritanopia'); }
   0%   { background-position: 0% 50%; }
   100% { background-position: 200% 50%; }
 }
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
 .animate-pulse-soft  { animation: pulse-soft 3.2s ease-in-out infinite; will-change: opacity, transform; }
 .animate-shimmer-slow{ animation: shimmer-slow 6s linear infinite; will-change: background-position; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse-soft, .animate-shimmer-slow { animation: none !important; }
+  [class*="animate-[shimmer"] { animation: none !important; }
 }
