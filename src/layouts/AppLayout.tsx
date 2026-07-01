@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquare, LayoutDashboard, Dumbbell, User,
-  Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2, Search,
+  Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import gdLogo from "@/assets/gd-buddy-logo-v2.png.asset.json";
@@ -147,28 +147,7 @@ const AppLayout = () => {
             </nav>
 
             <div className="flex items-center gap-1.5">
-              <Button
-                variant="glass"
-                size="sm"
-                onClick={() => setCmdOpen(true)}
-                className="hidden md:inline-flex gap-2 pr-2"
-                aria-label="Open command palette"
-              >
-                <Search className="w-4 h-4" />
-                <span className="hidden lg:inline text-muted-foreground">Search…</span>
-                <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border border-border/60 bg-background/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                  ⌘K
-                </kbd>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setCmdOpen(true)}
-                className="md:hidden"
-                aria-label="Search"
-              >
-                <Search className="w-4 h-4" />
-              </Button>
+
               {showInstall && (
                 <Button
                   variant="glass"
