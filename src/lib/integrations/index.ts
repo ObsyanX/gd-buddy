@@ -56,7 +56,7 @@ export const INTEGRATIONS: IntegrationPlugin[] = [
 ];
 
 export function registerIntegrations() {
-  for (const p of INTEGRATIONS) pluginRegistry.register(p);
+  for (const p of INTEGRATIONS) pluginRegistry.register(p as unknown as Parameters<typeof pluginRegistry.register>[0]);
 }
 
 export function listIntegrations(): IntegrationPlugin[] {
