@@ -476,7 +476,7 @@ const Admin = () => {
                       <h3 className="font-bold mb-2 flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Currently Active Users
                       </h3>
-                      <table className="w-full text-sm">
+                      <div className="overflow-x-auto -mx-2"><table className="w-full text-sm min-w-[520px]">
                         <thead className="text-left border-b-2 border-border">
                           <tr><th className="p-2">Name</th><th className="p-2">XP</th><th className="p-2">Joined</th></tr>
                         </thead>
@@ -489,13 +489,13 @@ const Admin = () => {
                             </tr>
                           ))}
                         </tbody>
-                      </table>
+                      </table></div>
                     </Card>
                   )}
 
                   <Card className="p-4 border-4 border-border max-h-[500px] overflow-auto">
                     <h3 className="font-bold mb-2">All Sign-ups ({users.length})</h3>
-                    <table className="w-full text-sm">
+                    <div className="overflow-x-auto -mx-2"><table className="w-full text-sm min-w-[520px]">
                       <thead className="text-left border-b-2 border-border sticky top-0 bg-card">
                         <tr>
                           <th className="p-2">Status</th>
@@ -526,7 +526,7 @@ const Admin = () => {
                           );
                         })}
                       </tbody>
-                    </table>
+                    </table></div>
                   </Card>
                 </>
               );
@@ -537,7 +537,7 @@ const Admin = () => {
           {/* ---------- SESSIONS ---------- */}
           <TabsContent value="sessions">
             <Card className="p-4 border-4 border-border max-h-[600px] overflow-auto">
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto -mx-2"><table className="w-full text-sm min-w-[520px]">
                 <thead className="text-left border-b-2 border-border sticky top-0 bg-card">
                   <tr><th className="p-2">Topic</th><th className="p-2">Type</th><th className="p-2">Status</th><th className="p-2">Date</th></tr>
                 </thead>
@@ -551,7 +551,7 @@ const Admin = () => {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </Card>
           </TabsContent>
 
