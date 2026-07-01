@@ -1334,6 +1334,36 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           )}
         </Card>
 
+        {/* AI Sub-scores (sentiment/leadership/teamwork/grammar) */}
+        {aiFeedback && (aiFeedback.sentiment_score != null || aiFeedback.leadership_score != null) && (
+          <Card className="p-6 border-4 border-border space-y-4">
+            <h3 className="text-xl font-bold">AI SUB-SCORES</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'Sentiment', value: aiFeedback.sentiment_score, icon: Heart },
+                { label: 'Leadership', value: aiFeedback.leadership_score, icon: Crown },
+                { label: 'Teamwork', value: aiFeedback.teamwork_score, icon: UsersIcon },
+                { label: 'Grammar', value: aiFeedback.grammar_score, icon: BookOpen },
+              ].map(({ label, value, icon: Icon }) => (
+                <div key={label} className="p-4 border-2 border-border rounded text-center space-y-1">
+                  <Icon className="w-5 h-5 mx-auto text-primary" />
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <p className="text-2xl font-bold">{value ?? '—'}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Ranking within the multiplayer room */}
+        {session.is_multiplayer && (
+          <RoomRanking sessionId={sessionId} myParticipantId={currentParticipant?.id} />
+        )}
+
+        {/* Post-session Feedback Form */}
+        <FeedbackForm sessionId={sessionId} />
+
+
         <div className="gap-[8px] rounded flex-col flex items-center justify-center shadow-none">
           <Button
             size="lg"
