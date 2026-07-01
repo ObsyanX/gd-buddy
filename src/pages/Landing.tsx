@@ -64,7 +64,7 @@ const Landing = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden relative">
+    <div className="min-h-dvh flex flex-col overflow-hidden relative">
       <SEOHead
         description="GD Buddy (Group Discussion Buddy) — practice group discussions with AI participants. Free AI GD simulator for placement preparation."
         keywords="group discussion buddy, GD Buddy, group discussion practice, AI group discussion practice, GD practice online, group discussion simulator"
