@@ -42,6 +42,8 @@ const SkillDrills = lazy(() => import("./pages/SkillDrills"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
+const Admin = lazy(() => import("./pages/Admin"));
+const FeedbackHistory = lazy(() => import("./pages/FeedbackHistory"));
 
 // SEO content pages (public, indexable)
 const GDTopics = lazy(() => import("./pages/GDTopics"));
