@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquare, LayoutDashboard, Dumbbell, User,
-  Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2, Search,
+  Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import gdLogo from "@/assets/gd-buddy-logo-v2.png.asset.json";
