@@ -24,13 +24,15 @@ export async function measure<T>(
     // fire-and-forget; swallow errors so telemetry never breaks callers
     void supabase
       .from("perf_events")
-      .insert({
-        name,
-        duration_ms,
-        ok,
-        session_id: opts.session_id ?? null,
-        metadata: opts.metadata ?? {},
-      })
+      .insert([
+        {
+          name,
+          duration_ms,
+          ok,
+          session_id: opts.session_id ?? undefined,
+          metadata: (opts.metadata ?? {}) as never,
+        },
+      ])
       .then(() => {}, () => {});
   }
 }
