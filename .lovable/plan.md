@@ -1,72 +1,72 @@
-## Track 3: Participant Behaviour + Discussion Health + Emotional Intelligence
-
-**Progress:** Tracks 1–2 done. This is Track 3 of 8 → **5 tracks remain** after this (Tracks 4–8).
-
----
+## Mobile-First Audit & Fix — Full Website
 
 ### Goal
-Give the intelligence pipeline (Reasoning → Policy → Dispatcher, built in Track 2) real per-participant behavioural signals and a session-wide health score, plus lightweight emotional-intelligence features from text + prosody. Everything feeds the policy engine as new signals — no new decision path.
+Bring every route and component to a true mobile-first standard: base styles target 375px, breakpoints (`sm:`/`md:`/`lg:`) progressively enhance for larger screens. No horizontal scroll, no clipped controls, all tap targets ≥ 44px, all data-dense views usable on phones.
 
----
+### Phase 1 — Audit (evidence, not guesses)
+Run Playwright at three viewports (375×812, 768×1024, 1280×800) across every route, capture screenshots + console warnings, and produce a per-page issue list.
+
+Routes to sweep:
+- Public: `/`, `/auth`, `/about`, SEO pages (`/how-to-crack-gd`, `/gd-preparation-guide`, `/communication-skills`, `/body-language-tips`, `/common-gd-mistakes`, `/ai-gd-simulator`, `/gd-topics/:slug`)
+- Authenticated: `/home`, `/home/dashboard`, `/home/profile`, `/home/settings`, `/home/skill-drills`, `/home/multiplayer-setup`, `/home/session/:id` (DiscussionRoom), `/home/report/:id`, `/home/intelligence`, `/home/instructor`, `/admin`, `/health`
+
+Audit output: `docs/mobile-audit.md` + `/tmp/mobile-audit/screens/` (kept out of repo).
+
+### Phase 2 — Fix weak-spot screens (mobile-first refactor)
+Priority order based on the earlier scan:
+
+1. **DiscussionRoom** (`src/components/DiscussionRoom.tsx`, `discussion/SessionHeader.tsx`, `discussion/MessageList.tsx`, `discussion/MessageInput.tsx`)
+   - Stack video/transcript/controls vertically on mobile; grid only from `md:`.
+   - Collapse SessionHeader into a compact bar with a sheet for meta/policies.
+   - MessageInput: full-width, sticky bottom, safe-area-inset padding.
+
+2. **Video surfaces** (`FloatingVideoPanel.tsx`, `VideoMonitor.tsx`, `AudioWaveform.tsx`)
+   - Replace desktop-first `lg:hidden` carve-outs with mobile-base layout.
+   - PiP tile becomes a bottom-sheet drawer < `md`.
+
+3. **Intelligence dashboard** (`src/pages/Intelligence.tsx`)
+   - Convert multi-column KPI grid to single column base → `md:grid-cols-2` → `lg:grid-cols-3`.
+   - Radar chart in `aspect-square` wrapper; tables become card lists on `< md`.
+
+4. **Admin** (`src/pages/Admin.tsx`)
+   - Tabs scroll horizontally; tables → responsive card view under `md`.
+   - Charts use `ResponsiveContainer` with min-height guards.
+   - Error log severity filters wrap onto two rows on mobile.
+
+5. **Reports & analytics** (`SessionReport.tsx`, `PerTurnAnalysis.tsx`, `DrillHistory.tsx`, `InstructorDashboard.tsx`)
+   - Convert side-by-side metric panels to stacked cards on mobile.
+   - Long tables → shadcn `Accordion`/card fallback via a shared `<ResponsiveTable>` helper (new util in `src/components/ui/responsive-table.tsx`).
+
+6. **Feature pages with sparse responsive classes** (`CommonGDMistakes`, `BodyLanguageTips`, `MultiplayerSetup`, `CommunicationSkills`, `GDTopicPage`, `CustomPersonaForm`, `SessionSetup`, `FeedbackForm`)
+   - Verify base widths, remove any fixed `w-[Npx]`, apply `max-w-*` with `w-full` fallback, tighten typography scale.
+
+7. **Layout shell** (`src/layouts/AppLayout.tsx`, `SEOFooter.tsx`, sidebar)
+   - Confirm the sidebar collapses to sheet on mobile (already using `ui/sheet.tsx`), audit for hidden overflow issues.
+   - Ensure a single `<main>` per route (a11y rule).
+
+### Phase 3 — Cross-cutting rules to enforce
+- **Tap targets:** every icon-only `Button` gets `min-h-11 min-w-11` and `aria-label`.
+- **Typography:** use existing token scale (`text-h1`, `text-body`, …); no fixed `text-[Npx]`.
+- **Containers:** replace ad-hoc `max-w-*` with the Tailwind `container` where appropriate; `px-4 md:px-6 lg:px-8`.
+- **Overflow:** wrap tables/wide charts in `overflow-x-auto` with `-mx-4 md:mx-0`.
+- **Safe area:** apply `pb-[env(safe-area-inset-bottom)]` on sticky bottom bars.
+- **Images:** use `aspect-*` wrappers instead of manual sizing.
+
+No color-token or design-language changes — visual identity stays as defined in memory (dark theme, Apple-like minimal).
+
+### Phase 4 — Verification
+- Re-run the Playwright sweep; diff before/after screenshots for the fixed routes.
+- Add a lightweight regression test `e2e/mobile-first.spec.ts` that asserts no horizontal overflow (`document.documentElement.scrollWidth <= innerWidth`) on the priority routes at 375px.
+- Run existing `bun run ci` to confirm nothing else regressed.
 
 ### Deliverables
+- `docs/mobile-audit.md` — findings per route with screenshots
+- Refactored components/pages listed in Phase 2
+- New `src/components/ui/responsive-table.tsx` helper
+- `e2e/mobile-first.spec.ts` regression test
+- No changes to backend, RLS, edge functions, or business logic
 
-**1. Database (single migration)**
-- `participant_behaviour` — rolling per-participant state per session
-  - `session_id`, `participant_id`, `talk_time_ms`, `turn_count`, `interruption_count`, `avg_turn_ms`, `dominance_score` (0–1), `engagement_score` (0–1), `sentiment_avg` (−1..1), `sentiment_trend` (−1..1), `emotion_label`, `last_spoke_at`, `updated_at`
-- `discussion_health` — session-level rollup, one row per session, updated on each tick
-  - `participation_gini`, `interruption_rate`, `sentiment_index`, `topic_focus`, `energy`, `overall_health` (0–100), `updated_at`
-- `emotion_events` — append-only per utterance
-  - `session_id`, `participant_id`, `source` (`text` | `prosody`), `label`, `valence`, `arousal`, `confidence`, `evidence` (jsonb), `created_at`
-- GRANTs + RLS scoped via `can_access_session(session_id, auth.uid())`; service_role full access. Realtime enabled on `discussion_health` + `participant_behaviour`.
-
-**2. Edge function `behaviour-aggregator`**
-- Trigger: called on turn release + on a 15s tick from `session-detectors`.
-- Reads recent `speaking_turns`, `gd_messages`, `emotion_events`.
-- Computes: talk-time share, Gini for participation, interruption rate (from Slice 5 attribution), sentiment averages, dominance/engagement.
-- Upserts `participant_behaviour` and `discussion_health`.
-- Emits a `behaviour_snapshot` signal into the Track 2 pipeline (does not decide actions itself).
-
-**3. Edge function `emotion-analyzer`**
-- Input: latest transcript segment + optional prosody features (pitch mean/var, energy, speaking rate) already produced client-side.
-- Text emotion via Lovable AI (`google/gemini-2.5-flash`) with Groq fallback (existing `_shared/ai-with-fallback.ts`). Strict JSON schema: `{label, valence, arousal, confidence, rationale}`.
-- Prosody emotion via deterministic rules on the client-supplied features (no audio upload).
-- Fuses both into one `emotion_events` row; PII-masks rationale via `src/lib/pii.ts`.
-
-**4. Client library `src/lib/behaviour/`**
-- `prosody-features.ts` — extracts pitch/energy/rate from existing `useAudioAnalysis` frames (pure functions, unit-tested).
-- `behaviour-client.ts` — subscribes to `participant_behaviour` + `discussion_health` realtime and exposes a `useDiscussionHealth(sessionId)` + `useParticipantBehaviour(sessionId)` hook.
-- `emotion-client.ts` — posts transcript + prosody snapshot to `emotion-analyzer`; debounced per participant.
-
-**5. Policy wiring (no engine changes)**
-- Seed 4 new rows into `moderation_policies` matching signals `behaviour_snapshot` + `emotion_event`:
-  - Dominance > 0.6 for 60s → nudge_share_time.
-  - Engagement < 0.25 for a participant → invite_to_speak.
-  - Negative sentiment spike (valence < −0.5, confidence > 0.7) → de-escalation prompt.
-  - Health score < 40 for 2 consecutive ticks → moderator summary + refocus.
-- All handled by existing `policy-engine` + `action-dispatcher`; explainability fields already populated.
-
-**6. UI (read-only surfaces, no new pages)**
-- `DiscussionHealthMeter` component in `SessionHeader` — small 0–100 ring bound to `useDiscussionHealth`.
-- `ParticipantBehaviourChip` on participant tiles — dominance/engagement dots + emotion label tooltip.
-- Admin dashboard: new "Behaviour & Health" tab reading recent `discussion_health` and top dominance/interruption outliers.
-
-**7. Tests**
-- `src/test/behaviour-metrics.test.ts` — Gini, dominance, engagement, interruption rate.
-- `src/test/prosody-features.test.ts` — pitch/energy/rate extraction on synthetic frames.
-- `src/test/emotion-fusion.test.ts` — text+prosody fusion rules and PII masking.
-- Playwright: extend `e2e/admin.spec.ts` with a smoke check that the health tab renders.
-
----
-
-### Technical notes
-- All heavy math runs server-side in `behaviour-aggregator` to keep clients light; client only aggregates its own audio frames.
-- Emotion inference is opt-in per participant via existing consent flag on `gd_participants`; when off, only prosody rules run and no `text` emotion rows are written.
-- Idempotency: aggregator uses `(session_id, tick_bucket)` key with the Track 2 dispatcher's `idempotencyKey` pattern.
-
----
-
-### Out of scope for Track 3
-Coaching prompts, memory/embeddings, knowledge graph, replay, personalities — those land in Tracks 4–8.
-
-Approve to implement Track 3.
+### Out of scope
+- Redesign of any screen (only responsive/layout changes)
+- New features, new pages, new theming
+- Native-app packaging or PWA install prompts
