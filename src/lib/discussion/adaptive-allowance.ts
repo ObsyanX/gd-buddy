@@ -51,8 +51,8 @@ export function computeAllowances(
   // Deduct what they've already used, so remaining budget rebalances toward quiet folks
   const adjusted = rawShares.map(({ p, base }) => {
     const remaining = base - p.used_seconds;
-    // Push quiet users up, dominant users down. 15% smoothing.
-    const smoothed = base + remaining * 0.15;
+    // Push quiet users up, dominant users down. 50% smoothing so the correction is visible.
+    const smoothed = base + remaining * 0.5;
     const clamped = Math.min(max, Math.max(min, Math.round(smoothed)));
     const reason =
       p.used_seconds > base * 1.25
