@@ -40,8 +40,7 @@ class MockAudioContext {
 // requestAnimationFrame shim
 if (!globalThis.requestAnimationFrame) {
   (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(() => cb(performance.now()), 16) as any;
-  // @ts-expect-error – test shim
-  globalThis.cancelAnimationFrame = (id: number) => clearTimeout(id);
+  (globalThis as any).cancelAnimationFrame = (id: number) => clearTimeout(id);
 }
 
 // Silence Supabase network in tests
