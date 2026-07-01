@@ -67,7 +67,7 @@ const SessionHeader = ({
   }, [isPaused]);
 
   return (
-    <header className="border-b-4 border-border p-2 sm:p-4">
+    <header className="shrink-0 border-b-4 border-border p-2 sm:p-4">
       <div className="container mx-auto">
         {/* Mobile Header */}
         <div className="flex items-center justify-between gap-2 md:hidden">

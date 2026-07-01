@@ -51,9 +51,26 @@ describe("Chat touch-scroll regression guard", () => {
     const src = read("src/components/ui/scroll-area.tsx");
     // Scrollbar is force-mounted so it renders on mobile too (ChatGPT-style visible bar)
     expect(src).toMatch(/ScrollBar\s+forceMount/);
-    // The scrollbar container must not use `touch-none` on mobile — that would
-    // swallow swipes over the right edge. `touch-auto` on mobile, `lg:touch-none` on desktop.
-    expect(src).toMatch(/touch-auto\s+lg:touch-none/);
+    // The scrollbar container must not receive touch pointers on mobile — that would
+    // swallow swipes over the right edge before they reach the Radix viewport.
+    expect(src).toMatch(/pointer-events-none\s+lg:pointer-events-auto/);
+  });
+
+  it("Discussion rooms lock page scrolling and reserve scroll for the chat viewport", () => {
+    const layout = read("src/layouts/AppLayout.tsx");
+    const transition = read("src/components/PageTransition.tsx");
+    const room = read("src/components/DiscussionRoom.tsx");
+    const bottomNav = read("src/components/BottomNav.tsx");
+
+    expect(layout).toMatch(/isDiscussionSession[\s\S]*h-dvh overflow-hidden/);
+    expect(layout).toMatch(/discussion-scroll-lock/);
+    expect(layout).toMatch(/isDiscussionSession[\s\S]*min-h-0 overflow-hidden/);
+    expect(transition).toMatch(/isDiscussionSession[\s\S]*h-full min-h-0 overflow-hidden/);
+    expect(room).toMatch(/h-full min-h-0[^"]*overflow-hidden/);
+    expect(room).toMatch(/hidden sm:block lg:hidden shrink-0/);
+    expect(room).toMatch(/useOnboardingTutorial\(\{ autoOpen: false \}\)/);
+    expect(room).toMatch(/min-h-0[^"]*overflow-hidden/);
+    expect(bottomNav).toMatch(/!isDiscussionSession/);
   });
 
   it("Global CSS enables pan-y touch on Radix viewports at mobile/tablet widths", () => {

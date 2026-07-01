@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ const AppLayout = () => {
   const { isAdmin } = useIsAdmin();
   const { canInstall, installed, isIOS, install } = usePWAInstall();
   const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
+  const isDiscussionSession = location.pathname.startsWith("/home/session/");
 
   const handleSignOut = async () => {
     await signOut();
@@ -57,8 +59,22 @@ const AppLayout = () => {
 
   const showInstall = !installed && (canInstall || isIOS);
 
+  useEffect(() => {
+    if (!isDiscussionSession) return;
+
+    const scrollY = window.scrollY;
+    document.documentElement.classList.add("discussion-scroll-lock");
+    document.body.classList.add("discussion-scroll-lock");
+
+    return () => {
+      document.documentElement.classList.remove("discussion-scroll-lock");
+      document.body.classList.remove("discussion-scroll-lock");
+      window.scrollTo(0, scrollY);
+    };
+  }, [isDiscussionSession]);
+
   return (
-    <div className="min-h-dvh flex flex-col relative">
+    <div className={cn("min-h-dvh flex flex-col relative", isDiscussionSession && "h-dvh overflow-hidden")}>
       <SkipLink />
       <Announcer />
       {/* Ambient orbs shared across the app */}
@@ -68,7 +84,7 @@ const AppLayout = () => {
       </div>
 
       {/* Glass header */}
-      <header className="sticky top-0 z-40 pt-safe py-3 md:py-4 px-1.5 sm:px-3 md:px-6" role="banner">
+      <header className="sticky top-0 z-40 shrink-0 pt-safe py-3 md:py-4 px-1.5 sm:px-3 md:px-6" role="banner">
         <div className="w-full container-app">
 
           <div className="glass rounded-full px-2 sm:px-3 md:px-5 py-2.5 flex items-center justify-between">
@@ -180,11 +196,16 @@ const AppLayout = () => {
       </header>
 
 
-      <main id="main-content" tabIndex={-1} className="flex-1 relative z-10 focus:outline-none" role="main">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className={cn("flex-1 relative z-10 focus:outline-none", isDiscussionSession && "min-h-0 overflow-hidden")}
+        role="main"
+      >
         <Outlet />
       </main>
 
-      <SEOFooter />
+      {!isDiscussionSession && <SEOFooter />}
 
       {/* Mobile-first bottom navigation with expand tray + install */}
       <BottomNav />

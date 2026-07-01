@@ -40,6 +40,7 @@ const BottomNav = () => {
   const { isAdmin } = useIsAdmin();
   const { canInstall, installed, isIOS, install } = usePWAInstall();
   const [open, setOpen] = useState(false);
+  const isDiscussionSession = location.pathname.startsWith("/home/session/");
 
   // Close panel on route change
   useEffect(() => {
@@ -164,12 +165,14 @@ const BottomNav = () => {
         </div>
       </nav>
 
-      {/* Content spacer so page bottom isn't hidden under the bar (includes safe-area) */}
-      <div
-        className="lg:hidden"
-        style={{ height: "calc(6rem + env(safe-area-inset-bottom))" }}
-        aria-hidden="true"
-      />
+      {/* Content spacer so normal pages aren't hidden under the bar; discussion rooms manage their own fixed-height layout. */}
+      {!isDiscussionSession && (
+        <div
+          className="lg:hidden"
+          style={{ height: "calc(6rem + env(safe-area-inset-bottom))" }}
+          aria-hidden="true"
+        />
+      )}
     </>
   );
 };

@@ -144,7 +144,7 @@ const MessageInput = ({
           {/* Mobile metrics toggle */}
           <Button
             variant="outline"
-            className="border-2 h-10 w-10 p-0 lg:hidden"
+            className="border-2 h-10 w-10 p-0 sm:hidden"
             title="View Metrics"
             onClick={onOpenMobileMetrics}
           >

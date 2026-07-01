@@ -226,7 +226,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   });
   
   const { isSpeaking, currentSpeaker, usingFallbackTTS, speak, stop: stopSpeaking } = useTextToSpeech();
-  const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial();
+  const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial({ autoOpen: false });
   const { estimatedWordCount, updateFromAudioLevel, reset: resetWordCount } = useWordCountEstimator();
 
   // Register TTS stop with centralized cleanup so idle/unmount stops any playback
@@ -925,7 +925,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-full min-h-0 bg-background flex flex-col overflow-hidden">
       {showTutorial && (
         <OnboardingTutorial onComplete={() => setShowTutorial(false)} />
       )}
@@ -947,9 +947,9 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         usingFallbackTTS={usingFallbackTTS}
       />
 
-      <div className="flex-1 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 p-2 sm:p-3 lg:p-4 overflow-hidden">
+      <div className="flex-1 min-h-0 container mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 p-2 sm:p-3 lg:p-4 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-4 overflow-hidden">
         {/* Mobile/Tablet Video Monitor */}
-        <div className="lg:hidden">
+        <div className="hidden sm:block lg:hidden shrink-0">
           <VideoMonitor
             isActive={true}
             sessionId={session?.id}
@@ -959,7 +959,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         </div>
 
         {/* Main Chat Area */}
-        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-2 sm:gap-3 lg:gap-4 min-w-0 flex-1">
+        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-2 sm:gap-3 lg:gap-4 min-w-0 min-h-0 flex-1 overflow-hidden">
           <MessageList
             messages={messages}
             currentUserId={currentUserId}

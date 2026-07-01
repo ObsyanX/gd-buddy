@@ -32,10 +32,10 @@ const ScrollBar = React.forwardRef<
   <ScrollAreaPrimitive.ScrollAreaScrollbar
     ref={ref}
     orientation={orientation}
-    // touch-none on mobile: never let the thin bar swallow swipes.
-    // Native touch scroll on the viewport is the primary interaction; the bar is visual + pointer-drag only.
+    // On touch devices the visible bar must not sit above the viewport and steal pan gestures.
+    // Keep it visual on mobile; restore pointer dragging on large screens.
     className={cn(
-      "flex select-none touch-none transition-opacity",
+      "flex select-none touch-none pointer-events-none lg:pointer-events-auto transition-opacity",
       orientation === "vertical" &&
         "h-full w-1.5 border-l border-l-transparent p-[1px] lg:w-2",
       orientation === "horizontal" &&

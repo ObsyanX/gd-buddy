@@ -9,6 +9,10 @@ interface OnboardingTutorialProps {
   onComplete: () => void;
 }
 
+interface UseOnboardingTutorialOptions {
+  autoOpen?: boolean;
+}
+
 const TUTORIAL_STEPS = [
   {
     title: "Welcome to GD-Buddy!",
@@ -214,15 +218,15 @@ export const OnboardingTutorial = ({ onComplete }: OnboardingTutorialProps) => {
   );
 };
 
-export const useOnboardingTutorial = () => {
+export const useOnboardingTutorial = ({ autoOpen = true }: UseOnboardingTutorialOptions = {}) => {
   const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
     const completed = useUserStore.getState().onboardingComplete;
-    if (!completed) {
+    if (autoOpen && !completed) {
       setShowTutorial(true);
     }
-  }, []);
+  }, [autoOpen]);
 
   const resetTutorial = () => {
     localStorage.removeItem('gd-buddy-onboarding-complete');
