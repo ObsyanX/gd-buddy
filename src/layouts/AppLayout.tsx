@@ -100,7 +100,7 @@ const AppLayout = () => {
               </div>
               <div className="min-w-0 overflow-hidden">
                 <span className="font-display text-lg md:text-xl tracking-tight text-foreground truncate block">
-                  GD
+                  GD Buddy
                 </span>
               </div>
             </Link>
