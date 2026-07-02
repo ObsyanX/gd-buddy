@@ -611,9 +611,12 @@ const Landing = () => {
                         <tile.icon className="w-5 h-5 text-primary-glow group-hover:scale-110 transition-transform" aria-hidden="true" />
                       </div>
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 flex flex-col">
                       <h3 className="font-display text-h3 mb-2">{tile.title}</h3>
                       <p className="text-sm text-muted-foreground leading-relaxed">{tile.body}</p>
+                      <div className="flex-1 min-h-[80px] mt-4">
+                        <TileIllustration kind={tile.kind} />
+                      </div>
                     </div>
                     <div className="flex items-center gap-1 text-micro text-primary-glow opacity-0 group-hover:opacity-100 transition-opacity">
                       Learn more <ArrowRight className="w-3 h-3" />
