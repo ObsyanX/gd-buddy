@@ -161,6 +161,11 @@ const BENTO = [
 
 const Landing = () => {
   const navigate = useNavigate();
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollY } = useScroll();
+  const orbY1 = useTransform(scrollY, [0, 800], [0, 120]);
+  const orbY2 = useTransform(scrollY, [0, 800], [0, -80]);
+  const orbY3 = useTransform(scrollY, [0, 800], [0, 60]);
 
   return (
     <div className="min-h-dvh flex flex-col overflow-hidden relative">
