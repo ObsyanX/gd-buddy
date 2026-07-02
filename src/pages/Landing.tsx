@@ -1,13 +1,112 @@
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquare, Users, BarChart3, Sparkles, Mic, Target,
-  ArrowRight, Radar, Waves, Trophy, Play, Zap,
+  ArrowRight, Radar, Waves, Trophy, Play, Zap, Compass, Feather, Gauge, Quote, Star,
 } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import SEOFooter from "@/components/SEOFooter";
 import { fadeRise, stagger, wordRise } from "@/lib/motion";
+
+/* ─── Decorative SVGs ───────────────────────────────────────────── */
+const DotGrid = ({ className = "" }: { className?: string }) => (
+  <svg className={className} width="200" height="200" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+    <defs>
+      <pattern id="dotgrid" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse">
+        <circle cx="1.5" cy="1.5" r="1.2" fill="currentColor" />
+      </pattern>
+    </defs>
+    <rect width="200" height="200" fill="url(#dotgrid)" />
+  </svg>
+);
+
+const RadarRings = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 240 240" fill="none" aria-hidden="true">
+    <defs>
+      <radialGradient id="radarFade" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stopColor="currentColor" stopOpacity="0.5" />
+        <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    {[30, 60, 90, 115].map((r, i) => (
+      <circle key={r} cx="120" cy="120" r={r} stroke="currentColor" strokeOpacity={0.25 - i * 0.04} strokeWidth="1" fill="none" />
+    ))}
+    <motion.g
+      style={{ originX: "120px", originY: "120px" }}
+      animate={{ rotate: 360 }}
+      transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
+    >
+      <path d="M120 120 L120 5 A115 115 0 0 1 233 133 Z" fill="url(#radarFade)" />
+    </motion.g>
+    <circle cx="120" cy="120" r="3" fill="currentColor" />
+  </svg>
+);
+
+const WaveLine = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 800 120" fill="none" preserveAspectRatio="none" aria-hidden="true">
+    <motion.path
+      d="M0 60 Q 100 10 200 60 T 400 60 T 600 60 T 800 60"
+      stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"
+      initial={{ pathLength: 0, opacity: 0 }}
+      whileInView={{ pathLength: 1, opacity: 0.6 }}
+      viewport={{ once: true }}
+      transition={{ duration: 2.2, ease: "easeInOut" }}
+    />
+    <motion.path
+      d="M0 70 Q 100 30 200 70 T 400 70 T 600 70 T 800 70"
+      stroke="currentColor" strokeWidth="1" fill="none" strokeOpacity="0.35"
+      initial={{ pathLength: 0 }}
+      whileInView={{ pathLength: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 2.6, delay: 0.2, ease: "easeInOut" }}
+    />
+  </svg>
+);
+
+const ConnectorLine = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 200 20" fill="none" preserveAspectRatio="none" aria-hidden="true">
+    <motion.line
+      x1="0" y1="10" x2="200" y2="10"
+      stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 6"
+      initial={{ pathLength: 0 }}
+      whileInView={{ pathLength: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 1.2, ease: "easeOut" }}
+    />
+  </svg>
+);
+
+/* ─── 3D Tilt Card ─────────────────────────────────────────────── */
+function TiltCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const rx = useSpring(useMotionValue(0), { stiffness: 200, damping: 20 });
+  const ry = useSpring(useMotionValue(0), { stiffness: 200, damping: 20 });
+
+  const handleMove = (e: React.MouseEvent) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    ry.set(px * 10);
+    rx.set(-py * 10);
+  };
+  const reset = () => { rx.set(0); ry.set(0); };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMove}
+      onMouseLeave={reset}
+      style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d", perspective: 1000 }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 const LANDING_FAQS = [
   { q: "What is GD Buddy?", a: "GD Buddy is a free AI-powered platform that lets students practice group discussions with realistic AI participants, get real-time feedback on communication skills, and prepare for placement GD rounds." },
