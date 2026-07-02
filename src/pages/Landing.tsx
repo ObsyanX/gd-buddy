@@ -1,13 +1,112 @@
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquare, Users, BarChart3, Sparkles, Mic, Target,
-  ArrowRight, Radar, Waves, Trophy, Play, Zap,
+  ArrowRight, Radar, Waves, Trophy, Play, Zap, Compass, Feather, Gauge, Quote, Star,
 } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import SEOFooter from "@/components/SEOFooter";
 import { fadeRise, stagger, wordRise } from "@/lib/motion";
+
+/* ─── Decorative SVGs ───────────────────────────────────────────── */
+const DotGrid = ({ className = "" }: { className?: string }) => (
+  <svg className={className} width="200" height="200" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+    <defs>
+      <pattern id="dotgrid" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse">
+        <circle cx="1.5" cy="1.5" r="1.2" fill="currentColor" />
+      </pattern>
+    </defs>
+    <rect width="200" height="200" fill="url(#dotgrid)" />
+  </svg>
+);
+
+const RadarRings = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 240 240" fill="none" aria-hidden="true">
+    <defs>
+      <radialGradient id="radarFade" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stopColor="currentColor" stopOpacity="0.5" />
+        <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    {[30, 60, 90, 115].map((r, i) => (
+      <circle key={r} cx="120" cy="120" r={r} stroke="currentColor" strokeOpacity={0.25 - i * 0.04} strokeWidth="1" fill="none" />
+    ))}
+    <motion.g
+      style={{ originX: "120px", originY: "120px" }}
+      animate={{ rotate: 360 }}
+      transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
+    >
+      <path d="M120 120 L120 5 A115 115 0 0 1 233 133 Z" fill="url(#radarFade)" />
+    </motion.g>
+    <circle cx="120" cy="120" r="3" fill="currentColor" />
+  </svg>
+);
+
+const WaveLine = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 800 120" fill="none" preserveAspectRatio="none" aria-hidden="true">
+    <motion.path
+      d="M0 60 Q 100 10 200 60 T 400 60 T 600 60 T 800 60"
+      stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"
+      initial={{ pathLength: 0, opacity: 0 }}
+      whileInView={{ pathLength: 1, opacity: 0.6 }}
+      viewport={{ once: true }}
+      transition={{ duration: 2.2, ease: "easeInOut" }}
+    />
+    <motion.path
+      d="M0 70 Q 100 30 200 70 T 400 70 T 600 70 T 800 70"
+      stroke="currentColor" strokeWidth="1" fill="none" strokeOpacity="0.35"
+      initial={{ pathLength: 0 }}
+      whileInView={{ pathLength: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 2.6, delay: 0.2, ease: "easeInOut" }}
+    />
+  </svg>
+);
+
+const ConnectorLine = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 200 20" fill="none" preserveAspectRatio="none" aria-hidden="true">
+    <motion.line
+      x1="0" y1="10" x2="200" y2="10"
+      stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 6"
+      initial={{ pathLength: 0 }}
+      whileInView={{ pathLength: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 1.2, ease: "easeOut" }}
+    />
+  </svg>
+);
+
+/* ─── 3D Tilt Card ─────────────────────────────────────────────── */
+function TiltCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const rx = useSpring(useMotionValue(0), { stiffness: 200, damping: 20 });
+  const ry = useSpring(useMotionValue(0), { stiffness: 200, damping: 20 });
+
+  const handleMove = (e: React.MouseEvent) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    ry.set(px * 10);
+    rx.set(-py * 10);
+  };
+  const reset = () => { rx.set(0); ry.set(0); };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMove}
+      onMouseLeave={reset}
+      style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d", perspective: 1000 }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 const LANDING_FAQS = [
   { q: "What is GD Buddy?", a: "GD Buddy is a free AI-powered platform that lets students practice group discussions with realistic AI participants, get real-time feedback on communication skills, and prepare for placement GD rounds." },
@@ -62,6 +161,10 @@ const BENTO = [
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { scrollY } = useScroll();
+  const orbY1 = useTransform(scrollY, [0, 800], [0, 120]);
+  const orbY2 = useTransform(scrollY, [0, 800], [0, -80]);
+  const orbY3 = useTransform(scrollY, [0, 800], [0, 60]);
 
   return (
     <div className="min-h-dvh flex flex-col overflow-hidden relative">
@@ -72,11 +175,14 @@ const Landing = () => {
         jsonLd={[webAppJsonLd, orgJsonLd, faqJsonLd]}
       />
 
-      {/* Ambient orbs */}
+      {/* Ambient orbs with parallax */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10" aria-hidden="true">
-        <div className="ambient-orb w-[52vw] h-[52vw] -top-[15%] -left-[10%]" style={{ background: "hsl(29 60% 45% / 0.55)" }} />
-        <div className="ambient-orb w-[46vw] h-[46vw] top-[10%] -right-[10%]" style={{ background: "hsl(12 55% 40% / 0.45)", animationDelay: "3s" }} />
-        <div className="ambient-orb w-[38vw] h-[38vw] bottom-[-15%] left-[20%]" style={{ background: "hsl(36 68% 40% / 0.35)", animationDelay: "6s" }} />
+        <motion.div style={{ y: orbY1, background: "hsl(29 60% 45% / 0.55)" }} className="ambient-orb w-[52vw] h-[52vw] -top-[15%] -left-[10%]" />
+        <motion.div style={{ y: orbY2, background: "hsl(12 55% 40% / 0.45)", animationDelay: "3s" }} className="ambient-orb w-[46vw] h-[46vw] top-[10%] -right-[10%]" />
+        <motion.div style={{ y: orbY3, background: "hsl(36 68% 40% / 0.35)", animationDelay: "6s" }} className="ambient-orb w-[38vw] h-[38vw] bottom-[-15%] left-[20%]" />
+        {/* Decorative dot grids */}
+        <DotGrid className="absolute top-24 right-4 text-primary/20 w-40 h-40 hidden md:block" />
+        <DotGrid className="absolute bottom-24 left-4 text-primary/15 w-32 h-32 hidden md:block" />
       </div>
 
       {/* Header */}
@@ -173,10 +279,40 @@ const Landing = () => {
               {/* Right — live session preview */}
               <motion.div variants={fadeRise} className="relative">
                 <div className="absolute -inset-8 bg-gradient-glow opacity-70 blur-3xl -z-10" aria-hidden="true" />
-                <div className="glass-strong rounded-3xl p-6 md:p-7 relative overflow-hidden">
+
+                {/* Floating radar SVG badge */}
+                <motion.div
+                  className="absolute -top-8 -right-6 w-28 h-28 text-primary-glow hidden md:block pointer-events-none"
+                  animate={{ y: [0, -10, 0], rotate: [0, 3, 0] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <RadarRings className="w-full h-full drop-shadow-[0_0_20px_hsl(29_60%_50%/0.4)]" />
+                </motion.div>
+
+                {/* Floating chip — sparkle */}
+                <motion.div
+                  className="absolute -bottom-4 -left-4 glass rounded-2xl px-3 py-2 flex items-center gap-2 shadow-copper hidden md:flex"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1, y: [0, 6, 0] }}
+                  transition={{ delay: 0.8, duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Sparkles className="w-4 h-4 text-primary-glow" />
+                  <span className="text-micro">+12 XP earned</span>
+                </motion.div>
+
+                <TiltCard className="glass-strong rounded-3xl p-6 md:p-7 relative overflow-hidden">
                   <div className="flex items-center justify-between mb-6">
-                    <span className="text-micro text-muted-foreground">Session · GD-992</span>
-                    <span className="text-micro px-2 py-1 rounded-full bg-primary/15 text-primary-glow">Recording</span>
+                    <span className="text-micro text-muted-foreground flex items-center gap-2">
+                      <Mic className="w-3 h-3" /> Session · GD-992
+                    </span>
+                    <motion.span
+                      className="text-micro px-2 py-1 rounded-full bg-primary/15 text-primary-glow flex items-center gap-1.5"
+                      animate={{ opacity: [1, 0.5, 1] }}
+                      transition={{ duration: 1.6, repeat: Infinity }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary-glow" />
+                      Recording
+                    </motion.span>
                   </div>
 
                   {/* Participant grid */}
@@ -186,9 +322,21 @@ const Landing = () => {
                       { name: "Aisha AI", speaking: false },
                       { name: "Kenji AI", speaking: false },
                       { name: "Priya AI", speaking: false },
-                    ].map((p) => (
-                      <div key={p.name} className={`aspect-video relative rounded-2xl glass-subtle overflow-hidden ${p.speaking ? "ring-2 ring-primary/60 copper-glow" : ""}`}>
+                    ].map((p, idx) => (
+                      <motion.div
+                        key={p.name}
+                        whileHover={{ scale: 1.03, y: -2 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        className={`aspect-video relative rounded-2xl glass-subtle overflow-hidden ${p.speaking ? "ring-2 ring-primary/60 copper-glow" : ""}`}
+                      >
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/5" />
+                        {/* Persona avatar mark */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-40">
+                          <svg viewBox="0 0 40 40" className="w-10 h-10 text-primary-glow" fill="none">
+                            <circle cx="20" cy="14" r="6" stroke="currentColor" strokeWidth="1.4" />
+                            <path d="M6 34 Q 20 22 34 34" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                          </svg>
+                        </div>
                         <div className="absolute bottom-2 left-2 flex items-center gap-2 text-micro text-foreground/80">
                           {p.name}
                         </div>
@@ -203,29 +351,54 @@ const Landing = () => {
                             ))}
                           </div>
                         )}
-                      </div>
+                        {!p.speaking && idx === 1 && (
+                          <motion.div
+                            className="absolute top-2 right-2 w-5 h-5 rounded-full glass flex items-center justify-center"
+                            animate={{ scale: [1, 1.15, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          >
+                            <Feather className="w-3 h-3 text-primary-glow" />
+                          </motion.div>
+                        )}
+                      </motion.div>
                     ))}
                   </div>
 
                   {/* Analytics bar */}
-                  <div className="glass-subtle rounded-2xl p-4">
-                    <div className="flex justify-between text-micro mb-2">
-                      <span className="text-muted-foreground">Speech quality</span>
-                      <span className="text-primary-glow">84% · clear</span>
+                  <div className="glass-subtle rounded-2xl p-4 space-y-3">
+                    <div>
+                      <div className="flex justify-between text-micro mb-2">
+                        <span className="text-muted-foreground flex items-center gap-1.5"><Gauge className="w-3 h-3" /> Speech quality</span>
+                        <span className="text-primary-glow">84% · clear</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden">
+                        <motion.div
+                          className="h-full rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: "84%" }}
+                          transition={{ duration: 1.4, delay: 0.6, ease: "easeOut" }}
+                          style={{
+                            backgroundImage: "linear-gradient(90deg, hsl(29 60% 50%), hsl(36 68% 70%), hsl(29 60% 50%))",
+                            backgroundSize: "200% 100%",
+                            animation: "copper-shimmer 3s linear infinite",
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-copper rounded-full"
-                        style={{
-                          width: "84%",
-                          backgroundImage: "linear-gradient(90deg, hsl(29 60% 50%), hsl(36 68% 70%), hsl(29 60% 50%))",
-                          backgroundSize: "200% 100%",
-                          animation: "copper-shimmer 3s linear infinite",
-                        }}
-                      />
+                    {/* Mini stat chips */}
+                    <div className="flex gap-2 flex-wrap">
+                      {[
+                        { i: Waves, l: "142 wpm" },
+                        { i: Target, l: "3 fillers" },
+                        { i: Star, l: "Lead 92" },
+                      ].map(({ i: I, l }) => (
+                        <span key={l} className="text-micro glass rounded-full px-2 py-1 flex items-center gap-1 text-foreground/80">
+                          <I className="w-3 h-3 text-primary-glow" />{l}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                </div>
+                </TiltCard>
               </motion.div>
             </div>
 
@@ -263,24 +436,36 @@ const Landing = () => {
             className="grid md:grid-cols-3 md:grid-rows-2 gap-4 md:gap-5 auto-rows-[minmax(180px,auto)]"
           >
             {BENTO.map((tile) => (
-              <motion.div
-                key={tile.title}
-                variants={fadeRise}
-                whileHover={{ y: -6 }}
-                className={`glass rounded-3xl p-6 md:p-7 relative overflow-hidden group ${tile.span}`}
-              >
-                {tile.accent && (
-                  <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-copper opacity-20 blur-3xl group-hover:opacity-40 transition-opacity" />
-                )}
-                <div className="relative flex flex-col h-full gap-4">
-                  <div className="w-11 h-11 rounded-2xl glass-subtle flex items-center justify-center">
-                    <tile.icon className="w-5 h-5 text-primary-glow" aria-hidden="true" />
+              <motion.div key={tile.title} variants={fadeRise} className={`${tile.span}`}>
+                <TiltCard className="glass rounded-3xl p-6 md:p-7 relative overflow-hidden group h-full">
+                  {tile.accent && (
+                    <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-copper opacity-20 blur-3xl group-hover:opacity-50 transition-opacity duration-slow" />
+                  )}
+                  <svg className="absolute bottom-2 right-2 w-16 h-16 text-primary/10 group-hover:text-primary/25 transition-colors duration-slow" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                    <circle cx="32" cy="32" r="30" stroke="currentColor" strokeWidth="1" />
+                    <circle cx="32" cy="32" r="20" stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" />
+                    <circle cx="32" cy="32" r="10" stroke="currentColor" strokeWidth="1" />
+                  </svg>
+                  <div className="relative flex flex-col h-full gap-4" style={{ transform: "translateZ(30px)" }}>
+                    <div className="relative w-12 h-12">
+                      <motion.div
+                        className="absolute inset-0 rounded-2xl border border-primary/30"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
+                      />
+                      <div className="absolute inset-0.5 rounded-2xl glass-subtle flex items-center justify-center group-hover:shadow-copper transition-shadow">
+                        <tile.icon className="w-5 h-5 text-primary-glow group-hover:scale-110 transition-transform" aria-hidden="true" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-display text-h3 mb-2">{tile.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{tile.body}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-micro text-primary-glow opacity-0 group-hover:opacity-100 transition-opacity">
+                      Learn more <ArrowRight className="w-3 h-3" />
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-h3 mb-2">{tile.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{tile.body}</p>
-                  </div>
-                </div>
+                </TiltCard>
               </motion.div>
             ))}
           </motion.div>
@@ -288,25 +473,45 @@ const Landing = () => {
 
         {/* Editorial process strip */}
         <section className="container mx-auto px-4 md:px-6 py-16" aria-label="How it works">
-          <div className="glass-strong rounded-[2.5rem] p-8 md:p-12">
-            <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
+          <div className="glass-strong rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden">
+            <WaveLine className="absolute inset-x-0 top-1/2 w-full h-24 text-primary/20 -translate-y-1/2 pointer-events-none" />
+            <div className="flex items-center justify-between flex-wrap gap-4 mb-8 relative">
               <h2 className="text-h1 font-display">
                 Four moves. <span className="italic-accent copper-text">One rehearsal.</span>
               </h2>
               <span className="text-micro text-muted-foreground">The GD Buddy method</span>
             </div>
-            <ol className="grid md:grid-cols-4 gap-6">
+            <ol className="grid md:grid-cols-4 gap-6 relative">
               {[
-                { n: "01", t: "Choose a topic", d: "Pick from 150+ curated placement prompts or ask AI for one." },
-                { n: "02", t: "Assemble the room", d: "Balance personas — the skeptic, the empath, the analyst." },
-                { n: "03", t: "Speak the case", d: "Turn-taking, coaching, and pacing feedback in real time." },
-                { n: "04", t: "Read the radar", d: "Score cards on clarity, empathy, structure, leadership." },
-              ].map((s) => (
-                <li key={s.n} className="space-y-3">
-                  <div className="text-micro text-primary-glow">{s.n}</div>
-                  <h3 className="font-display text-h3">{s.t}</h3>
+                { n: "01", t: "Choose a topic", d: "Pick from 150+ curated placement prompts or ask AI for one.", Icon: Compass },
+                { n: "02", t: "Assemble the room", d: "Balance personas — the skeptic, the empath, the analyst.", Icon: Users },
+                { n: "03", t: "Speak the case", d: "Turn-taking, coaching, and pacing feedback in real time.", Icon: Mic },
+                { n: "04", t: "Read the radar", d: "Score cards on clarity, empathy, structure, leadership.", Icon: Radar },
+              ].map((s, idx, arr) => (
+                <motion.li
+                  key={s.n}
+                  className="space-y-3 relative group"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.12, duration: 0.6, ease: "easeOut" }}
+                >
+                  <div className="relative flex items-center gap-3">
+                    <motion.div
+                      className="w-12 h-12 rounded-2xl bg-gradient-copper flex items-center justify-center shadow-copper relative"
+                      whileHover={{ rotate: [0, -8, 8, 0], scale: 1.06 }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      <s.Icon className="w-5 h-5 text-primary-foreground" />
+                      <span className="absolute -top-1 -right-1 text-[9px] px-1.5 py-0.5 rounded-full glass text-primary-glow font-mono">{s.n}</span>
+                    </motion.div>
+                    {idx < arr.length - 1 && (
+                      <ConnectorLine className="hidden md:block absolute left-14 right-[-1.5rem] top-6 text-primary/40 h-3" />
+                    )}
+                  </div>
+                  <h3 className="font-display text-h3 group-hover:copper-text transition-colors">{s.t}</h3>
                   <p className="text-sm text-muted-foreground">{s.d}</p>
-                </li>
+                </motion.li>
               ))}
             </ol>
           </div>
