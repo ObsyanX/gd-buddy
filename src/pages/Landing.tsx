@@ -286,10 +286,40 @@ const Landing = () => {
               {/* Right — live session preview */}
               <motion.div variants={fadeRise} className="relative">
                 <div className="absolute -inset-8 bg-gradient-glow opacity-70 blur-3xl -z-10" aria-hidden="true" />
-                <div className="glass-strong rounded-3xl p-6 md:p-7 relative overflow-hidden">
+
+                {/* Floating radar SVG badge */}
+                <motion.div
+                  className="absolute -top-8 -right-6 w-28 h-28 text-primary-glow hidden md:block pointer-events-none"
+                  animate={{ y: [0, -10, 0], rotate: [0, 3, 0] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <RadarRings className="w-full h-full drop-shadow-[0_0_20px_hsl(29_60%_50%/0.4)]" />
+                </motion.div>
+
+                {/* Floating chip — sparkle */}
+                <motion.div
+                  className="absolute -bottom-4 -left-4 glass rounded-2xl px-3 py-2 flex items-center gap-2 shadow-copper hidden md:flex"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1, y: [0, 6, 0] }}
+                  transition={{ delay: 0.8, duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Sparkles className="w-4 h-4 text-primary-glow" />
+                  <span className="text-micro">+12 XP earned</span>
+                </motion.div>
+
+                <TiltCard className="glass-strong rounded-3xl p-6 md:p-7 relative overflow-hidden">
                   <div className="flex items-center justify-between mb-6">
-                    <span className="text-micro text-muted-foreground">Session · GD-992</span>
-                    <span className="text-micro px-2 py-1 rounded-full bg-primary/15 text-primary-glow">Recording</span>
+                    <span className="text-micro text-muted-foreground flex items-center gap-2">
+                      <Mic className="w-3 h-3" /> Session · GD-992
+                    </span>
+                    <motion.span
+                      className="text-micro px-2 py-1 rounded-full bg-primary/15 text-primary-glow flex items-center gap-1.5"
+                      animate={{ opacity: [1, 0.5, 1] }}
+                      transition={{ duration: 1.6, repeat: Infinity }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary-glow" />
+                      Recording
+                    </motion.span>
                   </div>
 
                   {/* Participant grid */}
@@ -299,9 +329,21 @@ const Landing = () => {
                       { name: "Aisha AI", speaking: false },
                       { name: "Kenji AI", speaking: false },
                       { name: "Priya AI", speaking: false },
-                    ].map((p) => (
-                      <div key={p.name} className={`aspect-video relative rounded-2xl glass-subtle overflow-hidden ${p.speaking ? "ring-2 ring-primary/60 copper-glow" : ""}`}>
+                    ].map((p, idx) => (
+                      <motion.div
+                        key={p.name}
+                        whileHover={{ scale: 1.03, y: -2 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        className={`aspect-video relative rounded-2xl glass-subtle overflow-hidden ${p.speaking ? "ring-2 ring-primary/60 copper-glow" : ""}`}
+                      >
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/5" />
+                        {/* Persona avatar mark */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-40">
+                          <svg viewBox="0 0 40 40" className="w-10 h-10 text-primary-glow" fill="none">
+                            <circle cx="20" cy="14" r="6" stroke="currentColor" strokeWidth="1.4" />
+                            <path d="M6 34 Q 20 22 34 34" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                          </svg>
+                        </div>
                         <div className="absolute bottom-2 left-2 flex items-center gap-2 text-micro text-foreground/80">
                           {p.name}
                         </div>
@@ -316,29 +358,54 @@ const Landing = () => {
                             ))}
                           </div>
                         )}
-                      </div>
+                        {!p.speaking && idx === 1 && (
+                          <motion.div
+                            className="absolute top-2 right-2 w-5 h-5 rounded-full glass flex items-center justify-center"
+                            animate={{ scale: [1, 1.15, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          >
+                            <Feather className="w-3 h-3 text-primary-glow" />
+                          </motion.div>
+                        )}
+                      </motion.div>
                     ))}
                   </div>
 
                   {/* Analytics bar */}
-                  <div className="glass-subtle rounded-2xl p-4">
-                    <div className="flex justify-between text-micro mb-2">
-                      <span className="text-muted-foreground">Speech quality</span>
-                      <span className="text-primary-glow">84% · clear</span>
+                  <div className="glass-subtle rounded-2xl p-4 space-y-3">
+                    <div>
+                      <div className="flex justify-between text-micro mb-2">
+                        <span className="text-muted-foreground flex items-center gap-1.5"><Gauge className="w-3 h-3" /> Speech quality</span>
+                        <span className="text-primary-glow">84% · clear</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden">
+                        <motion.div
+                          className="h-full rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: "84%" }}
+                          transition={{ duration: 1.4, delay: 0.6, ease: "easeOut" }}
+                          style={{
+                            backgroundImage: "linear-gradient(90deg, hsl(29 60% 50%), hsl(36 68% 70%), hsl(29 60% 50%))",
+                            backgroundSize: "200% 100%",
+                            animation: "copper-shimmer 3s linear infinite",
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-copper rounded-full"
-                        style={{
-                          width: "84%",
-                          backgroundImage: "linear-gradient(90deg, hsl(29 60% 50%), hsl(36 68% 70%), hsl(29 60% 50%))",
-                          backgroundSize: "200% 100%",
-                          animation: "copper-shimmer 3s linear infinite",
-                        }}
-                      />
+                    {/* Mini stat chips */}
+                    <div className="flex gap-2 flex-wrap">
+                      {[
+                        { i: Waves, l: "142 wpm" },
+                        { i: Target, l: "3 fillers" },
+                        { i: Star, l: "Lead 92" },
+                      ].map(({ i: I, l }) => (
+                        <span key={l} className="text-micro glass rounded-full px-2 py-1 flex items-center gap-1 text-foreground/80">
+                          <I className="w-3 h-3 text-primary-glow" />{l}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                </div>
+                </TiltCard>
               </motion.div>
             </div>
 
