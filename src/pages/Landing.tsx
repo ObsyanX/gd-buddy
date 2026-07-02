@@ -443,24 +443,36 @@ const Landing = () => {
             className="grid md:grid-cols-3 md:grid-rows-2 gap-4 md:gap-5 auto-rows-[minmax(180px,auto)]"
           >
             {BENTO.map((tile) => (
-              <motion.div
-                key={tile.title}
-                variants={fadeRise}
-                whileHover={{ y: -6 }}
-                className={`glass rounded-3xl p-6 md:p-7 relative overflow-hidden group ${tile.span}`}
-              >
-                {tile.accent && (
-                  <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-copper opacity-20 blur-3xl group-hover:opacity-40 transition-opacity" />
-                )}
-                <div className="relative flex flex-col h-full gap-4">
-                  <div className="w-11 h-11 rounded-2xl glass-subtle flex items-center justify-center">
-                    <tile.icon className="w-5 h-5 text-primary-glow" aria-hidden="true" />
+              <motion.div key={tile.title} variants={fadeRise} className={`${tile.span}`}>
+                <TiltCard className="glass rounded-3xl p-6 md:p-7 relative overflow-hidden group h-full">
+                  {tile.accent && (
+                    <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-copper opacity-20 blur-3xl group-hover:opacity-50 transition-opacity duration-slow" />
+                  )}
+                  <svg className="absolute bottom-2 right-2 w-16 h-16 text-primary/10 group-hover:text-primary/25 transition-colors duration-slow" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                    <circle cx="32" cy="32" r="30" stroke="currentColor" strokeWidth="1" />
+                    <circle cx="32" cy="32" r="20" stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" />
+                    <circle cx="32" cy="32" r="10" stroke="currentColor" strokeWidth="1" />
+                  </svg>
+                  <div className="relative flex flex-col h-full gap-4" style={{ transform: "translateZ(30px)" }}>
+                    <div className="relative w-12 h-12">
+                      <motion.div
+                        className="absolute inset-0 rounded-2xl border border-primary/30"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
+                      />
+                      <div className="absolute inset-0.5 rounded-2xl glass-subtle flex items-center justify-center group-hover:shadow-copper transition-shadow">
+                        <tile.icon className="w-5 h-5 text-primary-glow group-hover:scale-110 transition-transform" aria-hidden="true" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-display text-h3 mb-2">{tile.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{tile.body}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-micro text-primary-glow opacity-0 group-hover:opacity-100 transition-opacity">
+                      Learn more <ArrowRight className="w-3 h-3" />
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-h3 mb-2">{tile.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{tile.body}</p>
-                  </div>
-                </div>
+                </TiltCard>
               </motion.div>
             ))}
           </motion.div>
@@ -468,25 +480,45 @@ const Landing = () => {
 
         {/* Editorial process strip */}
         <section className="container mx-auto px-4 md:px-6 py-16" aria-label="How it works">
-          <div className="glass-strong rounded-[2.5rem] p-8 md:p-12">
-            <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
+          <div className="glass-strong rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden">
+            <WaveLine className="absolute inset-x-0 top-1/2 w-full h-24 text-primary/20 -translate-y-1/2 pointer-events-none" />
+            <div className="flex items-center justify-between flex-wrap gap-4 mb-8 relative">
               <h2 className="text-h1 font-display">
                 Four moves. <span className="italic-accent copper-text">One rehearsal.</span>
               </h2>
               <span className="text-micro text-muted-foreground">The GD Buddy method</span>
             </div>
-            <ol className="grid md:grid-cols-4 gap-6">
+            <ol className="grid md:grid-cols-4 gap-6 relative">
               {[
-                { n: "01", t: "Choose a topic", d: "Pick from 150+ curated placement prompts or ask AI for one." },
-                { n: "02", t: "Assemble the room", d: "Balance personas — the skeptic, the empath, the analyst." },
-                { n: "03", t: "Speak the case", d: "Turn-taking, coaching, and pacing feedback in real time." },
-                { n: "04", t: "Read the radar", d: "Score cards on clarity, empathy, structure, leadership." },
-              ].map((s) => (
-                <li key={s.n} className="space-y-3">
-                  <div className="text-micro text-primary-glow">{s.n}</div>
-                  <h3 className="font-display text-h3">{s.t}</h3>
+                { n: "01", t: "Choose a topic", d: "Pick from 150+ curated placement prompts or ask AI for one.", Icon: Compass },
+                { n: "02", t: "Assemble the room", d: "Balance personas — the skeptic, the empath, the analyst.", Icon: Users },
+                { n: "03", t: "Speak the case", d: "Turn-taking, coaching, and pacing feedback in real time.", Icon: Mic },
+                { n: "04", t: "Read the radar", d: "Score cards on clarity, empathy, structure, leadership.", Icon: Radar },
+              ].map((s, idx, arr) => (
+                <motion.li
+                  key={s.n}
+                  className="space-y-3 relative group"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.12, duration: 0.6, ease: "easeOut" }}
+                >
+                  <div className="relative flex items-center gap-3">
+                    <motion.div
+                      className="w-12 h-12 rounded-2xl bg-gradient-copper flex items-center justify-center shadow-copper relative"
+                      whileHover={{ rotate: [0, -8, 8, 0], scale: 1.06 }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      <s.Icon className="w-5 h-5 text-primary-foreground" />
+                      <span className="absolute -top-1 -right-1 text-[9px] px-1.5 py-0.5 rounded-full glass text-primary-glow font-mono">{s.n}</span>
+                    </motion.div>
+                    {idx < arr.length - 1 && (
+                      <ConnectorLine className="hidden md:block absolute left-14 right-[-1.5rem] top-6 text-primary/40 h-3" />
+                    )}
+                  </div>
+                  <h3 className="font-display text-h3 group-hover:copper-text transition-colors">{s.t}</h3>
                   <p className="text-sm text-muted-foreground">{s.d}</p>
-                </li>
+                </motion.li>
               ))}
             </ol>
           </div>
