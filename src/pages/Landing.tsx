@@ -306,11 +306,11 @@ const orgJsonLd = {
 };
 
 const BENTO = [
-  { icon: Users, title: "Multi-persona AI", body: "Debate with 2–6 AI participants — each with a distinct temperament, tempo, and viewpoint.", span: "md:col-span-2 md:row-span-2", accent: true },
-  { icon: Radar, title: "Radar analytics", body: "Post-session scores on content, fluency, structure, empathy and leadership.", span: "" },
-  { icon: Sparkles, title: "Live coaching", body: "Real-time nudges on pace, fillers, and clarity while you speak.", span: "" },
-  { icon: Waves, title: "Voice fidelity", body: "Natural microphone flow with turn-taking that never feels robotic.", span: "md:col-span-2" },
-  { icon: Trophy, title: "Achievements", body: "XP, streaks, and badges that reward the craft, not just the effort.", span: "" },
+  { icon: Users, kind: "persona", title: "Multi-persona AI", body: "Debate with 2–6 AI participants — each with a distinct temperament, tempo, and viewpoint.", span: "md:col-span-2 md:row-span-2", accent: true },
+  { icon: Radar, kind: "radar", title: "Radar analytics", body: "Post-session scores on content, fluency, structure, empathy and leadership.", span: "" },
+  { icon: Sparkles, kind: "sparks", title: "Live coaching", body: "Real-time nudges on pace, fillers, and clarity while you speak.", span: "" },
+  { icon: Waves, kind: "waveform", title: "Voice fidelity", body: "Natural microphone flow with turn-taking that never feels robotic.", span: "md:col-span-2" },
+  { icon: Trophy, kind: "trophy", title: "Achievements", body: "XP, streaks, and badges that reward the craft, not just the effort.", span: "" },
 ];
 
 const Landing = () => {
