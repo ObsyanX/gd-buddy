@@ -178,16 +178,10 @@ const Landing = () => {
 
       {/* Ambient orbs with parallax */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10" aria-hidden="true">
-        <motion.div style={{ y: orbY1 }} className="ambient-orb w-[52vw] h-[52vw] -top-[15%] -left-[10%]" data-bg="hsl(29 60% 45% / 0.55)">
-          <div className="w-full h-full rounded-full" style={{ background: "hsl(29 60% 45% / 0.55)" }} />
-        </motion.div>
-        <motion.div style={{ y: orbY2 }} className="ambient-orb w-[46vw] h-[46vw] top-[10%] -right-[10%]">
-          <div className="w-full h-full rounded-full" style={{ background: "hsl(12 55% 40% / 0.45)" }} />
-        </motion.div>
-        <motion.div style={{ y: orbY3 }} className="ambient-orb w-[38vw] h-[38vw] bottom-[-15%] left-[20%]">
-          <div className="w-full h-full rounded-full" style={{ background: "hsl(36 68% 40% / 0.35)" }} />
-        </motion.div>
-        {/* Decorative dot grid corners */}
+        <motion.div style={{ y: orbY1, background: "hsl(29 60% 45% / 0.55)" }} className="ambient-orb w-[52vw] h-[52vw] -top-[15%] -left-[10%]" />
+        <motion.div style={{ y: orbY2, background: "hsl(12 55% 40% / 0.45)", animationDelay: "3s" }} className="ambient-orb w-[46vw] h-[46vw] top-[10%] -right-[10%]" />
+        <motion.div style={{ y: orbY3, background: "hsl(36 68% 40% / 0.35)", animationDelay: "6s" }} className="ambient-orb w-[38vw] h-[38vw] bottom-[-15%] left-[20%]" />
+        {/* Decorative dot grids */}
         <DotGrid className="absolute top-24 right-4 text-primary/20 w-40 h-40 hidden md:block" />
         <DotGrid className="absolute bottom-24 left-4 text-primary/15 w-32 h-32 hidden md:block" />
       </div>
