@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
-import { useRef } from "react";
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
+import { useRef, useState, useEffect } from "react";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquare, Users, BarChart3, Sparkles, Mic, Target,
