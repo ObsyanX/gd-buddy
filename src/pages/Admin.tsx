@@ -123,12 +123,13 @@ const Admin = () => {
       const ids = stale.map((e: any) => e.id);
       supabase.from('error_logs').delete().in('id', ids).then(() => {});
     }
-    setErrors(rawErrors.filter((e: any) => !stale.includes(e)));
+    const activeErrors = rawErrors.filter((e: any) => !stale.includes(e));
+    setErrors(activeErrors);
     setTotals({
       users: usersTotal.count || 0,
       sessions: sessionsTotal.count || 0,
       feedback: feedbackTotal.count || 0,
-      errors: errorsTotal.count || 0,
+      errors: Math.max(0, (errorsTotal.count || 0) - stale.length),
       activeUsers: activeUsersCnt.count || 0,
       activeSessions: activeSessionsCnt.count || 0,
     });
@@ -144,7 +145,7 @@ const Admin = () => {
       sessions: totals.sessions || sessions.length,
       feedback: totals.feedback || feedback.length,
       avgRating: Math.round(avg * 10) / 10,
-      errors: totals.errors || errors.length,
+      errors: errors.length,
       activeUsers: totals.activeUsers,
       activeSessions: totals.activeSessions,
     };
