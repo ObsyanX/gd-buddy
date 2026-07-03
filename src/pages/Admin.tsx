@@ -145,7 +145,7 @@ const Admin = () => {
       sessions: totals.sessions || sessions.length,
       feedback: totals.feedback || feedback.length,
       avgRating: Math.round(avg * 10) / 10,
-      errors: totals.errors || errors.length,
+      errors: errors.length,
       activeUsers: totals.activeUsers,
       activeSessions: totals.activeSessions,
     };
