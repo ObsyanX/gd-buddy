@@ -662,40 +662,7 @@ const Landing = () => {
             className="grid md:grid-cols-3 md:grid-rows-2 gap-4 md:gap-5 auto-rows-[minmax(180px,auto)]"
           >
             {BENTO.map((tile) => (
-              <motion.div key={tile.title} variants={fadeRise} className={`${tile.span}`}>
-                <TiltCard className="glass rounded-3xl p-6 md:p-7 relative overflow-hidden group h-full">
-                  {tile.accent && (
-                    <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-copper opacity-20 blur-3xl group-hover:opacity-50 transition-opacity duration-slow" />
-                  )}
-                  <svg className="absolute bottom-2 right-2 w-16 h-16 text-primary/10 group-hover:text-primary/25 transition-colors duration-slow" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                    <circle cx="32" cy="32" r="30" stroke="currentColor" strokeWidth="1" />
-                    <circle cx="32" cy="32" r="20" stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" />
-                    <circle cx="32" cy="32" r="10" stroke="currentColor" strokeWidth="1" />
-                  </svg>
-                  <div className="relative flex flex-col h-full gap-4" style={{ transform: "translateZ(30px)" }}>
-                    <div className="relative w-12 h-12">
-                      <motion.div
-                        className="absolute inset-0 rounded-2xl border border-primary/30"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
-                      />
-                      <div className="absolute inset-0.5 rounded-2xl glass-subtle flex items-center justify-center group-hover:shadow-copper transition-shadow">
-                        <tile.icon className="w-5 h-5 text-primary-glow group-hover:scale-110 transition-transform" aria-hidden="true" />
-                      </div>
-                    </div>
-                    <div className="flex-1 flex flex-col">
-                      <h3 className="font-display text-h3 mb-2">{tile.title}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{tile.body}</p>
-                      <div className="flex-1 min-h-[80px] mt-4">
-                        <TileIllustration kind={tile.kind} />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 text-micro text-primary-glow opacity-0 group-hover:opacity-100 transition-opacity">
-                      Learn more <ArrowRight className="w-3 h-3" />
-                    </div>
-                  </div>
-                </TiltCard>
-              </motion.div>
+              <BentoTile key={tile.title} tile={tile} />
             ))}
           </motion.div>
         </section>
