@@ -383,10 +383,14 @@ const BENTO = [
 
 const Landing = () => {
   const navigate = useNavigate();
+  const prefersReduced = useReducedMotion();
   const { scrollY } = useScroll();
-  const orbY1 = useTransform(scrollY, [0, 800], [0, 120]);
-  const orbY2 = useTransform(scrollY, [0, 800], [0, -80]);
-  const orbY3 = useTransform(scrollY, [0, 800], [0, 60]);
+  const rawY1 = useTransform(scrollY, [0, 800], [0, 120]);
+  const rawY2 = useTransform(scrollY, [0, 800], [0, -80]);
+  const rawY3 = useTransform(scrollY, [0, 800], [0, 60]);
+  const orbY1 = prefersReduced ? 0 : rawY1;
+  const orbY2 = prefersReduced ? 0 : rawY2;
+  const orbY3 = prefersReduced ? 0 : rawY3;
 
   return (
     <div className="min-h-dvh flex flex-col overflow-hidden relative">
@@ -397,7 +401,7 @@ const Landing = () => {
         jsonLd={[webAppJsonLd, orgJsonLd, faqJsonLd]}
       />
 
-      {/* Ambient orbs with parallax */}
+      {/* Ambient orbs with parallax (disabled for reduced motion) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10" aria-hidden="true">
         <motion.div style={{ y: orbY1, background: "hsl(29 60% 45% / 0.55)" }} className="ambient-orb w-[52vw] h-[52vw] -top-[15%] -left-[10%]" />
         <motion.div style={{ y: orbY2, background: "hsl(12 55% 40% / 0.45)", animationDelay: "3s" }} className="ambient-orb w-[46vw] h-[46vw] top-[10%] -right-[10%]" />
