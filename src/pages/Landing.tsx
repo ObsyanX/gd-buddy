@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
-import { useRef } from "react";
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
+import { useRef, useState, useEffect } from "react";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquare, Users, BarChart3, Sparkles, Mic, Target,
@@ -79,12 +80,25 @@ const ConnectorLine = ({ className = "" }: { className?: string }) => (
 );
 
 /* ─── 3D Tilt Card ─────────────────────────────────────────────── */
-function TiltCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function TiltCard({
+  children,
+  className = "",
+  onActivate,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onActivate?: () => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
+  const prefersReduced = useReducedMotion();
   const rx = useSpring(useMotionValue(0), { stiffness: 200, damping: 20 });
   const ry = useSpring(useMotionValue(0), { stiffness: 200, damping: 20 });
 
-  const handleMove = (e: React.MouseEvent) => {
+  const tiltEnabled = !prefersReduced;
+
+  const handleMove = (e: React.PointerEvent) => {
+    if (!tiltEnabled) return;
+    if (e.pointerType === "touch") return;
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -98,13 +112,67 @@ function TiltCard({ children, className = "" }: { children: React.ReactNode; cla
   return (
     <motion.div
       ref={ref}
-      onMouseMove={handleMove}
-      onMouseLeave={reset}
-      style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d", perspective: 1000 }}
+      onPointerMove={handleMove}
+      onPointerLeave={reset}
+      onPointerDown={onActivate}
+      onHoverStart={onActivate}
+      style={
+        tiltEnabled
+          ? { rotateX: rx, rotateY: ry, transformStyle: "preserve-3d", perspective: 1000 }
+          : undefined
+      }
+      whileTap={tiltEnabled ? { scale: 0.985 } : undefined}
       className={className}
     >
       {children}
     </motion.div>
+  );
+}
+
+/* ─── Particle burst overlay ─────────────────────────────────────── */
+function ParticleBurst({ active }: { active: number }) {
+  const prefersReduced = useReducedMotion();
+  if (prefersReduced) return null;
+  return (
+    <AnimatePresence>
+      {active > 0 && (
+        <motion.div
+          key={active}
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {Array.from({ length: 10 }).map((_, i) => {
+            const angle = (i / 10) * Math.PI * 2;
+            const dx = Math.cos(angle) * 60;
+            const dy = Math.sin(angle) * 60;
+            return (
+              <motion.span
+                key={i}
+                className="absolute w-1.5 h-1.5 rounded-full bg-primary-glow shadow-[0_0_8px_hsl(36_68%_65%)]"
+                initial={{ x: 0, y: 0, opacity: 1, scale: 0.6 }}
+                animate={{ x: dx, y: dy, opacity: 0, scale: 1.2 }}
+                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              />
+            );
+          })}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ─── Lazy illustration mount + scroll trigger ───────────────────── */
+function LazyIllustration({ kind }: { kind: string }) {
+  const { ref, isVisible } = useScrollReveal(0.2);
+  return (
+    <div
+      ref={ref}
+      className="w-full h-full"
+      style={{ contentVisibility: "auto" as never, containIntrinsicSize: "180px" }}
+    >
+      {isVisible ? <TileIllustration kind={kind} /> : null}
+    </div>
   );
 }
 
@@ -313,12 +381,114 @@ const BENTO = [
   { icon: Trophy, kind: "trophy", title: "Achievements", body: "XP, streaks, and badges that reward the craft, not just the effort.", span: "" },
 ];
 
+/* ─── Bento tile with scroll-triggered animation + burst ─────────── */
+type BentoTileData = {
+  icon: React.ComponentType<any>;
+  kind: string;
+  title: string;
+  body: string;
+  span: string;
+  accent?: boolean;
+};
+
+function BentoTile({ tile }: { tile: BentoTileData }) {
+  const [burst, setBurst] = useState(0);
+  const prefersReduced = useReducedMotion();
+  const lastBurstRef = useRef(0);
+
+  const fire = () => {
+    if (prefersReduced) return;
+    const now = Date.now();
+    if (now - lastBurstRef.current < 600) return; // throttle
+    lastBurstRef.current = now;
+    setBurst((n) => n + 1);
+  };
+
+  return (
+    <motion.div
+      variants={fadeRise}
+      className={tile.span}
+      // Scroll-triggered play — re-fires each time tile re-enters
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: false, amount: 0.35 }}
+      onViewportEnter={() => {
+        // Trigger a subtle burst as the SVG scrolls into view
+        if (!prefersReduced) fire();
+      }}
+    >
+      <TiltCard
+        onActivate={fire}
+        className="glass rounded-3xl p-6 md:p-7 relative overflow-hidden group h-full"
+      >
+        {tile.accent && (
+          <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-copper opacity-20 blur-3xl group-hover:opacity-50 transition-opacity duration-slow" />
+        )}
+        <svg
+          className="absolute bottom-2 right-2 w-16 h-16 text-primary/10 group-hover:text-primary/25 transition-colors duration-slow"
+          viewBox="0 0 64 64" fill="none" aria-hidden="true"
+        >
+          <circle cx="32" cy="32" r="30" stroke="currentColor" strokeWidth="1" />
+          <circle cx="32" cy="32" r="20" stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" />
+          <circle cx="32" cy="32" r="10" stroke="currentColor" strokeWidth="1" />
+        </svg>
+
+        {/* Copper glow that intensifies on hover/tap */}
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-3xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: burst > 0 ? 1 : 0 }}
+          transition={{ duration: 0.4 }}
+          style={{
+            boxShadow:
+              "inset 0 0 60px hsl(36 68% 55% / 0.28), 0 0 40px hsl(29 60% 45% / 0.35)",
+          }}
+        />
+
+        <div
+          className="relative flex flex-col h-full gap-4"
+          style={prefersReduced ? undefined : { transform: "translateZ(30px)" }}
+        >
+          <div className="relative w-12 h-12">
+            {!prefersReduced && (
+              <motion.div
+                className="absolute inset-0 rounded-2xl border border-primary/30"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
+              />
+            )}
+            <div className="absolute inset-0.5 rounded-2xl glass-subtle flex items-center justify-center group-hover:shadow-copper transition-shadow">
+              <tile.icon className="w-5 h-5 text-primary-glow group-hover:scale-110 transition-transform" aria-hidden={true} />
+            </div>
+          </div>
+          <div className="flex-1 flex flex-col">
+            <h3 className="font-display text-h3 mb-2">{tile.title}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{tile.body}</p>
+            <div className="flex-1 min-h-[80px] mt-4 relative">
+              <LazyIllustration kind={tile.kind} />
+              <ParticleBurst active={burst} />
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-micro text-primary-glow opacity-0 group-hover:opacity-100 transition-opacity">
+            Tap to spark <ArrowRight className="w-3 h-3" />
+          </div>
+        </div>
+      </TiltCard>
+    </motion.div>
+  );
+}
+
 const Landing = () => {
   const navigate = useNavigate();
+  const prefersReduced = useReducedMotion();
   const { scrollY } = useScroll();
-  const orbY1 = useTransform(scrollY, [0, 800], [0, 120]);
-  const orbY2 = useTransform(scrollY, [0, 800], [0, -80]);
-  const orbY3 = useTransform(scrollY, [0, 800], [0, 60]);
+  const rawY1 = useTransform(scrollY, [0, 800], [0, 120]);
+  const rawY2 = useTransform(scrollY, [0, 800], [0, -80]);
+  const rawY3 = useTransform(scrollY, [0, 800], [0, 60]);
+  const orbY1 = prefersReduced ? 0 : rawY1;
+  const orbY2 = prefersReduced ? 0 : rawY2;
+  const orbY3 = prefersReduced ? 0 : rawY3;
 
   return (
     <div className="min-h-dvh flex flex-col overflow-hidden relative">
@@ -329,7 +499,7 @@ const Landing = () => {
         jsonLd={[webAppJsonLd, orgJsonLd, faqJsonLd]}
       />
 
-      {/* Ambient orbs with parallax */}
+      {/* Ambient orbs with parallax (disabled for reduced motion) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10" aria-hidden="true">
         <motion.div style={{ y: orbY1, background: "hsl(29 60% 45% / 0.55)" }} className="ambient-orb w-[52vw] h-[52vw] -top-[15%] -left-[10%]" />
         <motion.div style={{ y: orbY2, background: "hsl(12 55% 40% / 0.45)", animationDelay: "3s" }} className="ambient-orb w-[46vw] h-[46vw] top-[10%] -right-[10%]" />
@@ -590,40 +760,7 @@ const Landing = () => {
             className="grid md:grid-cols-3 md:grid-rows-2 gap-4 md:gap-5 auto-rows-[minmax(180px,auto)]"
           >
             {BENTO.map((tile) => (
-              <motion.div key={tile.title} variants={fadeRise} className={`${tile.span}`}>
-                <TiltCard className="glass rounded-3xl p-6 md:p-7 relative overflow-hidden group h-full">
-                  {tile.accent && (
-                    <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-copper opacity-20 blur-3xl group-hover:opacity-50 transition-opacity duration-slow" />
-                  )}
-                  <svg className="absolute bottom-2 right-2 w-16 h-16 text-primary/10 group-hover:text-primary/25 transition-colors duration-slow" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                    <circle cx="32" cy="32" r="30" stroke="currentColor" strokeWidth="1" />
-                    <circle cx="32" cy="32" r="20" stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" />
-                    <circle cx="32" cy="32" r="10" stroke="currentColor" strokeWidth="1" />
-                  </svg>
-                  <div className="relative flex flex-col h-full gap-4" style={{ transform: "translateZ(30px)" }}>
-                    <div className="relative w-12 h-12">
-                      <motion.div
-                        className="absolute inset-0 rounded-2xl border border-primary/30"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
-                      />
-                      <div className="absolute inset-0.5 rounded-2xl glass-subtle flex items-center justify-center group-hover:shadow-copper transition-shadow">
-                        <tile.icon className="w-5 h-5 text-primary-glow group-hover:scale-110 transition-transform" aria-hidden="true" />
-                      </div>
-                    </div>
-                    <div className="flex-1 flex flex-col">
-                      <h3 className="font-display text-h3 mb-2">{tile.title}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{tile.body}</p>
-                      <div className="flex-1 min-h-[80px] mt-4">
-                        <TileIllustration kind={tile.kind} />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 text-micro text-primary-glow opacity-0 group-hover:opacity-100 transition-opacity">
-                      Learn more <ArrowRight className="w-3 h-3" />
-                    </div>
-                  </div>
-                </TiltCard>
-              </motion.div>
+              <BentoTile key={tile.title} tile={tile} />
             ))}
           </motion.div>
         </section>
