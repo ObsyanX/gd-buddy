@@ -383,7 +383,7 @@ const BENTO = [
 
 /* ─── Bento tile with scroll-triggered animation + burst ─────────── */
 type BentoTileData = {
-  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  icon: React.ComponentType<any>;
   kind: string;
   title: string;
   body: string;
