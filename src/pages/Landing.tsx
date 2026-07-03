@@ -80,12 +80,26 @@ const ConnectorLine = ({ className = "" }: { className?: string }) => (
 );
 
 /* ─── 3D Tilt Card ─────────────────────────────────────────────── */
-function TiltCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function TiltCard({
+  children,
+  className = "",
+  onActivate,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onActivate?: () => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
+  const prefersReduced = useReducedMotion();
   const rx = useSpring(useMotionValue(0), { stiffness: 200, damping: 20 });
   const ry = useSpring(useMotionValue(0), { stiffness: 200, damping: 20 });
 
+  const tiltEnabled = !prefersReduced;
+
   const handleMove = (e: React.MouseEvent) => {
+    if (!tiltEnabled) return;
+    // Skip tilt for coarse pointers (touch) — hover isn't meaningful
+    if (e.pointerType === "touch") return;
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -99,13 +113,67 @@ function TiltCard({ children, className = "" }: { children: React.ReactNode; cla
   return (
     <motion.div
       ref={ref}
-      onMouseMove={handleMove}
-      onMouseLeave={reset}
-      style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d", perspective: 1000 }}
+      onPointerMove={handleMove}
+      onPointerLeave={reset}
+      onPointerDown={onActivate}
+      onHoverStart={onActivate}
+      style={
+        tiltEnabled
+          ? { rotateX: rx, rotateY: ry, transformStyle: "preserve-3d", perspective: 1000 }
+          : undefined
+      }
+      whileTap={tiltEnabled ? { scale: 0.985 } : undefined}
       className={className}
     >
       {children}
     </motion.div>
+  );
+}
+
+/* ─── Particle burst overlay ─────────────────────────────────────── */
+function ParticleBurst({ active }: { active: number }) {
+  const prefersReduced = useReducedMotion();
+  if (prefersReduced) return null;
+  return (
+    <AnimatePresence>
+      {active > 0 && (
+        <motion.div
+          key={active}
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {Array.from({ length: 10 }).map((_, i) => {
+            const angle = (i / 10) * Math.PI * 2;
+            const dx = Math.cos(angle) * 60;
+            const dy = Math.sin(angle) * 60;
+            return (
+              <motion.span
+                key={i}
+                className="absolute w-1.5 h-1.5 rounded-full bg-primary-glow shadow-[0_0_8px_hsl(36_68%_65%)]"
+                initial={{ x: 0, y: 0, opacity: 1, scale: 0.6 }}
+                animate={{ x: dx, y: dy, opacity: 0, scale: 1.2 }}
+                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              />
+            );
+          })}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ─── Lazy illustration mount + scroll trigger ───────────────────── */
+function LazyIllustration({ kind }: { kind: string }) {
+  const { ref, isVisible } = useScrollReveal(0.2);
+  return (
+    <div
+      ref={ref}
+      className="w-full h-full"
+      style={{ contentVisibility: "auto" as never, containIntrinsicSize: "180px" }}
+    >
+      {isVisible ? <TileIllustration kind={kind} /> : null}
+    </div>
   );
 }
 
