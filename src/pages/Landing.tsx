@@ -381,6 +381,104 @@ const BENTO = [
   { icon: Trophy, kind: "trophy", title: "Achievements", body: "XP, streaks, and badges that reward the craft, not just the effort.", span: "" },
 ];
 
+/* ─── Bento tile with scroll-triggered animation + burst ─────────── */
+type BentoTileData = {
+  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  kind: string;
+  title: string;
+  body: string;
+  span: string;
+  accent?: boolean;
+};
+
+function BentoTile({ tile }: { tile: BentoTileData }) {
+  const [burst, setBurst] = useState(0);
+  const prefersReduced = useReducedMotion();
+  const lastBurstRef = useRef(0);
+
+  const fire = () => {
+    if (prefersReduced) return;
+    const now = Date.now();
+    if (now - lastBurstRef.current < 600) return; // throttle
+    lastBurstRef.current = now;
+    setBurst((n) => n + 1);
+  };
+
+  return (
+    <motion.div
+      variants={fadeRise}
+      className={tile.span}
+      // Scroll-triggered play — re-fires each time tile re-enters
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: false, amount: 0.35 }}
+      onViewportEnter={() => {
+        // Trigger a subtle burst as the SVG scrolls into view
+        if (!prefersReduced) fire();
+      }}
+    >
+      <TiltCard
+        onActivate={fire}
+        className="glass rounded-3xl p-6 md:p-7 relative overflow-hidden group h-full"
+      >
+        {tile.accent && (
+          <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-copper opacity-20 blur-3xl group-hover:opacity-50 transition-opacity duration-slow" />
+        )}
+        <svg
+          className="absolute bottom-2 right-2 w-16 h-16 text-primary/10 group-hover:text-primary/25 transition-colors duration-slow"
+          viewBox="0 0 64 64" fill="none" aria-hidden="true"
+        >
+          <circle cx="32" cy="32" r="30" stroke="currentColor" strokeWidth="1" />
+          <circle cx="32" cy="32" r="20" stroke="currentColor" strokeWidth="1" strokeDasharray="3 4" />
+          <circle cx="32" cy="32" r="10" stroke="currentColor" strokeWidth="1" />
+        </svg>
+
+        {/* Copper glow that intensifies on hover/tap */}
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-3xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: burst > 0 ? 1 : 0 }}
+          transition={{ duration: 0.4 }}
+          style={{
+            boxShadow:
+              "inset 0 0 60px hsl(36 68% 55% / 0.28), 0 0 40px hsl(29 60% 45% / 0.35)",
+          }}
+        />
+
+        <div
+          className="relative flex flex-col h-full gap-4"
+          style={prefersReduced ? undefined : { transform: "translateZ(30px)" }}
+        >
+          <div className="relative w-12 h-12">
+            {!prefersReduced && (
+              <motion.div
+                className="absolute inset-0 rounded-2xl border border-primary/30"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
+              />
+            )}
+            <div className="absolute inset-0.5 rounded-2xl glass-subtle flex items-center justify-center group-hover:shadow-copper transition-shadow">
+              <tile.icon className="w-5 h-5 text-primary-glow group-hover:scale-110 transition-transform" aria-hidden={true} />
+            </div>
+          </div>
+          <div className="flex-1 flex flex-col">
+            <h3 className="font-display text-h3 mb-2">{tile.title}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{tile.body}</p>
+            <div className="flex-1 min-h-[80px] mt-4 relative">
+              <LazyIllustration kind={tile.kind} />
+              <ParticleBurst active={burst} />
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-micro text-primary-glow opacity-0 group-hover:opacity-100 transition-opacity">
+            Tap to spark <ArrowRight className="w-3 h-3" />
+          </div>
+        </div>
+      </TiltCard>
+    </motion.div>
+  );
+}
+
 const Landing = () => {
   const navigate = useNavigate();
   const prefersReduced = useReducedMotion();
