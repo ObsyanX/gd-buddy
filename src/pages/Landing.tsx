@@ -96,9 +96,8 @@ function TiltCard({
 
   const tiltEnabled = !prefersReduced;
 
-  const handleMove = (e: React.MouseEvent) => {
+  const handleMove = (e: React.PointerEvent) => {
     if (!tiltEnabled) return;
-    // Skip tilt for coarse pointers (touch) — hover isn't meaningful
     if (e.pointerType === "touch") return;
     const el = ref.current;
     if (!el) return;
