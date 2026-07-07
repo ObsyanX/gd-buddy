@@ -112,12 +112,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 
 
+import { useTracker } from "@/hooks/useTracker";
+
+const RouteTracker = () => { useTracker(); return null; };
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
         <LazyMotionProvider>
         <TooltipProvider>
+          <RouteTracker />
           <Toaster />
           <Sonner />
           <OfflineBanner />
