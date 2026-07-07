@@ -106,6 +106,127 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_campaigns: {
+        Row: {
+          advertiser: string | null
+          budget_cents: number
+          created_at: string
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          advertiser?: string | null
+          budget_cents?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          advertiser?: string | null
+          budget_cents?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ad_clicks: {
+        Row: {
+          ad_id: string
+          country: string | null
+          created_at: string
+          device: string | null
+          id: string
+          placement: string | null
+          referrer: string | null
+          user_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          ad_id: string
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          id?: string
+          placement?: string | null
+          referrer?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          ad_id?: string
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          id?: string
+          placement?: string | null
+          referrer?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_clicks_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "advertisements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_impressions: {
+        Row: {
+          ad_id: string
+          country: string | null
+          created_at: string
+          device: string | null
+          id: string
+          placement: string | null
+          user_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          ad_id: string
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          id?: string
+          placement?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          ad_id?: string
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          id?: string
+          placement?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_impressions_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "advertisements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       adaptive_speaking_allowances: {
         Row: {
           created_at: string
@@ -149,6 +270,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      admin_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
       }
       adr_docs: {
         Row: {
@@ -194,6 +336,119 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      advertisements: {
+        Row: {
+          ad_type: Database["public"]["Enums"]["ad_type"]
+          advertiser: string | null
+          browsers: string[]
+          campaign_id: string | null
+          click_count: number
+          countries: string[]
+          created_at: string
+          cta_text: string | null
+          description: string | null
+          destination_url: string
+          devices: string[]
+          end_date: string | null
+          frequency_cap_per_day: number | null
+          id: string
+          image_url: string | null
+          image_url_dark: string | null
+          max_clicks: number | null
+          max_views: number | null
+          operating_systems: string[]
+          placements: string[]
+          priority: number
+          rotation: Database["public"]["Enums"]["ad_rotation"]
+          start_date: string | null
+          status: string
+          title: string
+          tracking_enabled: boolean
+          updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          view_count: number
+          weight: number
+        }
+        Insert: {
+          ad_type?: Database["public"]["Enums"]["ad_type"]
+          advertiser?: string | null
+          browsers?: string[]
+          campaign_id?: string | null
+          click_count?: number
+          countries?: string[]
+          created_at?: string
+          cta_text?: string | null
+          description?: string | null
+          destination_url: string
+          devices?: string[]
+          end_date?: string | null
+          frequency_cap_per_day?: number | null
+          id?: string
+          image_url?: string | null
+          image_url_dark?: string | null
+          max_clicks?: number | null
+          max_views?: number | null
+          operating_systems?: string[]
+          placements?: string[]
+          priority?: number
+          rotation?: Database["public"]["Enums"]["ad_rotation"]
+          start_date?: string | null
+          status?: string
+          title: string
+          tracking_enabled?: boolean
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          view_count?: number
+          weight?: number
+        }
+        Update: {
+          ad_type?: Database["public"]["Enums"]["ad_type"]
+          advertiser?: string | null
+          browsers?: string[]
+          campaign_id?: string | null
+          click_count?: number
+          countries?: string[]
+          created_at?: string
+          cta_text?: string | null
+          description?: string | null
+          destination_url?: string
+          devices?: string[]
+          end_date?: string | null
+          frequency_cap_per_day?: number | null
+          id?: string
+          image_url?: string | null
+          image_url_dark?: string | null
+          max_clicks?: number | null
+          max_views?: number | null
+          operating_systems?: string[]
+          placements?: string[]
+          priority?: number
+          rotation?: Database["public"]["Enums"]["ad_rotation"]
+          start_date?: string | null
+          status?: string
+          title?: string
+          tracking_enabled?: boolean
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          view_count?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advertisements_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_costs: {
         Row: {
@@ -293,6 +548,279 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      analytics_daily: {
+        Row: {
+          active_users: number
+          ad_clicks: number
+          ad_impressions: number
+          article_views: number
+          completed_sessions: number
+          day: string
+          gd_sessions: number
+          page_views: number
+          revenue_cents: number
+          sessions: number
+          signups: number
+          unique_visitors: number
+          updated_at: string
+          visitors: number
+        }
+        Insert: {
+          active_users?: number
+          ad_clicks?: number
+          ad_impressions?: number
+          article_views?: number
+          completed_sessions?: number
+          day: string
+          gd_sessions?: number
+          page_views?: number
+          revenue_cents?: number
+          sessions?: number
+          signups?: number
+          unique_visitors?: number
+          updated_at?: string
+          visitors?: number
+        }
+        Update: {
+          active_users?: number
+          ad_clicks?: number
+          ad_impressions?: number
+          article_views?: number
+          completed_sessions?: number
+          day?: string
+          gd_sessions?: number
+          page_views?: number
+          revenue_cents?: number
+          sessions?: number
+          signups?: number
+          unique_visitors?: number
+          updated_at?: string
+          visitors?: number
+        }
+        Relationships: []
+      }
+      article_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      article_comments: {
+        Row: {
+          approved: boolean
+          article_id: string
+          body: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          approved?: boolean
+          article_id: string
+          body: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          approved?: boolean
+          article_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_comments_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      article_likes: {
+        Row: {
+          article_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_likes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      article_tag_map: {
+        Row: {
+          article_id: string
+          tag_id: string
+        }
+        Insert: {
+          article_id: string
+          tag_id: string
+        }
+        Update: {
+          article_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_tag_map_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "article_tag_map_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "article_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      article_tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      articles: {
+        Row: {
+          author_id: string | null
+          body_markdown: string
+          category_id: string | null
+          comment_count: number
+          created_at: string
+          featured_image: string | null
+          id: string
+          like_count: number
+          publish_at: string | null
+          reading_time_min: number
+          related_ids: string[]
+          seo_description: string | null
+          seo_keywords: string | null
+          seo_title: string | null
+          share_count: number
+          slug: string
+          status: Database["public"]["Enums"]["article_status"]
+          summary: string | null
+          thumbnail: string | null
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          author_id?: string | null
+          body_markdown?: string
+          category_id?: string | null
+          comment_count?: number
+          created_at?: string
+          featured_image?: string | null
+          id?: string
+          like_count?: number
+          publish_at?: string | null
+          reading_time_min?: number
+          related_ids?: string[]
+          seo_description?: string | null
+          seo_keywords?: string | null
+          seo_title?: string | null
+          share_count?: number
+          slug: string
+          status?: Database["public"]["Enums"]["article_status"]
+          summary?: string | null
+          thumbnail?: string | null
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          author_id?: string | null
+          body_markdown?: string
+          category_id?: string | null
+          comment_count?: number
+          created_at?: string
+          featured_image?: string | null
+          id?: string
+          like_count?: number
+          publish_at?: string | null
+          reading_time_min?: number
+          related_ids?: string[]
+          seo_description?: string | null
+          seo_keywords?: string | null
+          seo_title?: string | null
+          share_count?: number
+          slug?: string
+          status?: Database["public"]["Enums"]["article_status"]
+          summary?: string | null
+          thumbnail?: string | null
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "article_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_events: {
         Row: {
@@ -1688,6 +2216,42 @@ export type Database = {
           },
         ]
       }
+      login_events: {
+        Row: {
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          ip: string | null
+          reason: string | null
+          success: boolean
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          reason?: string | null
+          success: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          reason?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       moderation_policies: {
         Row: {
           confidence_floor: number
@@ -1863,6 +2427,33 @@ export type Database = {
           },
         ]
       }
+      newsletter_subscribers: {
+        Row: {
+          confirmed: boolean
+          created_at: string
+          email: string
+          id: string
+          source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          confirmed?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          confirmed?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -2002,6 +2593,62 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_views: {
+        Row: {
+          browser: string | null
+          country: string | null
+          created_at: string
+          device: string | null
+          duration_ms: number | null
+          id: string
+          os: string | null
+          path: string
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          browser?: string | null
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          duration_ms?: number | null
+          id?: string
+          os?: string | null
+          path: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          browser?: string | null
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          duration_ms?: number | null
+          id?: string
+          os?: string | null
+          path?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_views_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -3016,6 +3663,60 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_sessions: {
+        Row: {
+          browser: string | null
+          country: string | null
+          created_at: string
+          device: string | null
+          entry_path: string | null
+          first_seen: string
+          id: string
+          last_seen: string
+          os: string | null
+          page_count: number
+          referrer: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          browser?: string | null
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          entry_path?: string | null
+          first_seen?: string
+          id?: string
+          last_seen?: string
+          os?: string | null
+          page_count?: number
+          referrer?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          browser?: string | null
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          entry_path?: string | null
+          first_seen?: string
+          id?: string
+          last_seen?: string
+          os?: string | null
+          page_count?: number
+          referrer?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -3039,6 +3740,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_article_view: { Args: { _slug: string }; Returns: undefined }
       is_joinable_session: { Args: { _session_id: string }; Returns: boolean }
       migrate_session_host: {
         Args: { _idle_seconds?: number; _session_id: string }
@@ -3055,7 +3757,18 @@ export type Database = {
       }
     }
     Enums: {
+      ad_rotation: "random" | "weighted" | "sequential" | "priority"
+      ad_type:
+        | "banner"
+        | "sidebar"
+        | "native"
+        | "card"
+        | "inline"
+        | "sticky_footer"
+        | "popup"
+        | "video"
       app_role: "admin" | "user" | "instructor"
+      article_status: "draft" | "scheduled" | "published" | "archived"
       discussion_status: "setup" | "active" | "paused" | "completed"
       drill_type:
         | "opening_statement"
@@ -3198,7 +3911,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ad_rotation: ["random", "weighted", "sequential", "priority"],
+      ad_type: [
+        "banner",
+        "sidebar",
+        "native",
+        "card",
+        "inline",
+        "sticky_footer",
+        "popup",
+        "video",
+      ],
       app_role: ["admin", "user", "instructor"],
+      article_status: ["draft", "scheduled", "published", "archived"],
       discussion_status: ["setup", "active", "paused", "completed"],
       drill_type: [
         "opening_statement",
