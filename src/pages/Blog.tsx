@@ -32,8 +32,8 @@ export default function Blog() {
       <div className="grid md:grid-cols-3 gap-6">
         {rows.length === 0 && <p className="col-span-full text-muted-foreground">No articles published yet.</p>}
         {rows.map((r, i) => (
-          <>
-            <article key={r.id} className="group rounded-lg border border-border/60 overflow-hidden hover:border-primary/50 transition-colors">
+          <div key={r.id} className="contents">
+            <article className="group rounded-lg border border-border/60 overflow-hidden hover:border-primary/50 transition-colors">
               <Link to={`/blog/${r.slug}`}>
                 {(r.thumbnail || r.featured_image) && (
                   <img src={r.thumbnail || r.featured_image!} alt={r.title} loading="lazy" className="w-full h-40 object-cover" />
@@ -45,8 +45,8 @@ export default function Blog() {
                 </div>
               </Link>
             </article>
-            {i > 0 && (i + 1) % 6 === 0 && <AdSlot key={`ad-${i}`} placement="blog.between_cards" className="md:col-span-3" />}
-          </>
+            {i > 0 && (i + 1) % 6 === 0 && <AdSlot placement="blog.between_cards" className="md:col-span-3" />}
+          </div>
         ))}
       </div>
     </div>
