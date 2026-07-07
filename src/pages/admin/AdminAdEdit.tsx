@@ -57,8 +57,9 @@ export default function AdminAdEdit() {
           start_date: data.start_date ? new Date(data.start_date).toISOString().slice(0, 16) : "",
           end_date: data.end_date ? new Date(data.end_date).toISOString().slice(0, 16) : "",
           priority: data.priority ?? 0, weight: data.weight ?? 1,
-          max_views: data.max_views ?? "", max_clicks: data.max_clicks ?? "",
-          frequency_cap_per_day: data.frequency_cap_per_day ?? "",
+          max_views: data.max_views == null ? "" : String(data.max_views),
+          max_clicks: data.max_clicks == null ? "" : String(data.max_clicks),
+          frequency_cap_per_day: data.frequency_cap_per_day == null ? "" : String(data.frequency_cap_per_day),
           utm_source: data.utm_source ?? "", utm_medium: data.utm_medium ?? "", utm_campaign: data.utm_campaign ?? "",
           status: data.status, tracking_enabled: data.tracking_enabled,
           campaign_id: data.campaign_id ?? "",
@@ -94,8 +95,10 @@ export default function AdminAdEdit() {
       campaign_id: f.campaign_id || null,
     };
     const res = isNew
-      ? await supabase.from("advertisements").insert(payload).select("id").single()
-      : await supabase.from("advertisements").update(payload).eq("id", id!).select("id").single();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? await supabase.from("advertisements").insert(payload as any).select("id").single()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      : await supabase.from("advertisements").update(payload as any).eq("id", id!).select("id").single();
     setSaving(false);
     if (res.error) return toast({ title: "Save failed", description: res.error.message, variant: "destructive" });
     toast({ title: "Saved" });

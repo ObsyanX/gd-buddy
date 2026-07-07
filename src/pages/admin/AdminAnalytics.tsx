@@ -93,7 +93,7 @@ export default function AdminAnalytics() {
         supabase.from("ad_clicks").select("id", { count: "exact", head: true }),
         supabase.from("advertisements").select("title, click_count, view_count").order("click_count", { ascending: false }).limit(5),
         supabase.from("ai_costs").select("id", { count: "exact", head: true }),
-        supabase.from("token_usage").select("total_tokens"),
+        supabase.from("token_usage").select("input_tokens, output_tokens"),
         supabase.from("error_logs").select("id", { count: "exact", head: true }),
       ]);
 
@@ -110,7 +110,7 @@ export default function AdminAnalytics() {
         ? gdMetrics.data.reduce((s, r) => s + (r.content_score ?? 0), 0) / gdMetrics.data.length
         : 0;
 
-      const totalTok = (aiTok.data ?? []).reduce((s, r) => s + (r.total_tokens || 0), 0);
+      const totalTok = (aiTok.data ?? []).reduce((s: number, r: { input_tokens?: number | null; output_tokens?: number | null }) => s + (r.input_tokens || 0) + (r.output_tokens || 0), 0);
 
       const impCount = adImps.count ?? 0;
       const clickCount = adClicks.count ?? 0;

@@ -91,8 +91,10 @@ export default function AdminArticleEdit() {
       author_id: user?.id ?? null,
     };
     const res = isNew
-      ? await supabase.from("articles").insert(payload).select("id").single()
-      : await supabase.from("articles").update(payload).eq("id", id!).select("id").single();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? await supabase.from("articles").insert(payload as any).select("id").single()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      : await supabase.from("articles").update(payload as any).eq("id", id!).select("id").single();
     setSaving(false);
     if (res.error) return toast({ title: "Save failed", description: res.error.message, variant: "destructive" });
     toast({ title: "Saved" });
