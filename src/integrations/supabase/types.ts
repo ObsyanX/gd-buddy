@@ -186,6 +186,53 @@ export type Database = {
           },
         ]
       }
+      ad_conversions: {
+        Row: {
+          ad_id: string
+          created_at: string
+          currency: string
+          id: string
+          meta: Json
+          postback_ref: string | null
+          revenue_cents: number
+          source: string | null
+          user_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          ad_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          meta?: Json
+          postback_ref?: string | null
+          revenue_cents?: number
+          source?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          ad_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          meta?: Json
+          postback_ref?: string | null
+          revenue_cents?: number
+          source?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_conversions_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "advertisements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ad_impressions: {
         Row: {
           ad_id: string
@@ -341,26 +388,36 @@ export type Database = {
         Row: {
           ad_type: Database["public"]["Enums"]["ad_type"]
           advertiser: string | null
+          auto_paused: boolean
           browsers: string[]
           campaign_id: string | null
           click_count: number
           countries: string[]
+          cpc_cents: number | null
+          cpm_cents: number | null
           created_at: string
           cta_text: string | null
+          daily_budget_cents: number | null
           description: string | null
           destination_url: string
           devices: string[]
           end_date: string | null
+          experiment_group: string | null
           frequency_cap_per_day: number | null
+          html_body: string | null
           id: string
           image_url: string | null
           image_url_dark: string | null
+          lifetime_budget_cents: number | null
           max_clicks: number | null
           max_views: number | null
+          media_type: string
           operating_systems: string[]
           placements: string[]
           priority: number
+          refresh_ms: number | null
           rotation: Database["public"]["Enums"]["ad_rotation"]
+          spend_cents: number
           start_date: string | null
           status: string
           title: string
@@ -369,32 +426,44 @@ export type Database = {
           utm_campaign: string | null
           utm_medium: string | null
           utm_source: string | null
+          video_poster: string | null
+          video_url: string | null
           view_count: number
           weight: number
         }
         Insert: {
           ad_type?: Database["public"]["Enums"]["ad_type"]
           advertiser?: string | null
+          auto_paused?: boolean
           browsers?: string[]
           campaign_id?: string | null
           click_count?: number
           countries?: string[]
+          cpc_cents?: number | null
+          cpm_cents?: number | null
           created_at?: string
           cta_text?: string | null
+          daily_budget_cents?: number | null
           description?: string | null
           destination_url: string
           devices?: string[]
           end_date?: string | null
+          experiment_group?: string | null
           frequency_cap_per_day?: number | null
+          html_body?: string | null
           id?: string
           image_url?: string | null
           image_url_dark?: string | null
+          lifetime_budget_cents?: number | null
           max_clicks?: number | null
           max_views?: number | null
+          media_type?: string
           operating_systems?: string[]
           placements?: string[]
           priority?: number
+          refresh_ms?: number | null
           rotation?: Database["public"]["Enums"]["ad_rotation"]
+          spend_cents?: number
           start_date?: string | null
           status?: string
           title: string
@@ -403,32 +472,44 @@ export type Database = {
           utm_campaign?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          video_poster?: string | null
+          video_url?: string | null
           view_count?: number
           weight?: number
         }
         Update: {
           ad_type?: Database["public"]["Enums"]["ad_type"]
           advertiser?: string | null
+          auto_paused?: boolean
           browsers?: string[]
           campaign_id?: string | null
           click_count?: number
           countries?: string[]
+          cpc_cents?: number | null
+          cpm_cents?: number | null
           created_at?: string
           cta_text?: string | null
+          daily_budget_cents?: number | null
           description?: string | null
           destination_url?: string
           devices?: string[]
           end_date?: string | null
+          experiment_group?: string | null
           frequency_cap_per_day?: number | null
+          html_body?: string | null
           id?: string
           image_url?: string | null
           image_url_dark?: string | null
+          lifetime_budget_cents?: number | null
           max_clicks?: number | null
           max_views?: number | null
+          media_type?: string
           operating_systems?: string[]
           placements?: string[]
           priority?: number
+          refresh_ms?: number | null
           rotation?: Database["public"]["Enums"]["ad_rotation"]
+          spend_cents?: number
           start_date?: string | null
           status?: string
           title?: string
@@ -437,6 +518,8 @@ export type Database = {
           utm_campaign?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          video_poster?: string | null
+          video_url?: string | null
           view_count?: number
           weight?: number
         }
@@ -554,6 +637,8 @@ export type Database = {
           active_users: number
           ad_clicks: number
           ad_impressions: number
+          ad_revenue_cents: number
+          affiliate_revenue_cents: number
           article_views: number
           completed_sessions: number
           day: string
@@ -570,6 +655,8 @@ export type Database = {
           active_users?: number
           ad_clicks?: number
           ad_impressions?: number
+          ad_revenue_cents?: number
+          affiliate_revenue_cents?: number
           article_views?: number
           completed_sessions?: number
           day: string
@@ -586,6 +673,8 @@ export type Database = {
           active_users?: number
           ad_clicks?: number
           ad_impressions?: number
+          ad_revenue_cents?: number
+          affiliate_revenue_cents?: number
           article_views?: number
           completed_sessions?: number
           day?: string
@@ -634,6 +723,10 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          moderated_at: string | null
+          moderated_by: string | null
+          parent_id: string | null
+          status: string
           user_id: string
         }
         Insert: {
@@ -642,6 +735,10 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          parent_id?: string | null
+          status?: string
           user_id: string
         }
         Update: {
@@ -650,6 +747,10 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          parent_id?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: [
@@ -658,6 +759,13 @@ export type Database = {
             columns: ["article_id"]
             isOneToOne: false
             referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "article_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "article_comments"
             referencedColumns: ["id"]
           },
         ]
@@ -681,6 +789,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "article_likes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      article_revisions: {
+        Row: {
+          article_id: string
+          body_json: Json | null
+          body_markdown: string | null
+          created_at: string
+          editor_id: string | null
+          id: string
+          summary: string | null
+          title: string | null
+        }
+        Insert: {
+          article_id: string
+          body_json?: Json | null
+          body_markdown?: string | null
+          created_at?: string
+          editor_id?: string | null
+          id?: string
+          summary?: string | null
+          title?: string | null
+        }
+        Update: {
+          article_id?: string
+          body_json?: Json | null
+          body_markdown?: string | null
+          created_at?: string
+          editor_id?: string | null
+          id?: string
+          summary?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_revisions_article_id_fkey"
             columns: ["article_id"]
             isOneToOne: false
             referencedRelation: "articles"
@@ -742,10 +891,13 @@ export type Database = {
       articles: {
         Row: {
           author_id: string | null
+          body_html: string | null
+          body_json: Json | null
           body_markdown: string
           category_id: string | null
           comment_count: number
           created_at: string
+          editor_mode: string
           featured_image: string | null
           id: string
           like_count: number
@@ -766,10 +918,13 @@ export type Database = {
         }
         Insert: {
           author_id?: string | null
+          body_html?: string | null
+          body_json?: Json | null
           body_markdown?: string
           category_id?: string | null
           comment_count?: number
           created_at?: string
+          editor_mode?: string
           featured_image?: string | null
           id?: string
           like_count?: number
@@ -790,10 +945,13 @@ export type Database = {
         }
         Update: {
           author_id?: string | null
+          body_html?: string | null
+          body_json?: Json | null
           body_markdown?: string
           category_id?: string | null
           comment_count?: number
           created_at?: string
+          editor_mode?: string
           featured_image?: string | null
           id?: string
           like_count?: number
@@ -2429,27 +2587,39 @@ export type Database = {
       }
       newsletter_subscribers: {
         Row: {
+          confirm_token: string | null
           confirmed: boolean
+          confirmed_at: string | null
           created_at: string
           email: string
           id: string
           source: string | null
+          unsubscribe_token: string | null
+          unsubscribed_at: string | null
           user_id: string | null
         }
         Insert: {
+          confirm_token?: string | null
           confirmed?: boolean
+          confirmed_at?: string | null
           created_at?: string
           email: string
           id?: string
           source?: string | null
+          unsubscribe_token?: string | null
+          unsubscribed_at?: string | null
           user_id?: string | null
         }
         Update: {
+          confirm_token?: string | null
           confirmed?: boolean
+          confirmed_at?: string | null
           created_at?: string
           email?: string
           id?: string
           source?: string | null
+          unsubscribe_token?: string | null
+          unsubscribed_at?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -3733,6 +3903,7 @@ export type Database = {
       delete_user_data: { Args: { _user_id: string }; Returns: undefined }
       expire_stale_turns: { Args: never; Returns: number }
       export_user_data: { Args: { _user_id: string }; Returns: Json }
+      get_feature_flag: { Args: { _key: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3740,6 +3911,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_article_like: { Args: { _slug: string }; Returns: undefined }
+      increment_article_share: { Args: { _slug: string }; Returns: undefined }
       increment_article_view: { Args: { _slug: string }; Returns: undefined }
       is_joinable_session: { Args: { _session_id: string }; Returns: boolean }
       migrate_session_host: {
@@ -3749,6 +3922,42 @@ export type Database = {
       owns_session: {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
+      }
+      related_articles: {
+        Args: { _article_id: string; _limit?: number }
+        Returns: {
+          author_id: string | null
+          body_html: string | null
+          body_json: Json | null
+          body_markdown: string
+          category_id: string | null
+          comment_count: number
+          created_at: string
+          editor_mode: string
+          featured_image: string | null
+          id: string
+          like_count: number
+          publish_at: string | null
+          reading_time_min: number
+          related_ids: string[]
+          seo_description: string | null
+          seo_keywords: string | null
+          seo_title: string | null
+          share_count: number
+          slug: string
+          status: Database["public"]["Enums"]["article_status"]
+          summary: string | null
+          thumbnail: string | null
+          title: string
+          updated_at: string
+          view_count: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "articles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       release_mic: { Args: { _session_id: string }; Returns: Json }
       request_mic: {
