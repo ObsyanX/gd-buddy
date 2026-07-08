@@ -176,7 +176,7 @@ export default function AdminArticleEdit() {
           </CardContent>
         </Card>
       )}
-      </div>
+
 
       <div className="grid lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
