@@ -2,7 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Users, FileText, Tags, Layers,
-  Megaphone, Rocket, BarChart3, MessageSquare, Mail, FileBarChart, Settings,
+  Megaphone, Rocket, BarChart3, MessageSquare, Mail, FileBarChart, Settings, ShieldCheck,
 } from "lucide-react";
 
 const nav = [
@@ -17,6 +17,7 @@ const nav = [
   { to: "/home/admin/comments", label: "Comments", icon: MessageSquare },
   { to: "/home/admin/newsletter", label: "Newsletter", icon: Mail },
   { to: "/home/admin/reports", label: "Reports", icon: FileBarChart },
+  { to: "/home/admin/audit", label: "Audit log", icon: ShieldCheck },
   { to: "/home/admin/settings", label: "Settings", icon: Settings },
 ];
 

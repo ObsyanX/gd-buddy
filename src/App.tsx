@@ -63,6 +63,13 @@ const AdminArticleEdit = lazy(() => import("./pages/admin/AdminArticleEdit"));
 const AdminAds = lazy(() => import("./pages/admin/AdminAds"));
 const AdminAdEdit = lazy(() => import("./pages/admin/AdminAdEdit"));
 const AdminPlaceholder = lazy(() => import("./pages/admin/AdminPlaceholder"));
+const AdminComments = lazy(() => import("./pages/admin/AdminComments"));
+const AdminNewsletter = lazy(() => import("./pages/admin/AdminNewsletter"));
+const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
+const AdminCampaigns = lazy(() => import("./pages/admin/AdminCampaigns"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
 
 // SEO content pages (public, indexable)
 const GDTopics = lazy(() => import("./pages/GDTopics"));
@@ -178,14 +185,15 @@ const App = () => (
                   <Route path="ads" element={<Suspense fallback={<DashboardSkeleton />}><AdminAds /></Suspense>} />
                   <Route path="ads/new" element={<Suspense fallback={<DashboardSkeleton />}><AdminAdEdit /></Suspense>} />
                   <Route path="ads/:id/edit" element={<Suspense fallback={<DashboardSkeleton />}><AdminAdEdit /></Suspense>} />
-                  <Route path="users" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Users" note="User management coming in Phase 2." /></Suspense>} />
-                  <Route path="categories" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Categories" note="Manage categories via SQL for now — full UI in Phase 2." /></Suspense>} />
+                  <Route path="users" element={<Suspense fallback={<DashboardSkeleton />}><AdminUsers /></Suspense>} />
+                  <Route path="categories" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Categories" note="Manage categories via SQL for now — full UI in Phase 3." /></Suspense>} />
                   <Route path="tags" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Tags" /></Suspense>} />
-                  <Route path="campaigns" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Campaigns" /></Suspense>} />
-                  <Route path="comments" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Comments" /></Suspense>} />
-                  <Route path="newsletter" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Newsletter" /></Suspense>} />
-                  <Route path="reports" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Reports" /></Suspense>} />
-                  <Route path="settings" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Settings" /></Suspense>} />
+                  <Route path="campaigns" element={<Suspense fallback={<DashboardSkeleton />}><AdminCampaigns /></Suspense>} />
+                  <Route path="comments" element={<Suspense fallback={<DashboardSkeleton />}><AdminComments /></Suspense>} />
+                  <Route path="newsletter" element={<Suspense fallback={<DashboardSkeleton />}><AdminNewsletter /></Suspense>} />
+                  <Route path="reports" element={<Suspense fallback={<DashboardSkeleton />}><AdminReports /></Suspense>} />
+                  <Route path="settings" element={<Suspense fallback={<DashboardSkeleton />}><AdminSettingsPage /></Suspense>} />
+                  <Route path="audit" element={<Suspense fallback={<DashboardSkeleton />}><AdminAudit /></Suspense>} />
                 </Route>
                 <Route path="governance" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Governance /></PageTransition></Suspense>} />
                 <Route path="feedback" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackHistory /></PageTransition></Suspense>} />

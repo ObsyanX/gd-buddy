@@ -107,14 +107,17 @@ serve(async (req) => {
       .from("advertisements")
       .select("*")
       .eq("status", "active")
+      .eq("auto_paused", false)
       .contains("placements", [placement])
       .or(`start_date.is.null,start_date.lte.${nowIso}`)
       .or(`end_date.is.null,end_date.gte.${nowIso}`);
     if (error) throw error;
 
-    const filtered = (data as AdRow[])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const filtered = (data as any[])
       .filter((a) => !a.max_views || a.view_count < a.max_views)
       .filter((a) => !a.max_clicks || a.click_count < a.max_clicks)
+      .filter((a) => !a.lifetime_budget_cents || (a.spend_cents ?? 0) < a.lifetime_budget_cents)
       .filter((a) => matchTarget(a.countries, country))
       .filter((a) => matchTarget(a.operating_systems, os))
       .filter((a) => matchTarget(a.browsers, browser))
