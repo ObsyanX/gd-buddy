@@ -2,26 +2,39 @@ import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Users, FileText, Tags, Layers,
-  Megaphone, Rocket, BarChart3, MessageSquare, Mail, FileBarChart, Settings, ShieldCheck,
+  Megaphone, Rocket, BarChart3, MessageSquare, Mail, FileBarChart, Settings, ShieldCheck, DollarSign,
 } from "lucide-react";
+import { useUserRoles, type AppRole } from "@/hooks/useUserRoles";
 
-const nav = [
-  { to: "/home/admin", label: "Overview", icon: LayoutDashboard, end: true },
-  { to: "/home/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/home/admin/users", label: "Users", icon: Users },
-  { to: "/home/admin/articles", label: "Articles", icon: FileText },
-  { to: "/home/admin/categories", label: "Categories", icon: Layers },
-  { to: "/home/admin/tags", label: "Tags", icon: Tags },
-  { to: "/home/admin/ads", label: "Advertisements", icon: Megaphone },
-  { to: "/home/admin/campaigns", label: "Campaigns", icon: Rocket },
-  { to: "/home/admin/comments", label: "Comments", icon: MessageSquare },
-  { to: "/home/admin/newsletter", label: "Newsletter", icon: Mail },
-  { to: "/home/admin/reports", label: "Reports", icon: FileBarChart },
-  { to: "/home/admin/audit", label: "Audit log", icon: ShieldCheck },
-  { to: "/home/admin/settings", label: "Settings", icon: Settings },
+interface NavItem {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  end?: boolean;
+  allow: AppRole[]; // roles that can see this item
+}
+
+const NAV: NavItem[] = [
+  { to: "/home/admin",            label: "Overview",       icon: LayoutDashboard, end: true, allow: ["admin", "editor", "analyst"] },
+  { to: "/home/admin/analytics",  label: "Analytics",      icon: BarChart3,       allow: ["admin", "analyst"] },
+  { to: "/home/admin/users",      label: "Users",          icon: Users,           allow: ["admin"] },
+  { to: "/home/admin/articles",   label: "Articles",       icon: FileText,        allow: ["admin", "editor", "analyst"] },
+  { to: "/home/admin/categories", label: "Categories",     icon: Layers,          allow: ["admin", "editor"] },
+  { to: "/home/admin/tags",       label: "Tags",           icon: Tags,            allow: ["admin", "editor"] },
+  { to: "/home/admin/ads",        label: "Advertisements", icon: Megaphone,       allow: ["admin", "analyst"] },
+  { to: "/home/admin/campaigns",  label: "Campaigns",      icon: Rocket,          allow: ["admin", "analyst"] },
+  { to: "/home/admin/revenue",    label: "Revenue",        icon: DollarSign,      allow: ["admin", "analyst"] },
+  { to: "/home/admin/comments",   label: "Comments",       icon: MessageSquare,   allow: ["admin", "editor"] },
+  { to: "/home/admin/newsletter", label: "Newsletter",     icon: Mail,            allow: ["admin"] },
+  { to: "/home/admin/reports",    label: "Reports",        icon: FileBarChart,    allow: ["admin", "analyst"] },
+  { to: "/home/admin/audit",      label: "Audit log",      icon: ShieldCheck,     allow: ["admin"] },
+  { to: "/home/admin/settings",   label: "Settings",       icon: Settings,        allow: ["admin"] },
 ];
 
 export default function AdminShell() {
+  const { roles } = useUserRoles();
+  const visible = NAV.filter((n) => n.allow.some((r) => roles.includes(r)));
+
   return (
     <div className="flex flex-col md:flex-row gap-6 p-4 md:p-6">
       <aside className="md:w-56 shrink-0">
@@ -29,7 +42,7 @@ export default function AdminShell() {
           Admin
         </div>
         <nav className="grid grid-cols-2 md:grid-cols-1 gap-1">
-          {nav.map(({ to, label, icon: Icon, end }) => (
+          {visible.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
