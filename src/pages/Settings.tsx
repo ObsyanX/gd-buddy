@@ -13,6 +13,7 @@ import { invokeWithAuth } from '@/lib/supabase-auth';
 import { useVoiceStore } from '@/stores/useVoiceStore';
 import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
 import { AccessibilityCenter } from '@/components/AccessibilityCenter';
+import PrivacyPanel from '@/components/settings/PrivacyPanel';
 
 const VOICE_OPTIONS = [
   { value: 'sarah', label: 'Sarah', description: 'Clear female voice' },
@@ -221,6 +222,9 @@ const Settings = () => {
 
           {/* Accessibility & Language */}
           <AccessibilityCenter />
+
+          {/* GDPR: export / delete personal data */}
+          <PrivacyPanel />
 
           {/* Save Button */}
           <Button
