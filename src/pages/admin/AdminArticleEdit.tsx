@@ -278,6 +278,8 @@ export default function AdminArticleEdit() {
           </Card>
         </div>
       </div>
+
+      {!isNew && id && i18nEnabled && <ArticleTranslations articleId={id} />}
     </div>
   );
 }
