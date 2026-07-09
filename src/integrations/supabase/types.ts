@@ -3976,7 +3976,7 @@ export type Database = {
         | "sticky_footer"
         | "popup"
         | "video"
-      app_role: "admin" | "user" | "instructor"
+      app_role: "admin" | "user" | "instructor" | "editor" | "analyst"
       article_status: "draft" | "scheduled" | "published" | "archived"
       discussion_status: "setup" | "active" | "paused" | "completed"
       drill_type:
@@ -4131,7 +4131,7 @@ export const Constants = {
         "popup",
         "video",
       ],
-      app_role: ["admin", "user", "instructor"],
+      app_role: ["admin", "user", "instructor", "editor", "analyst"],
       article_status: ["draft", "scheduled", "published", "archived"],
       discussion_status: ["setup", "active", "paused", "completed"],
       drill_type: [
