@@ -35,6 +35,7 @@ export default function AdminArticleEdit() {
   const isNew = !id || id === "new";
   const nav = useNavigate();
   const { user } = useAuth();
+  const i18nEnabled = useFeatureFlag<boolean>("articles.i18n_enabled", true);
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
