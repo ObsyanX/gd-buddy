@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Download } from "lucide-react";
+import { Download, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const EXPORTS: Array<{ table: string; label: string; cols: string }> = [
   { table: "articles", label: "Articles", cols: "id,slug,title,status,view_count,like_count,publish_at,created_at" },
@@ -32,7 +33,16 @@ export default function AdminReports() {
   return (
     <div className="space-y-4 max-w-3xl">
       <h1 className="text-2xl font-semibold tracking-tight">Reports & exports</h1>
-      <p className="text-sm text-muted-foreground">Download recent rows as CSV for offline analysis.</p>
+      <p className="text-sm text-muted-foreground">Download recent rows as CSV for offline analysis, or preview the weekly digest.</p>
+
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Weekly digest</CardTitle></CardHeader>
+        <CardContent className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">Top KPIs, articles, and ads over the last 7 days.</p>
+          <Button asChild size="sm"><Link to="/home/admin/reports/digest"><Mail className="h-4 w-4 mr-1" />Open digest</Link></Button>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-3">
         {EXPORTS.map((e) => (
           <Card key={e.table}>
