@@ -7,12 +7,17 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
+import { useI18n, LOCALES, type Locale } from "@/i18n";
 
 interface Article {
   id: string; title: string; slug: string; summary: string | null;
   body_markdown: string; featured_image: string | null;
   seo_title: string | null; seo_description: string | null;
   reading_time_min: number; publish_at: string | null; created_at: string;
+}
+interface Translation {
+  locale: Locale; title: string; excerpt: string | null; body_markdown: string | null;
+  seo_title: string | null; seo_description: string | null; status: string;
 }
 
 function tocFromMarkdown(md: string) {
@@ -30,29 +35,62 @@ function tocFromMarkdown(md: string) {
 
 export default function BlogArticle() {
   const { slug } = useParams<{ slug: string }>();
+  const { locale, setLocale } = useI18n();
   const [a, setA] = useState<Article | null>(null);
+  const [translations, setTranslations] = useState<Translation[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!slug) return;
-    supabase.from("articles")
-      .select("id,title,slug,summary,body_markdown,featured_image,seo_title,seo_description,reading_time_min,publish_at,created_at")
-      .eq("slug", slug).eq("status", "published").maybeSingle()
-      .then(({ data }) => { setA(data); setLoading(false); });
-    // fire-and-forget view count
+    (async () => {
+      const { data } = await supabase.from("articles")
+        .select("id,title,slug,summary,body_markdown,featured_image,seo_title,seo_description,reading_time_min,publish_at,created_at")
+        .eq("slug", slug).eq("status", "published").maybeSingle();
+      setA(data as Article | null);
+      if (data?.id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: t } = await (supabase.from("article_translations") as any)
+          .select("locale,title,excerpt,body_markdown,seo_title,seo_description,status")
+          .eq("article_id", data.id).eq("status", "published");
+        setTranslations(((t as Translation[]) ?? []));
+      }
+      setLoading(false);
+    })();
     supabase.rpc("increment_article_view" as never, { _slug: slug } as never).then(() => {});
   }, [slug]);
 
   if (loading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
   if (!a) return <div className="p-10 text-center"><p className="text-muted-foreground">Article not found.</p><Link to="/blog" className="text-primary">Back to blog</Link></div>;
 
-  const toc = tocFromMarkdown(a.body_markdown);
+  const translation = translations.find((t) => t.locale === locale);
+  const displayTitle = translation?.title || a.title;
+  const displayBody = translation?.body_markdown || a.body_markdown;
+  const displayExcerpt = translation?.excerpt || a.summary;
+  const displaySeoTitle = translation?.seo_title || a.seo_title || a.title;
+  const displaySeoDesc = translation?.seo_description || a.seo_description || a.summary || undefined;
+  const availableLocales: Locale[] = ["en" as Locale, ...translations.map((t) => t.locale)];
+  const toc = tocFromMarkdown(displayBody);
 
   return (
     <article className="max-w-4xl mx-auto px-4 py-10">
-      <SEOHead title={a.seo_title || a.title} description={a.seo_description || a.summary || undefined} />
-      {a.featured_image && <img src={a.featured_image} alt={a.title} className="w-full h-64 md:h-80 object-cover rounded-xl mb-6" />}
-      <h1 className="text-3xl md:text-4xl font-bold mb-2">{a.title}</h1>
+      <SEOHead title={displaySeoTitle} description={displaySeoDesc} />
+      {availableLocales.length > 1 && (
+        <div className="flex items-center gap-2 text-xs mb-4">
+          <span className="text-muted-foreground">Language:</span>
+          {LOCALES.filter((l) => availableLocales.includes(l.value)).map((l) => (
+            <button
+              key={l.value}
+              onClick={() => setLocale(l.value)}
+              className={`px-2 py-1 rounded ${locale === l.value ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {a.featured_image && <img src={a.featured_image} alt={displayTitle} className="w-full h-64 md:h-80 object-cover rounded-xl mb-6" />}
+      <h1 className="text-3xl md:text-4xl font-bold mb-2">{displayTitle}</h1>
+      {displayExcerpt && <p className="text-lg text-muted-foreground mb-3">{displayExcerpt}</p>}
       <p className="text-sm text-muted-foreground mb-6">
         {a.publish_at ? new Date(a.publish_at).toLocaleDateString() : new Date(a.created_at).toLocaleDateString()} · {a.reading_time_min} min read
       </p>
@@ -83,7 +121,7 @@ export default function BlogArticle() {
             },
           }}
         >
-          {a.body_markdown}
+          {displayBody}
         </ReactMarkdown>
       </div>
 

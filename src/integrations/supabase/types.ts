@@ -274,6 +274,50 @@ export type Database = {
           },
         ]
       }
+      ad_revenue_events: {
+        Row: {
+          ad_id: string | null
+          advertiser: string | null
+          amount_cents: number
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json
+          occurred_at: string
+          source: string
+        }
+        Insert: {
+          ad_id?: string | null
+          advertiser?: string | null
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          source: string
+        }
+        Update: {
+          ad_id?: string | null
+          advertiser?: string | null
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_revenue_events_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "advertisements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       adaptive_speaking_allowances: {
         Row: {
           created_at: string
@@ -416,6 +460,7 @@ export type Database = {
           placements: string[]
           priority: number
           refresh_ms: number | null
+          revenue_cents: number
           rotation: Database["public"]["Enums"]["ad_rotation"]
           spend_cents: number
           start_date: string | null
@@ -462,6 +507,7 @@ export type Database = {
           placements?: string[]
           priority?: number
           refresh_ms?: number | null
+          revenue_cents?: number
           rotation?: Database["public"]["Enums"]["ad_rotation"]
           spend_cents?: number
           start_date?: string | null
@@ -508,6 +554,7 @@ export type Database = {
           placements?: string[]
           priority?: number
           refresh_ms?: number | null
+          revenue_cents?: number
           rotation?: Database["public"]["Enums"]["ad_rotation"]
           spend_cents?: number
           start_date?: string | null
@@ -887,6 +934,59 @@ export type Database = {
           slug?: string
         }
         Relationships: []
+      }
+      article_translations: {
+        Row: {
+          article_id: string
+          body_html: string | null
+          body_markdown: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          locale: string
+          seo_description: string | null
+          seo_title: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          article_id: string
+          body_html?: string | null
+          body_markdown?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          locale: string
+          seo_description?: string | null
+          seo_title?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          article_id?: string
+          body_html?: string | null
+          body_markdown?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          locale?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_translations_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       articles: {
         Row: {
@@ -2591,6 +2691,7 @@ export type Database = {
           confirmed: boolean
           confirmed_at: string | null
           created_at: string
+          digest_opt_in: boolean
           email: string
           id: string
           source: string | null
@@ -2603,6 +2704,7 @@ export type Database = {
           confirmed?: boolean
           confirmed_at?: string | null
           created_at?: string
+          digest_opt_in?: boolean
           email: string
           id?: string
           source?: string | null
@@ -2615,6 +2717,7 @@ export type Database = {
           confirmed?: boolean
           confirmed_at?: string | null
           created_at?: string
+          digest_opt_in?: boolean
           email?: string
           id?: string
           source?: string | null
@@ -3976,7 +4079,7 @@ export type Database = {
         | "sticky_footer"
         | "popup"
         | "video"
-      app_role: "admin" | "user" | "instructor"
+      app_role: "admin" | "user" | "instructor" | "editor" | "analyst"
       article_status: "draft" | "scheduled" | "published" | "archived"
       discussion_status: "setup" | "active" | "paused" | "completed"
       drill_type:
@@ -4131,7 +4234,7 @@ export const Constants = {
         "popup",
         "video",
       ],
-      app_role: ["admin", "user", "instructor"],
+      app_role: ["admin", "user", "instructor", "editor", "analyst"],
       article_status: ["draft", "scheduled", "published", "archived"],
       discussion_status: ["setup", "active", "paused", "completed"],
       drill_type: [

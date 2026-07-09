@@ -32,3 +32,6 @@ verify_jwt = true
 
 [functions.session-feedback]
 verify_jwt = false
+
+[functions.newsletter-digest]
+verify_jwt = true
