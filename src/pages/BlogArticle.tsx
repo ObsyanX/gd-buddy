@@ -7,12 +7,17 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
+import { useI18n, LOCALES, type Locale } from "@/i18n";
 
 interface Article {
   id: string; title: string; slug: string; summary: string | null;
   body_markdown: string; featured_image: string | null;
   seo_title: string | null; seo_description: string | null;
   reading_time_min: number; publish_at: string | null; created_at: string;
+}
+interface Translation {
+  locale: Locale; title: string; excerpt: string | null; body_markdown: string | null;
+  seo_title: string | null; seo_description: string | null; status: string;
 }
 
 function tocFromMarkdown(md: string) {
@@ -30,16 +35,27 @@ function tocFromMarkdown(md: string) {
 
 export default function BlogArticle() {
   const { slug } = useParams<{ slug: string }>();
+  const { locale, setLocale } = useI18n();
   const [a, setA] = useState<Article | null>(null);
+  const [translations, setTranslations] = useState<Translation[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!slug) return;
-    supabase.from("articles")
-      .select("id,title,slug,summary,body_markdown,featured_image,seo_title,seo_description,reading_time_min,publish_at,created_at")
-      .eq("slug", slug).eq("status", "published").maybeSingle()
-      .then(({ data }) => { setA(data); setLoading(false); });
-    // fire-and-forget view count
+    (async () => {
+      const { data } = await supabase.from("articles")
+        .select("id,title,slug,summary,body_markdown,featured_image,seo_title,seo_description,reading_time_min,publish_at,created_at")
+        .eq("slug", slug).eq("status", "published").maybeSingle();
+      setA(data as Article | null);
+      if (data?.id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: t } = await (supabase.from("article_translations") as any)
+          .select("locale,title,excerpt,body_markdown,seo_title,seo_description,status")
+          .eq("article_id", data.id).eq("status", "published");
+        setTranslations(((t as Translation[]) ?? []));
+      }
+      setLoading(false);
+    })();
     supabase.rpc("increment_article_view" as never, { _slug: slug } as never).then(() => {});
   }, [slug]);
 
