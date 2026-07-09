@@ -15,6 +15,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
+import ArticleTranslations from "@/components/admin/ArticleTranslations";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface Revision { id: string; title: string | null; summary: string | null; body_markdown: string | null; created_at: string; }
 
