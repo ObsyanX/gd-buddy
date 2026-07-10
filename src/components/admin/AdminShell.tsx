@@ -27,6 +27,7 @@ const NAV: NavItem[] = [
   { to: "/home/admin/comments",   label: "Comments",       icon: MessageSquare,   allow: ["admin", "editor"] },
   { to: "/home/admin/newsletter", label: "Newsletter",     icon: Mail,            allow: ["admin"] },
   { to: "/home/admin/reports",    label: "Reports",        icon: FileBarChart,    allow: ["admin", "analyst"] },
+  { to: "/home/admin/intelligence", label: "AI Intelligence", icon: Sparkles,      allow: ["admin", "analyst"] },
   { to: "/home/admin/audit",      label: "Audit log",      icon: ShieldCheck,     allow: ["admin"] },
   { to: "/home/admin/settings",   label: "Settings",       icon: Settings,        allow: ["admin"] },
 ];
