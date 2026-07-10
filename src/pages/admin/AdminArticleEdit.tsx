@@ -277,6 +277,18 @@ export default function AdminArticleEdit() {
               </div>
             </CardContent>
           </Card>
+
+          <AiArticleAssist
+            title={title}
+            body={body}
+            onDraft={(md) => setBody(md)}
+            onImprove={(md) => setBody(md)}
+            onSeo={(seo) => {
+              if (seo.seo_title) setSeoTitle(seo.seo_title);
+              if (seo.seo_description) setSeoDesc(seo.seo_description);
+              if (Array.isArray(seo.tags)) setSeoKw(seo.tags.join(", "));
+            }}
+          />
         </div>
       </div>
 
