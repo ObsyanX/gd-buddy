@@ -194,20 +194,23 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/home`
-        }
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
       });
 
-      if (error) {
+      if (result.error) {
         toast({
           title: "Google Sign-in Failed",
-          description: error.message,
+          description: result.error.message || "Unable to start Google sign-in",
           variant: "destructive"
         });
+        return;
       }
+
+      if (result.redirected) return;
+
+      // Session established via popup — go to app
+      navigate("/home");
     } catch (error) {
       toast({
         title: "Error",
