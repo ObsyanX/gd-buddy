@@ -2,7 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Users, FileText, Tags, Layers,
-  Megaphone, Rocket, BarChart3, MessageSquare, Mail, FileBarChart, Settings, ShieldCheck, DollarSign,
+  Megaphone, Rocket, BarChart3, MessageSquare, Mail, FileBarChart, Settings, ShieldCheck, DollarSign, Sparkles,
 } from "lucide-react";
 import { useUserRoles, type AppRole } from "@/hooks/useUserRoles";
 
