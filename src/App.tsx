@@ -72,6 +72,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
 const AdminReportsDigest = lazy(() => import("./pages/admin/AdminReportsDigest"));
 const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
+const AdminIntelligence = lazy(() => import("./pages/admin/AdminIntelligence"));
 
 // SEO content pages (public, indexable)
 const GDTopics = lazy(() => import("./pages/GDTopics"));
@@ -196,6 +197,7 @@ const App = () => (
                   <Route path="reports" element={<Suspense fallback={<DashboardSkeleton />}><AdminReports /></Suspense>} />
                   <Route path="reports/digest" element={<Suspense fallback={<DashboardSkeleton />}><AdminReportsDigest /></Suspense>} />
                   <Route path="revenue" element={<Suspense fallback={<DashboardSkeleton />}><AdminRevenue /></Suspense>} />
+                  <Route path="intelligence" element={<Suspense fallback={<DashboardSkeleton />}><AdminIntelligence /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<DashboardSkeleton />}><AdminSettingsPage /></Suspense>} />
                   <Route path="audit" element={<Suspense fallback={<DashboardSkeleton />}><AdminAudit /></Suspense>} />
                 </Route>

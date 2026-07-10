@@ -16,6 +16,7 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
 import ArticleTranslations from "@/components/admin/ArticleTranslations";
+import AiArticleAssist from "@/components/admin/AiArticleAssist";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface Revision { id: string; title: string | null; summary: string | null; body_markdown: string | null; created_at: string; }
@@ -276,6 +277,18 @@ export default function AdminArticleEdit() {
               </div>
             </CardContent>
           </Card>
+
+          <AiArticleAssist
+            title={title}
+            body={body}
+            onDraft={(md) => setBody(md)}
+            onImprove={(md) => setBody(md)}
+            onSeo={(seo) => {
+              if (seo.seo_title) setSeoTitle(seo.seo_title);
+              if (seo.seo_description) setSeoDesc(seo.seo_description);
+              if (Array.isArray(seo.tags)) setSeoKw(seo.tags.join(", "));
+            }}
+          />
         </div>
       </div>
 
