@@ -72,6 +72,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
 const AdminReportsDigest = lazy(() => import("./pages/admin/AdminReportsDigest"));
 const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
+const AdminIntelligence = lazy(() => import("./pages/admin/AdminIntelligence"));
 
 // SEO content pages (public, indexable)
 const GDTopics = lazy(() => import("./pages/GDTopics"));
