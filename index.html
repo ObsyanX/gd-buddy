@@ -23,32 +23,13 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 
-    <!-- Fonts: non-blocking load with display=swap (avoids invisible text / FOIT) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!--
+      Fonts: the app renders in Cormorant Garamond / Karla / JetBrains Mono
+      (bundled via @fontsource in src/main.tsx). Google Fonts and the earlier
+      Space Grotesk preload were unused — removing them saves ~1 blocking
+      stylesheet + a wasted preload on mobile.
+    -->
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-    <!-- LCP boost: preload Space Grotesk 700 (hero H1) latin woff2 subset -->
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      href="https://fonts.gstatic.com/s/spacegrotesk/v22/V8mQoQDjQSkFtoMM3T6r8E7mF71Q-gOoraIAEj4PVnskPMA.woff2"
-      crossorigin="anonymous"
-      fetchpriority="high"
-    />
-    <!-- Combined stylesheet request (1 round-trip instead of 2), loaded non-blocking -->
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
-      media="print"
-      onload="this.media='all';this.onload=null"
-    />
-    <noscript>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
-      />
-    </noscript>
 
     <!-- Inline critical above-the-fold CSS — uses background token so no flash -->
     <style>
