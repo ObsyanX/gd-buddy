@@ -100,18 +100,36 @@
         ]
       }
     </script>
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JKSN8K8C3"></script>
+    <!--
+      Analytics + Ads: deferred until after `load` so they never block LCP or
+      steal main-thread time during hydration. Injected via a tiny inline
+      loader; the `async` attribute prevents blocking once appended.
+    -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-6JKSN8K8C3');
+      (function () {
+        function inject() {
+          var scripts = [
+            "https://www.googletagmanager.com/gtag/js?id=G-6JKSN8K8C3",
+            "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7535496448152688"
+          ];
+          scripts.forEach(function (src) {
+            var s = document.createElement("script");
+            s.src = src; s.async = true; s.defer = true;
+            if (src.indexOf("adsbygoogle") !== -1) s.crossOrigin = "anonymous";
+            document.head.appendChild(s);
+          });
+        }
+        if (document.readyState === "complete") {
+          setTimeout(inject, 1500);
+        } else {
+          window.addEventListener("load", function () { setTimeout(inject, 1500); }, { once: true });
+        }
+      })();
     </script>
-
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7535496448152688"
-     crossorigin="anonymous"></script>
   </head>
 
   <body>

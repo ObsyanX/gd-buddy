@@ -98,10 +98,10 @@
     --chart-5: 42 78% 62%;
 
     /* Editorial typography families */
-    --font-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
-    --font-sans: 'Karla', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-display: 'Cormorant Garamond', 'CormorantFallback', ui-serif, Georgia, serif;
+    --font-sans: 'Karla', 'KarlaFallback', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    --font-serif: 'Cormorant Garamond', ui-serif, Georgia, serif;
+    --font-serif: 'Cormorant Garamond', 'CormorantFallback', ui-serif, Georgia, serif;
 
     /* === GRADIENTS === */
     --gradient-copper: linear-gradient(135deg, hsl(29 60% 50%), hsl(36 68% 68%));
