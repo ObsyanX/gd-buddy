@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Compass, Users, Mic, Radar } from "lucide-react";
 import { stagger } from "@/lib/motion";
+import SEOFooter from "@/components/SEOFooter";
 import {
   BENTO, BentoTile, WaveLine, ConnectorLine, LANDING_FAQS,
 } from "./parts";
@@ -182,6 +183,8 @@ const LandingBelow = () => {
           </div>
         </div>
       </section>
+
+      <SEOFooter />
     </>
   );
 };

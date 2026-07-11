@@ -6,7 +6,6 @@ import {
   MessageSquare, Mic, Target, ArrowRight, Play, Sparkles, Feather, Gauge, Star, Waves,
 } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
-import SEOFooter from "@/components/SEOFooter";
 import { fadeRise, stagger, wordRise } from "@/lib/motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DotGrid, RadarRings, TiltCard, LANDING_FAQS } from "./landing/parts";
@@ -352,24 +351,33 @@ const Landing = () => {
           </motion.div>
         </section>
 
-        {/* Everything below the hero is lazy — big TBT/LCP win on mobile. */}
+        {/*
+          Everything below the hero (Bento, HowItWorks, Resources, FAQ, CTA,
+          Footer) is lazy-loaded together. SEOFooter is included inside the
+          lazy chunk so it never mid-shifts while LandingBelow hydrates —
+          this is what fixes the 0.11 CLS from the earlier audit.
+        */}
         <Suspense
           fallback={
-            <div className="container mx-auto px-4 md:px-6 py-16 space-y-6" aria-busy="true">
+            <div
+              className="container mx-auto px-4 md:px-6 py-16 space-y-6"
+              aria-busy="true"
+              style={{ minHeight: "1400px" }}
+            >
               <div className="rounded-[2.5rem] h-40 skeleton-shimmer" />
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="rounded-3xl h-48 skeleton-shimmer" />
                 <div className="rounded-3xl h-48 skeleton-shimmer" />
                 <div className="rounded-3xl h-48 skeleton-shimmer" />
               </div>
+              <div className="rounded-[2.5rem] h-80 skeleton-shimmer" />
+              <div className="rounded-[2.5rem] h-64 skeleton-shimmer" />
             </div>
           }
         >
           <LandingBelow />
         </Suspense>
       </main>
-
-      <SEOFooter />
     </div>
   );
 };

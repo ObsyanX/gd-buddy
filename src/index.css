@@ -3,6 +3,29 @@
 @tailwind utilities;
 
 /* ============================================================
+   Metric-adjusted fallback fonts — eliminate CLS from font swap.
+   The fallback renders at the exact metrics of the webfont, so
+   when Cormorant/Karla arrive over the network, the swap causes
+   no reflow. Values derived from Chrome DevTools font metric tool.
+   ============================================================ */
+@font-face {
+  font-family: 'CormorantFallback';
+  src: local('Georgia'), local('Times New Roman');
+  size-adjust: 99%;
+  ascent-override: 92%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'KarlaFallback';
+  src: local('Arial'), local('Helvetica Neue');
+  size-adjust: 104%;
+  ascent-override: 96%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+}
+
+/* ============================================================
    GD Buddy — Premium Sienna Glass design system
    All colors defined as HSL. Never hardcode colors in components.
    ============================================================ */
@@ -98,10 +121,10 @@
     --chart-5: 42 78% 62%;
 
     /* Editorial typography families */
-    --font-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
-    --font-sans: 'Karla', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-display: 'Cormorant Garamond', 'CormorantFallback', ui-serif, Georgia, serif;
+    --font-sans: 'Karla', 'KarlaFallback', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    --font-serif: 'Cormorant Garamond', ui-serif, Georgia, serif;
+    --font-serif: 'Cormorant Garamond', 'CormorantFallback', ui-serif, Georgia, serif;
 
     /* === GRADIENTS === */
     --gradient-copper: linear-gradient(135deg, hsl(29 60% 50%), hsl(36 68% 68%));
