@@ -23,26 +23,21 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 
-    <!-- Preload critical fonts -->
+    <!-- Fonts: non-blocking load with display=swap (avoids invisible text / FOIT) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <!-- Combined stylesheet request (1 round-trip instead of 2), loaded non-blocking -->
     <link
-      rel="preload"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      as="style"
-      onload="this.onload=null;this.rel='stylesheet'"
-    />
-    <link
-      rel="preload"
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"
-      as="style"
-      onload="this.onload=null;this.rel='stylesheet'"
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      media="print"
+      onload="this.media='all';this.onload=null"
     />
     <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
       />
     </noscript>
 

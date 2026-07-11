@@ -25,8 +25,10 @@ import PageTransition from "@/components/PageTransition";
 
 // Eager load core pages
 import Landing from "./pages/Landing";
-import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+
+// Lazy — trims initial JS for landing visitors; prefetched on CTA hover.
+const Auth = lazy(() => import("./pages/Auth"));
 
 // Layout
 const AppLayout = lazy(() => import("./layouts/AppLayout"));
@@ -91,15 +93,41 @@ const GDTopicPage = lazy(() => import("./pages/GDTopicPage"));
 const queryClient = new QueryClient();
 
 const Loading = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <p className="text-xl font-mono">LOADING...</p>
+  <div className="min-h-screen flex items-center justify-center" aria-busy="true" aria-live="polite">
+    <div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+    <span className="sr-only">Loading…</span>
+  </div>
+);
+
+// Branded landing skeleton — mirrors hero layout to prevent CLS.
+const LandingSkeleton = () => (
+  <div className="min-h-dvh flex flex-col" aria-busy="true" aria-live="polite">
+    <div className="container mx-auto py-6 px-4 md:px-6">
+      <div className="h-14 rounded-full skeleton-shimmer" />
+    </div>
+    <div className="container mx-auto px-4 md:px-6 pt-8 md:pt-16 flex-1">
+      <div className="rounded-[2.5rem] p-8 md:p-12 space-y-6 skeleton-shimmer min-h-[520px]" />
+    </div>
+    <span className="sr-only">Loading GD Buddy…</span>
+  </div>
+);
+
+// Auth skeleton — mirrors auth card to prevent CLS.
+const AuthSkeleton = () => (
+  <div className="min-h-dvh flex items-center justify-center px-4" aria-busy="true" aria-live="polite">
+    <div className="w-full max-w-md space-y-4">
+      <div className="h-10 rounded-2xl skeleton-shimmer" />
+      <div className="h-64 rounded-3xl skeleton-shimmer" />
+      <div className="h-12 rounded-2xl skeleton-shimmer" />
+    </div>
+    <span className="sr-only">Loading sign in…</span>
   </div>
 );
 
 // Redirect authenticated users from / to /home
 const LandingGuard = () => {
   const { user, loading } = useAuth();
-  if (loading) return <Loading />;
+  if (loading) return <LandingSkeleton />;
   if (user) return <Navigate to="/home" replace />;
   return <Landing />;
 };
@@ -107,9 +135,13 @@ const LandingGuard = () => {
 // Redirect authenticated users away from /auth
 const AuthGuard = () => {
   const { user, loading } = useAuth();
-  if (loading) return <Loading />;
+  if (loading) return <AuthSkeleton />;
   if (user) return <Navigate to="/home" replace />;
-  return <Auth />;
+  return (
+    <Suspense fallback={<AuthSkeleton />}>
+      <Auth />
+    </Suspense>
+  );
 };
 
 // Protect all /home/* routes

@@ -604,13 +604,31 @@
   50% { transform: scaleY(1); }
 }
 
+/* Smooth in-page scroll (anchor links, scrollIntoView) */
+html { scroll-behavior: smooth; }
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* Landing skeleton shimmer — cheap, GPU-friendly */
+@keyframes landing-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg,
+    hsl(var(--muted) / 0.35) 0%,
+    hsl(var(--muted) / 0.6) 50%,
+    hsl(var(--muted) / 0.35) 100%);
+  background-size: 200% 100%;
+  animation: landing-shimmer 1.6s ease-in-out infinite;
 }
 
 /* ============================================================
