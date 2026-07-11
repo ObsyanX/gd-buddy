@@ -355,8 +355,13 @@ const Landing = () => {
         {/* Everything below the hero is lazy — big TBT/LCP win on mobile. */}
         <Suspense
           fallback={
-            <div className="container mx-auto px-4 md:px-6 py-16">
-              <div className="glass rounded-[2.5rem] h-64 animate-pulse" aria-hidden="true" />
+            <div className="container mx-auto px-4 md:px-6 py-16 space-y-6" aria-busy="true">
+              <div className="rounded-[2.5rem] h-40 skeleton-shimmer" />
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="rounded-3xl h-48 skeleton-shimmer" />
+                <div className="rounded-3xl h-48 skeleton-shimmer" />
+                <div className="rounded-3xl h-48 skeleton-shimmer" />
+              </div>
             </div>
           }
         >
