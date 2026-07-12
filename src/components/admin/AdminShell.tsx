@@ -18,6 +18,7 @@ const NAV: NavItem[] = [
   { to: "/home/admin",            label: "Overview",       icon: LayoutDashboard, end: true, allow: ["admin", "editor", "analyst"] },
   { to: "/home/admin/analytics",  label: "Analytics",      icon: BarChart3,       allow: ["admin", "analyst"] },
   { to: "/home/admin/users",      label: "Users",          icon: Users,           allow: ["admin"] },
+  { to: "/home/admin/sessions",   label: "Sessions",       icon: Activity,        allow: ["admin", "analyst"] },
   { to: "/home/admin/articles",   label: "Articles",       icon: FileText,        allow: ["admin", "editor", "analyst"] },
   { to: "/home/admin/categories", label: "Categories",     icon: Layers,          allow: ["admin", "editor"] },
   { to: "/home/admin/tags",       label: "Tags",           icon: Tags,            allow: ["admin", "editor"] },
