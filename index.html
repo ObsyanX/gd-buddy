@@ -111,25 +111,45 @@
       gtag('js', new Date());
       gtag('config', 'G-6JKSN8K8C3');
       (function () {
-        function inject() {
-          var scripts = [
-            "https://www.googletagmanager.com/gtag/js?id=G-6JKSN8K8C3",
-            "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7535496448152688"
-          ];
-          scripts.forEach(function (src) {
-            var s = document.createElement("script");
-            s.src = src; s.async = true; s.defer = true;
-            if (src.indexOf("adsbygoogle") !== -1) s.crossOrigin = "anonymous";
-            document.head.appendChild(s);
-          });
+        var gaLoaded = false, adsLoaded = false;
+        function loadScript(src, opts) {
+          var s = document.createElement('script');
+          s.src = src; s.async = true; s.defer = true;
+          if (opts && opts.crossOrigin) s.crossOrigin = opts.crossOrigin;
+          document.head.appendChild(s);
         }
-        if (document.readyState === "complete") {
-          setTimeout(inject, 1500);
-        } else {
-          window.addEventListener("load", function () { setTimeout(inject, 1500); }, { once: true });
+        function loadGA() {
+          if (gaLoaded) return; gaLoaded = true;
+          loadScript('https://www.googletagmanager.com/gtag/js?id=G-6JKSN8K8C3');
         }
+        function loadAds() {
+          if (adsLoaded) return; adsLoaded = true;
+          loadScript('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7535496448152688', { crossOrigin: 'anonymous' });
+        }
+        // GA: after idle, does not block LCP.
+        function scheduleGA() {
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(loadGA, { timeout: 4000 });
+          } else {
+            setTimeout(loadGA, 3000);
+          }
+        }
+        // AdSense: only after the first real user interaction OR meaningful scroll —
+        // this removes ~660 KB of third-party JS from the mobile LCP path entirely.
+        var interactionEvents = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
+        function onInteract() {
+          interactionEvents.forEach(function (ev) { window.removeEventListener(ev, onInteract, true); });
+          loadAds();
+        }
+        interactionEvents.forEach(function (ev) { window.addEventListener(ev, onInteract, { once: true, passive: true, capture: true }); });
+        // Safety net: if the user never interacts within 15s, load ads anyway so revenue slots eventually populate.
+        setTimeout(loadAds, 15000);
+
+        if (document.readyState === 'complete') scheduleGA();
+        else window.addEventListener('load', scheduleGA, { once: true });
       })();
     </script>
+
   </head>
 
   <body>
