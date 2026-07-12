@@ -3,46 +3,64 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+function serializeError(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === 'string') return e;
+  try { return JSON.stringify(e); } catch { return String(e); }
+}
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  if (!SUPABASE_URL || !SERVICE_KEY) {
+    console.error('ai-recommend-articles: missing env', { hasUrl: !!SUPABASE_URL, hasKey: !!SERVICE_KEY });
+    return json({ items: [], strategy: 'fallback', error: 'server_misconfigured' }, 200);
+  }
+
   try {
     const authHeader = req.headers.get('Authorization');
-    const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+    const userScoped = createClient(SUPABASE_URL, SERVICE_KEY, {
       global: authHeader ? { headers: { Authorization: authHeader } } : {},
     });
-    const { limit = 6, article_id } = (await req.json().catch(() => ({}))) as { limit?: number; article_id?: string };
-    const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
-    // If article_id given → use built-in related_articles RPC
+    const body = await req.json().catch(() => ({}));
+    const limit = Math.min(Math.max(Number(body?.limit) || 6, 1), 24);
+    const article_id: string | undefined = body?.article_id;
+
     if (article_id) {
       const { data, error } = await admin.rpc('related_articles', { _article_id: article_id, _limit: limit });
-      if (error) throw error;
-      return new Response(JSON.stringify({ items: data ?? [], strategy: 'related' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      if (error) {
+        console.error('related_articles rpc failed', error);
+        // Fall through to trending
+      } else {
+        return json({ items: data ?? [], strategy: 'related' });
+      }
     }
 
     let userId: string | null = null;
     if (authHeader) {
-      const { data: u } = await supabase.auth.getUser();
+      const { data: u } = await userScoped.auth.getUser();
       userId = u?.user?.id ?? null;
     }
 
-    // Personalized: fetch user's liked article categories
     let categoryIds: string[] = [];
     if (userId) {
-      const { data: likes } = await admin
-        .from('article_likes')
-        .select('article_id')
-        .eq('user_id', userId)
-        .limit(20);
-      const ids = (likes ?? []).map((l: { article_id: string }) => l.article_id);
+      const { data: likes } = await admin.from('article_likes').select('article_id').eq('user_id', userId).limit(20);
+      const ids = (likes ?? []).map((l: { article_id: string }) => l.article_id).filter(Boolean);
       if (ids.length) {
         const { data: arts } = await admin.from('articles').select('category_id').in('id', ids);
-        categoryIds = [...new Set((arts ?? []).map((a: { category_id: string | null }) => a.category_id).filter(Boolean) as string[])];
+        categoryIds = [...new Set(((arts ?? []).map((a: { category_id: string | null }) => a.category_id).filter(Boolean)) as string[])];
       }
     }
 
@@ -56,14 +74,14 @@ Deno.serve(async (req) => {
     if (categoryIds.length) query = query.in('category_id', categoryIds);
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      console.error('articles query failed', error);
+      return json({ items: [], strategy: 'fallback', error: serializeError(error) }, 200);
+    }
 
-    return new Response(JSON.stringify({
-      items: data ?? [],
-      strategy: categoryIds.length ? 'personalized' : 'trending',
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return json({ items: data ?? [], strategy: categoryIds.length ? 'personalized' : 'trending' });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.error('ai-recommend-articles crashed', e);
+    return json({ items: [], strategy: 'fallback', error: serializeError(e) }, 200);
   }
 });
