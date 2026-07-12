@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SelectSeparator } from "@/components/ui/sheet";
-import { SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+
 import { toast } from "@/hooks/use-toast";
 import { useUserRoles, type AppRole } from "@/hooks/useUserRoles";
 import { Eye, Users2, Trophy, Clock, MessageSquare } from "lucide-react";
