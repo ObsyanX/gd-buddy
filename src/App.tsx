@@ -223,6 +223,8 @@ const App = () => (
                   <Route path="ads/new" element={<Suspense fallback={<DashboardSkeleton />}><AdminAdEdit /></Suspense>} />
                   <Route path="ads/:id/edit" element={<Suspense fallback={<DashboardSkeleton />}><AdminAdEdit /></Suspense>} />
                   <Route path="users" element={<Suspense fallback={<DashboardSkeleton />}><AdminUsers /></Suspense>} />
+                  <Route path="sessions" element={<Suspense fallback={<DashboardSkeleton />}><AdminSessions /></Suspense>} />
+                  <Route path="sessions/:id" element={<Suspense fallback={<DashboardSkeleton />}><AdminSessionDetail /></Suspense>} />
                   <Route path="categories" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Categories" note="Manage categories via SQL for now — full UI in Phase 3." /></Suspense>} />
                   <Route path="tags" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Tags" /></Suspense>} />
                   <Route path="campaigns" element={<Suspense fallback={<DashboardSkeleton />}><AdminCampaigns /></Suspense>} />
