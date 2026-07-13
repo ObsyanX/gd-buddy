@@ -158,7 +158,7 @@ export default function AdminUsers() {
     load();
   }
 
-  const filtered = rows.filter((r) => !q || (r.display_name ?? "").toLowerCase().includes(q.toLowerCase()) || r.id.includes(q));
+  const totalPages = Math.max(1, Math.ceil(total / USERS_PAGE_SIZE));
 
   const summary = useMemo(() => {
     if (!detail) return null;
