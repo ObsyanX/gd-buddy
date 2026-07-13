@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { Eye, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Row {
   id: string;
@@ -23,6 +23,9 @@ interface Row {
   host_name?: string | null;
 }
 
+type SortKey = "topic" | "status" | "is_multiplayer" | "created_at" | "participants";
+const PAGE_SIZE = 25;
+
 function durationLabel(s: Row) {
   if (!s.start_time || !s.end_time) return "—";
   const ms = new Date(s.end_time).getTime() - new Date(s.start_time).getTime();
@@ -35,58 +38,93 @@ function durationLabel(s: Row) {
 export default function AdminSessions() {
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState("");
+  const [qDebounced, setQDebounced] = useState("");
   const [mode, setMode] = useState<"all" | "solo" | "multi">("all");
   const [status, setStatus] = useState<string>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Debounce search input to avoid a query per keystroke.
   useEffect(() => {
-    let cancel = false;
-    async function load() {
-      setLoading(true);
-      let query = supabase
-        .from("gd_sessions")
-        .select("id, topic, topic_category, status, is_multiplayer, start_time, end_time, created_at, user_id, host_user_id")
-        .order("created_at", { ascending: false })
-        .limit(300);
-      if (mode === "solo") query = query.eq("is_multiplayer", false);
-      if (mode === "multi") query = query.eq("is_multiplayer", true);
-      if (status !== "all") query = query.eq("status", status as never);
-      const { data } = await query;
-      if (cancel) return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const list = ((data as any[]) ?? []) as Row[];
-      const ids = list.map((s) => s.id);
-      const hostIds = [...new Set(list.map((s) => s.host_user_id || s.user_id).filter(Boolean) as string[])];
-      const [{ data: parts }, { data: profs }] = await Promise.all([
-        ids.length ? supabase.from("gd_participants").select("session_id").in("session_id", ids) : Promise.resolve({ data: [] as { session_id: string }[] }),
-        hostIds.length ? supabase.from("profiles").select("id, display_name").in("id", hostIds) : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
-      ]);
-      const partMap = new Map<string, number>();
-      (parts ?? []).forEach((p: { session_id: string }) => partMap.set(p.session_id, (partMap.get(p.session_id) ?? 0) + 1));
-      const nameMap = new Map<string, string | null>();
-      (profs ?? []).forEach((p: { id: string; display_name: string | null }) => nameMap.set(p.id, p.display_name));
-      setRows(list.map((s) => ({
-        ...s,
-        participants: partMap.get(s.id) ?? 0,
-        host_name: nameMap.get(s.host_user_id || s.user_id || "") ?? null,
-      })));
-      setLoading(false);
-    }
-    load();
-    return () => { cancel = true; };
-  }, [mode, status]);
+    const t = setTimeout(() => setQDebounced(q.trim()), 300);
+    return () => clearTimeout(t);
+  }, [q]);
 
-  const filtered = rows.filter((r) => !q || r.topic.toLowerCase().includes(q.toLowerCase()) || (r.host_name ?? "").toLowerCase().includes(q.toLowerCase()));
+  // Reset to page 0 whenever filters change.
+  useEffect(() => { setPage(0); }, [qDebounced, mode, status, sortKey, sortDir]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    // participants sorting can't be pushed to Postgres cheaply — sort in-memory after fetch.
+    const serverSortable = sortKey !== "participants";
+    let query = supabase
+      .from("gd_sessions")
+      .select("id, topic, topic_category, status, is_multiplayer, start_time, end_time, created_at, user_id, host_user_id", { count: "exact" });
+
+    if (mode === "solo") query = query.eq("is_multiplayer", false);
+    if (mode === "multi") query = query.eq("is_multiplayer", true);
+    if (status !== "all") query = query.eq("status", status as never);
+    if (qDebounced) query = query.ilike("topic", `%${qDebounced}%`);
+
+    if (serverSortable) {
+      query = query.order(sortKey, { ascending: sortDir === "asc" });
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
+    query = query.range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+
+    const { data, count } = await query;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const list = ((data as any[]) ?? []) as Row[];
+    const ids = list.map((s) => s.id);
+    const hostIds = [...new Set(list.map((s) => s.host_user_id || s.user_id).filter(Boolean) as string[])];
+    const [{ data: parts }, { data: profs }] = await Promise.all([
+      ids.length ? supabase.from("gd_participants").select("session_id").in("session_id", ids) : Promise.resolve({ data: [] as { session_id: string }[] }),
+      hostIds.length ? supabase.from("profiles").select("id, display_name").in("id", hostIds) : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
+    ]);
+    const partMap = new Map<string, number>();
+    (parts ?? []).forEach((p: { session_id: string }) => partMap.set(p.session_id, (partMap.get(p.session_id) ?? 0) + 1));
+    const nameMap = new Map<string, string | null>();
+    (profs ?? []).forEach((p: { id: string; display_name: string | null }) => nameMap.set(p.id, p.display_name));
+
+    let hydrated = list.map((s) => ({
+      ...s,
+      participants: partMap.get(s.id) ?? 0,
+      host_name: nameMap.get(s.host_user_id || s.user_id || "") ?? null,
+    }));
+
+    if (sortKey === "participants") {
+      hydrated = hydrated.sort((a, b) => sortDir === "asc" ? a.participants - b.participants : b.participants - a.participants);
+    }
+
+    setRows(hydrated);
+    setTotal(count ?? 0);
+    setLoading(false);
+  }, [mode, status, qDebounced, sortKey, sortDir, page]);
+
+  useEffect(() => { load(); }, [load]);
+
+  function toggleSort(key: SortKey) {
+    if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir(key === "created_at" ? "desc" : "asc"); }
+  }
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Sessions</h1>
-          <p className="text-sm text-muted-foreground">{rows.length} sessions · click any row for full report</p>
+          <p className="text-sm text-muted-foreground">
+            {loading ? "Loading…" : `${total} sessions · page ${page + 1} of ${totalPages}`}
+          </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Input placeholder="Search topic or host…" value={q} onChange={(e) => setQ(e.target.value)} className="w-56" />
+          <Input placeholder="Search topic…" value={q} onChange={(e) => setQ(e.target.value)} className="w-56" />
           <Select value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
             <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -113,18 +151,18 @@ export default function AdminSessions() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="text-left px-3 py-2">Topic</th>
-                <th className="text-left px-3 py-2">Mode</th>
+                <SortableTh label="Topic" active={sortKey === "topic"} dir={sortDir} onClick={() => toggleSort("topic")} />
+                <SortableTh label="Mode" active={sortKey === "is_multiplayer"} dir={sortDir} onClick={() => toggleSort("is_multiplayer")} />
                 <th className="text-left px-3 py-2">Host</th>
-                <th className="text-left px-3 py-2">Participants</th>
+                <SortableTh label="Participants" active={sortKey === "participants"} dir={sortDir} onClick={() => toggleSort("participants")} />
                 <th className="text-left px-3 py-2">Duration</th>
-                <th className="text-left px-3 py-2">Status</th>
-                <th className="text-left px-3 py-2">Started</th>
+                <SortableTh label="Status" active={sortKey === "status"} dir={sortDir} onClick={() => toggleSort("status")} />
+                <SortableTh label="Started" active={sortKey === "created_at"} dir={sortDir} onClick={() => toggleSort("created_at")} />
                 <th className="text-left px-3 py-2"></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
+              {rows.map((r) => (
                 <tr key={r.id} className="border-t border-border/60 hover:bg-muted/30">
                   <td className="px-3 py-2 max-w-[280px]">
                     <div className="font-medium truncate">{r.topic}</div>
@@ -143,12 +181,37 @@ export default function AdminSessions() {
                   </td>
                 </tr>
               ))}
-              {!loading && filtered.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-muted-foreground">No sessions.</td></tr>}
+              {!loading && rows.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-muted-foreground">No sessions.</td></tr>}
               {loading && <tr><td colSpan={8} className="text-center py-8 text-muted-foreground">Loading…</td></tr>}
             </tbody>
           </table>
         </div>
       </CardContent></Card>
+
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">
+          {total === 0 ? "0" : `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, total)}`} of {total}
+        </span>
+        <div className="flex gap-1">
+          <Button size="sm" variant="outline" disabled={page === 0 || loading} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+            <ChevronLeft className="h-4 w-4" /> Prev
+          </Button>
+          <Button size="sm" variant="outline" disabled={page >= totalPages - 1 || loading} onClick={() => setPage((p) => p + 1)}>
+            Next <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
+  );
+}
+
+function SortableTh({ label, active, dir, onClick }: { label: string; active: boolean; dir: "asc" | "desc"; onClick: () => void }) {
+  return (
+    <th className="text-left px-3 py-2">
+      <button onClick={onClick} className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
+        <span>{label}</span>
+        {active ? (dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+      </button>
+    </th>
   );
 }
