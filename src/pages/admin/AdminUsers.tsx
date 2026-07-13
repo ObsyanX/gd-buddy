@@ -56,16 +56,39 @@ export default function AdminUsers() {
   const { isAdmin } = useUserRoles();
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState("");
+  const [qDebounced, setQDebounced] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [selected, setSelected] = useState<Row | null>(null);
   const [detail, setDetail] = useState<UserDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [sortKey, setSortKey] = useState<UsersSortKey>("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setQDebounced(q.trim()), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  useEffect(() => { setPage(0); }, [qDebounced, sortKey, sortDir]);
 
   const load = useCallback(async () => {
-    const [{ data: profiles }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("id, display_name, avatar_url, created_at").order("created_at", { ascending: false }).limit(500),
-      supabase.from("user_roles").select("user_id, role"),
-    ]);
+    setLoading(true);
+    let query = supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url, created_at", { count: "exact" })
+      .order(sortKey, { ascending: sortDir === "asc", nullsFirst: false })
+      .range(page * USERS_PAGE_SIZE, page * USERS_PAGE_SIZE + USERS_PAGE_SIZE - 1);
+    if (qDebounced) query = query.or(`display_name.ilike.%${qDebounced}%,id.eq.${/^[0-9a-f-]{8,}$/i.test(qDebounced) ? qDebounced : "00000000-0000-0000-0000-000000000000"}`);
+
+    const { data: profiles, count } = await query;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ids = ((profiles as any[]) ?? []).map((p) => p.id);
+    const { data: roles } = ids.length
+      ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
+      : { data: [] as { user_id: string; role: AppRole }[] };
     const map = new Map<string, AppRole[]>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (roles ?? []).forEach((r: any) => {
@@ -74,9 +97,16 @@ export default function AdminUsers() {
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setRows(((profiles as any[]) ?? []).map((p) => ({ ...p, roles: map.get(p.id) ?? ["user"] })));
-  }, []);
+    setTotal(count ?? 0);
+    setLoading(false);
+  }, [qDebounced, sortKey, sortDir, page]);
 
   useEffect(() => { load(); }, [load]);
+
+  function toggleSort(key: UsersSortKey) {
+    if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir(key === "created_at" ? "desc" : "asc"); }
+  }
 
   async function openDetail(row: Row) {
     setSelected(row);
