@@ -237,6 +237,7 @@ const App = () => (
                   <Route path="intelligence" element={<Suspense fallback={<DashboardSkeleton />}><AdminIntelligence /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<DashboardSkeleton />}><AdminSettingsPage /></Suspense>} />
                   <Route path="audit" element={<Suspense fallback={<DashboardSkeleton />}><AdminAudit /></Suspense>} />
+                  <Route path="edge-errors" element={<Suspense fallback={<DashboardSkeleton />}><AdminEdgeErrors /></Suspense>} />
                 </Route>
                 <Route path="governance" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Governance /></PageTransition></Suspense>} />
                 <Route path="feedback" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackHistory /></PageTransition></Suspense>} />
