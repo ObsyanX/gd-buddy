@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Bot } from "lucide-react";
+import { ArrowLeft, User, Bot, Download, Printer } from "lucide-react";
 
 interface Session {
   id: string;
