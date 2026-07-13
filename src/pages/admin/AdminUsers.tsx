@@ -355,3 +355,14 @@ function StatBox({ icon, label, value }: { icon?: React.ReactNode; label: string
     </div>
   );
 }
+
+function UsersSortableTh({ label, active, dir, onClick }: { label: string; active: boolean; dir: "asc" | "desc"; onClick: () => void }) {
+  return (
+    <th className="text-left px-3 py-2">
+      <button onClick={onClick} className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
+        <span>{label}</span>
+        {active ? (dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+      </button>
+    </th>
+  );
+}
