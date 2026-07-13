@@ -2,6 +2,7 @@
 // with the user's recent likes/views. Falls back to trending articles.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { logEdgeError } from '../_shared/log-edge-error.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -76,12 +77,14 @@ Deno.serve(async (req) => {
     const { data, error } = await query;
     if (error) {
       console.error('articles query failed', error);
+      await logEdgeError(error, { function_name: 'ai-recommend-articles', status: 500, path: 'articles.select', extra: { strategy: 'fallback' } });
       return json({ items: [], strategy: 'fallback', error: serializeError(error) }, 200);
     }
 
     return json({ items: data ?? [], strategy: categoryIds.length ? 'personalized' : 'trending' });
   } catch (e) {
     console.error('ai-recommend-articles crashed', e);
+    await logEdgeError(e, { function_name: 'ai-recommend-articles', status: 500 });
     return json({ items: [], strategy: 'fallback', error: serializeError(e) }, 200);
   }
 });

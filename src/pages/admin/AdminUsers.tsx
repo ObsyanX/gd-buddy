@@ -9,7 +9,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 
 import { toast } from "@/hooks/use-toast";
 import { useUserRoles, type AppRole } from "@/hooks/useUserRoles";
-import { Eye, Users2, Trophy, Clock, MessageSquare } from "lucide-react";
+import { Eye, Users2, Trophy, Clock, MessageSquare, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+
+type UsersSortKey = "display_name" | "created_at";
+const USERS_PAGE_SIZE = 25;
 
 interface Row {
   id: string;
@@ -53,16 +56,39 @@ export default function AdminUsers() {
   const { isAdmin } = useUserRoles();
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState("");
+  const [qDebounced, setQDebounced] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [selected, setSelected] = useState<Row | null>(null);
   const [detail, setDetail] = useState<UserDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [sortKey, setSortKey] = useState<UsersSortKey>("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setQDebounced(q.trim()), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  useEffect(() => { setPage(0); }, [qDebounced, sortKey, sortDir]);
 
   const load = useCallback(async () => {
-    const [{ data: profiles }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("id, display_name, avatar_url, created_at").order("created_at", { ascending: false }).limit(500),
-      supabase.from("user_roles").select("user_id, role"),
-    ]);
+    setLoading(true);
+    let query = supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url, created_at", { count: "exact" })
+      .order(sortKey, { ascending: sortDir === "asc", nullsFirst: false })
+      .range(page * USERS_PAGE_SIZE, page * USERS_PAGE_SIZE + USERS_PAGE_SIZE - 1);
+    if (qDebounced) query = query.or(`display_name.ilike.%${qDebounced}%,id.eq.${/^[0-9a-f-]{8,}$/i.test(qDebounced) ? qDebounced : "00000000-0000-0000-0000-000000000000"}`);
+
+    const { data: profiles, count } = await query;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ids = ((profiles as any[]) ?? []).map((p) => p.id);
+    const { data: roles } = ids.length
+      ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
+      : { data: [] as { user_id: string; role: AppRole }[] };
     const map = new Map<string, AppRole[]>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (roles ?? []).forEach((r: any) => {
@@ -71,9 +97,16 @@ export default function AdminUsers() {
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setRows(((profiles as any[]) ?? []).map((p) => ({ ...p, roles: map.get(p.id) ?? ["user"] })));
-  }, []);
+    setTotal(count ?? 0);
+    setLoading(false);
+  }, [qDebounced, sortKey, sortDir, page]);
 
   useEffect(() => { load(); }, [load]);
+
+  function toggleSort(key: UsersSortKey) {
+    if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir(key === "created_at" ? "desc" : "asc"); }
+  }
 
   async function openDetail(row: Row) {
     setSelected(row);
@@ -125,7 +158,7 @@ export default function AdminUsers() {
     load();
   }
 
-  const filtered = rows.filter((r) => !q || (r.display_name ?? "").toLowerCase().includes(q.toLowerCase()) || r.id.includes(q));
+  const totalPages = Math.max(1, Math.ceil(total / USERS_PAGE_SIZE));
 
   const summary = useMemo(() => {
     if (!detail) return null;
@@ -154,7 +187,9 @@ export default function AdminUsers() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
-          <p className="text-sm text-muted-foreground">{rows.length} profiles · {isAdmin ? "role management enabled" : "read-only (admin only can edit roles)"}</p>
+          <p className="text-sm text-muted-foreground">
+            {loading ? "Loading…" : `${total} profiles · page ${page + 1} of ${totalPages}`} · {isAdmin ? "role management enabled" : "read-only"}
+          </p>
         </div>
         <Input placeholder="Search name or id…" value={q} onChange={(e) => setQ(e.target.value)} className="w-64" />
       </div>
@@ -164,15 +199,15 @@ export default function AdminUsers() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="text-left px-3 py-2">User</th>
+                <UsersSortableTh label="User" active={sortKey === "display_name"} dir={sortDir} onClick={() => toggleSort("display_name")} />
                 <th className="text-left px-3 py-2">Roles</th>
-                <th className="text-left px-3 py-2">Joined</th>
+                <UsersSortableTh label="Joined" active={sortKey === "created_at"} dir={sortDir} onClick={() => toggleSort("created_at")} />
                 <th className="text-left px-3 py-2">Details</th>
                 {isAdmin && <th className="text-left px-3 py-2">Grant</th>}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
+              {rows.map((r) => (
                 <tr key={r.id} className="border-t border-border/60 align-top hover:bg-muted/30">
                   <td className="px-3 py-2">
                     <div className="font-medium">{r.display_name ?? "(no name)"}</div>
@@ -210,11 +245,26 @@ export default function AdminUsers() {
                   )}
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">No users.</td></tr>}
+              {!loading && rows.length === 0 && <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">No users.</td></tr>}
+              {loading && <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">Loading…</td></tr>}
             </tbody>
           </table>
         </div>
       </CardContent></Card>
+
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">
+          {total === 0 ? "0" : `${page * USERS_PAGE_SIZE + 1}–${Math.min((page + 1) * USERS_PAGE_SIZE, total)}`} of {total}
+        </span>
+        <div className="flex gap-1">
+          <Button size="sm" variant="outline" disabled={page === 0 || loading} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+            <ChevronLeft className="h-4 w-4" /> Prev
+          </Button>
+          <Button size="sm" variant="outline" disabled={page >= totalPages - 1 || loading} onClick={() => setPage((p) => p + 1)}>
+            Next <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
       <Sheet open={!!selected} onOpenChange={(o) => { if (!o) { setSelected(null); setDetail(null); } }}>
         <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
@@ -303,5 +353,16 @@ function StatBox({ icon, label, value }: { icon?: React.ReactNode; label: string
       </div>
       <div className="text-lg font-semibold mt-0.5">{value}</div>
     </div>
+  );
+}
+
+function UsersSortableTh({ label, active, dir, onClick }: { label: string; active: boolean; dir: "asc" | "desc"; onClick: () => void }) {
+  return (
+    <th className="text-left px-3 py-2">
+      <button onClick={onClick} className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
+        <span>{label}</span>
+        {active ? (dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+      </button>
+    </th>
   );
 }

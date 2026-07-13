@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Bot } from "lucide-react";
+import { ArrowLeft, User, Bot, Download, Printer } from "lucide-react";
 
 interface Session {
   id: string;
@@ -136,12 +136,31 @@ export default function AdminSessionDetail() {
   const humans = parts.filter((p) => p.is_user || p.real_user_id);
   const ais = parts.filter((p) => !p.is_user && !p.real_user_id);
 
+  function exportJson() {
+    const payload = { session, metrics, participants: parts, exported_at: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `session-${session!.id}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
+    <div className="space-y-6 print:space-y-4">
+      <div className="flex items-center justify-between gap-3 print:hidden">
         <Button asChild variant="ghost" size="sm">
           <Link to="/home/admin/sessions"><ArrowLeft className="h-4 w-4 mr-1" />All sessions</Link>
         </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={exportJson}>
+            <Download className="h-4 w-4 mr-1" /> JSON
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => window.print()}>
+            <Printer className="h-4 w-4 mr-1" /> PDF
+          </Button>
+        </div>
       </div>
 
       <div>
