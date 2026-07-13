@@ -187,7 +187,9 @@ export default function AdminUsers() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
-          <p className="text-sm text-muted-foreground">{rows.length} profiles · {isAdmin ? "role management enabled" : "read-only (admin only can edit roles)"}</p>
+          <p className="text-sm text-muted-foreground">
+            {loading ? "Loading…" : `${total} profiles · page ${page + 1} of ${totalPages}`} · {isAdmin ? "role management enabled" : "read-only"}
+          </p>
         </div>
         <Input placeholder="Search name or id…" value={q} onChange={(e) => setQ(e.target.value)} className="w-64" />
       </div>
@@ -197,15 +199,15 @@ export default function AdminUsers() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="text-left px-3 py-2">User</th>
+                <UsersSortableTh label="User" active={sortKey === "display_name"} dir={sortDir} onClick={() => toggleSort("display_name")} />
                 <th className="text-left px-3 py-2">Roles</th>
-                <th className="text-left px-3 py-2">Joined</th>
+                <UsersSortableTh label="Joined" active={sortKey === "created_at"} dir={sortDir} onClick={() => toggleSort("created_at")} />
                 <th className="text-left px-3 py-2">Details</th>
                 {isAdmin && <th className="text-left px-3 py-2">Grant</th>}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
+              {rows.map((r) => (
                 <tr key={r.id} className="border-t border-border/60 align-top hover:bg-muted/30">
                   <td className="px-3 py-2">
                     <div className="font-medium">{r.display_name ?? "(no name)"}</div>
@@ -243,11 +245,26 @@ export default function AdminUsers() {
                   )}
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">No users.</td></tr>}
+              {!loading && rows.length === 0 && <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">No users.</td></tr>}
+              {loading && <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">Loading…</td></tr>}
             </tbody>
           </table>
         </div>
       </CardContent></Card>
+
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">
+          {total === 0 ? "0" : `${page * USERS_PAGE_SIZE + 1}–${Math.min((page + 1) * USERS_PAGE_SIZE, total)}`} of {total}
+        </span>
+        <div className="flex gap-1">
+          <Button size="sm" variant="outline" disabled={page === 0 || loading} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+            <ChevronLeft className="h-4 w-4" /> Prev
+          </Button>
+          <Button size="sm" variant="outline" disabled={page >= totalPages - 1 || loading} onClick={() => setPage((p) => p + 1)}>
+            Next <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
       <Sheet open={!!selected} onOpenChange={(o) => { if (!o) { setSelected(null); setDetail(null); } }}>
         <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
