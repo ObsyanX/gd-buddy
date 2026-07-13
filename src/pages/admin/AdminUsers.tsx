@@ -9,7 +9,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 
 import { toast } from "@/hooks/use-toast";
 import { useUserRoles, type AppRole } from "@/hooks/useUserRoles";
-import { Eye, Users2, Trophy, Clock, MessageSquare } from "lucide-react";
+import { Eye, Users2, Trophy, Clock, MessageSquare, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+
+type UsersSortKey = "display_name" | "created_at";
+const USERS_PAGE_SIZE = 25;
 
 interface Row {
   id: string;
