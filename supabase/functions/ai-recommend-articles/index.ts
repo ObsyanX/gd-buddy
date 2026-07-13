@@ -77,12 +77,14 @@ Deno.serve(async (req) => {
     const { data, error } = await query;
     if (error) {
       console.error('articles query failed', error);
+      await logEdgeError(error, { function_name: 'ai-recommend-articles', status: 500, path: 'articles.select', extra: { strategy: 'fallback' } });
       return json({ items: [], strategy: 'fallback', error: serializeError(error) }, 200);
     }
 
     return json({ items: data ?? [], strategy: categoryIds.length ? 'personalized' : 'trending' });
   } catch (e) {
     console.error('ai-recommend-articles crashed', e);
+    await logEdgeError(e, { function_name: 'ai-recommend-articles', status: 500 });
     return json({ items: [], strategy: 'fallback', error: serializeError(e) }, 200);
   }
 });
