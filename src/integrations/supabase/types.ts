@@ -2926,6 +2926,60 @@ export type Database = {
           },
         ]
       }
+      pagespeed_reports: {
+        Row: {
+          cls: number | null
+          created_at: string
+          fcp_ms: number | null
+          id: string
+          inp_ms: number | null
+          lcp_ms: number | null
+          performance_score: number | null
+          raw: Json | null
+          si_ms: number | null
+          source: string
+          strategy: string
+          tbt_ms: number | null
+          triggered_by: string | null
+          ttfb_ms: number | null
+          url: string
+        }
+        Insert: {
+          cls?: number | null
+          created_at?: string
+          fcp_ms?: number | null
+          id?: string
+          inp_ms?: number | null
+          lcp_ms?: number | null
+          performance_score?: number | null
+          raw?: Json | null
+          si_ms?: number | null
+          source?: string
+          strategy: string
+          tbt_ms?: number | null
+          triggered_by?: string | null
+          ttfb_ms?: number | null
+          url: string
+        }
+        Update: {
+          cls?: number | null
+          created_at?: string
+          fcp_ms?: number | null
+          id?: string
+          inp_ms?: number | null
+          lcp_ms?: number | null
+          performance_score?: number | null
+          raw?: Json | null
+          si_ms?: number | null
+          source?: string
+          strategy?: string
+          tbt_ms?: number | null
+          triggered_by?: string | null
+          ttfb_ms?: number | null
+          url?: string
+        }
+        Relationships: []
+      }
       participant_behaviour: {
         Row: {
           avg_turn_ms: number
@@ -3987,6 +4041,51 @@ export type Database = {
           user_agent?: string | null
           user_id?: string | null
           visitor_id?: string
+        }
+        Relationships: []
+      }
+      web_vitals_events: {
+        Row: {
+          adsense_loaded: boolean
+          created_at: string
+          device: string | null
+          id: string
+          metric: string
+          navigation_type: string | null
+          path: string
+          rating: string | null
+          user_agent: string | null
+          user_id: string | null
+          value: number
+          visitor_id: string | null
+        }
+        Insert: {
+          adsense_loaded?: boolean
+          created_at?: string
+          device?: string | null
+          id?: string
+          metric: string
+          navigation_type?: string | null
+          path?: string
+          rating?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          value: number
+          visitor_id?: string | null
+        }
+        Update: {
+          adsense_loaded?: boolean
+          created_at?: string
+          device?: string | null
+          id?: string
+          metric?: string
+          navigation_type?: string | null
+          path?: string
+          rating?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          value?: number
+          visitor_id?: string | null
         }
         Relationships: []
       }
