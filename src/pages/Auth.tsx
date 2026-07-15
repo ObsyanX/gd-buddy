@@ -10,13 +10,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
-import { MessageSquare, Loader2 } from "lucide-react";
+import { MessageSquare, Loader2, AlertCircle, RefreshCw, X } from "lucide-react";
 import { z } from "zod";
 import { Link } from "react-router-dom";
 import SEOFooter from "@/components/SEOFooter";
+import { Skeleton } from "@/components/ui/skeleton";
+import { mapAuthError, logAuthError, type MappedAuthError } from "@/lib/auth-errors";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
+
+type AuthTab = "login" | "signup" | "reset";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -24,6 +28,10 @@ const Auth = () => {
   const { toast } = useToast();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<AuthTab>("login");
+  const [googleError, setGoogleError] = useState<MappedAuthError | null>(null);
+  const [emailError, setEmailError] = useState<MappedAuthError | null>(null);
+  const [verifyingSession, setVerifyingSession] = useState(false);
 
   // Login form
   const [loginEmail, setLoginEmail] = useState("");
