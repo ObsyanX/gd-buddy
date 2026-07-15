@@ -240,6 +240,7 @@ const App = () => (
                   <Route path="settings" element={<Suspense fallback={<DashboardSkeleton />}><AdminSettingsPage /></Suspense>} />
                   <Route path="audit" element={<Suspense fallback={<DashboardSkeleton />}><AdminAudit /></Suspense>} />
                   <Route path="edge-errors" element={<Suspense fallback={<DashboardSkeleton />}><AdminEdgeErrors /></Suspense>} />
+                  <Route path="auth-errors" element={<Suspense fallback={<DashboardSkeleton />}><AdminAuthErrors /></Suspense>} />
                   <Route path="performance" element={<Suspense fallback={<DashboardSkeleton />}><AdminPerformance /></Suspense>} />
                 </Route>
                 <Route path="governance" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Governance /></PageTransition></Suspense>} />
