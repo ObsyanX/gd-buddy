@@ -10,13 +10,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
-import { MessageSquare, Loader2 } from "lucide-react";
+import { MessageSquare, Loader2, AlertCircle, RefreshCw, X } from "lucide-react";
 import { z } from "zod";
 import { Link } from "react-router-dom";
 import SEOFooter from "@/components/SEOFooter";
+import { Skeleton } from "@/components/ui/skeleton";
+import { mapAuthError, logAuthError, type MappedAuthError } from "@/lib/auth-errors";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
+
+type AuthTab = "login" | "signup" | "reset";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -24,6 +28,10 @@ const Auth = () => {
   const { toast } = useToast();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<AuthTab>("login");
+  const [googleError, setGoogleError] = useState<MappedAuthError | null>(null);
+  const [emailError, setEmailError] = useState<MappedAuthError | null>(null);
+  const [verifyingSession, setVerifyingSession] = useState(false);
 
   // Login form
   const [loginEmail, setLoginEmail] = useState("");
@@ -56,36 +64,23 @@ const Auth = () => {
     }
 
     setIsLoading(true);
+    setEmailError(null);
     try {
       const { error } = await signIn(loginEmail, loginPassword);
 
       if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          toast({
-            title: "Login failed",
-            description: "Invalid email or password. Please try again.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Login failed",
-            description: error.message,
-            variant: "destructive"
-          });
-        }
+        const mapped = mapAuthError(error, "email");
+        setEmailError(mapped);
+        void logAuthError({ provider: "email", code: mapped.code, raw: error, context: { intent: "login" } });
+        toast({ title: mapped.title, description: mapped.message, variant: "destructive" });
       } else {
-        toast({
-          title: "Welcome back!",
-          description: "You've successfully logged in."
-        });
+        toast({ title: "Welcome back!", description: "You've successfully logged in." });
         navigate("/home");
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
+    } catch (error: any) {
+      const mapped = mapAuthError(error, "email");
+      setEmailError(mapped);
+      void logAuthError({ provider: "email", code: mapped.code, raw: error, context: { intent: "login", thrown: true } });
     } finally {
       setIsLoading(false);
     }
@@ -110,38 +105,23 @@ const Auth = () => {
     }
 
     setIsLoading(true);
+    setEmailError(null);
     try {
       const { error } = await signUp(signupEmail, signupPassword, signupDisplayName);
 
       if (error) {
-        if (error.message.includes("already registered")) {
-          toast({
-            title: "Signup failed",
-            description: "This email is already registered. Please login instead.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Signup failed",
-            description: error.message,
-            variant: "destructive"
-          });
-        }
+        const mapped = mapAuthError(error, "email");
+        setEmailError(mapped);
+        void logAuthError({ provider: "email", code: mapped.code, raw: error, context: { intent: "signup" } });
+        toast({ title: mapped.title, description: mapped.message, variant: "destructive" });
       } else {
-        toast({
-          title: "Account created!",
-          description: "Check your email to confirm your account. You can now log in."
-        });
-        setTimeout(() => {
-          navigate("/home");
-        }, 1000);
+        toast({ title: "Account created!", description: "Check your email to confirm your account. You can now log in." });
+        setTimeout(() => { navigate("/home"); }, 1000);
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
+    } catch (error: any) {
+      const mapped = mapAuthError(error, "email");
+      setEmailError(mapped);
+      void logAuthError({ provider: "email", code: mapped.code, raw: error, context: { intent: "signup", thrown: true } });
     } finally {
       setIsLoading(false);
     }
@@ -191,7 +171,32 @@ const Auth = () => {
     }
   };
 
+  const verifyAndNavigate = async () => {
+    setVerifyingSession(true);
+    try {
+      // Poll briefly to allow async token persistence (popup / redirect handoff).
+      let session = null;
+      for (let i = 0; i < 10; i++) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) { session = data.session; break; }
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      if (!session) {
+        const mapped = mapAuthError("session missing after oauth", "google");
+        setGoogleError(mapped);
+        void logAuthError({ provider: "google", code: mapped.code, raw: "session missing after oauth", context: { stage: "verify" } });
+        return false;
+      }
+      toast({ title: "Welcome!", description: "Signed in with Google." });
+      navigate("/home");
+      return true;
+    } finally {
+      setVerifyingSession(false);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
+    setGoogleError(null);
     setIsGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
@@ -200,49 +205,19 @@ const Auth = () => {
       });
 
       if (result?.error) {
-        const raw = (result.error as any)?.message || String(result.error) || "";
-        const msg = raw.toLowerCase();
-        let friendly = "Unable to sign in with Google. Please try again.";
-        if (msg.includes("popup") && msg.includes("close")) {
-          friendly = "Google sign-in was cancelled. Please complete the sign-in in the popup window.";
-        } else if (msg.includes("popup") && msg.includes("block")) {
-          friendly = "Your browser blocked the Google sign-in popup. Please allow popups for this site and try again.";
-        } else if (msg.includes("access_denied") || msg.includes("denied")) {
-          friendly = "You denied access. Please approve the Google permissions to continue.";
-        } else if (msg.includes("network") || msg.includes("fetch")) {
-          friendly = "Network issue while contacting Google. Check your connection and try again.";
-        } else if (msg.includes("unsupported provider") || msg.includes("provider is not enabled")) {
-          friendly = "Google sign-in isn't enabled yet. Please contact support.";
-        } else if (msg.includes("redirect") && msg.includes("uri")) {
-          friendly = "This domain isn't authorized for Google sign-in. Please try from the official site.";
-        } else if (raw) {
-          friendly = raw;
-        }
-        toast({ title: "Google Sign-in Failed", description: friendly, variant: "destructive" });
+        const mapped = mapAuthError(result.error, "google");
+        setGoogleError(mapped);
+        void logAuthError({ provider: "google", code: mapped.code, raw: result.error, context: { intent: activeTab } });
         return;
       }
 
-      if (result?.redirected) return;
+      if (result?.redirected) return; // browser will hand off — session verified on return
 
-      // Confirm session before navigating
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: "Sign-in incomplete",
-          description: "We couldn't confirm your Google session. Please try again.",
-          variant: "destructive"
-        });
-        return;
-      }
-      toast({ title: "Welcome!", description: "Signed in with Google." });
-      navigate("/home");
+      await verifyAndNavigate();
     } catch (error: any) {
-      const raw = error?.message || "";
-      toast({
-        title: "Google Sign-in Failed",
-        description: raw || "An unexpected error occurred during Google sign-in. Please try again.",
-        variant: "destructive"
-      });
+      const mapped = mapAuthError(error, "google");
+      setGoogleError(mapped);
+      void logAuthError({ provider: "google", code: mapped.code, raw: error, context: { intent: activeTab, thrown: true } });
     } finally {
       setIsGoogleLoading(false);
     }
@@ -271,19 +246,74 @@ const Auth = () => {
       </header>
 
       <main className="flex-1 container mx-auto py-8 md:py-12 px-4 md:px-6 flex items-center justify-center relative z-10">
-        <Card className="w-full max-w-md p-8 glass-strong shadow-premium">
+        <Card className="w-full max-w-md p-8 glass-strong shadow-premium relative">
+          {verifyingSession && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 rounded-[inherit] bg-background/85 backdrop-blur-sm" aria-live="polite" aria-busy="true">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" aria-hidden="true" />
+              <p className="text-sm text-muted-foreground">Restoring your session…</p>
+              <div className="w-full max-w-[240px] space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-10 w-full mt-2" />
+              </div>
+            </div>
+          )}
           <div className="mb-6 text-center">
             <h1 className="font-display text-h1">
               Welcome <span className="italic-accent copper-text">back.</span>
             </h1>
             <p className="text-sm text-muted-foreground mt-2">Rehearse. Refine. Return sharper.</p>
           </div>
-          <Tabs defaultValue="login" className="w-full">
+
+          {(googleError || emailError) && (
+            <div
+              role="alert"
+              aria-live="polite"
+              className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-3"
+            >
+              <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" aria-hidden="true" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-destructive">
+                  {(googleError ?? emailError)!.title}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {(googleError ?? emailError)!.message}
+                </p>
+                {googleError && googleError.retryable && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="glass"
+                    className="mt-2 h-8 text-xs"
+                    onClick={handleGoogleSignIn}
+                    disabled={isGoogleLoading || verifyingSession}
+                  >
+                    {isGoogleLoading ? (
+                      <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" />Retrying…</>
+                    ) : (
+                      <><RefreshCw className="w-3 h-3 mr-1.5" />Retry Google sign-in</>
+                    )}
+                  </Button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => { setGoogleError(null); setEmailError(null); }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as AuthTab); setEmailError(null); }} className="w-full">
             <TabsList className="grid w-full grid-cols-3 glass-subtle rounded-full p-1">
               <TabsTrigger value="login" className="rounded-full">Login</TabsTrigger>
               <TabsTrigger value="signup" className="rounded-full">Sign up</TabsTrigger>
               <TabsTrigger value="reset" className="rounded-full">Forgot</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="login" className="space-y-4 mt-6">
               <form onSubmit={handleLogin} className="space-y-4">
