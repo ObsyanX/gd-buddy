@@ -78,6 +78,7 @@ const AdminIntelligence = lazy(() => import("./pages/admin/AdminIntelligence"));
 const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
 const AdminSessionDetail = lazy(() => import("./pages/admin/AdminSessionDetail"));
 const AdminEdgeErrors = lazy(() => import("./pages/admin/AdminEdgeErrors"));
+const AdminAuthErrors = lazy(() => import("./pages/admin/AdminAuthErrors"));
 const AdminPerformance = lazy(() => import("./pages/admin/AdminPerformance"));
 
 // SEO content pages (public, indexable)
