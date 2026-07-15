@@ -195,26 +195,52 @@ const Auth = () => {
     setIsGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/auth`,
+        extraParams: { prompt: "select_account" },
       });
 
-      if (result.error) {
+      if (result?.error) {
+        const raw = (result.error as any)?.message || String(result.error) || "";
+        const msg = raw.toLowerCase();
+        let friendly = "Unable to sign in with Google. Please try again.";
+        if (msg.includes("popup") && msg.includes("close")) {
+          friendly = "Google sign-in was cancelled. Please complete the sign-in in the popup window.";
+        } else if (msg.includes("popup") && msg.includes("block")) {
+          friendly = "Your browser blocked the Google sign-in popup. Please allow popups for this site and try again.";
+        } else if (msg.includes("access_denied") || msg.includes("denied")) {
+          friendly = "You denied access. Please approve the Google permissions to continue.";
+        } else if (msg.includes("network") || msg.includes("fetch")) {
+          friendly = "Network issue while contacting Google. Check your connection and try again.";
+        } else if (msg.includes("unsupported provider") || msg.includes("provider is not enabled")) {
+          friendly = "Google sign-in isn't enabled yet. Please contact support.";
+        } else if (msg.includes("redirect") && msg.includes("uri")) {
+          friendly = "This domain isn't authorized for Google sign-in. Please try from the official site.";
+        } else if (raw) {
+          friendly = raw;
+        }
+        toast({ title: "Google Sign-in Failed", description: friendly, variant: "destructive" });
+        return;
+      }
+
+      if (result?.redirected) return;
+
+      // Confirm session before navigating
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         toast({
-          title: "Google Sign-in Failed",
-          description: result.error.message || "Unable to start Google sign-in",
+          title: "Sign-in incomplete",
+          description: "We couldn't confirm your Google session. Please try again.",
           variant: "destructive"
         });
         return;
       }
-
-      if (result.redirected) return;
-
-      // Session established via popup — go to app
+      toast({ title: "Welcome!", description: "Signed in with Google." });
       navigate("/home");
-    } catch (error) {
+    } catch (error: any) {
+      const raw = error?.message || "";
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "Google Sign-in Failed",
+        description: raw || "An unexpected error occurred during Google sign-in. Please try again.",
         variant: "destructive"
       });
     } finally {
