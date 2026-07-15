@@ -105,38 +105,23 @@ const Auth = () => {
     }
 
     setIsLoading(true);
+    setEmailError(null);
     try {
       const { error } = await signUp(signupEmail, signupPassword, signupDisplayName);
 
       if (error) {
-        if (error.message.includes("already registered")) {
-          toast({
-            title: "Signup failed",
-            description: "This email is already registered. Please login instead.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Signup failed",
-            description: error.message,
-            variant: "destructive"
-          });
-        }
+        const mapped = mapAuthError(error, "email");
+        setEmailError(mapped);
+        void logAuthError({ provider: "email", code: mapped.code, raw: error, context: { intent: "signup" } });
+        toast({ title: mapped.title, description: mapped.message, variant: "destructive" });
       } else {
-        toast({
-          title: "Account created!",
-          description: "Check your email to confirm your account. You can now log in."
-        });
-        setTimeout(() => {
-          navigate("/home");
-        }, 1000);
+        toast({ title: "Account created!", description: "Check your email to confirm your account. You can now log in." });
+        setTimeout(() => { navigate("/home"); }, 1000);
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
+    } catch (error: any) {
+      const mapped = mapAuthError(error, "email");
+      setEmailError(mapped);
+      void logAuthError({ provider: "email", code: mapped.code, raw: error, context: { intent: "signup", thrown: true } });
     } finally {
       setIsLoading(false);
     }
