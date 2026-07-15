@@ -246,19 +246,74 @@ const Auth = () => {
       </header>
 
       <main className="flex-1 container mx-auto py-8 md:py-12 px-4 md:px-6 flex items-center justify-center relative z-10">
-        <Card className="w-full max-w-md p-8 glass-strong shadow-premium">
+        <Card className="w-full max-w-md p-8 glass-strong shadow-premium relative">
+          {verifyingSession && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 rounded-[inherit] bg-background/85 backdrop-blur-sm" aria-live="polite" aria-busy="true">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" aria-hidden="true" />
+              <p className="text-sm text-muted-foreground">Restoring your session…</p>
+              <div className="w-full max-w-[240px] space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-10 w-full mt-2" />
+              </div>
+            </div>
+          )}
           <div className="mb-6 text-center">
             <h1 className="font-display text-h1">
               Welcome <span className="italic-accent copper-text">back.</span>
             </h1>
             <p className="text-sm text-muted-foreground mt-2">Rehearse. Refine. Return sharper.</p>
           </div>
-          <Tabs defaultValue="login" className="w-full">
+
+          {(googleError || emailError) && (
+            <div
+              role="alert"
+              aria-live="polite"
+              className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 flex items-start gap-3"
+            >
+              <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" aria-hidden="true" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-destructive">
+                  {(googleError ?? emailError)!.title}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {(googleError ?? emailError)!.message}
+                </p>
+                {googleError && googleError.retryable && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="glass"
+                    className="mt-2 h-8 text-xs"
+                    onClick={handleGoogleSignIn}
+                    disabled={isGoogleLoading || verifyingSession}
+                  >
+                    {isGoogleLoading ? (
+                      <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" />Retrying…</>
+                    ) : (
+                      <><RefreshCw className="w-3 h-3 mr-1.5" />Retry Google sign-in</>
+                    )}
+                  </Button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => { setGoogleError(null); setEmailError(null); }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as AuthTab); setEmailError(null); }} className="w-full">
             <TabsList className="grid w-full grid-cols-3 glass-subtle rounded-full p-1">
               <TabsTrigger value="login" className="rounded-full">Login</TabsTrigger>
               <TabsTrigger value="signup" className="rounded-full">Sign up</TabsTrigger>
               <TabsTrigger value="reset" className="rounded-full">Forgot</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="login" className="space-y-4 mt-6">
               <form onSubmit={handleLogin} className="space-y-4">
