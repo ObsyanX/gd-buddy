@@ -199,7 +199,32 @@ const Auth = () => {
     }
   };
 
+  const verifyAndNavigate = async () => {
+    setVerifyingSession(true);
+    try {
+      // Poll briefly to allow async token persistence (popup / redirect handoff).
+      let session = null;
+      for (let i = 0; i < 10; i++) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) { session = data.session; break; }
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      if (!session) {
+        const mapped = mapAuthError("session missing after oauth", "google");
+        setGoogleError(mapped);
+        void logAuthError({ provider: "google", code: mapped.code, raw: "session missing after oauth", context: { stage: "verify" } });
+        return false;
+      }
+      toast({ title: "Welcome!", description: "Signed in with Google." });
+      navigate("/home");
+      return true;
+    } finally {
+      setVerifyingSession(false);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
+    setGoogleError(null);
     setIsGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
@@ -208,49 +233,19 @@ const Auth = () => {
       });
 
       if (result?.error) {
-        const raw = (result.error as any)?.message || String(result.error) || "";
-        const msg = raw.toLowerCase();
-        let friendly = "Unable to sign in with Google. Please try again.";
-        if (msg.includes("popup") && msg.includes("close")) {
-          friendly = "Google sign-in was cancelled. Please complete the sign-in in the popup window.";
-        } else if (msg.includes("popup") && msg.includes("block")) {
-          friendly = "Your browser blocked the Google sign-in popup. Please allow popups for this site and try again.";
-        } else if (msg.includes("access_denied") || msg.includes("denied")) {
-          friendly = "You denied access. Please approve the Google permissions to continue.";
-        } else if (msg.includes("network") || msg.includes("fetch")) {
-          friendly = "Network issue while contacting Google. Check your connection and try again.";
-        } else if (msg.includes("unsupported provider") || msg.includes("provider is not enabled")) {
-          friendly = "Google sign-in isn't enabled yet. Please contact support.";
-        } else if (msg.includes("redirect") && msg.includes("uri")) {
-          friendly = "This domain isn't authorized for Google sign-in. Please try from the official site.";
-        } else if (raw) {
-          friendly = raw;
-        }
-        toast({ title: "Google Sign-in Failed", description: friendly, variant: "destructive" });
+        const mapped = mapAuthError(result.error, "google");
+        setGoogleError(mapped);
+        void logAuthError({ provider: "google", code: mapped.code, raw: result.error, context: { intent: activeTab } });
         return;
       }
 
-      if (result?.redirected) return;
+      if (result?.redirected) return; // browser will hand off — session verified on return
 
-      // Confirm session before navigating
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: "Sign-in incomplete",
-          description: "We couldn't confirm your Google session. Please try again.",
-          variant: "destructive"
-        });
-        return;
-      }
-      toast({ title: "Welcome!", description: "Signed in with Google." });
-      navigate("/home");
+      await verifyAndNavigate();
     } catch (error: any) {
-      const raw = error?.message || "";
-      toast({
-        title: "Google Sign-in Failed",
-        description: raw || "An unexpected error occurred during Google sign-in. Please try again.",
-        variant: "destructive"
-      });
+      const mapped = mapAuthError(error, "google");
+      setGoogleError(mapped);
+      void logAuthError({ provider: "google", code: mapped.code, raw: error, context: { intent: activeTab, thrown: true } });
     } finally {
       setIsGoogleLoading(false);
     }
