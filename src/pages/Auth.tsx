@@ -64,36 +64,23 @@ const Auth = () => {
     }
 
     setIsLoading(true);
+    setEmailError(null);
     try {
       const { error } = await signIn(loginEmail, loginPassword);
 
       if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          toast({
-            title: "Login failed",
-            description: "Invalid email or password. Please try again.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Login failed",
-            description: error.message,
-            variant: "destructive"
-          });
-        }
+        const mapped = mapAuthError(error, "email");
+        setEmailError(mapped);
+        void logAuthError({ provider: "email", code: mapped.code, raw: error, context: { intent: "login" } });
+        toast({ title: mapped.title, description: mapped.message, variant: "destructive" });
       } else {
-        toast({
-          title: "Welcome back!",
-          description: "You've successfully logged in."
-        });
+        toast({ title: "Welcome back!", description: "You've successfully logged in." });
         navigate("/home");
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
+    } catch (error: any) {
+      const mapped = mapAuthError(error, "email");
+      setEmailError(mapped);
+      void logAuthError({ provider: "email", code: mapped.code, raw: error, context: { intent: "login", thrown: true } });
     } finally {
       setIsLoading(false);
     }
