@@ -19,7 +19,9 @@ async function runPSI(url: string, strategy: "mobile" | "desktop") {
   const res = await fetch(endpoint);
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`PSI ${strategy} failed (${res.status}): ${text.slice(0, 200)}`);
+    const err: Error & { status?: number } = new Error(`PSI ${strategy} failed (${res.status}): ${text.slice(0, 200)}`);
+    err.status = res.status;
+    throw err;
   }
   const data = await res.json();
   const lhr = data.lighthouseResult ?? {};
