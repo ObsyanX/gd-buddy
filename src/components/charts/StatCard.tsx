@@ -22,6 +22,12 @@ export interface StatCardProps {
   icon?: React.ReactNode;
   loading?: boolean;
   className?: string;
+  /** When provided, the card becomes a clickable link to this route. */
+  href?: string;
+  /** Optional click handler; used with or instead of href. */
+  onClick?: () => void;
+  /** Tooltip / aria-label describing where the card leads. */
+  hint?: string;
 }
 
 function formatDelta(delta: number) {
