@@ -223,11 +223,7 @@ const Admin = () => {
     return [...m.entries()].filter(([k]) => k >= 1).map(([k, v]) => ({ stars: `${k}★`, count: v }));
   }, [feedback]);
 
-  const sessionStatus = useMemo(() => {
-    const m = new Map<string, number>();
-    sessions.forEach((s) => m.set(s.status, (m.get(s.status) || 0) + 1));
-    return [...m.entries()].map(([name, value]) => ({ name, value }));
-  }, [sessions]);
+  const sessionStatus = statusCounts;
 
   // AI insights (deterministic, generated from stats)
   const insights = useMemo(() => {
