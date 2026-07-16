@@ -1,6 +1,7 @@
 import * as React from "react";
 import { motion } from "framer-motion";
-import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowDownRight, ArrowUpRight, ArrowUpRight as ExternalIcon, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sparkline } from "./Sparkline";
 import { chartColor } from "@/lib/chart-theme";
