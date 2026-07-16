@@ -134,6 +134,18 @@ const Admin = () => {
       activeUsers: activeUsersCnt.count || 0,
       activeSessions: activeSessionsCnt.count || 0,
     });
+
+    // Accurate session-status breakdown via server-side count queries (not limited by page size).
+    const STATUSES = ['setup', 'active', 'paused', 'completed'] as const;
+    const statusResults = await Promise.all(
+      STATUSES.map((st) =>
+        supabase.from('gd_sessions').select('*', { count: 'exact', head: true }).eq('status', st),
+      ),
+    );
+    setStatusCounts(
+      STATUSES.map((name, i) => ({ name, value: statusResults[i].count || 0 })).filter((r) => r.value > 0),
+    );
+
     setRefreshing(false);
   };
 
