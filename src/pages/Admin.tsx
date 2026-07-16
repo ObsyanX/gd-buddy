@@ -91,6 +91,7 @@ const Admin = () => {
   const [feedback, setFeedback] = useState<any[]>([]);
   const [errors, setErrors] = useState<any[]>([]);
   const [totals, setTotals] = useState({ users: 0, sessions: 0, feedback: 0, errors: 0, activeUsers: 0, activeSessions: 0 });
+  const [statusCounts, setStatusCounts] = useState<{ name: string; value: number }[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = async () => {
@@ -133,6 +134,18 @@ const Admin = () => {
       activeUsers: activeUsersCnt.count || 0,
       activeSessions: activeSessionsCnt.count || 0,
     });
+
+    // Accurate session-status breakdown via server-side count queries (not limited by page size).
+    const STATUSES = ['setup', 'active', 'paused', 'completed'] as const;
+    const statusResults = await Promise.all(
+      STATUSES.map((st) =>
+        supabase.from('gd_sessions').select('*', { count: 'exact', head: true }).eq('status', st),
+      ),
+    );
+    setStatusCounts(
+      STATUSES.map((name, i) => ({ name, value: statusResults[i].count || 0 })).filter((r) => r.value > 0),
+    );
+
     setRefreshing(false);
   };
 
@@ -210,11 +223,7 @@ const Admin = () => {
     return [...m.entries()].filter(([k]) => k >= 1).map(([k, v]) => ({ stars: `${k}★`, count: v }));
   }, [feedback]);
 
-  const sessionStatus = useMemo(() => {
-    const m = new Map<string, number>();
-    sessions.forEach((s) => m.set(s.status, (m.get(s.status) || 0) + 1));
-    return [...m.entries()].map(([name, value]) => ({ name, value }));
-  }, [sessions]);
+  const sessionStatus = statusCounts;
 
   // AI insights (deterministic, generated from stats)
   const insights = useMemo(() => {
