@@ -87,12 +87,50 @@ Deno.serve(async (req) => {
       }
     }
 
-    const [mobile, desktop] = await Promise.all([
-      runPSI(url, "mobile"),
-      runPSI(url, "desktop"),
-    ]);
-
     const admin = createClient(supabaseUrl, serviceKey);
+
+    let mobile, desktop;
+    try {
+      [mobile, desktop] = await Promise.all([
+        runPSI(url, "mobile"),
+        runPSI(url, "desktop"),
+      ]);
+    } catch (psiErr) {
+      const status = (psiErr as { status?: number })?.status;
+      const message = psiErr instanceof Error ? psiErr.message : String(psiErr);
+      const quotaExceeded = status === 429 || /quota/i.test(message);
+
+      // Fallback: return the most recent cached report for this URL so the UI stays populated.
+      const { data: cached } = await admin
+        .from("pagespeed_reports")
+        .select("*")
+        .eq("url", url)
+        .order("created_at", { ascending: false })
+        .limit(2);
+
+      const cachedMobile = cached?.find((r) => r.strategy === "mobile") ?? null;
+      const cachedDesktop = cached?.find((r) => r.strategy === "desktop") ?? null;
+
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          quota_exceeded: quotaExceeded,
+          error: quotaExceeded
+            ? "PageSpeed Insights daily quota exceeded. Showing the last cached audit — try again tomorrow or add a PAGESPEED_API_KEY with a higher quota."
+            : message,
+          status: status ?? 500,
+          url,
+          mobile: cachedMobile,
+          desktop: cachedDesktop,
+          cached: Boolean(cachedMobile || cachedDesktop),
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const rows = [mobile, desktop].map((r) => ({
       url,
       strategy: r.strategy,
