@@ -91,8 +91,14 @@ export default function AdminPerformance() {
         body: { url: AUDIT_URL },
       });
       if (error) throw error;
-      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
-      toast.success("Audit complete");
+      const resp = data as { ok?: boolean; error?: string; quota_exceeded?: boolean };
+      if (resp?.quota_exceeded) {
+        toast.warning(resp.error || "PageSpeed daily quota exceeded — showing cached results.");
+      } else if (resp?.ok === false && resp.error) {
+        throw new Error(resp.error);
+      } else {
+        toast.success("Audit complete");
+      }
       await loadData();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Audit failed");
