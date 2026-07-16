@@ -36,17 +36,6 @@ function formatDelta(delta: number) {
   return `${delta > 0 ? "+" : delta < 0 ? "-" : ""}${rounded}%`;
 }
 
-export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
-  ({ label, value, unit, delta, deltaLabel, invertDelta, trend, icon, loading, className }, ref) => {
-    const isFlat = delta === undefined || delta === 0;
-    const isPositive = delta !== undefined && delta > 0;
-    const good = invertDelta ? !isPositive : isPositive;
-    const deltaColor = isFlat
-      ? "text-muted-foreground"
-      : good
-        ? "text-[hsl(var(--success))]"
-        : "text-[hsl(var(--destructive))]";
-    const DeltaIcon = isFlat ? Minus : isPositive ? ArrowUpRight : ArrowDownRight;
 
 export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
   ({ label, value, unit, delta, deltaLabel, invertDelta, trend, icon, loading, className, href, onClick, hint }, ref) => {
