@@ -91,6 +91,7 @@ const Admin = () => {
   const [feedback, setFeedback] = useState<any[]>([]);
   const [errors, setErrors] = useState<any[]>([]);
   const [totals, setTotals] = useState({ users: 0, sessions: 0, feedback: 0, errors: 0, activeUsers: 0, activeSessions: 0 });
+  const [statusCounts, setStatusCounts] = useState<{ name: string; value: number }[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = async () => {
