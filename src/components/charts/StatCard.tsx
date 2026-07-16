@@ -1,6 +1,7 @@
 import * as React from "react";
 import { motion } from "framer-motion";
-import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowDownRight, ArrowUpRight, ArrowUpRight as ExternalIcon, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sparkline } from "./Sparkline";
 import { chartColor } from "@/lib/chart-theme";
@@ -21,6 +22,12 @@ export interface StatCardProps {
   icon?: React.ReactNode;
   loading?: boolean;
   className?: string;
+  /** When provided, the card becomes a clickable link to this route. */
+  href?: string;
+  /** Optional click handler; used with or instead of href. */
+  onClick?: () => void;
+  /** Tooltip / aria-label describing where the card leads. */
+  hint?: string;
 }
 
 function formatDelta(delta: number) {
@@ -29,8 +36,9 @@ function formatDelta(delta: number) {
   return `${delta > 0 ? "+" : delta < 0 ? "-" : ""}${rounded}%`;
 }
 
+
 export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
-  ({ label, value, unit, delta, deltaLabel, invertDelta, trend, icon, loading, className }, ref) => {
+  ({ label, value, unit, delta, deltaLabel, invertDelta, trend, icon, loading, className, href, onClick, hint }, ref) => {
     const isFlat = delta === undefined || delta === 0;
     const isPositive = delta !== undefined && delta > 0;
     const good = invertDelta ? !isPositive : isPositive;
@@ -40,8 +48,9 @@ export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
         ? "text-[hsl(var(--success))]"
         : "text-[hsl(var(--destructive))]";
     const DeltaIcon = isFlat ? Minus : isPositive ? ArrowUpRight : ArrowDownRight;
+    const interactive = Boolean(href || onClick);
 
-    return (
+    const inner = (
       <motion.div
         ref={ref}
         initial={{ opacity: 0, y: 8 }}
@@ -49,7 +58,8 @@ export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
           "relative overflow-hidden rounded-2xl glass-1 hairline p-4 sm:p-5",
-          "elev-md lift focus-ring",
+          "elev-md lift focus-ring h-full",
+          interactive && "cursor-pointer transition-transform hover:-translate-y-0.5 hover:elev-lg group",
           loading && "animate-pulse",
           className,
         )}
@@ -75,11 +85,16 @@ export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
               </div>
             )}
           </div>
-          {icon && (
+          {icon ? (
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl glass-copper text-primary">
               {icon}
             </div>
-          )}
+          ) : interactive ? (
+            <ExternalIcon
+              className="size-4 shrink-0 text-muted-foreground/60 transition-all group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              aria-hidden
+            />
+          ) : null}
         </div>
         {trend && trend.length > 1 && (
           <div className="mt-3 -mx-1">
@@ -93,6 +108,34 @@ export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
         )}
       </motion.div>
     );
+
+    if (href) {
+      return (
+        <Link
+          to={href}
+          onClick={onClick}
+          aria-label={hint ? `${label} — ${hint}` : `View ${label} details`}
+          title={hint}
+          className="block rounded-2xl focus-ring"
+        >
+          {inner}
+        </Link>
+      );
+    }
+    if (onClick) {
+      return (
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={hint ? `${label} — ${hint}` : label}
+          title={hint}
+          className="block w-full text-left rounded-2xl focus-ring"
+        >
+          {inner}
+        </button>
+      );
+    }
+    return inner;
   },
 );
 StatCard.displayName = "StatCard";

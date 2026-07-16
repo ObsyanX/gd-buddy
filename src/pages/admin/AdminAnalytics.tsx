@@ -211,66 +211,67 @@ export default function AdminAnalytics() {
       <section aria-labelledby="users-h" className="space-y-3">
         <h2 id="users-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Users</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Total users" value={k.totalUsers} />
-          <StatCard label="New today" value={k.newToday} />
-          <StatCard label="New this week" value={k.newWeek} />
-          <StatCard label="New this month" value={k.newMonth} />
-          <StatCard label="DAU" value={k.dau} />
-          <StatCard label="WAU" value={k.wau} />
-          <StatCard label="MAU" value={k.mau} />
+          <StatCard label="Total users" value={k.totalUsers} href="/home/admin/users" hint="Open users list" />
+          <StatCard label="New today" value={k.newToday} href="/home/admin/users?range=1d" hint="Users created in the last 24h" />
+          <StatCard label="New this week" value={k.newWeek} href="/home/admin/users?range=7d" hint="Users created in the last 7 days" />
+          <StatCard label="New this month" value={k.newMonth} href="/home/admin/users?range=30d" hint="Users created in the last 30 days" />
+          <StatCard label="DAU" value={k.dau} href="/home/admin/users?active=1d" hint="Daily active users" />
+          <StatCard label="WAU" value={k.wau} href="/home/admin/users?active=7d" hint="Weekly active users" />
+          <StatCard label="MAU" value={k.mau} href="/home/admin/users?active=30d" hint="Monthly active users" />
         </div>
       </section>
 
       <section aria-labelledby="auth-h" className="space-y-3">
         <h2 id="auth-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Authentication</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Total logins" value={k.totalLogins} />
-          <StatCard label="Successful" value={k.successLogins} />
-          <StatCard label="Failed" value={k.failedLogins} />
+          <StatCard label="Total logins" value={k.totalLogins} href="/home/admin/auth-errors" hint="See login history & failures" />
+          <StatCard label="Successful" value={k.successLogins} href="/home/admin/auth-errors?status=success" hint="Successful sign-ins" />
+          <StatCard label="Failed" value={k.failedLogins} href="/home/admin/auth-errors?status=failed" hint="Failed sign-in attempts" />
         </div>
       </section>
 
       <section aria-labelledby="traffic-h" className="space-y-3">
         <h2 id="traffic-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Traffic</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Total visitors" value={k.totalVisitors} />
-          <StatCard label="Unique visitors" value={k.uniqueVisitors} />
-          <StatCard label="Page views" value={k.totalPageViews} />
-          <StatCard label="Avg session (s)" value={k.avgSessionSec} />
-          <StatCard label="Bounce rate %" value={k.bounceRate} />
-          <StatCard label="Pages / session" value={k.pagesPerSession} />
+          <StatCard label="Total visitors" value={k.totalVisitors} href="/home/admin/performance" hint="Visitor sessions & performance" />
+          <StatCard label="Unique visitors" value={k.uniqueVisitors} href="/home/admin/performance" hint="Distinct visitor IDs" />
+          <StatCard label="Page views" value={k.totalPageViews} href="/home/admin/performance" hint="Page view breakdown" />
+          <StatCard label="Avg session (s)" value={k.avgSessionSec} href="/home/admin/performance" hint="Average session duration" />
+          <StatCard label="Bounce rate %" value={k.bounceRate} href="/home/admin/performance" hint="Single-page-view sessions" />
+          <StatCard label="Pages / session" value={k.pagesPerSession} href="/home/admin/performance" hint="Pages per visitor session" />
         </div>
       </section>
 
       <section aria-labelledby="eng-h" className="space-y-3">
         <h2 id="eng-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Engagement</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="GD sessions" value={k.gdSessions} />
-          <StatCard label="Completed" value={k.completedSessions} />
-          <StatCard label="Avg AI score" value={k.avgAiScore} />
-          <StatCard label="AI evaluations" value={k.totalAiEvals} />
-          <StatCard label="Feedback given" value={k.totalFeedback} />
+          <StatCard label="GD sessions" value={k.gdSessions} href="/home/admin/sessions" hint="Browse all group discussions" />
+          <StatCard label="Completed" value={k.completedSessions} href="/home/admin/sessions?status=completed" hint="Completed sessions" />
+          <StatCard label="Avg AI score" value={k.avgAiScore} href="/home/admin/sessions" hint="Average AI content score" />
+          <StatCard label="AI evaluations" value={k.totalAiEvals} href="/home/admin/intelligence" hint="AI cost & evaluation logs" />
+          <StatCard label="Feedback given" value={k.totalFeedback} href="/home/admin/reports" hint="User feedback & reports" />
         </div>
       </section>
 
       <section aria-labelledby="ads-h" className="space-y-3">
         <h2 id="ads-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Advertisements</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Active ads" value={k.activeAds} />
-          <StatCard label="Impressions" value={k.adImpressions} />
-          <StatCard label="Clicks" value={k.adClicks} />
-          <StatCard label="CTR %" value={k.ctr} />
+          <StatCard label="Active ads" value={k.activeAds} href="/home/admin/ads?status=active" hint="Currently running ads" />
+          <StatCard label="Impressions" value={k.adImpressions} href="/home/admin/ads" hint="All ad impressions" />
+          <StatCard label="Clicks" value={k.adClicks} href="/home/admin/ads" hint="All ad clicks" />
+          <StatCard label="CTR %" value={k.ctr} href="/home/admin/campaigns" hint="Campaign performance" />
         </div>
       </section>
 
       <section aria-labelledby="sys-h" className="space-y-3">
         <h2 id="sys-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">System</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="AI requests" value={k.aiRequests} />
-          <StatCard label="Token usage" value={k.tokenUsage} />
-          <StatCard label="API errors" value={k.apiErrors} />
+          <StatCard label="AI requests" value={k.aiRequests} href="/home/admin/intelligence" hint="AI request & cost logs" />
+          <StatCard label="Token usage" value={k.tokenUsage} href="/home/admin/intelligence" hint="Token consumption details" />
+          <StatCard label="API errors" value={k.apiErrors} href="/home/admin/edge-errors" hint="Edge function errors" />
         </div>
       </section>
+
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
