@@ -62,9 +62,10 @@ function fmtDuration(start: string | null, end: string | null): string {
 
 export default function AdminUsers() {
   const { isAdmin } = useUserRoles();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState<Row[]>([]);
-  const [q, setQ] = useState("");
-  const [qDebounced, setQDebounced] = useState("");
+  const [q, setQ] = useState(searchParams.get("q") ?? "");
+  const [qDebounced, setQDebounced] = useState(searchParams.get("q") ?? "");
   const [busy, setBusy] = useState<string | null>(null);
   const [selected, setSelected] = useState<Row | null>(null);
   const [detail, setDetail] = useState<UserDetail | null>(null);
@@ -75,21 +76,61 @@ export default function AdminUsers() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Filters coming from StatCard deep-links: ?range=1d|7d|30d (created_at window)
+  // and ?active=1d|7d|30d (recent visitor_sessions activity).
+  const rangeParam = searchParams.get("range");
+  const activeParam = searchParams.get("active");
+  const rangeDays = rangeToDays(rangeParam);
+  const activeDays = rangeToDays(activeParam);
+
   useEffect(() => {
     const t = setTimeout(() => setQDebounced(q.trim()), 300);
     return () => clearTimeout(t);
   }, [q]);
 
-  useEffect(() => { setPage(0); }, [qDebounced, sortKey, sortDir]);
+  useEffect(() => { setPage(0); }, [qDebounced, sortKey, sortDir, rangeParam, activeParam]);
+
+  // Persist search text into the URL alongside the incoming range/active filters.
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (qDebounced) next.set("q", qDebounced); else next.delete("q");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qDebounced]);
+
+  const clearFilters = () => {
+    setQ("");
+    setSearchParams(new URLSearchParams(), { replace: true });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
+    // Pre-compute an id allow-list when filtering by recent activity.
+    let activeIds: string[] | null = null;
+    if (activeDays) {
+      const since = new Date(Date.now() - activeDays * 86400_000).toISOString();
+      const { data } = await supabase
+        .from("visitor_sessions")
+        .select("user_id")
+        .gte("last_seen", since)
+        .not("user_id", "is", null);
+      activeIds = [...new Set(((data as { user_id: string | null }[] | null) ?? []).map((r) => r.user_id).filter(Boolean) as string[])];
+      if (activeIds.length === 0) {
+        setRows([]); setTotal(0); setLoading(false); return;
+      }
+    }
+
     let query = supabase
       .from("profiles")
       .select("id, display_name, avatar_url, created_at", { count: "exact" })
       .order(sortKey, { ascending: sortDir === "asc", nullsFirst: false })
       .range(page * USERS_PAGE_SIZE, page * USERS_PAGE_SIZE + USERS_PAGE_SIZE - 1);
     if (qDebounced) query = query.or(`display_name.ilike.%${qDebounced}%,id.eq.${/^[0-9a-f-]{8,}$/i.test(qDebounced) ? qDebounced : "00000000-0000-0000-0000-000000000000"}`);
+    if (rangeDays) {
+      const since = new Date(Date.now() - rangeDays * 86400_000).toISOString();
+      query = query.gte("created_at", since);
+    }
+    if (activeIds) query = query.in("id", activeIds);
 
     const { data: profiles, count } = await query;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,7 +148,7 @@ export default function AdminUsers() {
     setRows(((profiles as any[]) ?? []).map((p) => ({ ...p, roles: map.get(p.id) ?? ["user"] })));
     setTotal(count ?? 0);
     setLoading(false);
-  }, [qDebounced, sortKey, sortDir, page]);
+  }, [qDebounced, sortKey, sortDir, page, rangeDays, activeDays]);
 
   useEffect(() => { load(); }, [load]);
 
