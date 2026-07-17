@@ -5,6 +5,7 @@ import { ArrowDownRight, ArrowUpRight, ArrowUpRight as ExternalIcon, Minus } fro
 import { cn } from "@/lib/utils";
 import { Sparkline } from "./Sparkline";
 import { chartColor } from "@/lib/chart-theme";
+import { trackStatCardClick, type StatCardTracking } from "@/lib/track-stat-card";
 
 /**
  * Phase 11 — StatCard
