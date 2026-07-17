@@ -212,6 +212,9 @@ export default function AdminSessions() {
                   />
                 </td></tr>
               )}
+            </tbody>
+          </table>
+        </div>
       </CardContent></Card>
 
       <div className="flex items-center justify-between text-sm">
