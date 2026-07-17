@@ -233,7 +233,7 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
           <p className="text-sm text-muted-foreground">
@@ -242,6 +242,17 @@ export default function AdminUsers() {
         </div>
         <Input placeholder="Search name or id…" value={q} onChange={(e) => setQ(e.target.value)} className="w-64" />
       </div>
+
+      {(rangeParam || activeParam) && (
+        <div className="flex items-center gap-2 flex-wrap text-xs">
+          <span className="text-muted-foreground">Filters:</span>
+          {rangeParam && <Badge variant="secondary">Joined ≤ {rangeParam}</Badge>}
+          {activeParam && <Badge variant="secondary">Active ≤ {activeParam}</Badge>}
+          <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={clearFilters}>
+            <X className="h-3 w-3 mr-1" /> Clear
+          </Button>
+        </div>
+      )}
 
       <Card><CardContent className="p-0">
         <div className="overflow-x-auto">
