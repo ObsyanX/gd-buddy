@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 
 import { toast } from "@/hooks/use-toast";
 import { useUserRoles, type AppRole } from "@/hooks/useUserRoles";
-import { Eye, Users2, Trophy, Clock, MessageSquare, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, Users2, Trophy, Clock, MessageSquare, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { TableSkeleton, EmptyState } from "@/components/admin/TableSkeleton";
+
+function rangeToDays(v: string | null): number | null {
+  if (!v) return null;
+  const m = /^(\d+)d$/.exec(v);
+  return m ? parseInt(m[1], 10) : null;
+}
 
 type UsersSortKey = "display_name" | "created_at";
 const USERS_PAGE_SIZE = 25;
