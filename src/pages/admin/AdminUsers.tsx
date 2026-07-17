@@ -305,8 +305,20 @@ export default function AdminUsers() {
                   )}
                 </tr>
               ))}
-              {!loading && rows.length === 0 && <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">No users.</td></tr>}
-              {loading && <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">Loading…</td></tr>}
+              {loading && <TableSkeleton rows={6} cols={isAdmin ? 5 : 4} />}
+              {!loading && rows.length === 0 && (
+                <tr><td colSpan={isAdmin ? 5 : 4}>
+                  <EmptyState
+                    title="No users match these filters"
+                    description={qDebounced || rangeParam || activeParam
+                      ? "Try clearing the search or the range/active filter."
+                      : "New sign-ups will appear here."}
+                    action={(qDebounced || rangeParam || activeParam) && (
+                      <Button size="sm" variant="outline" onClick={clearFilters}>Clear filters</Button>
+                    )}
+                  />
+                </td></tr>
+              )}
             </tbody>
           </table>
         </div>
