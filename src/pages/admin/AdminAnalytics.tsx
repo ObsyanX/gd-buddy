@@ -2,8 +2,27 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Legend, CartesianGrid } from "recharts";
-import { StatCard } from "@/components/charts";
+import { StatCard, type StatCardProps } from "@/components/charts";
 import { format, subDays } from "date-fns";
+
+/**
+ * Local wrapper that automatically attaches tracking metadata (page + filters
+ * parsed from the destination href) so every StatCard click is logged for
+ * analytics / debugging without repeating boilerplate in the JSX below.
+ */
+function LinkedStat(props: StatCardProps) {
+  const filters: Record<string, string> = {};
+  if (props.href && props.href.includes("?")) {
+    const qs = props.href.split("?")[1];
+    new URLSearchParams(qs).forEach((v, k) => { filters[k] = v; });
+  }
+  return (
+    <StatCard
+      {...props}
+      tracking={{ page: "admin_analytics", card: props.label, filters }}
+    />
+  );
+}
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))", "hsl(var(--muted-foreground))", "#22c55e", "#f59e0b", "#ef4444"];
 
@@ -211,64 +230,64 @@ export default function AdminAnalytics() {
       <section aria-labelledby="users-h" className="space-y-3">
         <h2 id="users-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Users</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Total users" value={k.totalUsers} href="/home/admin/users" hint="Open users list" />
-          <StatCard label="New today" value={k.newToday} href="/home/admin/users?range=1d" hint="Users created in the last 24h" />
-          <StatCard label="New this week" value={k.newWeek} href="/home/admin/users?range=7d" hint="Users created in the last 7 days" />
-          <StatCard label="New this month" value={k.newMonth} href="/home/admin/users?range=30d" hint="Users created in the last 30 days" />
-          <StatCard label="DAU" value={k.dau} href="/home/admin/users?active=1d" hint="Daily active users" />
-          <StatCard label="WAU" value={k.wau} href="/home/admin/users?active=7d" hint="Weekly active users" />
-          <StatCard label="MAU" value={k.mau} href="/home/admin/users?active=30d" hint="Monthly active users" />
+          <LinkedStat label="Total users" value={k.totalUsers} href="/home/admin/users" hint="Open users list" />
+          <LinkedStat label="New today" value={k.newToday} href="/home/admin/users?range=1d" hint="Users created in the last 24h" />
+          <LinkedStat label="New this week" value={k.newWeek} href="/home/admin/users?range=7d" hint="Users created in the last 7 days" />
+          <LinkedStat label="New this month" value={k.newMonth} href="/home/admin/users?range=30d" hint="Users created in the last 30 days" />
+          <LinkedStat label="DAU" value={k.dau} href="/home/admin/users?active=1d" hint="Daily active users" />
+          <LinkedStat label="WAU" value={k.wau} href="/home/admin/users?active=7d" hint="Weekly active users" />
+          <LinkedStat label="MAU" value={k.mau} href="/home/admin/users?active=30d" hint="Monthly active users" />
         </div>
       </section>
 
       <section aria-labelledby="auth-h" className="space-y-3">
         <h2 id="auth-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Authentication</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Total logins" value={k.totalLogins} href="/home/admin/auth-errors" hint="See login history & failures" />
-          <StatCard label="Successful" value={k.successLogins} href="/home/admin/auth-errors?status=success" hint="Successful sign-ins" />
-          <StatCard label="Failed" value={k.failedLogins} href="/home/admin/auth-errors?status=failed" hint="Failed sign-in attempts" />
+          <LinkedStat label="Total logins" value={k.totalLogins} href="/home/admin/auth-errors" hint="See login history & failures" />
+          <LinkedStat label="Successful" value={k.successLogins} href="/home/admin/auth-errors?status=success" hint="Successful sign-ins" />
+          <LinkedStat label="Failed" value={k.failedLogins} href="/home/admin/auth-errors?status=failed" hint="Failed sign-in attempts" />
         </div>
       </section>
 
       <section aria-labelledby="traffic-h" className="space-y-3">
         <h2 id="traffic-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Traffic</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Total visitors" value={k.totalVisitors} href="/home/admin/performance" hint="Visitor sessions & performance" />
-          <StatCard label="Unique visitors" value={k.uniqueVisitors} href="/home/admin/performance" hint="Distinct visitor IDs" />
-          <StatCard label="Page views" value={k.totalPageViews} href="/home/admin/performance" hint="Page view breakdown" />
-          <StatCard label="Avg session (s)" value={k.avgSessionSec} href="/home/admin/performance" hint="Average session duration" />
-          <StatCard label="Bounce rate %" value={k.bounceRate} href="/home/admin/performance" hint="Single-page-view sessions" />
-          <StatCard label="Pages / session" value={k.pagesPerSession} href="/home/admin/performance" hint="Pages per visitor session" />
+          <LinkedStat label="Total visitors" value={k.totalVisitors} href="/home/admin/performance" hint="Visitor sessions & performance" />
+          <LinkedStat label="Unique visitors" value={k.uniqueVisitors} href="/home/admin/performance" hint="Distinct visitor IDs" />
+          <LinkedStat label="Page views" value={k.totalPageViews} href="/home/admin/performance" hint="Page view breakdown" />
+          <LinkedStat label="Avg session (s)" value={k.avgSessionSec} href="/home/admin/performance" hint="Average session duration" />
+          <LinkedStat label="Bounce rate %" value={k.bounceRate} href="/home/admin/performance" hint="Single-page-view sessions" />
+          <LinkedStat label="Pages / session" value={k.pagesPerSession} href="/home/admin/performance" hint="Pages per visitor session" />
         </div>
       </section>
 
       <section aria-labelledby="eng-h" className="space-y-3">
         <h2 id="eng-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Engagement</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="GD sessions" value={k.gdSessions} href="/home/admin/sessions" hint="Browse all group discussions" />
-          <StatCard label="Completed" value={k.completedSessions} href="/home/admin/sessions?status=completed" hint="Completed sessions" />
-          <StatCard label="Avg AI score" value={k.avgAiScore} href="/home/admin/sessions" hint="Average AI content score" />
-          <StatCard label="AI evaluations" value={k.totalAiEvals} href="/home/admin/intelligence" hint="AI cost & evaluation logs" />
-          <StatCard label="Feedback given" value={k.totalFeedback} href="/home/admin/reports" hint="User feedback & reports" />
+          <LinkedStat label="GD sessions" value={k.gdSessions} href="/home/admin/sessions" hint="Browse all group discussions" />
+          <LinkedStat label="Completed" value={k.completedSessions} href="/home/admin/sessions?status=completed" hint="Completed sessions" />
+          <LinkedStat label="Avg AI score" value={k.avgAiScore} href="/home/admin/sessions" hint="Average AI content score" />
+          <LinkedStat label="AI evaluations" value={k.totalAiEvals} href="/home/admin/intelligence" hint="AI cost & evaluation logs" />
+          <LinkedStat label="Feedback given" value={k.totalFeedback} href="/home/admin/reports" hint="User feedback & reports" />
         </div>
       </section>
 
       <section aria-labelledby="ads-h" className="space-y-3">
         <h2 id="ads-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Advertisements</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Active ads" value={k.activeAds} href="/home/admin/ads?status=active" hint="Currently running ads" />
-          <StatCard label="Impressions" value={k.adImpressions} href="/home/admin/ads" hint="All ad impressions" />
-          <StatCard label="Clicks" value={k.adClicks} href="/home/admin/ads" hint="All ad clicks" />
-          <StatCard label="CTR %" value={k.ctr} href="/home/admin/campaigns" hint="Campaign performance" />
+          <LinkedStat label="Active ads" value={k.activeAds} href="/home/admin/ads?status=active" hint="Currently running ads" />
+          <LinkedStat label="Impressions" value={k.adImpressions} href="/home/admin/ads" hint="All ad impressions" />
+          <LinkedStat label="Clicks" value={k.adClicks} href="/home/admin/ads" hint="All ad clicks" />
+          <LinkedStat label="CTR %" value={k.ctr} href="/home/admin/campaigns" hint="Campaign performance" />
         </div>
       </section>
 
       <section aria-labelledby="sys-h" className="space-y-3">
         <h2 id="sys-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">System</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="AI requests" value={k.aiRequests} href="/home/admin/intelligence" hint="AI request & cost logs" />
-          <StatCard label="Token usage" value={k.tokenUsage} href="/home/admin/intelligence" hint="Token consumption details" />
-          <StatCard label="API errors" value={k.apiErrors} href="/home/admin/edge-errors" hint="Edge function errors" />
+          <LinkedStat label="AI requests" value={k.aiRequests} href="/home/admin/intelligence" hint="AI request & cost logs" />
+          <LinkedStat label="Token usage" value={k.tokenUsage} href="/home/admin/intelligence" hint="Token consumption details" />
+          <LinkedStat label="API errors" value={k.apiErrors} href="/home/admin/edge-errors" hint="Edge function errors" />
         </div>
       </section>
 

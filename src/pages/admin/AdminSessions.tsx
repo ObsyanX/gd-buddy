@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Eye, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { TableSkeleton, EmptyState } from "@/components/admin/TableSkeleton";
 
 interface Row {
   id: string;
@@ -36,11 +37,12 @@ function durationLabel(s: Row) {
 }
 
 export default function AdminSessions() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState<Row[]>([]);
-  const [q, setQ] = useState("");
-  const [qDebounced, setQDebounced] = useState("");
-  const [mode, setMode] = useState<"all" | "solo" | "multi">("all");
-  const [status, setStatus] = useState<string>("all");
+  const [q, setQ] = useState(searchParams.get("q") ?? "");
+  const [qDebounced, setQDebounced] = useState(searchParams.get("q") ?? "");
+  const [mode, setMode] = useState<"all" | "solo" | "multi">((searchParams.get("mode") as "all" | "solo" | "multi") ?? "all");
+  const [status, setStatus] = useState<string>(searchParams.get("status") ?? "all");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
@@ -55,6 +57,19 @@ export default function AdminSessions() {
 
   // Reset to page 0 whenever filters change.
   useEffect(() => { setPage(0); }, [qDebounced, mode, status, sortKey, sortDir]);
+
+  // Sync active filters into the URL so refresh / share preserves state.
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    const setOrDel = (k: string, v: string, def: string) => {
+      if (v && v !== def) next.set(k, v); else next.delete(k);
+    };
+    setOrDel("q", qDebounced, "");
+    setOrDel("mode", mode, "all");
+    setOrDel("status", status, "all");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qDebounced, mode, status]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -181,8 +196,22 @@ export default function AdminSessions() {
                   </td>
                 </tr>
               ))}
-              {!loading && rows.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-muted-foreground">No sessions.</td></tr>}
-              {loading && <tr><td colSpan={8} className="text-center py-8 text-muted-foreground">Loading…</td></tr>}
+              {loading && <TableSkeleton rows={6} cols={8} />}
+              {!loading && rows.length === 0 && (
+                <tr><td colSpan={8}>
+                  <EmptyState
+                    title="No sessions match these filters"
+                    description={qDebounced || mode !== "all" || status !== "all"
+                      ? "Try clearing the search or switching status/mode."
+                      : "Sessions will appear here once users start discussions."}
+                    action={(qDebounced || mode !== "all" || status !== "all") && (
+                      <Button size="sm" variant="outline" onClick={() => { setQ(""); setMode("all"); setStatus("all"); }}>
+                        Clear filters
+                      </Button>
+                    )}
+                  />
+                </td></tr>
+              )}
             </tbody>
           </table>
         </div>

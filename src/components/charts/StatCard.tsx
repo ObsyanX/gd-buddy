@@ -5,6 +5,7 @@ import { ArrowDownRight, ArrowUpRight, ArrowUpRight as ExternalIcon, Minus } fro
 import { cn } from "@/lib/utils";
 import { Sparkline } from "./Sparkline";
 import { chartColor } from "@/lib/chart-theme";
+import { trackStatCardClick, type StatCardTracking } from "@/lib/track-stat-card";
 
 /**
  * Phase 11 — StatCard
@@ -28,6 +29,8 @@ export interface StatCardProps {
   onClick?: () => void;
   /** Tooltip / aria-label describing where the card leads. */
   hint?: string;
+  /** Analytics metadata sent on click (page + filters). */
+  tracking?: StatCardTracking;
 }
 
 function formatDelta(delta: number) {
@@ -38,7 +41,7 @@ function formatDelta(delta: number) {
 
 
 export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
-  ({ label, value, unit, delta, deltaLabel, invertDelta, trend, icon, loading, className, href, onClick, hint }, ref) => {
+  ({ label, value, unit, delta, deltaLabel, invertDelta, trend, icon, loading, className, href, onClick, hint, tracking }, ref) => {
     const isFlat = delta === undefined || delta === 0;
     const isPositive = delta !== undefined && delta > 0;
     const good = invertDelta ? !isPositive : isPositive;
@@ -109,11 +112,15 @@ export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
       </motion.div>
     );
 
+    const fireTracking = () => {
+      if (tracking) trackStatCardClick({ destination: href, ...tracking, card: tracking.card ?? label });
+    };
+
     if (href) {
       return (
         <Link
           to={href}
-          onClick={onClick}
+          onClick={(e) => { fireTracking(); onClick?.(); void e; }}
           aria-label={hint ? `${label} — ${hint}` : `View ${label} details`}
           title={hint}
           className="block rounded-2xl focus-ring"
@@ -126,7 +133,7 @@ export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
       return (
         <button
           type="button"
-          onClick={onClick}
+          onClick={() => { fireTracking(); onClick(); }}
           aria-label={hint ? `${label} — ${hint}` : label}
           title={hint}
           className="block w-full text-left rounded-2xl focus-ring"
