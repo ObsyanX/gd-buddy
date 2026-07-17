@@ -29,6 +29,8 @@ export interface StatCardProps {
   onClick?: () => void;
   /** Tooltip / aria-label describing where the card leads. */
   hint?: string;
+  /** Analytics metadata sent on click (page + filters). */
+  tracking?: StatCardTracking;
 }
 
 function formatDelta(delta: number) {
