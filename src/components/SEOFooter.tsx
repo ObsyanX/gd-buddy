@@ -18,7 +18,7 @@ const SEOFooter = () => (
             </p>
           </div>
 
-          <nav aria-label="Footer navigation" className="md:col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-6">
+          <nav aria-label="Footer navigation" className="md:col-span-3 grid grid-cols-2 sm:grid-cols-5 gap-6">
             <div>
               <h3 className="text-micro text-primary-glow mb-3">Practice</h3>
               <ul className="space-y-2 text-sm">
@@ -50,6 +50,7 @@ const SEOFooter = () => (
               <ul className="space-y-2 text-sm">
                 <li><Link to="/home/profile" className="text-muted-foreground story-link hover:text-foreground">Profile</Link></li>
                 <li><Link to="/home/settings" className="text-muted-foreground story-link hover:text-foreground">Settings</Link></li>
+                <li><Link to="/contact" className="text-muted-foreground story-link hover:text-foreground">Contact</Link></li>
               </ul>
               <div className="flex gap-3 mt-4">
                 <a href="https://github.com/ObsyanX" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="w-9 h-9 rounded-full glass-subtle flex items-center justify-center text-muted-foreground hover:text-primary-glow transition-colors">
@@ -62,6 +63,15 @@ const SEOFooter = () => (
                   <Mail className="w-4 h-4" />
                 </a>
               </div>
+            </div>
+            <div>
+              <h3 className="text-micro text-primary-glow mb-3">Legal</h3>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/privacy" className="text-muted-foreground story-link hover:text-foreground">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="text-muted-foreground story-link hover:text-foreground">Terms of Service</Link></li>
+                <li><Link to="/disclaimer" className="text-muted-foreground story-link hover:text-foreground">Disclaimer</Link></li>
+                <li><Link to="/contact" className="text-muted-foreground story-link hover:text-foreground">Contact Us</Link></li>
+              </ul>
             </div>
           </nav>
         </div>
