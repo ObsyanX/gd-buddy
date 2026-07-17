@@ -2,8 +2,27 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Legend, CartesianGrid } from "recharts";
-import { StatCard } from "@/components/charts";
+import { StatCard, type StatCardProps } from "@/components/charts";
 import { format, subDays } from "date-fns";
+
+/**
+ * Local wrapper that automatically attaches tracking metadata (page + filters
+ * parsed from the destination href) so every StatCard click is logged for
+ * analytics / debugging without repeating boilerplate in the JSX below.
+ */
+function LinkedStat(props: StatCardProps) {
+  const filters: Record<string, string> = {};
+  if (props.href && props.href.includes("?")) {
+    const qs = props.href.split("?")[1];
+    new URLSearchParams(qs).forEach((v, k) => { filters[k] = v; });
+  }
+  return (
+    <StatCard
+      {...props}
+      tracking={{ page: "admin_analytics", card: props.label, filters }}
+    />
+  );
+}
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))", "hsl(var(--muted-foreground))", "#22c55e", "#f59e0b", "#ef4444"];
 
