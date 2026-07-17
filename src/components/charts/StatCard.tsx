@@ -112,11 +112,15 @@ export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
       </motion.div>
     );
 
+    const fireTracking = () => {
+      if (tracking) trackStatCardClick({ destination: href, ...tracking, card: tracking.card ?? label });
+    };
+
     if (href) {
       return (
         <Link
           to={href}
-          onClick={onClick}
+          onClick={(e) => { fireTracking(); onClick?.(); void e; }}
           aria-label={hint ? `${label} — ${hint}` : `View ${label} details`}
           title={hint}
           className="block rounded-2xl focus-ring"
@@ -129,7 +133,7 @@ export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
       return (
         <button
           type="button"
-          onClick={onClick}
+          onClick={() => { fireTracking(); onClick(); }}
           aria-label={hint ? `${label} — ${hint}` : label}
           title={hint}
           className="block w-full text-left rounded-2xl focus-ring"
