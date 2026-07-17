@@ -37,11 +37,12 @@ function durationLabel(s: Row) {
 }
 
 export default function AdminSessions() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState<Row[]>([]);
-  const [q, setQ] = useState("");
-  const [qDebounced, setQDebounced] = useState("");
-  const [mode, setMode] = useState<"all" | "solo" | "multi">("all");
-  const [status, setStatus] = useState<string>("all");
+  const [q, setQ] = useState(searchParams.get("q") ?? "");
+  const [qDebounced, setQDebounced] = useState(searchParams.get("q") ?? "");
+  const [mode, setMode] = useState<"all" | "solo" | "multi">((searchParams.get("mode") as "all" | "solo" | "multi") ?? "all");
+  const [status, setStatus] = useState<string>(searchParams.get("status") ?? "all");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
@@ -56,6 +57,19 @@ export default function AdminSessions() {
 
   // Reset to page 0 whenever filters change.
   useEffect(() => { setPage(0); }, [qDebounced, mode, status, sortKey, sortDir]);
+
+  // Sync active filters into the URL so refresh / share preserves state.
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    const setOrDel = (k: string, v: string, def: string) => {
+      if (v && v !== def) next.set(k, v); else next.delete(k);
+    };
+    setOrDel("q", qDebounced, "");
+    setOrDel("mode", mode, "all");
+    setOrDel("status", status, "all");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qDebounced, mode, status]);
 
   const load = useCallback(async () => {
     setLoading(true);
