@@ -41,7 +41,7 @@ function formatDelta(delta: number) {
 
 
 export const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
-  ({ label, value, unit, delta, deltaLabel, invertDelta, trend, icon, loading, className, href, onClick, hint }, ref) => {
+  ({ label, value, unit, delta, deltaLabel, invertDelta, trend, icon, loading, className, href, onClick, hint, tracking }, ref) => {
     const isFlat = delta === undefined || delta === 0;
     const isPositive = delta !== undefined && delta > 0;
     const good = invertDelta ? !isPositive : isPositive;
