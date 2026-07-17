@@ -55,6 +55,12 @@ const Health = lazy(() => import("./pages/Health"));
 const Intelligence = lazy(() => import("./pages/Intelligence"));
 const ADRs = lazy(() => import("./pages/ADRs"));
 
+// Legal pages
+const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"));
+const Contact = lazy(() => import("./pages/legal/Contact"));
+const Disclaimer = lazy(() => import("./pages/legal/Disclaimer"));
+
 // Blog + admin phase 1
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogArticle = lazy(() => import("./pages/BlogArticle"));
@@ -197,6 +203,12 @@ const App = () => (
               {/* Blog (public) */}
               <Route path="/blog" element={<Suspense fallback={<Loading />}><Blog /></Suspense>} />
               <Route path="/blog/:slug" element={<Suspense fallback={<Loading />}><BlogArticle /></Suspense>} />
+
+              {/* Legal & policy pages (required for AdSense) */}
+              <Route path="/privacy" element={<Suspense fallback={<Loading />}><PrivacyPolicy /></Suspense>} />
+              <Route path="/terms" element={<Suspense fallback={<Loading />}><TermsOfService /></Suspense>} />
+              <Route path="/contact" element={<Suspense fallback={<Loading />}><Contact /></Suspense>} />
+              <Route path="/disclaimer" element={<Suspense fallback={<Loading />}><Disclaimer /></Suspense>} />
 
               <Route path="/auth" element={<AuthGuard />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />
