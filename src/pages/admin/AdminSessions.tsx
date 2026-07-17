@@ -196,11 +196,22 @@ export default function AdminSessions() {
                   </td>
                 </tr>
               ))}
-              {!loading && rows.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-muted-foreground">No sessions.</td></tr>}
-              {loading && <tr><td colSpan={8} className="text-center py-8 text-muted-foreground">Loading…</td></tr>}
-            </tbody>
-          </table>
-        </div>
+              {loading && <TableSkeleton rows={6} cols={8} />}
+              {!loading && rows.length === 0 && (
+                <tr><td colSpan={8}>
+                  <EmptyState
+                    title="No sessions match these filters"
+                    description={qDebounced || mode !== "all" || status !== "all"
+                      ? "Try clearing the search or switching status/mode."
+                      : "Sessions will appear here once users start discussions."}
+                    action={(qDebounced || mode !== "all" || status !== "all") && (
+                      <Button size="sm" variant="outline" onClick={() => { setQ(""); setMode("all"); setStatus("all"); }}>
+                        Clear filters
+                      </Button>
+                    )}
+                  />
+                </td></tr>
+              )}
       </CardContent></Card>
 
       <div className="flex items-center justify-between text-sm">
