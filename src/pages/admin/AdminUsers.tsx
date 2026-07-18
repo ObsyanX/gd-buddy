@@ -59,8 +59,8 @@ export default function AdminUsers() {
   const { isAdmin } = useUserRoles();
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState<Row[]>([]);
-  const [q, setQ] = useState(searchParams.get("q") ?? "");
-  const [qDebounced, setQDebounced] = useState(searchParams.get("q") ?? "");
+  const [q, setQ] = useState(safeSearch(searchParams.get("q")));
+  const [qDebounced, setQDebounced] = useState(safeSearch(searchParams.get("q")));
   const [busy, setBusy] = useState<string | null>(null);
   const [selected, setSelected] = useState<Row | null>(null);
   const [detail, setDetail] = useState<UserDetail | null>(null);
@@ -70,16 +70,18 @@ export default function AdminUsers() {
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Filters coming from StatCard deep-links: ?range=1d|7d|30d (created_at window)
   // and ?active=1d|7d|30d (recent visitor_sessions activity).
+  // Values are validated against an allowlist and default to "no filter" on bad input.
   const rangeParam = searchParams.get("range");
   const activeParam = searchParams.get("active");
   const rangeDays = rangeToDays(rangeParam);
   const activeDays = rangeToDays(activeParam);
 
   useEffect(() => {
-    const t = setTimeout(() => setQDebounced(q.trim()), 300);
+    const t = setTimeout(() => setQDebounced(safeSearch(q)), 300);
     return () => clearTimeout(t);
   }, [q]);
 
