@@ -150,7 +150,7 @@ export default function AdminSessions() {
               <SelectItem value="multi">Multiplayer</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={status} onValueChange={setStatus}>
+          <Select value={status} onValueChange={(v) => setStatus(safeStatus(v))}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
