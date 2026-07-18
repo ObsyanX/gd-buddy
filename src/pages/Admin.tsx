@@ -143,12 +143,27 @@ const Admin = () => {
       supabase.from('error_logs').delete().in('id', ids).then(() => {});
     }
     const activeErrors = rawErrors.filter((e: any) => !stale.includes(e));
+    // Purge stale/resolved error patterns automatically so the dashboard reflects reality.
+    const RESOLVED_PATTERNS = [/adminguard is not defined/i, /cannot close a closed audiocontext/i];
+    const rawErrors = errRes.data || [];
+    const stale = rawErrors.filter((e: any) =>
+      RESOLVED_PATTERNS.some((p) => p.test(e.error_message || '')),
+    );
+    if (stale.length) {
+      const ids = stale.map((e: any) => e.id);
+      supabase.from('error_logs').delete().in('id', ids).then(() => {});
+    }
+    // Auth-form validation messages ("Invalid login credentials", weak-password
+    // notices, etc.) are surfaced to the user in the auth UI and should NOT
+    // appear as runtime errors on the ops dashboard.
+    const authNoise = rawErrors.filter((e: any) => isAuthValidationMessage(e.error_message || ''));
+    const activeErrors = rawErrors.filter((e: any) => !stale.includes(e) && !authNoise.includes(e));
     setErrors(activeErrors);
     setTotals({
       users: usersTotal.count || 0,
       sessions: sessionsTotal.count || 0,
       feedback: feedbackTotal.count || 0,
-      errors: Math.max(0, (errorsTotal.count || 0) - stale.length),
+      errors: Math.max(0, (errorsTotal.count || 0) - stale.length - authNoise.length),
       activeUsers: activeUsersCnt.count || 0,
       activeSessions: activeSessionsCnt.count || 0,
     });
