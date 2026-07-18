@@ -102,49 +102,64 @@ export default function AdminUsers() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    // Pre-compute an id allow-list when filtering by recent activity.
-    let activeIds: string[] | null = null;
-    if (activeDays) {
-      const since = new Date(Date.now() - activeDays * 86400_000).toISOString();
-      const { data } = await supabase
-        .from("visitor_sessions")
-        .select("user_id")
-        .gte("last_seen", since)
-        .not("user_id", "is", null);
-      activeIds = [...new Set(((data as { user_id: string | null }[] | null) ?? []).map((r) => r.user_id).filter(Boolean) as string[])];
-      if (activeIds.length === 0) {
-        setRows([]); setTotal(0); setLoading(false); return;
-      }
-    }
+    setLoadError(null);
+    // Race the query against a 12s timeout so a stalled network doesn't
+    // trap the page in an infinite skeleton state — surface an error UI instead.
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Request timed out. Please retry.")), 12_000),
+    );
+    try {
+      await Promise.race([timeout, (async () => {
+        // Pre-compute an id allow-list when filtering by recent activity.
+        let activeIds: string[] | null = null;
+        if (activeDays) {
+          const since = new Date(Date.now() - activeDays * 86400_000).toISOString();
+          const { data, error } = await supabase
+            .from("visitor_sessions")
+            .select("user_id")
+            .gte("last_seen", since)
+            .not("user_id", "is", null);
+          if (error) throw error;
+          activeIds = [...new Set(((data as { user_id: string | null }[] | null) ?? []).map((r) => r.user_id).filter(Boolean) as string[])];
+          if (activeIds.length === 0) { setRows([]); setTotal(0); return; }
+        }
 
-    let query = supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url, created_at", { count: "exact" })
-      .order(sortKey, { ascending: sortDir === "asc", nullsFirst: false })
-      .range(page * USERS_PAGE_SIZE, page * USERS_PAGE_SIZE + USERS_PAGE_SIZE - 1);
-    if (qDebounced) query = query.or(`display_name.ilike.%${qDebounced}%,id.eq.${/^[0-9a-f-]{8,}$/i.test(qDebounced) ? qDebounced : "00000000-0000-0000-0000-000000000000"}`);
-    if (rangeDays) {
-      const since = new Date(Date.now() - rangeDays * 86400_000).toISOString();
-      query = query.gte("created_at", since);
-    }
-    if (activeIds) query = query.in("id", activeIds);
+        let query = supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url, created_at", { count: "exact" })
+          .order(sortKey, { ascending: sortDir === "asc", nullsFirst: false })
+          .range(page * USERS_PAGE_SIZE, page * USERS_PAGE_SIZE + USERS_PAGE_SIZE - 1);
+        if (qDebounced) query = query.or(`display_name.ilike.%${qDebounced}%,id.eq.${/^[0-9a-f-]{8,}$/i.test(qDebounced) ? qDebounced : "00000000-0000-0000-0000-000000000000"}`);
+        if (rangeDays) {
+          const since = new Date(Date.now() - rangeDays * 86400_000).toISOString();
+          query = query.gte("created_at", since);
+        }
+        if (activeIds) query = query.in("id", activeIds);
 
-    const { data: profiles, count } = await query;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ids = ((profiles as any[]) ?? []).map((p) => p.id);
-    const { data: roles } = ids.length
-      ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
-      : { data: [] as { user_id: string; role: AppRole }[] };
-    const map = new Map<string, AppRole[]>();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (roles ?? []).forEach((r: any) => {
-      const arr = map.get(r.user_id) ?? [];
-      arr.push(r.role as AppRole); map.set(r.user_id, arr);
-    });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setRows(((profiles as any[]) ?? []).map((p) => ({ ...p, roles: map.get(p.id) ?? ["user"] })));
-    setTotal(count ?? 0);
-    setLoading(false);
+        const { data: profiles, count, error } = await query;
+        if (error) throw error;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ids = ((profiles as any[]) ?? []).map((p) => p.id);
+        const { data: roles } = ids.length
+          ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
+          : { data: [] as { user_id: string; role: AppRole }[] };
+        const map = new Map<string, AppRole[]>();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (roles ?? []).forEach((r: any) => {
+          const arr = map.get(r.user_id) ?? [];
+          arr.push(r.role as AppRole); map.set(r.user_id, arr);
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setRows(((profiles as any[]) ?? []).map((p) => ({ ...p, roles: map.get(p.id) ?? ["user"] })));
+        setTotal(count ?? 0);
+      })()]);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Failed to load users.");
+      setRows([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
   }, [qDebounced, sortKey, sortDir, page, rangeDays, activeDays]);
 
   useEffect(() => { load(); }, [load]);
