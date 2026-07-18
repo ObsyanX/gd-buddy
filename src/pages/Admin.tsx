@@ -29,8 +29,26 @@ interface ErrCat {
   fix: string;
   vuln?: string;
 }
+const AUTH_VALIDATION_PATTERNS = [
+  /invalid login credentials/i,
+  /password is known to be weak/i,
+  /password should be at least/i,
+  /password should contain at least/i,
+  /email not confirmed/i,
+  /user already registered/i,
+  /rate limit/i,
+];
+const isAuthValidationMessage = (msg: string) =>
+  AUTH_VALIDATION_PATTERNS.some((p) => p.test(msg || ""));
+
 const classify = (msg: string): ErrCat => {
   const m = (msg || '').toLowerCase();
+  if (isAuthValidationMessage(msg)) return {
+    category: 'Auth Validation',
+    severity: 'low',
+    cause: 'Expected auth form-validation feedback (wrong password, weak password, etc.) — not a runtime error.',
+    fix: 'Excluded from active vulnerability grouping. Review only if volume spikes (possible credential stuffing).',
+  };
   if (m.includes('audiocontext')) return {
     category: 'Audio Runtime',
     severity: 'low',
