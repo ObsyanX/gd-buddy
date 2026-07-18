@@ -9,6 +9,7 @@ import RoomRanking from "@/components/report/RoomRanking";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { CheckCircle2, XCircle, TrendingUp, Home, Target, Clock, MessageSquare, Mic, Eye, User, Camera, BarChart3, Bot, Loader2, Sparkles, Heart, Crown, Users as UsersIcon, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,6 +87,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   const [videoMetrics, setVideoMetrics] = useState<any>(null);
   const [aiFeedback, setAiFeedback] = useState<any>(null);
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(true);
   const [chartData, setChartData] = useState<{
     timeline: any[];
     performance: any[];
@@ -1360,8 +1362,31 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           <RoomRanking sessionId={sessionId} myParticipantId={currentParticipant?.id} />
         )}
 
-        {/* Post-session Feedback Form */}
-        <FeedbackForm sessionId={sessionId} />
+        {/* Post-session feedback: auto-opens as a modal. Users can reopen it from the button below. */}
+        <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>How was your session?</DialogTitle>
+              <DialogDescription>
+                Your feedback helps us improve future discussions. It only takes a few seconds.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto">
+              <FeedbackForm sessionId={sessionId} />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowFeedbackModal(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <div className="flex justify-center">
+          <Button variant="ghost" size="sm" onClick={() => setShowFeedbackModal(true)}>
+            <MessageSquare className="w-4 h-4 mr-2" /> Leave feedback
+          </Button>
+        </div>
+
+
 
 
         <div className="gap-[8px] rounded flex-col flex items-center justify-center shadow-none">

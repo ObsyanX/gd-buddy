@@ -12,12 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { useUserRoles, type AppRole } from "@/hooks/useUserRoles";
 import { Eye, Users2, Trophy, Clock, MessageSquare, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { TableSkeleton, EmptyState } from "@/components/admin/TableSkeleton";
-
-function rangeToDays(v: string | null): number | null {
-  if (!v) return null;
-  const m = /^(\d+)d$/.exec(v);
-  return m ? parseInt(m[1], 10) : null;
-}
+import { rangeToDays, safeSearch } from "@/lib/admin-query-params";
 
 type UsersSortKey = "display_name" | "created_at";
 const USERS_PAGE_SIZE = 25;
@@ -64,8 +59,8 @@ export default function AdminUsers() {
   const { isAdmin } = useUserRoles();
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState<Row[]>([]);
-  const [q, setQ] = useState(searchParams.get("q") ?? "");
-  const [qDebounced, setQDebounced] = useState(searchParams.get("q") ?? "");
+  const [q, setQ] = useState(safeSearch(searchParams.get("q")));
+  const [qDebounced, setQDebounced] = useState(safeSearch(searchParams.get("q")));
   const [busy, setBusy] = useState<string | null>(null);
   const [selected, setSelected] = useState<Row | null>(null);
   const [detail, setDetail] = useState<UserDetail | null>(null);
@@ -75,16 +70,18 @@ export default function AdminUsers() {
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Filters coming from StatCard deep-links: ?range=1d|7d|30d (created_at window)
   // and ?active=1d|7d|30d (recent visitor_sessions activity).
+  // Values are validated against an allowlist and default to "no filter" on bad input.
   const rangeParam = searchParams.get("range");
   const activeParam = searchParams.get("active");
   const rangeDays = rangeToDays(rangeParam);
   const activeDays = rangeToDays(activeParam);
 
   useEffect(() => {
-    const t = setTimeout(() => setQDebounced(q.trim()), 300);
+    const t = setTimeout(() => setQDebounced(safeSearch(q)), 300);
     return () => clearTimeout(t);
   }, [q]);
 
@@ -105,49 +102,64 @@ export default function AdminUsers() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    // Pre-compute an id allow-list when filtering by recent activity.
-    let activeIds: string[] | null = null;
-    if (activeDays) {
-      const since = new Date(Date.now() - activeDays * 86400_000).toISOString();
-      const { data } = await supabase
-        .from("visitor_sessions")
-        .select("user_id")
-        .gte("last_seen", since)
-        .not("user_id", "is", null);
-      activeIds = [...new Set(((data as { user_id: string | null }[] | null) ?? []).map((r) => r.user_id).filter(Boolean) as string[])];
-      if (activeIds.length === 0) {
-        setRows([]); setTotal(0); setLoading(false); return;
-      }
-    }
+    setLoadError(null);
+    // Race the query against a 12s timeout so a stalled network doesn't
+    // trap the page in an infinite skeleton state — surface an error UI instead.
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Request timed out. Please retry.")), 12_000),
+    );
+    try {
+      await Promise.race([timeout, (async () => {
+        // Pre-compute an id allow-list when filtering by recent activity.
+        let activeIds: string[] | null = null;
+        if (activeDays) {
+          const since = new Date(Date.now() - activeDays * 86400_000).toISOString();
+          const { data, error } = await supabase
+            .from("visitor_sessions")
+            .select("user_id")
+            .gte("last_seen", since)
+            .not("user_id", "is", null);
+          if (error) throw error;
+          activeIds = [...new Set(((data as { user_id: string | null }[] | null) ?? []).map((r) => r.user_id).filter(Boolean) as string[])];
+          if (activeIds.length === 0) { setRows([]); setTotal(0); return; }
+        }
 
-    let query = supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url, created_at", { count: "exact" })
-      .order(sortKey, { ascending: sortDir === "asc", nullsFirst: false })
-      .range(page * USERS_PAGE_SIZE, page * USERS_PAGE_SIZE + USERS_PAGE_SIZE - 1);
-    if (qDebounced) query = query.or(`display_name.ilike.%${qDebounced}%,id.eq.${/^[0-9a-f-]{8,}$/i.test(qDebounced) ? qDebounced : "00000000-0000-0000-0000-000000000000"}`);
-    if (rangeDays) {
-      const since = new Date(Date.now() - rangeDays * 86400_000).toISOString();
-      query = query.gte("created_at", since);
-    }
-    if (activeIds) query = query.in("id", activeIds);
+        let query = supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url, created_at", { count: "exact" })
+          .order(sortKey, { ascending: sortDir === "asc", nullsFirst: false })
+          .range(page * USERS_PAGE_SIZE, page * USERS_PAGE_SIZE + USERS_PAGE_SIZE - 1);
+        if (qDebounced) query = query.or(`display_name.ilike.%${qDebounced}%,id.eq.${/^[0-9a-f-]{8,}$/i.test(qDebounced) ? qDebounced : "00000000-0000-0000-0000-000000000000"}`);
+        if (rangeDays) {
+          const since = new Date(Date.now() - rangeDays * 86400_000).toISOString();
+          query = query.gte("created_at", since);
+        }
+        if (activeIds) query = query.in("id", activeIds);
 
-    const { data: profiles, count } = await query;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ids = ((profiles as any[]) ?? []).map((p) => p.id);
-    const { data: roles } = ids.length
-      ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
-      : { data: [] as { user_id: string; role: AppRole }[] };
-    const map = new Map<string, AppRole[]>();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (roles ?? []).forEach((r: any) => {
-      const arr = map.get(r.user_id) ?? [];
-      arr.push(r.role as AppRole); map.set(r.user_id, arr);
-    });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setRows(((profiles as any[]) ?? []).map((p) => ({ ...p, roles: map.get(p.id) ?? ["user"] })));
-    setTotal(count ?? 0);
-    setLoading(false);
+        const { data: profiles, count, error } = await query;
+        if (error) throw error;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ids = ((profiles as any[]) ?? []).map((p) => p.id);
+        const { data: roles } = ids.length
+          ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
+          : { data: [] as { user_id: string; role: AppRole }[] };
+        const map = new Map<string, AppRole[]>();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (roles ?? []).forEach((r: any) => {
+          const arr = map.get(r.user_id) ?? [];
+          arr.push(r.role as AppRole); map.set(r.user_id, arr);
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setRows(((profiles as any[]) ?? []).map((p) => ({ ...p, roles: map.get(p.id) ?? ["user"] })));
+        setTotal(count ?? 0);
+      })()]);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Failed to load users.");
+      setRows([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
   }, [qDebounced, sortKey, sortDir, page, rangeDays, activeDays]);
 
   useEffect(() => { load(); }, [load]);
@@ -306,7 +318,16 @@ export default function AdminUsers() {
                 </tr>
               ))}
               {loading && <TableSkeleton rows={6} cols={isAdmin ? 5 : 4} />}
-              {!loading && rows.length === 0 && (
+              {!loading && loadError && (
+                <tr><td colSpan={isAdmin ? 5 : 4}>
+                  <EmptyState
+                    title="Couldn't load users"
+                    description={loadError}
+                    action={<Button size="sm" variant="outline" onClick={() => load()}>Retry</Button>}
+                  />
+                </td></tr>
+              )}
+              {!loading && !loadError && rows.length === 0 && (
                 <tr><td colSpan={isAdmin ? 5 : 4}>
                   <EmptyState
                     title="No users match these filters"

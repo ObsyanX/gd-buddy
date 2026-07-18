@@ -29,8 +29,26 @@ interface ErrCat {
   fix: string;
   vuln?: string;
 }
+const AUTH_VALIDATION_PATTERNS = [
+  /invalid login credentials/i,
+  /password is known to be weak/i,
+  /password should be at least/i,
+  /password should contain at least/i,
+  /email not confirmed/i,
+  /user already registered/i,
+  /rate limit/i,
+];
+const isAuthValidationMessage = (msg: string) =>
+  AUTH_VALIDATION_PATTERNS.some((p) => p.test(msg || ""));
+
 const classify = (msg: string): ErrCat => {
   const m = (msg || '').toLowerCase();
+  if (isAuthValidationMessage(msg)) return {
+    category: 'Auth Validation',
+    severity: 'low',
+    cause: 'Expected auth form-validation feedback (wrong password, weak password, etc.) — not a runtime error.',
+    fix: 'Excluded from active vulnerability grouping. Review only if volume spikes (possible credential stuffing).',
+  };
   if (m.includes('audiocontext')) return {
     category: 'Audio Runtime',
     severity: 'low',
@@ -124,13 +142,17 @@ const Admin = () => {
       const ids = stale.map((e: any) => e.id);
       supabase.from('error_logs').delete().in('id', ids).then(() => {});
     }
-    const activeErrors = rawErrors.filter((e: any) => !stale.includes(e));
+    // Auth-form validation messages ("Invalid login credentials", weak-password
+    // notices, etc.) are surfaced to the user in the auth UI and should NOT
+    // appear as runtime errors on the ops dashboard.
+    const authNoise = rawErrors.filter((e: any) => isAuthValidationMessage(e.error_message || ''));
+    const activeErrors = rawErrors.filter((e: any) => !stale.includes(e) && !authNoise.includes(e));
     setErrors(activeErrors);
     setTotals({
       users: usersTotal.count || 0,
       sessions: sessionsTotal.count || 0,
       feedback: feedbackTotal.count || 0,
-      errors: Math.max(0, (errorsTotal.count || 0) - stale.length),
+      errors: Math.max(0, (errorsTotal.count || 0) - stale.length - authNoise.length),
       activeUsers: activeUsersCnt.count || 0,
       activeSessions: activeSessionsCnt.count || 0,
     });

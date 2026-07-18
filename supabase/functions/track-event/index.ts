@@ -98,6 +98,22 @@ serve(async (req) => {
         user_agent: ua,
         country,
       });
+    } else if (type === "statcard_click") {
+      // Persist admin StatCard interactions for analytics/debugging.
+      await admin.from("audit_events").insert({
+        actor_user_id: userId,
+        action: "statcard_click",
+        resource_type: "admin_dashboard",
+        resource_id: String(body.page || "unknown"),
+        metadata: {
+          page: body.page || null,
+          card: body.card || null,
+          destination: body.destination || null,
+          filters: body.filters || {},
+          path: body.path || null,
+          device, browser, os, country,
+        },
+      });
     }
 
     return new Response(JSON.stringify({ ok: true, visitor_id: visitorId }), {
