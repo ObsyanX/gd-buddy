@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Eye, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { TableSkeleton, EmptyState } from "@/components/admin/TableSkeleton";
+import { safeMode, safeStatus, safeSearch, type SessionMode, type SessionStatus } from "@/lib/admin-query-params";
 
 interface Row {
   id: string;
