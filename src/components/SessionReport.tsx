@@ -1362,8 +1362,31 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
           <RoomRanking sessionId={sessionId} myParticipantId={currentParticipant?.id} />
         )}
 
-        {/* Post-session Feedback Form */}
-        <FeedbackForm sessionId={sessionId} />
+        {/* Post-session feedback: auto-opens as a modal. Users can reopen it from the button below. */}
+        <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>How was your session?</DialogTitle>
+              <DialogDescription>
+                Your feedback helps us improve future discussions. It only takes a few seconds.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto">
+              <FeedbackForm sessionId={sessionId} />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowFeedbackModal(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <div className="flex justify-center">
+          <Button variant="ghost" size="sm" onClick={() => setShowFeedbackModal(true)}>
+            <MessageSquare className="w-4 h-4 mr-2" /> Leave feedback
+          </Button>
+        </div>
+
+
 
 
         <div className="gap-[8px] rounded flex-col flex items-center justify-center shadow-none">
