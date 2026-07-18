@@ -53,7 +53,7 @@ export default function AdminSessions() {
 
   // Debounce search input to avoid a query per keystroke.
   useEffect(() => {
-    const t = setTimeout(() => setQDebounced(q.trim()), 300);
+    const t = setTimeout(() => setQDebounced(safeSearch(q)), 300);
     return () => clearTimeout(t);
   }, [q]);
 
