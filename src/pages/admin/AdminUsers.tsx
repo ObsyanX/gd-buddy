@@ -12,12 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { useUserRoles, type AppRole } from "@/hooks/useUserRoles";
 import { Eye, Users2, Trophy, Clock, MessageSquare, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { TableSkeleton, EmptyState } from "@/components/admin/TableSkeleton";
-
-function rangeToDays(v: string | null): number | null {
-  if (!v) return null;
-  const m = /^(\d+)d$/.exec(v);
-  return m ? parseInt(m[1], 10) : null;
-}
+import { rangeToDays, safeSearch } from "@/lib/admin-query-params";
 
 type UsersSortKey = "display_name" | "created_at";
 const USERS_PAGE_SIZE = 25;
