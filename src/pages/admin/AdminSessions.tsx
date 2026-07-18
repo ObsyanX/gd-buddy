@@ -214,7 +214,16 @@ export default function AdminSessions() {
                 </tr>
               ))}
               {loading && <TableSkeleton rows={6} cols={8} />}
-              {!loading && rows.length === 0 && (
+              {!loading && loadError && (
+                <tr><td colSpan={8}>
+                  <EmptyState
+                    title="Couldn't load sessions"
+                    description={loadError}
+                    action={<Button size="sm" variant="outline" onClick={() => load()}>Retry</Button>}
+                  />
+                </td></tr>
+              )}
+              {!loading && !loadError && rows.length === 0 && (
                 <tr><td colSpan={8}>
                   <EmptyState
                     title="No sessions match these filters"
