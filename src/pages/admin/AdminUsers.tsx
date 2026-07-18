@@ -318,7 +318,16 @@ export default function AdminUsers() {
                 </tr>
               ))}
               {loading && <TableSkeleton rows={6} cols={isAdmin ? 5 : 4} />}
-              {!loading && rows.length === 0 && (
+              {!loading && loadError && (
+                <tr><td colSpan={isAdmin ? 5 : 4}>
+                  <EmptyState
+                    title="Couldn't load users"
+                    description={loadError}
+                    action={<Button size="sm" variant="outline" onClick={() => load()}>Retry</Button>}
+                  />
+                </td></tr>
+              )}
+              {!loading && !loadError && rows.length === 0 && (
                 <tr><td colSpan={isAdmin ? 5 : 4}>
                   <EmptyState
                     title="No users match these filters"
