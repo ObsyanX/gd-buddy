@@ -75,51 +75,66 @@ export default function AdminSessions() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    // participants sorting can't be pushed to Postgres cheaply — sort in-memory after fetch.
-    const serverSortable = sortKey !== "participants";
-    let query = supabase
-      .from("gd_sessions")
-      .select("id, topic, topic_category, status, is_multiplayer, start_time, end_time, created_at, user_id, host_user_id", { count: "exact" });
+    setLoadError(null);
+    // Fail gracefully if the round-trip stalls — the empty-state renders an error retry.
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Request timed out. Please retry.")), 12_000),
+    );
+    try {
+      await Promise.race([timeout, (async () => {
+        // participants sorting can't be pushed to Postgres cheaply — sort in-memory after fetch.
+        const serverSortable = sortKey !== "participants";
+        let query = supabase
+          .from("gd_sessions")
+          .select("id, topic, topic_category, status, is_multiplayer, start_time, end_time, created_at, user_id, host_user_id", { count: "exact" });
 
-    if (mode === "solo") query = query.eq("is_multiplayer", false);
-    if (mode === "multi") query = query.eq("is_multiplayer", true);
-    if (status !== "all") query = query.eq("status", status as never);
-    if (qDebounced) query = query.ilike("topic", `%${qDebounced}%`);
+        if (mode === "solo") query = query.eq("is_multiplayer", false);
+        if (mode === "multi") query = query.eq("is_multiplayer", true);
+        if (status !== "all") query = query.eq("status", status as never);
+        if (qDebounced) query = query.ilike("topic", `%${qDebounced}%`);
 
-    if (serverSortable) {
-      query = query.order(sortKey, { ascending: sortDir === "asc" });
-    } else {
-      query = query.order("created_at", { ascending: false });
+        if (serverSortable) {
+          query = query.order(sortKey, { ascending: sortDir === "asc" });
+        } else {
+          query = query.order("created_at", { ascending: false });
+        }
+        query = query.range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+
+        const { data, count, error } = await query;
+        if (error) throw error;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const list = ((data as any[]) ?? []) as Row[];
+        const ids = list.map((s) => s.id);
+        const hostIds = [...new Set(list.map((s) => s.host_user_id || s.user_id).filter(Boolean) as string[])];
+        const [{ data: parts }, { data: profs }] = await Promise.all([
+          ids.length ? supabase.from("gd_participants").select("session_id").in("session_id", ids) : Promise.resolve({ data: [] as { session_id: string }[] }),
+          hostIds.length ? supabase.from("profiles").select("id, display_name").in("id", hostIds) : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
+        ]);
+        const partMap = new Map<string, number>();
+        (parts ?? []).forEach((p: { session_id: string }) => partMap.set(p.session_id, (partMap.get(p.session_id) ?? 0) + 1));
+        const nameMap = new Map<string, string | null>();
+        (profs ?? []).forEach((p: { id: string; display_name: string | null }) => nameMap.set(p.id, p.display_name));
+
+        let hydrated = list.map((s) => ({
+          ...s,
+          participants: partMap.get(s.id) ?? 0,
+          host_name: nameMap.get(s.host_user_id || s.user_id || "") ?? null,
+        }));
+
+        if (sortKey === "participants") {
+          hydrated = hydrated.sort((a, b) => sortDir === "asc" ? a.participants - b.participants : b.participants - a.participants);
+        }
+
+        setRows(hydrated);
+        setTotal(count ?? 0);
+      })()]);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Failed to load sessions.");
+      setRows([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
     }
-    query = query.range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
-
-    const { data, count } = await query;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const list = ((data as any[]) ?? []) as Row[];
-    const ids = list.map((s) => s.id);
-    const hostIds = [...new Set(list.map((s) => s.host_user_id || s.user_id).filter(Boolean) as string[])];
-    const [{ data: parts }, { data: profs }] = await Promise.all([
-      ids.length ? supabase.from("gd_participants").select("session_id").in("session_id", ids) : Promise.resolve({ data: [] as { session_id: string }[] }),
-      hostIds.length ? supabase.from("profiles").select("id, display_name").in("id", hostIds) : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
-    ]);
-    const partMap = new Map<string, number>();
-    (parts ?? []).forEach((p: { session_id: string }) => partMap.set(p.session_id, (partMap.get(p.session_id) ?? 0) + 1));
-    const nameMap = new Map<string, string | null>();
-    (profs ?? []).forEach((p: { id: string; display_name: string | null }) => nameMap.set(p.id, p.display_name));
-
-    let hydrated = list.map((s) => ({
-      ...s,
-      participants: partMap.get(s.id) ?? 0,
-      host_name: nameMap.get(s.host_user_id || s.user_id || "") ?? null,
-    }));
-
-    if (sortKey === "participants") {
-      hydrated = hydrated.sort((a, b) => sortDir === "asc" ? a.participants - b.participants : b.participants - a.participants);
-    }
-
-    setRows(hydrated);
-    setTotal(count ?? 0);
-    setLoading(false);
   }, [mode, status, qDebounced, sortKey, sortDir, page]);
 
   useEffect(() => { load(); }, [load]);
