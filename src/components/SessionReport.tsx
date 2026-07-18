@@ -87,6 +87,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   const [videoMetrics, setVideoMetrics] = useState<any>(null);
   const [aiFeedback, setAiFeedback] = useState<any>(null);
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(true);
   const [chartData, setChartData] = useState<{
     timeline: any[];
     performance: any[];
