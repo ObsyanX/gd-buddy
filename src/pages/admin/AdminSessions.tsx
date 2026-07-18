@@ -40,15 +40,16 @@ function durationLabel(s: Row) {
 export default function AdminSessions() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState<Row[]>([]);
-  const [q, setQ] = useState(searchParams.get("q") ?? "");
-  const [qDebounced, setQDebounced] = useState(searchParams.get("q") ?? "");
-  const [mode, setMode] = useState<"all" | "solo" | "multi">((searchParams.get("mode") as "all" | "solo" | "multi") ?? "all");
-  const [status, setStatus] = useState<string>(searchParams.get("status") ?? "all");
+  const [q, setQ] = useState(safeSearch(searchParams.get("q")));
+  const [qDebounced, setQDebounced] = useState(safeSearch(searchParams.get("q")));
+  const [mode, setMode] = useState<SessionMode>(safeMode(searchParams.get("mode")));
+  const [status, setStatus] = useState<SessionStatus>(safeStatus(searchParams.get("status")));
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Debounce search input to avoid a query per keystroke.
   useEffect(() => {
