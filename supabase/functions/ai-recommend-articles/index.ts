@@ -20,6 +20,35 @@ function json(body: unknown, status = 200) {
   });
 }
 
+type ArticleRow = {
+  id: string;
+  slug: string;
+  title: string;
+  summary?: string | null;
+  thumbnail?: string | null;
+  featured_image?: string | null;
+  publish_at?: string | null;
+  view_count?: number | null;
+  like_count?: number | null;
+  category_id?: string | null;
+};
+
+function normalizeArticleItems(rows: ArticleRow[] | null | undefined) {
+  return (rows ?? []).map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    summary: row.summary ?? null,
+    excerpt: row.summary ?? null,
+    thumbnail: row.thumbnail ?? null,
+    featured_image: row.featured_image ?? null,
+    publish_at: row.publish_at ?? null,
+    view_count: row.view_count ?? 0,
+    like_count: row.like_count ?? 0,
+    category_id: row.category_id ?? null,
+  }));
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -45,7 +74,7 @@ Deno.serve(async (req) => {
         console.error('related_articles rpc failed', error);
         // Fall through to trending
       } else {
-        return json({ items: data ?? [], strategy: 'related' });
+        return json({ items: normalizeArticleItems(data as ArticleRow[]), strategy: 'related' });
       }
     }
 
@@ -81,7 +110,7 @@ Deno.serve(async (req) => {
       return json({ items: [], strategy: 'fallback', error: serializeError(error) }, 200);
     }
 
-    return json({ items: data ?? [], strategy: categoryIds.length ? 'personalized' : 'trending' });
+    return json({ items: normalizeArticleItems(data as ArticleRow[]), strategy: categoryIds.length ? 'personalized' : 'trending' });
   } catch (e) {
     console.error('ai-recommend-articles crashed', e);
     await logEdgeError(e, { function_name: 'ai-recommend-articles', status: 500 });
