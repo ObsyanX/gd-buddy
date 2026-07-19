@@ -71,6 +71,8 @@ const AdminArticleEdit = lazy(() => import("./pages/admin/AdminArticleEdit"));
 const AdminAds = lazy(() => import("./pages/admin/AdminAds"));
 const AdminAdEdit = lazy(() => import("./pages/admin/AdminAdEdit"));
 const AdminPlaceholder = lazy(() => import("./pages/admin/AdminPlaceholder"));
+const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
+const AdminTags = lazy(() => import("./pages/admin/AdminTags"));
 const AdminComments = lazy(() => import("./pages/admin/AdminComments"));
 const AdminNewsletter = lazy(() => import("./pages/admin/AdminNewsletter"));
 const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettings"));
@@ -240,8 +242,8 @@ const App = () => (
                   <Route path="users" element={<Suspense fallback={<DashboardSkeleton />}><AdminUsers /></Suspense>} />
                   <Route path="sessions" element={<Suspense fallback={<DashboardSkeleton />}><AdminSessions /></Suspense>} />
                   <Route path="sessions/:id" element={<Suspense fallback={<DashboardSkeleton />}><AdminSessionDetail /></Suspense>} />
-                  <Route path="categories" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Categories" note="Manage categories via SQL for now — full UI in Phase 3." /></Suspense>} />
-                  <Route path="tags" element={<Suspense fallback={<DashboardSkeleton />}><AdminPlaceholder title="Tags" /></Suspense>} />
+                  <Route path="categories" element={<Suspense fallback={<DashboardSkeleton />}><AdminCategories /></Suspense>} />
+                  <Route path="tags" element={<Suspense fallback={<DashboardSkeleton />}><AdminTags /></Suspense>} />
                   <Route path="campaigns" element={<Suspense fallback={<DashboardSkeleton />}><AdminCampaigns /></Suspense>} />
                   <Route path="comments" element={<Suspense fallback={<DashboardSkeleton />}><AdminComments /></Suspense>} />
                   <Route path="newsletter" element={<Suspense fallback={<DashboardSkeleton />}><AdminNewsletter /></Suspense>} />
