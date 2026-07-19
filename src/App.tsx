@@ -71,6 +71,8 @@ const AdminArticleEdit = lazy(() => import("./pages/admin/AdminArticleEdit"));
 const AdminAds = lazy(() => import("./pages/admin/AdminAds"));
 const AdminAdEdit = lazy(() => import("./pages/admin/AdminAdEdit"));
 const AdminPlaceholder = lazy(() => import("./pages/admin/AdminPlaceholder"));
+const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
+const AdminTags = lazy(() => import("./pages/admin/AdminTags"));
 const AdminComments = lazy(() => import("./pages/admin/AdminComments"));
 const AdminNewsletter = lazy(() => import("./pages/admin/AdminNewsletter"));
 const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettings"));
