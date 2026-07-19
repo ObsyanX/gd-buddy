@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
     let query = admin
       .from('articles')
-      .select('id, slug, title, excerpt, hero_image_url, publish_at, view_count, like_count, category_id')
+      .select('id, slug, title, summary, thumbnail, featured_image, publish_at, view_count, like_count, category_id')
       .eq('status', 'published')
       .lte('publish_at', new Date().toISOString())
       .order('view_count', { ascending: false })
