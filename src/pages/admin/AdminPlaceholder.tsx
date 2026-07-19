@@ -8,7 +8,7 @@ export default function AdminPlaceholder({ title, note }: { title: string; note?
       <Card>
         <CardContent className="p-8 flex flex-col items-center gap-3 text-center">
           <Construction className="h-8 w-8 text-muted-foreground" />
-          <p className="text-muted-foreground">{note ?? "This section will be built out in Phase 2."}</p>
+          <p className="text-muted-foreground">{note ?? "This section is coming soon."}</p>
         </CardContent>
       </Card>
     </div>
