@@ -92,6 +92,7 @@ const FeedbackForm = ({ sessionId, onSubmitted }: { sessionId: string; onSubmitt
     const { data } = await supabase
       .from('user_feedback').select('*').eq('user_id', user.id).eq('session_id', sessionId).maybeSingle();
     setExisting(data);
+    onSubmitted?.();
   };
 
   return (
