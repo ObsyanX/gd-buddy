@@ -1372,7 +1372,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
               </DialogDescription>
             </DialogHeader>
             <div className="max-h-[60vh] overflow-y-auto">
-              <FeedbackForm sessionId={sessionId} />
+              <FeedbackForm sessionId={sessionId} onSubmitted={() => setShowFeedbackModal(false)} />
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowFeedbackModal(false)}>Close</Button>
