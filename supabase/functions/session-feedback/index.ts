@@ -130,8 +130,30 @@ Provide your structured feedback as JSON.`;
     throw new Error("Failed to parse AI feedback response");
   } catch (e) {
     console.error("session-feedback error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const message = e instanceof Error ? e.message : (typeof e === "string" ? e : JSON.stringify(e));
+    // Return a graceful fallback so the report UI never breaks.
+    const fallback = {
+      overall_rating: 6,
+      summary: "We couldn't generate AI feedback for this session right now. Please try again shortly.",
+      communication: "AI feedback is temporarily unavailable.",
+      content_quality: "AI feedback is temporarily unavailable.",
+      group_dynamics: "AI feedback is temporarily unavailable.",
+      body_language: "No video data available for this session.",
+      tips: [
+        "Review your transcript and note filler words to reduce.",
+        "Practice structuring points with a clear opening, body, and conclusion.",
+        "Try again in a minute to regenerate AI feedback.",
+      ],
+      sentiment_score: 50,
+      leadership_score: 50,
+      teamwork_score: 50,
+      grammar_score: 50,
+      _fallback: true,
+      _error: message,
+    };
+    return new Response(JSON.stringify(fallback), {
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
+
