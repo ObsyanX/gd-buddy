@@ -28,7 +28,7 @@ const StarRow = ({ value, onChange, label }: { value: number; onChange: (n: numb
   </div>
 );
 
-const FeedbackForm = ({ sessionId }: { sessionId: string }) => {
+const FeedbackForm = ({ sessionId, onSubmitted }: { sessionId: string; onSubmitted?: () => void }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [existing, setExisting] = useState<any>(null);
@@ -92,6 +92,7 @@ const FeedbackForm = ({ sessionId }: { sessionId: string }) => {
     const { data } = await supabase
       .from('user_feedback').select('*').eq('user_id', user.id).eq('session_id', sessionId).maybeSingle();
     setExisting(data);
+    onSubmitted?.();
   };
 
   return (
