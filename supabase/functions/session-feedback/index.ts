@@ -57,7 +57,7 @@ Provide your structured feedback as JSON.`;
     let data;
     try {
       data = await callAI({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
