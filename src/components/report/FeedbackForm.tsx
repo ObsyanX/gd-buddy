@@ -28,7 +28,7 @@ const StarRow = ({ value, onChange, label }: { value: number; onChange: (n: numb
   </div>
 );
 
-const FeedbackForm = ({ sessionId }: { sessionId: string }) => {
+const FeedbackForm = ({ sessionId, onSubmitted }: { sessionId: string; onSubmitted?: () => void }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [existing, setExisting] = useState<any>(null);
