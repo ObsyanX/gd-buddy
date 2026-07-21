@@ -54,12 +54,13 @@ Deno.serve(async (req) => {
     }
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    const { data: msgs } = await supabase
+    const { data: msgs, error: msgErr } = await supabase
       .from('gd_messages')
       .select('text')
       .eq('session_id', session_id)
       .order('start_ts', { ascending: true })
       .limit(60);
+    if (msgErr) console.error('graph-builder gd_messages error', msgErr);
 
     const transcript = (msgs ?? []).map((m: any, i: number) => `${i + 1}. ${m.text ?? ''}`).join('\n');
     if (!transcript.trim()) {
@@ -86,10 +87,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: inserted } = await supabase
+    const { data: inserted, error: nodeErr } = await supabase
       .from('knowledge_nodes')
       .insert(nodeRows)
       .select('id, label');
+    if (nodeErr) console.error('graph-builder knowledge_nodes insert error', nodeErr);
 
     const idByLabel = new Map<string, string>();
     for (const n of inserted ?? []) idByLabel.set(n.label.trim().toLowerCase(), n.id);
