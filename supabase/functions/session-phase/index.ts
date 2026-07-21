@@ -67,14 +67,45 @@ async function broadcastSystemMessage(
   db: ReturnType<typeof createClient>,
   session_id: string,
   content: string,
-  kind: string,
+  _kind: string,
 ) {
+  // gd_messages requires a participant_id — find or create a Moderator participant for this session.
+  let moderatorId: string | null = null;
+  const { data: existing } = await db
+    .from("gd_participants")
+    .select("id")
+    .eq("session_id", session_id)
+    .eq("persona_name", "Moderator")
+    .maybeSingle();
+  if (existing?.id) {
+    moderatorId = existing.id;
+  } else {
+    const { data: maxOrder } = await db
+      .from("gd_participants")
+      .select("order_index")
+      .eq("session_id", session_id)
+      .order("order_index", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextOrder = ((maxOrder as any)?.order_index ?? -1) + 1;
+    const { data: created } = await db
+      .from("gd_participants")
+      .insert({
+        session_id,
+        is_user: false,
+        order_index: nextOrder,
+        persona_name: "Moderator",
+        persona_role: "moderator",
+      })
+      .select("id")
+      .maybeSingle();
+    moderatorId = (created as any)?.id ?? null;
+  }
+  if (!moderatorId) return;
   await db.from("gd_messages").insert({
     session_id,
-    sender_type: "system",
-    speaker_name: "Moderator",
-    content,
-    metadata: { kind },
+    participant_id: moderatorId,
+    text: content,
   });
 }
 
@@ -107,13 +138,13 @@ async function generateAIConclusion(
 ): Promise<string> {
   const { data: msgs } = await db
     .from("gd_messages")
-    .select("speaker_name, content")
+    .select("text, gd_participants(persona_name)")
     .eq("session_id", session_id)
-    .order("created_at", { ascending: false })
+    .order("start_ts", { ascending: false })
     .limit(20);
   const transcript = (msgs ?? [])
     .reverse()
-    .map((m: any) => `${m.speaker_name}: ${m.content}`)
+    .map((m: any) => `${m?.gd_participants?.persona_name ?? "Speaker"}: ${m.text ?? ""}`)
     .join("\n")
     .slice(0, 3500);
   try {
