@@ -1,8 +1,15 @@
 {
   "rewrites": [
-    { "source": "/((?!api/|assets/|sw\\.js|manifest\\.json|robots\\.txt|sitemap\\.xml|favicon\\.ico|og-image\\.png|placeholder\\.svg|llms\\.txt).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/|sw\\.js|manifest\\.json|robots\\.txt|sitemap\\.xml|favicon\\.ico|og-image\\.png|placeholder\\.svg|llms\\.txt|ads\\.txt).*)", "destination": "/index.html" }
   ],
   "headers": [
+    {
+      "source": "/ads.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
     {
       "source": "/sitemap.xml",
       "headers": [
