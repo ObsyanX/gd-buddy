@@ -77,17 +77,17 @@ Deno.serve(async (req) => {
 
     const { data: messages } = await supabase
       .from('gd_messages')
-      .select('content, duration_ms, end_ts')
+      .select('text, start_ts, end_ts')
       .eq('session_id', session_id)
-      .order('end_ts', { ascending: false })
+      .order('start_ts', { ascending: false })
       .limit(12);
 
     const utterances: Utterance[] = (messages ?? [])
       .reverse()
       .map((m: any) => ({
-        text: m.content ?? '',
-        duration_ms: m.duration_ms ?? 0,
-        ts: new Date(m.end_ts ?? Date.now()).getTime(),
+        text: m.text ?? '',
+        duration_ms: m.start_ts && m.end_ts ? Math.max(0, new Date(m.end_ts).getTime() - new Date(m.start_ts).getTime()) : 0,
+        ts: new Date(m.end_ts ?? m.start_ts ?? Date.now()).getTime(),
       }));
 
     const verdict = await aiVerdict(session?.topic ?? '', utterances);
