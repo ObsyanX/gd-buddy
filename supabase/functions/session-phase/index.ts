@@ -54,13 +54,14 @@ async function logDecision(
   evidence: unknown = [],
   confidence = 0.95,
 ) {
-  await db.from("moderator_decisions").insert({
+  const { error } = await db.from("moderator_decisions").insert({
     session_id,
     action,
     reason,
     confidence,
     evidence,
   });
+  if (error) console.error("session-phase moderator_decisions insert error", error);
 }
 
 async function broadcastSystemMessage(
@@ -71,24 +72,26 @@ async function broadcastSystemMessage(
 ) {
   // gd_messages requires a participant_id — find or create a Moderator participant for this session.
   let moderatorId: string | null = null;
-  const { data: existing } = await db
+  const { data: existing, error: existErr } = await db
     .from("gd_participants")
     .select("id")
     .eq("session_id", session_id)
     .eq("persona_name", "Moderator")
     .maybeSingle();
+  if (existErr) console.error("session-phase find moderator error", existErr);
   if (existing?.id) {
     moderatorId = existing.id;
   } else {
-    const { data: maxOrder } = await db
+    const { data: maxOrder, error: maxErr } = await db
       .from("gd_participants")
       .select("order_index")
       .eq("session_id", session_id)
       .order("order_index", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (maxErr) console.error("session-phase max order error", maxErr);
     const nextOrder = ((maxOrder as any)?.order_index ?? -1) + 1;
-    const { data: created } = await db
+    const { data: created, error: createErr } = await db
       .from("gd_participants")
       .insert({
         session_id,
@@ -99,14 +102,16 @@ async function broadcastSystemMessage(
       })
       .select("id")
       .maybeSingle();
+    if (createErr) console.error("session-phase create moderator error", createErr);
     moderatorId = (created as any)?.id ?? null;
   }
   if (!moderatorId) return;
-  await db.from("gd_messages").insert({
+  const { error: msgErr } = await db.from("gd_messages").insert({
     session_id,
     participant_id: moderatorId,
     text: content,
   });
+  if (msgErr) console.error("session-phase gd_messages insert error", msgErr);
 }
 
 async function generateAIIntro(topic: string): Promise<string> {
@@ -232,7 +237,8 @@ serve(async (req) => {
     if (event === "extend") updates.extension_used = true;
     if (target === "ended") updates.end_time = new Date().toISOString();
 
-    await supabase.from("gd_sessions").update(updates).eq("id", session_id);
+    const { error: updErr } = await supabase.from("gd_sessions").update(updates).eq("id", session_id);
+    if (updErr) console.error("session-phase gd_sessions update error", updErr);
     await logDecision(supabase, session_id, `phase:${current}->${target}`, `event=${event}`);
 
     // Phase-entry side effects

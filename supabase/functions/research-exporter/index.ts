@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       ? { column: "session_id", value: session_id }
       : { column: "session_id", value: null };
 
-    const [{ data: msgs }, { data: scores }, { data: nodes }, { data: edges }, { data: events }] =
+    const [msgsRes, scoresRes, nodesRes, edgesRes, eventsRes] =
       await Promise.all([
         admin.from("gd_messages").select("id, text, start_ts, end_ts, participant_id, gd_participants(real_user_id, persona_name, is_user)").eq("session_id", session_id).order("start_ts"),
         admin.from("session_scores").select("*").eq("session_id", session_id),
@@ -66,6 +66,10 @@ Deno.serve(async (req) => {
         admin.from("knowledge_edges").select("*").eq("session_id", session_id),
         admin.from("event_log").select("*").eq("session_id", session_id).order("ts").limit(2000),
       ]);
+    for (const [name, r] of [["gd_messages", msgsRes], ["session_scores", scoresRes], ["knowledge_nodes", nodesRes], ["knowledge_edges", edgesRes], ["event_log", eventsRes]] as const) {
+      if ((r as any).error) console.error(`research-exporter ${name} error`, (r as any).error);
+    }
+    const msgs = msgsRes.data, scores = scoresRes.data, nodes = nodesRes.data, edges = edgesRes.data, events = eventsRes.data;
 
     // Anonymize
     const userIdCache = new Map<string, string>();

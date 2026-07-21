@@ -15,6 +15,26 @@ Deno.serve(async (req) => {
 
   const url = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+  // Auth: allow either the service role key (cron/internal) or an authenticated admin JWT.
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  let authorized = false;
+  if (bearer && bearer === serviceKey) {
+    authorized = true;
+  } else if (bearer) {
+    const userClient = createClient(url, anonKey, { global: { headers: { Authorization: authHeader } } });
+    const { data: userData } = await userClient.auth.getUser();
+    if (userData?.user?.email === "duttasayan947595@gdbuddy.com") authorized = true;
+  }
+  if (!authorized) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const supabase = createClient(url, serviceKey);
 
   let dryRun = true;
