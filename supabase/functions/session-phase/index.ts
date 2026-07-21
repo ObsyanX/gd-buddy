@@ -237,7 +237,8 @@ serve(async (req) => {
     if (event === "extend") updates.extension_used = true;
     if (target === "ended") updates.end_time = new Date().toISOString();
 
-    await supabase.from("gd_sessions").update(updates).eq("id", session_id);
+    const { error: updErr } = await supabase.from("gd_sessions").update(updates).eq("id", session_id);
+    if (updErr) console.error("session-phase gd_sessions update error", updErr);
     await logDecision(supabase, session_id, `phase:${current}->${target}`, `event=${event}`);
 
     // Phase-entry side effects
