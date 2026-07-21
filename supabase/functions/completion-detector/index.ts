@@ -69,18 +69,20 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    const { data: session } = await supabase
+    const { data: session, error: sessErr } = await supabase
       .from('gd_sessions')
       .select('id, topic')
       .eq('id', session_id)
       .maybeSingle();
+    if (sessErr) console.error('completion-detector gd_sessions error', sessErr);
 
-    const { data: messages } = await supabase
+    const { data: messages, error: msgErr } = await supabase
       .from('gd_messages')
       .select('text, start_ts, end_ts')
       .eq('session_id', session_id)
       .order('start_ts', { ascending: false })
       .limit(12);
+    if (msgErr) console.error('completion-detector gd_messages error', msgErr);
 
     const utterances: Utterance[] = (messages ?? [])
       .reverse()
@@ -115,13 +117,14 @@ Deno.serve(async (req) => {
     const confidence = Math.min(1, Number(score.toFixed(2)));
     const acted = confidence >= 0.75;
 
-    await supabase.from('completion_signals').insert({
+    const { error: insErr } = await supabase.from('completion_signals').insert({
       session_id,
       confidence,
       reason: acted ? 'natural_completion' : 'ongoing',
       evidence,
       acted_on: false,
     });
+    if (insErr) console.error('completion-detector completion_signals insert error', insErr);
 
     return new Response(
       JSON.stringify({ confidence, reason: acted ? 'natural_completion' : 'ongoing', evidence }),
