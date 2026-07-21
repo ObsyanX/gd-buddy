@@ -165,7 +165,10 @@ Deno.serve(async (req) => {
       if (scoreErr) console.error('coaching-engine session_scores upsert error', scoreErr);
 
       const tips = generateTips(score).map((t) => ({ session_id, user_id: uid, ...t }));
-      if (tips.length) await supabase.from('coaching_tips').insert(tips);
+      if (tips.length) {
+        const { error: tipErr } = await supabase.from('coaching_tips').insert(tips);
+        if (tipErr) console.error('coaching-engine coaching_tips insert error', tipErr);
+      }
 
       results.push({ user_id: uid, score, tip_count: tips.length });
     }
