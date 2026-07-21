@@ -108,7 +108,10 @@ Deno.serve(async (req) => {
       .filter((e: any) => e.from_node && e.to_node && e.from_node !== e.to_node)
       .slice(0, 80);
 
-    if (edgeRows.length) await supabase.from('knowledge_edges').insert(edgeRows);
+    if (edgeRows.length) {
+      const { error: edgeErr } = await supabase.from('knowledge_edges').insert(edgeRows);
+      if (edgeErr) console.error('graph-builder knowledge_edges insert error', edgeErr);
+    }
 
     return new Response(
       JSON.stringify({ ok: true, nodes: nodeRows.length, edges: edgeRows.length }),
