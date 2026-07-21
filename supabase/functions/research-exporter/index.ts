@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
 
     const [{ data: msgs }, { data: scores }, { data: nodes }, { data: edges }, { data: events }] =
       await Promise.all([
-        admin.from("gd_messages").select("*").eq("session_id", session_id).order("created_at"),
+        admin.from("gd_messages").select("id, text, start_ts, end_ts, participant_id, gd_participants(real_user_id, persona_name, is_user)").eq("session_id", session_id).order("start_ts"),
         admin.from("session_scores").select("*").eq("session_id", session_id),
         admin.from("knowledge_nodes").select("*").eq("session_id", session_id),
         admin.from("knowledge_edges").select("*").eq("session_id", session_id),
@@ -77,12 +77,14 @@ Deno.serve(async (req) => {
 
     const outTranscript = [];
     for (const m of msgs ?? []) {
+      const p = (m as any).gd_participants ?? {};
       outTranscript.push({
-        id: m.id,
-        speaker: await anon((m as { user_id?: string }).user_id ?? null),
-        role: (m as { role?: string }).role,
-        text: redact(String((m as { content?: string }).content ?? "")),
-        at: (m as { created_at?: string }).created_at,
+        id: (m as any).id,
+        speaker: await anon(p.real_user_id ?? (m as any).participant_id ?? null),
+        role: p.is_user ? "user" : "ai",
+        persona: p.persona_name ?? null,
+        text: redact(String((m as any).text ?? "")),
+        at: (m as any).start_ts,
       });
     }
 
