@@ -113,17 +113,20 @@ Deno.serve(async (req) => {
       // Aggregate raw signals in parallel
       const [{ data: msgs }, { data: dup }, { data: fal }, { data: fc }, { data: behaviour }] =
         await Promise.all([
-          supabase.from('gd_messages').select('content, duration_ms').eq('session_id', session_id).eq('participant_id', p.id),
+          supabase.from('gd_messages').select('text, start_ts, end_ts').eq('session_id', session_id).eq('participant_id', p.id),
           supabase.from('duplicate_ideas').select('id, duplicate_message_id').eq('session_id', session_id),
           supabase.from('fallacies').select('id, message_id').eq('session_id', session_id),
           supabase.from('fact_checks').select('verdict, message_id').eq('session_id', session_id),
           supabase.from('participant_behaviour').select('*').eq('session_id', session_id).eq('user_id', uid).maybeSingle(),
         ]);
 
-      const words = (msgs ?? []).reduce((s, m) => s + (m.content ?? '').split(/\s+/).filter(Boolean).length, 0);
+      const words = (msgs ?? []).reduce((s: number, m: any) => s + String(m.text ?? '').split(/\s+/).filter(Boolean).length, 0);
       const turns = (msgs ?? []).length;
       const avg_words_per_turn = turns > 0 ? words / turns : 0;
-      const speaking_seconds = (msgs ?? []).reduce((s, m) => s + Math.round((m.duration_ms ?? 0) / 1000), 0);
+      const speaking_seconds = (msgs ?? []).reduce((s: number, m: any) => {
+        if (!m.start_ts || !m.end_ts) return s;
+        return s + Math.max(0, Math.round((new Date(m.end_ts).getTime() - new Date(m.start_ts).getTime()) / 1000));
+      }, 0);
 
       const supported = (fc ?? []).filter((c: any) => c.verdict === 'supported').length;
       const disputed = (fc ?? []).filter((c: any) => c.verdict === 'disputed').length;

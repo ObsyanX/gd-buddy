@@ -56,12 +56,12 @@ Deno.serve(async (req) => {
 
     const { data: msgs } = await supabase
       .from('gd_messages')
-      .select('content')
+      .select('text')
       .eq('session_id', session_id)
-      .order('end_ts', { ascending: true })
+      .order('start_ts', { ascending: true })
       .limit(60);
 
-    const transcript = (msgs ?? []).map((m: any, i: number) => `${i + 1}. ${m.content ?? ''}`).join('\n');
+    const transcript = (msgs ?? []).map((m: any, i: number) => `${i + 1}. ${m.text ?? ''}`).join('\n');
     if (!transcript.trim()) {
       return new Response(JSON.stringify({ ok: true, nodes: 0, edges: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
