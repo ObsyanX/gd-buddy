@@ -99,10 +99,11 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     // Pull participants
-    const { data: participants } = await supabase
+    const { data: participants, error: partErr } = await supabase
       .from('gd_participants')
       .select('id, real_user_id')
       .eq('session_id', session_id);
+    if (partErr) console.error('coaching-engine gd_participants error', partErr);
 
     const results: any[] = [];
 
@@ -111,7 +112,7 @@ Deno.serve(async (req) => {
       if (!uid) continue;
 
       // Aggregate raw signals in parallel
-      const [{ data: msgs }, { data: dup }, { data: fal }, { data: fc }, { data: behaviour }] =
+      const [msgsRes, dupRes, falRes, fcRes, behaviourRes] =
         await Promise.all([
           supabase.from('gd_messages').select('text, start_ts, end_ts').eq('session_id', session_id).eq('participant_id', p.id),
           supabase.from('duplicate_ideas').select('id, duplicate_message_id').eq('session_id', session_id),
@@ -119,6 +120,10 @@ Deno.serve(async (req) => {
           supabase.from('fact_checks').select('verdict, message_id').eq('session_id', session_id),
           supabase.from('participant_behaviour').select('*').eq('session_id', session_id).eq('user_id', uid).maybeSingle(),
         ]);
+      for (const [name, r] of [['gd_messages', msgsRes], ['duplicate_ideas', dupRes], ['fallacies', falRes], ['fact_checks', fcRes], ['participant_behaviour', behaviourRes]] as const) {
+        if ((r as any).error) console.error(`coaching-engine ${name} error`, (r as any).error);
+      }
+      const msgs = msgsRes.data, dup = dupRes.data, fal = falRes.data, fc = fcRes.data, behaviour = behaviourRes.data;
 
       const words = (msgs ?? []).reduce((s: number, m: any) => s + String(m.text ?? '').split(/\s+/).filter(Boolean).length, 0);
       const turns = (msgs ?? []).length;
@@ -153,10 +158,11 @@ Deno.serve(async (req) => {
 
       const score = radar(inputs);
 
-      await supabase.from('session_scores').upsert(
+      const { error: scoreErr } = await supabase.from('session_scores').upsert(
         { session_id, user_id: uid, ...score, computed_at: new Date().toISOString() },
         { onConflict: 'session_id,user_id' },
       );
+      if (scoreErr) console.error('coaching-engine session_scores upsert error', scoreErr);
 
       const tips = generateTips(score).map((t) => ({ session_id, user_id: uid, ...t }));
       if (tips.length) await supabase.from('coaching_tips').insert(tips);
