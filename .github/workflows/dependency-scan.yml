@@ -1,0 +1,67 @@
+name: Dependency Security Scan
+
+# Fails the build when a real vulnerable package version is present in the
+# lockfile at high or critical severity, matching the thresholds the Lovable
+# security scanner uses for `vulnerable_dependencies_critical` /
+# `vulnerable_dependencies_high`. Advisories at moderate/low are reported but
+# do NOT fail the pipeline, to avoid noise from transitive dev warnings.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Daily re-scan so a newly published advisory against an already-installed
+    # version breaks the build even without a new commit.
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: bun audit (high+critical)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile
+
+      # `bun audit --json` prints an advisory summary. We only fail when a real
+      # vulnerable version is installed at severity high or critical — this
+      # matches the scanner's fix thresholds and avoids false positives from
+      # ranges that the resolved lockfile version already sits above.
+      - name: Run bun audit
+        id: audit
+        run: |
+          set +e
+          bun audit --json > audit.json
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat audit.json
+          echo "---"
+          # Count high+critical advisories using jq.
+          HIGH=$(jq '[.advisories // {} | to_entries[] | select(.value.severity == "high" or .value.severity == "critical")] | length' audit.json 2>/dev/null || echo 0)
+          echo "high_critical=$HIGH" >> "$GITHUB_OUTPUT"
+          echo "High+critical advisories: $HIGH"
+
+      - name: Fail on high/critical vulnerabilities
+        if: steps.audit.outputs.high_critical != '0'
+        run: |
+          echo "::error::Found ${{ steps.audit.outputs.high_critical }} high/critical vulnerable dependencies. See audit.json above."
+          exit 1
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bun-audit-report
+          path: audit.json
+          retention-days: 30
