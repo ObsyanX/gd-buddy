@@ -50,6 +50,12 @@ export async function requireAuth(req: Request): Promise<AuthContext | Response>
   if (!authHeader.startsWith("Bearer ")) return unauthorized();
   const jwt = authHeader.slice("Bearer ".length);
 
+  // Allow trusted service-role calls (edge-function to edge-function) to skip
+  // the user JWT flow. Returned isAdmin=true so downstream role checks pass.
+  if (jwt === SERVICE_ROLE) {
+    return { userId: "service", isAdmin: true, jwt };
+  }
+
   const userClient = createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: `Bearer ${jwt}` } },
     auth: { persistSession: false },
