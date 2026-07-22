@@ -20,6 +20,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { callAI } from "../_shared/ai-with-fallback.ts";
+import { requireAuth } from "../_shared/auth-guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -204,6 +205,18 @@ serve(async (req) => {
     if (sErr || !session) {
       return new Response(JSON.stringify({ error: "session not found" }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Require authenticated caller who owns/hosts the session (admins pass).
+    const authRes = await requireAuth(req);
+    if (authRes instanceof Response) return authRes;
+    const isOwner =
+      authRes.userId === session.host_user_id || authRes.userId === session.user_id;
+    if (!authRes.isAdmin && !isOwner) {
+      return new Response(JSON.stringify({ error: "Only the session host can control phase" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

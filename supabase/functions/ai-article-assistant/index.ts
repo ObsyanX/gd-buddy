@@ -1,6 +1,7 @@
 // AI Article Assistant — generate outlines, drafts, improvements, SEO meta
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { callAI } from "../_shared/ai-with-fallback.ts";
+import { requireRole } from "../_shared/auth-guard.ts";
 
 interface Req {
   action: 'outline' | 'draft' | 'improve' | 'seo';
@@ -40,6 +41,8 @@ Return JSON only, no code fences.`;
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
+    const authRes = await requireRole(req, ['editor', 'admin']);
+    if (authRes instanceof Response) return authRes;
     const body = (await req.json()) as Req;
     if (!body.action) {
       return new Response(JSON.stringify({ error: 'action is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

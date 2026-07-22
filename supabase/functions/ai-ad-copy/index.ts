@@ -1,6 +1,7 @@
 // AI Ad Copy — generate ad headline + description variants
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { callAI } from "../_shared/ai-with-fallback.ts";
+import { requireRole } from "../_shared/auth-guard.ts";
 
 interface Req {
   product: string;
@@ -13,6 +14,8 @@ interface Req {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
+    const authRes = await requireRole(req, ['editor', 'admin']);
+    if (authRes instanceof Response) return authRes;
     const body = (await req.json()) as Req;
     if (!body.product) {
       return new Response(JSON.stringify({ error: 'product is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

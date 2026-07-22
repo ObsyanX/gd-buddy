@@ -7,6 +7,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.23.8";
 import { callAI } from "../_shared/ai-with-fallback.ts";
+import { requireSessionAccess } from "../_shared/auth-guard.ts";
 
 const BodySchema = z.object({
   session_id: z.string().uuid(),
@@ -70,6 +71,10 @@ Deno.serve(async (req) => {
     return json({ error: parsed.error.flatten().fieldErrors }, 400);
   }
   const { session_id, participant_id, text, prosody } = parsed.data;
+
+  const authOrResp = await requireSessionAccess(req, session_id);
+  if (authOrResp instanceof Response) return authOrResp;
+
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,

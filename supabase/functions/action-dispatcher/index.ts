@@ -14,6 +14,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { requireSessionAccess } from "../_shared/auth-guard.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -25,6 +26,9 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const authOrResp = await requireSessionAccess(req, session_id);
+    if (authOrResp instanceof Response) return authOrResp;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",

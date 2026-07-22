@@ -11,6 +11,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { callAI } from "../_shared/ai-with-fallback.ts";
+import { requireSessionAccess } from "../_shared/auth-guard.ts";
 
 interface Intervention {
   action: string;
@@ -31,6 +32,9 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const authOrResp = await requireSessionAccess(req, session_id);
+    if (authOrResp instanceof Response) return authOrResp;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",

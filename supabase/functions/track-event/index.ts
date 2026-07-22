@@ -8,13 +8,34 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Service-role client — this function accepts unauthenticated writes and
-// records visitor telemetry only into admin-read tables.
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+// Service-role client — this function accepts unauthenticated writes for
+// public page_view telemetry only. Identity-sensitive events (login/audit)
+// must derive user_id from a verified JWT below.
 const admin = createClient(
-  Deno.env.get("SUPABASE_URL")!,
+  SUPABASE_URL,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   { auth: { persistSession: false } },
 );
+
+/** Return the caller's verified user id, or null if unauthenticated. */
+async function verifiedUserId(req: Request): Promise<string | null> {
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (!authHeader.startsWith("Bearer ")) return null;
+  const jwt = authHeader.slice("Bearer ".length);
+  try {
+    const client = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+      auth: { persistSession: false },
+    });
+    const { data } = await client.auth.getClaims(jwt);
+    return (data?.claims?.sub as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 function parseUA(ua: string) {
   try {
@@ -37,7 +58,10 @@ serve(async (req) => {
     const body = await req.json();
     const type: string = body.type;
     const visitorId: string = body.visitor_id || crypto.randomUUID();
-    const userId: string | null = body.user_id || null;
+    // Only trust user identity derived from a verified JWT — the request body
+    // could otherwise attribute events to arbitrary users.
+    const authedUserId = await verifiedUserId(req);
+    const userId: string | null = authedUserId; // used for page_view attribution
     const path: string = body.path || "/";
     const referrer: string | null = body.referrer || null;
     const ua = req.headers.get("user-agent") || "";
@@ -89,9 +113,18 @@ serve(async (req) => {
         user_agent: ua,
       });
     } else if (type === "login_success" || type === "login_failed") {
+      // Login events must be authenticated for success (identity-sensitive).
+      // Failure events are recorded without user_id/email trust — attackers
+      // could otherwise plant fake failed logins under any account.
+      if (type === "login_success" && !authedUserId) {
+        return new Response(JSON.stringify({ ok: false, error: "unauthenticated" }), {
+          status: 401,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
       await admin.from("login_events").insert({
-        user_id: userId,
-        email: body.email || null,
+        user_id: authedUserId,
+        email: authedUserId ? (body.email || null) : null,
         success: type === "login_success",
         reason: body.reason || null,
         ip,
@@ -99,9 +132,16 @@ serve(async (req) => {
         country,
       });
     } else if (type === "statcard_click") {
-      // Persist admin StatCard interactions for analytics/debugging.
+      // Admin audit trail — require a verified caller so events cannot be
+      // forged under another user's identity.
+      if (!authedUserId) {
+        return new Response(JSON.stringify({ ok: false, error: "unauthenticated" }), {
+          status: 401,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
       await admin.from("audit_events").insert({
-        actor_user_id: userId,
+        actor_user_id: authedUserId,
         action: "statcard_click",
         resource_type: "admin_dashboard",
         resource_id: String(body.page || "unknown"),

@@ -2,11 +2,15 @@
 // into `enterprise_metrics_daily`. Idempotent via upsert on (org_id, day).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { requireRole } from "../_shared/auth-guard.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const authRes = await requireRole(req, ["admin", "analyst"]);
+    if (authRes instanceof Response) return authRes;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -101,7 +105,9 @@ Deno.serve(async (req) => {
       else results.push({ org_id: org.id, sessions: sessionIds.length });
     }
 
-    return new Response(JSON.stringify({ day: dayStr, results }), {
+    // Do not echo per-org business metrics back to the caller. Return only a
+    // count and the day processed; admins can read details from the table.
+    return new Response(JSON.stringify({ day: dayStr, orgs_processed: results.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
