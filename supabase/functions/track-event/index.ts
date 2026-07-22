@@ -58,7 +58,10 @@ serve(async (req) => {
     const body = await req.json();
     const type: string = body.type;
     const visitorId: string = body.visitor_id || crypto.randomUUID();
-    const userId: string | null = body.user_id || null;
+    // Only trust user identity derived from a verified JWT — the request body
+    // could otherwise attribute events to arbitrary users.
+    const authedUserId = await verifiedUserId(req);
+    const userId: string | null = authedUserId; // used for page_view attribution
     const path: string = body.path || "/";
     const referrer: string | null = body.referrer || null;
     const ua = req.headers.get("user-agent") || "";
@@ -110,9 +113,18 @@ serve(async (req) => {
         user_agent: ua,
       });
     } else if (type === "login_success" || type === "login_failed") {
+      // Login events must be authenticated for success (identity-sensitive).
+      // Failure events are recorded without user_id/email trust — attackers
+      // could otherwise plant fake failed logins under any account.
+      if (type === "login_success" && !authedUserId) {
+        return new Response(JSON.stringify({ ok: false, error: "unauthenticated" }), {
+          status: 401,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
       await admin.from("login_events").insert({
-        user_id: userId,
-        email: body.email || null,
+        user_id: authedUserId,
+        email: authedUserId ? (body.email || null) : null,
         success: type === "login_success",
         reason: body.reason || null,
         ip,
@@ -120,9 +132,16 @@ serve(async (req) => {
         country,
       });
     } else if (type === "statcard_click") {
-      // Persist admin StatCard interactions for analytics/debugging.
+      // Admin audit trail — require a verified caller so events cannot be
+      // forged under another user's identity.
+      if (!authedUserId) {
+        return new Response(JSON.stringify({ ok: false, error: "unauthenticated" }), {
+          status: 401,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
       await admin.from("audit_events").insert({
-        actor_user_id: userId,
+        actor_user_id: authedUserId,
         action: "statcard_click",
         resource_type: "admin_dashboard",
         resource_id: String(body.page || "unknown"),
