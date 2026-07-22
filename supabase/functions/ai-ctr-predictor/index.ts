@@ -1,6 +1,7 @@
 // AI CTR Predictor — heuristic + AI-scored predicted CTR for an ad
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { callAI } from "../_shared/ai-with-fallback.ts";
+import { requireRole } from "../_shared/auth-guard.ts";
 
 interface Req {
   headline: string;
@@ -14,6 +15,8 @@ interface Req {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
+    const authRes = await requireRole(req, ['editor', 'admin', 'analyst']);
+    if (authRes instanceof Response) return authRes;
     const body = (await req.json()) as Req;
     if (!body.headline) {
       return new Response(JSON.stringify({ error: 'headline is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
