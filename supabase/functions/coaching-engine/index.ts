@@ -1,6 +1,7 @@
 // coaching-engine — computes per-participant radar scores and writes coaching tips.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { requireSessionAccess } from "../_shared/auth-guard.ts";
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -96,6 +97,8 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    const authOrResp = await requireSessionAccess(req, session_id);
+    if (authOrResp instanceof Response) return authOrResp;
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     // Pull participants
