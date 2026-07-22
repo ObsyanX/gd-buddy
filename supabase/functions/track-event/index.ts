@@ -8,13 +8,34 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Service-role client — this function accepts unauthenticated writes and
-// records visitor telemetry only into admin-read tables.
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+// Service-role client — this function accepts unauthenticated writes for
+// public page_view telemetry only. Identity-sensitive events (login/audit)
+// must derive user_id from a verified JWT below.
 const admin = createClient(
-  Deno.env.get("SUPABASE_URL")!,
+  SUPABASE_URL,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   { auth: { persistSession: false } },
 );
+
+/** Return the caller's verified user id, or null if unauthenticated. */
+async function verifiedUserId(req: Request): Promise<string | null> {
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (!authHeader.startsWith("Bearer ")) return null;
+  const jwt = authHeader.slice("Bearer ".length);
+  try {
+    const client = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+      auth: { persistSession: false },
+    });
+    const { data } = await client.auth.getClaims(jwt);
+    return (data?.claims?.sub as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 function parseUA(ua: string) {
   try {
