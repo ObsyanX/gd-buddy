@@ -39,6 +39,8 @@ let started = false;
 export function startRUM() {
   if (started || typeof window === "undefined") return;
   started = true;
+  logDependencyEvidence();
+
 
   const device = detectDevice();
   const visitor_id = getVisitorId();
