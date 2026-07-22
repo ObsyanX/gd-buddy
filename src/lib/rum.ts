@@ -3,6 +3,22 @@
 import { onLCP, onINP, onCLS, onFCP, onTTFB, type Metric } from "web-vitals";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/analytics/visitor-id";
+import { collectDependencyEvidence } from "@/lib/security/dependency-evidence";
+
+/** One-shot: log resolved versions of security-critical transitive packages. */
+let depsLogged = false;
+function logDependencyEvidence() {
+  if (depsLogged) return;
+  depsLogged = true;
+  try {
+    const evidence = collectDependencyEvidence();
+    console.info("[security:deps]", JSON.stringify({ runtime: "browser", evidence }));
+    const unpatched = evidence.filter((e) => !e.patched);
+    if (unpatched.length) console.warn("[security:deps] Unpatched packages:", unpatched);
+  } catch {
+    /* never break UX */
+  }
+}
 
 function detectDevice(): "mobile" | "tablet" | "desktop" {
   const ua = navigator.userAgent || "";
@@ -23,6 +39,8 @@ let started = false;
 export function startRUM() {
   if (started || typeof window === "undefined") return;
   started = true;
+  logDependencyEvidence();
+
 
   const device = detectDevice();
   const visitor_id = getVisitorId();

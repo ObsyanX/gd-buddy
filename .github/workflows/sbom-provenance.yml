@@ -1,0 +1,82 @@
+name: SBOM & Provenance
+
+# Generates a CycloneDX SBOM for the deployed app, records lockfile provenance
+# (SHA-256 hashes of bun.lock + package.json), and uploads everything as CI
+# build artifacts for auditing. Complements dependency-scan.yml (which fails on
+# high/critical vulns) with attestation-quality supply-chain evidence.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # required for GitHub attestations
+  attestations: write
+
+jobs:
+  sbom:
+    name: Generate SBOM + provenance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile
+
+      # ---------- SBOM (CycloneDX JSON) ----------
+      - name: Install CycloneDX generator
+        run: npm install -g @cyclonedx/cdxgen@^11
+
+      - name: Generate CycloneDX SBOM
+        run: |
+          mkdir -p artifacts
+          cdxgen -t js -o artifacts/sbom.cdx.json --spec-version 1.5 .
+          # Sanity check: SBOM must be non-empty and list protobufjs (transitive) resolved to a patched version.
+          jq -r '.components[] | select(.name == "protobufjs") | "\(.name)@\(.version)"' artifacts/sbom.cdx.json | tee artifacts/sbom-protobufjs.txt
+          # Fail if protobufjs is present and older than 7.5.3.
+          bad=$(jq -r '[.components[] | select(.name == "protobufjs") | .version | select((split(".") | map(tonumber)) as $v | $v[0] < 7 or ($v[0] == 7 and ($v[1] < 5 or ($v[1] == 5 and $v[2] < 3))))] | length' artifacts/sbom.cdx.json)
+          if [ "$bad" != "0" ]; then
+            echo "::error::SBOM contains protobufjs < 7.5.3"
+            exit 1
+          fi
+
+      # ---------- Provenance: lockfile + package.json hashes ----------
+      - name: Compute lockfile provenance hashes
+        run: |
+          {
+            echo "# Dependency provenance"
+            echo "generated_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "git_sha: ${{ github.sha }}"
+            echo "git_ref: ${{ github.ref }}"
+            echo ""
+            echo "## Lockfile hashes (SHA-256)"
+            sha256sum bun.lock package.json | tee artifacts/lockfile-hashes.txt
+            echo ""
+            echo "## Node/Bun toolchain"
+            bun --version
+          } > artifacts/provenance.md
+          cat artifacts/provenance.md
+
+      # ---------- GitHub build attestation for the SBOM ----------
+      - name: Attest SBOM provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            artifacts/sbom.cdx.json
+            bun.lock
+
+      - name: Upload SBOM + provenance artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-and-provenance
+          path: artifacts/
+          retention-days: 90
