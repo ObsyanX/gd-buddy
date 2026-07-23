@@ -139,14 +139,18 @@
         }
         // AdSense: only after the first real user interaction OR meaningful scroll —
         // this removes ~660 KB of third-party JS from the mobile LCP path entirely.
+        // Consent-gated: skip entirely when the user has denied ads.
+        function consentGranted() {
+          try { return localStorage.getItem('ads_consent') !== 'denied'; } catch (e) { return true; }
+        }
         var interactionEvents = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
         function onInteract() {
           interactionEvents.forEach(function (ev) { window.removeEventListener(ev, onInteract, true); });
-          loadAds();
+          if (consentGranted()) loadAds();
         }
         interactionEvents.forEach(function (ev) { window.addEventListener(ev, onInteract, { once: true, passive: true, capture: true }); });
-        // Safety net: if the user never interacts within 15s, load ads anyway so revenue slots eventually populate.
-        setTimeout(loadAds, 15000);
+        // Safety net: if the user never interacts within 15s, load ads anyway so revenue slots eventually populate — still gated on consent.
+        setTimeout(function () { if (consentGranted()) loadAds(); }, 15000);
 
         if (document.readyState === 'complete') scheduleGA();
         else window.addEventListener('load', scheduleGA, { once: true });
