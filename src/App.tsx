@@ -60,6 +60,7 @@ const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"));
 const Contact = lazy(() => import("./pages/legal/Contact"));
 const Disclaimer = lazy(() => import("./pages/legal/Disclaimer"));
+const AdsenseTest = lazy(() => import("./pages/AdsenseTest"));
 
 // Blog + admin phase 1
 const Blog = lazy(() => import("./pages/Blog"));
@@ -211,6 +212,7 @@ const App = () => (
               <Route path="/terms" element={<Suspense fallback={<Loading />}><TermsOfService /></Suspense>} />
               <Route path="/contact" element={<Suspense fallback={<Loading />}><Contact /></Suspense>} />
               <Route path="/disclaimer" element={<Suspense fallback={<Loading />}><Disclaimer /></Suspense>} />
+              <Route path="/adsense-test" element={<Suspense fallback={<Loading />}><AdsenseTest /></Suspense>} />
 
               <Route path="/auth" element={<AuthGuard />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />
