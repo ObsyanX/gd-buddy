@@ -33,6 +33,17 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // Enforce role: admin or analyst only (mirrors analytics_daily RLS)
+    const roleAdmin = createClient(SUPABASE_URL, SERVICE_KEY);
+    const [{ data: isAdmin }, { data: isAnalyst }] = await Promise.all([
+      roleAdmin.rpc('has_role', { _user_id: userData.user.id, _role: 'admin' }),
+      roleAdmin.rpc('has_role', { _user_id: userData.user.id, _role: 'analyst' }),
+    ]);
+    if (!isAdmin && !isAnalyst) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const since = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
     const { data, error } = await admin.from('analytics_daily').select('*').gte('day', since).order('day', { ascending: true });

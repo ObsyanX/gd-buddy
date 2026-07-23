@@ -71,7 +71,29 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Auth: require valid JWT and that caller can access this session
+    const authHeader = req.headers.get('Authorization') ?? '';
+    if (!authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const jwt = authHeader.slice('Bearer '.length);
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const userClient = createClient(SUPABASE_URL, anonKey, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+      auth: { persistSession: false },
+    });
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(jwt);
+    const userId = claimsData?.claims?.sub as string | undefined;
+    if (claimsErr || !userId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
+    const { data: canAccess } = await supabase.rpc('can_access_session', { _session_id: session_id, _user_id: userId });
+    if (!canAccess) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
 
     const hints = heuristicHints(content);
     // Only spend AI tokens if there is a hint OR the utterance is >30 words (worth analyzing).
