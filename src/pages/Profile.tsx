@@ -133,7 +133,34 @@ const Profile = () => {
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value.slice(0, 300))} className="border-2 min-h-20" placeholder="A short intro…" />
               </div>
-              <Button onClick={handleSave} className="border-4 border-border">SAVE PROFILE</Button>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button onClick={handleSave} className="border-4 border-border">SAVE PROFILE</Button>
+                <PWAInstallButton size="default" />
+                {user && (
+                  <>
+                    <ShareButton
+                      size="default"
+                      label="Share Profile"
+                      icon={<Share2 className="w-4 h-4 mr-2" />}
+                      content={{
+                        title: `${displayName || 'My'} · GD Buddy Profile`,
+                        text: `Check out ${displayName || 'my'} profile on GD Buddy — Level ${level}, ${xp} XP.`,
+                        url: `${window.location.origin}/?ref=${user.id}`,
+                      }}
+                    />
+                    <ShareButton
+                      size="default"
+                      label="Invite Friends"
+                      icon={<UserPlus className="w-4 h-4 mr-2" />}
+                      content={{
+                        title: 'Join me on GD Buddy',
+                        text: `I'm practicing group discussions on GD Buddy — join me and let's level up together!`,
+                        url: `${window.location.origin}/?ref=${user.id}`,
+                      }}
+                    />
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </Card>

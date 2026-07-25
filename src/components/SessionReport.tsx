@@ -746,8 +746,8 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                 </p>
               }
             </div>
-            <div className="text-right">
-              <Badge variant={session.is_multiplayer ? 'default' : 'secondary'} className="mb-2">
+            <div className="text-right space-y-2">
+              <Badge variant={session.is_multiplayer ? 'default' : 'secondary'} className="mb-1">
                 {session.is_multiplayer ? 'Multiplayer' : 'Solo'}
               </Badge>
               {currentParticipant &&
@@ -760,6 +760,16 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                   {calculatedStats.humanParticipantCount} human participants in session
                 </p>
               }
+              <div className="flex justify-end">
+                <ShareButton
+                  label="Share Report"
+                  content={{
+                    title: 'My GD Buddy session report',
+                    text: `Just finished a group discussion on "${session.topic}" — check out my report on GD Buddy.`,
+                    url: `${window.location.origin}/home/session/${sessionId}/report`,
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
