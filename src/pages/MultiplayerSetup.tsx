@@ -17,6 +17,7 @@ import {
   PersonaTemplate
 } from "@/config/personas";
 import CustomPersonaForm from "@/components/CustomPersonaForm";
+import { ShareButton } from "@/components/ShareButton";
 
 type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
 
@@ -364,7 +365,19 @@ const MultiplayerSetup = () => {
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </Button>
             </div>
-            
+
+            <div className="flex justify-center">
+              <ShareButton
+                size="lg"
+                label="Share Invite Link"
+                content={{
+                  title: 'Join my GD Buddy room',
+                  text: `Join my group discussion on "${topic?.title}" — room code: ${createdRoomCode}`,
+                  url: `${window.location.origin}/home/multiplayer?code=${createdRoomCode}`,
+                }}
+              />
+            </div>
+
             <p className="text-sm text-muted-foreground">
               Redirecting to session...
             </p>
