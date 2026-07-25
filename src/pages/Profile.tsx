@@ -10,9 +10,11 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, User, Trophy, Zap, MessageSquareHeart, History } from 'lucide-react';
+import { Upload, User, Trophy, Zap, MessageSquareHeart, History, UserPlus, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ShareButton } from '@/components/ShareButton';
+import { PWAInstallButton } from '@/components/PWAInstallButton';
 
 const XP_PER_LEVEL = 500;
 
