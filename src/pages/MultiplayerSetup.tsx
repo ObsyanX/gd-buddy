@@ -17,6 +17,7 @@ import {
   PersonaTemplate
 } from "@/config/personas";
 import CustomPersonaForm from "@/components/CustomPersonaForm";
+import { ShareButton } from "@/components/ShareButton";
 
 type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
 
