@@ -14,6 +14,7 @@ import { Upload, User, Trophy, Zap, MessageSquareHeart, History, UserPlus, Share
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ShareButton } from '@/components/ShareButton';
+import { buildDeepLink } from '@/lib/share';
 import { PWAInstallButton } from '@/components/PWAInstallButton';
 
 const XP_PER_LEVEL = 500;
