@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area } from 'recharts';
 import { ShareButton } from "@/components/ShareButton";
+import { buildDeepLink } from "@/lib/share";
 
 interface SessionReportProps {
   sessionId: string;
