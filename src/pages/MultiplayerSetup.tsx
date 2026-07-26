@@ -18,6 +18,8 @@ import {
 } from "@/config/personas";
 import CustomPersonaForm from "@/components/CustomPersonaForm";
 import { ShareButton } from "@/components/ShareButton";
+import { QRCodeSVG } from "qrcode.react";
+import { buildDeepLink } from "@/lib/share";
 
 type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
 
