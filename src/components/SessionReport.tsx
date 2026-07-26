@@ -772,7 +772,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                     meta: {
                       kind: 'report',
                       topic: session.topic,
-                      score: typeof overallScore === 'number' ? overallScore : undefined,
+                      score: (calculatedStats as any)?.overall_score ?? undefined,
                       highlights: [
                         typeof calculatedStats?.wpm === 'number' ? `Speaking pace: ${calculatedStats.wpm} WPM` : null,
                         typeof calculatedStats?.totalTurns === 'number' ? `${calculatedStats.totalTurns} contributions` : null,
