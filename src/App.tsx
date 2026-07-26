@@ -216,6 +216,12 @@ const App = () => (
               <Route path="/disclaimer" element={<Suspense fallback={<Loading />}><Disclaimer /></Suspense>} />
               <Route path="/adsense-test" element={<Suspense fallback={<Loading />}><AdsenseTest /></Suspense>} />
 
+              {/* Public deep-link redirectors for shared URLs */}
+              <Route path="/p/:userId" element={<ProfileDeepLink />} />
+              <Route path="/r/:sessionId" element={<ReportDeepLink />} />
+              <Route path="/join/:code" element={<MultiplayerJoinDeepLink />} />
+              <Route path="/i/:ref" element={<InviteDeepLink />} />
+
               <Route path="/auth" element={<AuthGuard />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />
 
