@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area } from 'recharts';
 import { ShareButton } from "@/components/ShareButton";
+import { buildDeepLink } from "@/lib/share";
 
 interface SessionReportProps {
   sessionId: string;
@@ -767,7 +768,17 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                   content={{
                     title: 'My GD Buddy session report',
                     text: `Just finished a group discussion on "${session.topic}" — check out my report on GD Buddy.`,
-                    url: `${window.location.origin}/home/session/${sessionId}/report`,
+                    url: buildDeepLink('report', sessionId),
+                    meta: {
+                      kind: 'report',
+                      topic: session.topic,
+                      score: (calculatedStats as any)?.overall_score ?? undefined,
+                      highlights: [
+                        typeof calculatedStats?.wpm === 'number' ? `Speaking pace: ${calculatedStats.wpm} WPM` : null,
+                        typeof calculatedStats?.totalTurns === 'number' ? `${calculatedStats.totalTurns} contributions` : null,
+                        session.is_multiplayer ? `Multiplayer session` : `Solo practice`,
+                      ].filter(Boolean) as string[],
+                    },
                   }}
                 />
               </div>

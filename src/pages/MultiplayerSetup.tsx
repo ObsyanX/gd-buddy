@@ -18,6 +18,8 @@ import {
 } from "@/config/personas";
 import CustomPersonaForm from "@/components/CustomPersonaForm";
 import { ShareButton } from "@/components/ShareButton";
+import { QRCodeSVG } from "qrcode.react";
+import { buildDeepLink } from "@/lib/share";
 
 type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
 
@@ -361,22 +363,49 @@ const MultiplayerSetup = () => {
               <div className="text-5xl font-bold font-mono tracking-widest border-4 border-border p-4">
                 {createdRoomCode}
               </div>
-              <Button variant="outline" size="icon" onClick={copyRoomCode} className="border-2">
+              <Button variant="outline" size="icon" onClick={copyRoomCode} className="border-2" aria-label="Copy room code">
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </Button>
             </div>
 
-            <div className="flex justify-center">
-              <ShareButton
-                size="lg"
-                label="Share Invite Link"
-                content={{
-                  title: 'Join my GD Buddy room',
-                  text: `Join my group discussion on "${topic?.title}" — room code: ${createdRoomCode}`,
-                  url: `${window.location.origin}/home/multiplayer?code=${createdRoomCode}`,
-                }}
-              />
-            </div>
+            {(() => {
+              const inviteUrl = buildDeepLink("multiplayer", createdRoomCode);
+              return (
+                <>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="rounded-xl bg-white p-3 border-4 border-border">
+                      <QRCodeSVG
+                        value={inviteUrl}
+                        size={168}
+                        level="M"
+                        includeMargin={false}
+                        aria-label={`QR code to join room ${createdRoomCode}`}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      Scan on another device to join instantly
+                    </p>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <ShareButton
+                      size="lg"
+                      label="Share Invite Link"
+                      content={{
+                        title: 'Join my GD Buddy room',
+                        text: `Join my group discussion on "${topic?.title}" — room code: ${createdRoomCode}`,
+                        url: inviteUrl,
+                        meta: {
+                          kind: 'multiplayer',
+                          topic: topic?.title,
+                          roomCode: createdRoomCode,
+                        },
+                      }}
+                    />
+                  </div>
+                </>
+              );
+            })()}
 
             <p className="text-sm text-muted-foreground">
               Redirecting to session...

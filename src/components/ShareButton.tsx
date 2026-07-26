@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Dialog,
   DialogContent,
@@ -23,8 +23,11 @@ import { useToast } from "@/hooks/use-toast";
 import {
   buildTargetUrl,
   copyToClipboard,
+  previewForTarget,
+  trackShare,
   tryNativeShare,
   type ShareContent,
+  type ShareKind,
   type ShareTarget,
 } from "@/lib/share";
 
@@ -38,7 +41,6 @@ interface ShareButtonProps {
   fullWidth?: boolean;
 }
 
-// Inline WhatsApp glyph — lucide doesn't ship one.
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
     <path d="M20.52 3.48A11.86 11.86 0 0 0 12.05 0C5.5 0 .17 5.32.17 11.87c0 2.09.55 4.13 1.6 5.93L0 24l6.35-1.66a11.9 11.9 0 0 0 5.7 1.45h.01c6.55 0 11.88-5.33 11.88-11.87 0-3.17-1.24-6.15-3.42-8.44ZM12.06 21.5h-.01a9.6 9.6 0 0 1-4.9-1.34l-.35-.21-3.77.99 1-3.67-.23-.38a9.6 9.6 0 0 1-1.47-5.02c0-5.31 4.32-9.63 9.64-9.63 2.57 0 4.99 1 6.81 2.82a9.55 9.55 0 0 1 2.82 6.82c0 5.32-4.32 9.63-9.63 9.63Zm5.28-7.21c-.29-.15-1.71-.85-1.98-.94-.27-.1-.46-.15-.66.14-.19.29-.75.94-.92 1.13-.17.19-.34.22-.63.07-.29-.14-1.22-.45-2.32-1.43-.86-.77-1.44-1.71-1.61-2-.17-.29-.02-.44.13-.59.13-.13.29-.34.44-.51.15-.17.19-.29.29-.48.1-.19.05-.36-.02-.51-.07-.14-.66-1.58-.9-2.17-.24-.57-.48-.49-.66-.5l-.56-.01c-.19 0-.5.07-.77.36s-1.02 1-1.02 2.44 1.05 2.83 1.19 3.03c.14.19 2.06 3.14 5 4.4.7.3 1.25.48 1.67.62.7.22 1.34.19 1.85.12.56-.09 1.71-.7 1.96-1.37.24-.68.24-1.26.17-1.37-.07-.11-.26-.19-.55-.34Z" />
@@ -71,14 +73,22 @@ export function ShareButton({
 }: ShareButtonProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [hoverTarget, setHoverTarget] = useState<ShareTarget | null>(null);
   const { toast } = useToast();
+
+  const kind: ShareKind = content.meta?.kind ?? "generic";
 
   const handleClick = async () => {
     const used = await tryNativeShare(content);
-    if (!used) setOpen(true);
+    if (used) {
+      trackShare("native", kind, { url: content.url });
+    } else {
+      setOpen(true);
+    }
   };
 
   const openTarget = (t: ShareTarget) => {
+    trackShare(t, kind, { url: content.url });
     const href = buildTargetUrl(t, content);
     window.open(href, "_blank", "noopener,noreferrer");
   };
@@ -86,6 +96,7 @@ export function ShareButton({
   const handleCopy = async () => {
     const ok = await copyToClipboard(content.url);
     if (ok) {
+      trackShare("copy", kind, { url: content.url });
       setCopied(true);
       toast({ title: "Link copied", description: "Paste it anywhere to share." });
       setTimeout(() => setCopied(false), 2000);
@@ -93,6 +104,11 @@ export function ShareButton({
       toast({ title: "Copy failed", variant: "destructive" });
     }
   };
+
+  const preview = useMemo(
+    () => (hoverTarget ? previewForTarget(hoverTarget, content) : previewForTarget("whatsapp", content)),
+    [hoverTarget, content],
+  );
 
   return (
     <>
@@ -102,8 +118,9 @@ export function ShareButton({
         size={size}
         onClick={handleClick}
         className={`${fullWidth ? "w-full " : ""}border-2 ${className ?? ""}`}
+        aria-label={label}
       >
-        {icon ?? <Share2 className="w-4 h-4 mr-2" />}
+        {icon ?? <Share2 className="w-4 h-4 mr-2" aria-hidden="true" />}
         {label}
       </Button>
 
@@ -120,7 +137,11 @@ export function ShareButton({
                 key={t.id}
                 type="button"
                 onClick={() => openTarget(t.id)}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 border-border hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-primary min-h-[72px]"
+                onMouseEnter={() => setHoverTarget(t.id)}
+                onFocus={() => setHoverTarget(t.id)}
+                onMouseLeave={() => setHoverTarget(null)}
+                onBlur={() => setHoverTarget(null)}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 border-border hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[72px]"
                 aria-label={`Share via ${t.label}`}
               >
                 <t.icon className={`w-6 h-6 ${t.color}`} />
@@ -131,9 +152,29 @@ export function ShareButton({
             ))}
           </div>
 
+          <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground whitespace-pre-wrap break-words max-h-32 overflow-auto">
+            <p className="text-[10px] uppercase tracking-wider mb-1 opacity-70">
+              Preview {hoverTarget ? `· ${hoverTarget}` : ""}
+            </p>
+            {preview}
+          </div>
+
           <div className="flex items-center gap-2 mt-2">
-            <Input readOnly value={content.url} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
-            <Button type="button" size="icon" variant="outline" onClick={handleCopy} className="shrink-0 border-2" aria-label="Copy link">
+            <Input
+              readOnly
+              value={content.url}
+              className="font-mono text-xs"
+              onFocus={(e) => e.currentTarget.select()}
+              aria-label="Shareable link"
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              onClick={handleCopy}
+              className="shrink-0 border-2"
+              aria-label="Copy link"
+            >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             </Button>
           </div>

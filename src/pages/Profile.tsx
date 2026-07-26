@@ -14,6 +14,7 @@ import { Upload, User, Trophy, Zap, MessageSquareHeart, History, UserPlus, Share
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ShareButton } from '@/components/ShareButton';
+import { buildDeepLink } from '@/lib/share';
 import { PWAInstallButton } from '@/components/PWAInstallButton';
 
 const XP_PER_LEVEL = 500;
@@ -145,7 +146,11 @@ const Profile = () => {
                       content={{
                         title: `${displayName || 'My'} · GD Buddy Profile`,
                         text: `Check out ${displayName || 'my'} profile on GD Buddy — Level ${level}, ${xp} XP.`,
-                        url: `${window.location.origin}/?ref=${user.id}`,
+                        url: buildDeepLink('profile', user.id),
+                        meta: {
+                          kind: 'profile',
+                          highlights: [`Level ${level}`, `${xp} XP`],
+                        },
                       }}
                     />
                     <ShareButton
@@ -155,7 +160,8 @@ const Profile = () => {
                       content={{
                         title: 'Join me on GD Buddy',
                         text: `I'm practicing group discussions on GD Buddy — join me and let's level up together!`,
-                        url: `${window.location.origin}/?ref=${user.id}`,
+                        url: buildDeepLink('invite', user.id),
+                        meta: { kind: 'invite' },
                       }}
                     />
                   </>
