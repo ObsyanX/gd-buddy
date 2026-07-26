@@ -27,6 +27,12 @@ import PageTransition from "@/components/PageTransition";
 // Eager load core pages
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
+import {
+  ProfileDeepLink,
+  ReportDeepLink,
+  MultiplayerJoinDeepLink,
+  InviteDeepLink,
+} from "@/components/DeepLinks";
 
 // Lazy — trims initial JS for landing visitors; prefetched on CTA hover.
 const Auth = lazy(() => import("./pages/Auth"));
