@@ -768,7 +768,17 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
                   content={{
                     title: 'My GD Buddy session report',
                     text: `Just finished a group discussion on "${session.topic}" — check out my report on GD Buddy.`,
-                    url: `${window.location.origin}/home/session/${sessionId}/report`,
+                    url: buildDeepLink('report', sessionId),
+                    meta: {
+                      kind: 'report',
+                      topic: session.topic,
+                      score: typeof overallScore === 'number' ? overallScore : undefined,
+                      highlights: [
+                        typeof calculatedStats?.wpm === 'number' ? `Speaking pace: ${calculatedStats.wpm} WPM` : null,
+                        typeof calculatedStats?.totalTurns === 'number' ? `${calculatedStats.totalTurns} contributions` : null,
+                        session.is_multiplayer ? `Multiplayer session` : `Solo practice`,
+                      ].filter(Boolean) as string[],
+                    },
                   }}
                 />
               </div>
