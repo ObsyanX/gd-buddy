@@ -3540,6 +3540,60 @@ export type Database = {
           },
         ]
       }
+      share_events: {
+        Row: {
+          browser: string | null
+          country: string | null
+          created_at: string
+          device: string | null
+          event_type: string
+          extra: Json | null
+          id: string
+          kind: string
+          os: string | null
+          path: string | null
+          ref: string | null
+          room_code: string | null
+          target: string | null
+          user_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          browser?: string | null
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          event_type: string
+          extra?: Json | null
+          id?: string
+          kind: string
+          os?: string | null
+          path?: string | null
+          ref?: string | null
+          room_code?: string | null
+          target?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          browser?: string | null
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          event_type?: string
+          extra?: Json | null
+          id?: string
+          kind?: string
+          os?: string | null
+          path?: string | null
+          ref?: string | null
+          room_code?: string | null
+          target?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
       silence_events: {
         Row: {
           created_at: string
