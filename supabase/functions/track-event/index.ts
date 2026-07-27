@@ -154,6 +154,36 @@ serve(async (req) => {
           device, browser, os, country,
         },
       });
+    } else if (type === "share") {
+      // Fire-and-forget share click. Unauthenticated calls are OK — visitor_id
+      // (client-generated cookie) is the attribution key.
+      await admin.from("share_events").insert({
+        visitor_id: visitorId,
+        user_id: authedUserId,
+        kind: String(body.kind || "generic"),
+        event_type: "share",
+        target: body.target ? String(body.target) : null,
+        path: body.path || null,
+        ref: body.ref || null,
+        room_code: body.room_code || null,
+        device, browser, os, country,
+        extra: body.extra || {},
+      });
+    } else if (type === "share_conversion") {
+      // Install / join conversion attributed to the last-seen ref link.
+      const eventType = String(body.event_type || "install"); // 'install' | 'join'
+      await admin.from("share_events").insert({
+        visitor_id: visitorId,
+        user_id: authedUserId,
+        kind: String(body.kind || "generic"),
+        event_type: eventType,
+        target: body.target ? String(body.target) : null,
+        path: body.path || null,
+        ref: body.ref || null,
+        room_code: body.room_code || null,
+        device, browser, os, country,
+        extra: body.extra || {},
+      });
     }
 
     return new Response(JSON.stringify({ ok: true, visitor_id: visitorId }), {
