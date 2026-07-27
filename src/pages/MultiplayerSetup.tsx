@@ -370,6 +370,13 @@ const MultiplayerSetup = () => {
 
             {(() => {
               const inviteUrl = buildDeepLink("multiplayer", createdRoomCode);
+              const copyInvite = async () => {
+                try {
+                  await navigator.clipboard.writeText(inviteUrl);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                } catch { /* ignore */ }
+              };
               return (
                 <>
                   <div className="flex flex-col items-center gap-3">
@@ -382,8 +389,29 @@ const MultiplayerSetup = () => {
                         aria-label={`QR code to join room ${createdRoomCode}`}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      Scan on another device to join instantly
+
+                    {/* QR companion controls — code + copy link, optimized for phones */}
+                    <div className="w-full max-w-xs flex flex-col sm:flex-row items-stretch gap-2">
+                      <div
+                        className="flex-1 rounded-lg border-2 border-border bg-muted/40 px-3 py-2 text-center font-mono text-lg font-bold tracking-widest select-all"
+                        aria-label="Short join code shown next to QR"
+                      >
+                        {createdRoomCode}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={copyInvite}
+                        className="border-2 min-h-11"
+                        aria-label="Copy invite link"
+                      >
+                        {copied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
+                        <span className="text-xs font-bold">{copied ? "COPIED" : "COPY LINK"}</span>
+                      </Button>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground font-mono text-center">
+                      Scan the QR on another device — or share the link
                     </p>
                   </div>
 
