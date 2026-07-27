@@ -207,7 +207,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 export function trackShare(
   target: ShareTarget,
   kind: ShareKind,
-  extra?: Record<string, unknown>,
+  extra?: Record<string, unknown> & { room_code?: string; ref?: string },
 ) {
   try {
     const payload = {
@@ -216,8 +216,29 @@ export function trackShare(
       path: typeof window !== "undefined" ? window.location.pathname : null,
       target,
       kind,
-      ...extra,
+      room_code: extra?.room_code ?? null,
+      ref: extra?.ref ?? null,
+      extra: extra ?? {},
     };
     supabase.functions.invoke("track-event", { body: payload }).catch(() => {});
+  } catch {}
+}
+
+/** Fire a multiplayer join conversion, attributed to the last share ref. */
+export function trackJoinConversion(roomCode: string, ref: string | null) {
+  try {
+    supabase.functions
+      .invoke("track-event", {
+        body: {
+          type: "share_conversion",
+          event_type: "join",
+          kind: "multiplayer",
+          visitor_id: getVisitorId(),
+          path: typeof window !== "undefined" ? window.location.pathname : null,
+          room_code: roomCode,
+          ref,
+        },
+      })
+      .catch(() => {});
   } catch {}
 }

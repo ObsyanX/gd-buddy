@@ -2,7 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Users, FileText, Tags, Layers,
-  Megaphone, Rocket, BarChart3, MessageSquare, Mail, FileBarChart, Settings, ShieldCheck, DollarSign, Sparkles, Activity, AlertTriangle, Gauge, ShieldAlert,
+  Megaphone, Rocket, BarChart3, MessageSquare, Mail, FileBarChart, Settings, ShieldCheck, DollarSign, Sparkles, Activity, AlertTriangle, Gauge, ShieldAlert, Share2,
 } from "lucide-react";
 import { useUserRoles, type AppRole } from "@/hooks/useUserRoles";
 
@@ -32,6 +32,7 @@ const NAV: NavItem[] = [
   { to: "/home/admin/edge-errors", label: "Edge errors",   icon: AlertTriangle,   allow: ["admin"] },
   { to: "/home/admin/auth-errors", label: "Auth errors",   icon: ShieldAlert,     allow: ["admin"] },
   { to: "/home/admin/performance", label: "Performance",   icon: Gauge,           allow: ["admin", "analyst"] },
+  { to: "/home/admin/shares",     label: "Share analytics", icon: Share2,          allow: ["admin", "analyst"] },
   { to: "/home/admin/audit",      label: "Audit log",      icon: ShieldCheck,     allow: ["admin"] },
   { to: "/home/admin/settings",   label: "Settings",       icon: Settings,        allow: ["admin"] },
 ];

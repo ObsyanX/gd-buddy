@@ -8,6 +8,8 @@ import { Users, ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { trackJoinConversion } from "@/lib/share";
+import { getAttribution } from "@/lib/attribution";
 
 interface MultiplayerLobbyProps {
   onSessionJoined: (sessionId: string) => void;
@@ -115,6 +117,10 @@ const MultiplayerLobby = ({
         title: "Joined room!",
         description: "Connecting to the discussion..."
       });
+
+      // Attribution: this join came from a shared /join/:code link if ref matches.
+      const attrib = getAttribution();
+      trackJoinConversion(normalizedCode, attrib?.ref ?? normalizedCode);
 
       onSessionJoined(session.id);
     } catch (error: any) {

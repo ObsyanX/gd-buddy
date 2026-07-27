@@ -96,6 +96,7 @@ const AdminSessionDetail = lazy(() => import("./pages/admin/AdminSessionDetail")
 const AdminEdgeErrors = lazy(() => import("./pages/admin/AdminEdgeErrors"));
 const AdminAuthErrors = lazy(() => import("./pages/admin/AdminAuthErrors"));
 const AdminPerformance = lazy(() => import("./pages/admin/AdminPerformance"));
+const AdminShareAnalytics = lazy(() => import("./pages/admin/AdminShareAnalytics"));
 
 // SEO content pages (public, indexable)
 const GDTopics = lazy(() => import("./pages/GDTopics"));
@@ -272,6 +273,7 @@ const App = () => (
                   <Route path="edge-errors" element={<Suspense fallback={<DashboardSkeleton />}><AdminEdgeErrors /></Suspense>} />
                   <Route path="auth-errors" element={<Suspense fallback={<DashboardSkeleton />}><AdminAuthErrors /></Suspense>} />
                   <Route path="performance" element={<Suspense fallback={<DashboardSkeleton />}><AdminPerformance /></Suspense>} />
+                  <Route path="shares" element={<Suspense fallback={<DashboardSkeleton />}><AdminShareAnalytics /></Suspense>} />
                 </Route>
                 <Route path="governance" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Governance /></PageTransition></Suspense>} />
                 <Route path="feedback" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackHistory /></PageTransition></Suspense>} />
