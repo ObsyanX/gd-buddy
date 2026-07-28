@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Share2, TrendingUp, Users, Download } from "lucide-react";
+import { Share2, TrendingUp, Users, Download, ChevronRight } from "lucide-react";
 
 interface Row {
   id: string;
@@ -84,9 +85,18 @@ export default function AdminShareAnalytics() {
         ) : (
           <ul className="space-y-2">
             {stats.top.map(([t, n]) => (
-              <li key={t} className="flex items-center justify-between text-sm">
-                <span className="capitalize">{t}</span>
-                <span className="font-mono font-bold">{n}</span>
+              <li key={t}>
+                <Link
+                  to={`/home/admin/shares/${encodeURIComponent(t)}`}
+                  className="flex items-center justify-between text-sm rounded-md px-2 py-1.5 -mx-2 hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label={`Drill down into ${t} shares`}
+                >
+                  <span className="capitalize">{t}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-mono font-bold">{n}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>

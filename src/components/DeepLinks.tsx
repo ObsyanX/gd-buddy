@@ -54,8 +54,17 @@ function useCaptureRef() {
   }, []);
 }
 
+import { ogImageUrl } from "@/lib/share";
+
+/** Forward `?s=` (HMAC signature) alongside `ref` so conversions stay verified. */
+function sigParam(sp: URLSearchParams): string {
+  const s = sp.get("s");
+  return s ? `&s=${encodeURIComponent(s)}` : "";
+}
+
 export function ProfileDeepLink() {
   const { userId } = useParams();
+  const [sp] = useSearchParams();
   useCaptureRef();
   const url = `${ORIGIN}/p/${encodeURIComponent(userId ?? "")}`;
   return (
@@ -64,14 +73,16 @@ export function ProfileDeepLink() {
         title="Meet me on GD Buddy — group discussion practice"
         description="Join me on GD Buddy to sharpen your group-discussion skills with AI-powered practice, live rooms, and instant feedback."
         url={url}
+        image={ogImageUrl({ kind: "profile", title: "Meet me on GD Buddy", subtitle: "AI-scored group discussion practice" })}
       />
-      <Navigate to={`/?ref=${encodeURIComponent(userId ?? "")}&k=profile`} replace />
+      <Navigate to={`/?ref=${encodeURIComponent(userId ?? "")}&k=profile${sigParam(sp)}`} replace />
     </>
   );
 }
 
 export function ReportDeepLink() {
   const { sessionId } = useParams();
+  const [sp] = useSearchParams();
   useCaptureRef();
   if (!sessionId) return <Navigate to="/home" replace />;
   const url = `${ORIGIN}/r/${encodeURIComponent(sessionId)}`;
@@ -81,9 +92,10 @@ export function ReportDeepLink() {
         title="My GD Buddy session report"
         description="A detailed AI-scored breakdown of my latest group-discussion practice on GD Buddy — clarity, structure, teamwork and more."
         url={url}
+        image={ogImageUrl({ kind: "report", title: "My GD Buddy session report", subtitle: "AI-scored breakdown" })}
       />
       <Navigate
-        to={`/home/session/${encodeURIComponent(sessionId)}/report?ref=${encodeURIComponent(sessionId)}&k=report`}
+        to={`/home/session/${encodeURIComponent(sessionId)}/report?ref=${encodeURIComponent(sessionId)}&k=report${sigParam(sp)}`}
         replace
       />
     </>
@@ -92,10 +104,11 @@ export function ReportDeepLink() {
 
 export function MultiplayerJoinDeepLink() {
   const { code } = useParams();
+  const [sp] = useSearchParams();
   useCaptureRef();
   const url = `${ORIGIN}/join/${encodeURIComponent(code ?? "")}`;
   const search = code
-    ? `?code=${encodeURIComponent(code)}&ref=${encodeURIComponent(code)}&k=multiplayer`
+    ? `?code=${encodeURIComponent(code)}&ref=${encodeURIComponent(code)}&k=multiplayer${sigParam(sp)}`
     : "";
   return (
     <>
@@ -103,6 +116,7 @@ export function MultiplayerJoinDeepLink() {
         title={`Join my GD Buddy room${code ? ` · ${code}` : ""}`}
         description="Jump into a live group discussion with me on GD Buddy — scan or tap to join instantly with your invite code."
         url={url}
+        image={ogImageUrl({ kind: "multiplayer", title: "Join my live GD room", code: code ?? undefined })}
       />
       <Navigate to={`/home/multiplayer${search}`} replace />
     </>
@@ -122,8 +136,9 @@ export function InviteDeepLink() {
         title="You're invited to GD Buddy"
         description="Practice group discussions with AI moderators, live rooms, and detailed feedback. Free to join."
         url={url}
+        image={ogImageUrl({ kind: "invite", title: "You're invited to GD Buddy" })}
       />
-      <Navigate to={`${target}${sep}ref=${encodeURIComponent(ref ?? "")}&k=invite`} replace />
+      <Navigate to={`${target}${sep}ref=${encodeURIComponent(ref ?? "")}&k=invite${sigParam(sp)}`} replace />
     </>
   );
 }

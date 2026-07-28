@@ -3554,8 +3554,10 @@ export type Database = {
           path: string | null
           ref: string | null
           room_code: string | null
+          signature: string | null
           target: string | null
           user_id: string | null
+          verified: boolean
           visitor_id: string | null
         }
         Insert: {
@@ -3571,8 +3573,10 @@ export type Database = {
           path?: string | null
           ref?: string | null
           room_code?: string | null
+          signature?: string | null
           target?: string | null
           user_id?: string | null
+          verified?: boolean
           visitor_id?: string | null
         }
         Update: {
@@ -3588,8 +3592,10 @@ export type Database = {
           path?: string | null
           ref?: string | null
           room_code?: string | null
+          signature?: string | null
           target?: string | null
           user_id?: string | null
+          verified?: boolean
           visitor_id?: string | null
         }
         Relationships: []
