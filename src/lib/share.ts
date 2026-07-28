@@ -37,21 +37,61 @@ export interface ShareContent {
 const APP_ORIGIN = () =>
   typeof window !== "undefined" ? window.location.origin : "https://gdbuddy.lovable.app";
 
-export function buildDeepLink(
-  kind: Extract<ShareKind, "profile" | "report" | "multiplayer" | "invite">,
-  id: string,
-): string {
-  const origin = APP_ORIGIN();
+type DeepLinkKind = Extract<ShareKind, "profile" | "report" | "multiplayer" | "invite">;
+
+function deepLinkPath(kind: DeepLinkKind, id: string): string {
+  const enc = encodeURIComponent(id);
   switch (kind) {
-    case "profile":
-      return `${origin}/p/${encodeURIComponent(id)}`;
-    case "report":
-      return `${origin}/r/${encodeURIComponent(id)}`;
-    case "multiplayer":
-      return `${origin}/join/${encodeURIComponent(id)}`;
-    case "invite":
-      return `${origin}/i/${encodeURIComponent(id)}`;
+    case "profile": return `/p/${enc}`;
+    case "report": return `/r/${enc}`;
+    case "multiplayer": return `/join/${enc}`;
+    case "invite": return `/i/${enc}`;
   }
+}
+
+export function buildDeepLink(kind: DeepLinkKind, id: string): string {
+  return `${APP_ORIGIN()}${deepLinkPath(kind, id)}`;
+}
+
+/**
+ * Build a signed deep link. The `s=` query param binds (kind, ref) via HMAC
+ * so downstream install/join conversions cannot be spoofed by editing `ref`.
+ * Falls back to an unsigned link when the caller is unauthenticated or the
+ * edge function is unreachable (analytics still record verified=false).
+ */
+export async function buildSignedDeepLink(
+  kind: DeepLinkKind,
+  id: string,
+): Promise<string> {
+  const base = buildDeepLink(kind, id);
+  try {
+    const { data, error } = await supabase.functions.invoke("sign-share-ref", {
+      body: { kind, ref: id },
+    });
+    if (error || !data?.sig) return base;
+    return `${base}?s=${encodeURIComponent(data.sig)}`;
+  } catch {
+    return base;
+  }
+}
+
+/** OG image URL for a share — hits the og-image edge function. */
+export function ogImageUrl(params: {
+  kind: ShareKind;
+  title: string;
+  subtitle?: string;
+  score?: string | number;
+  code?: string;
+}): string {
+  const projectId = (import.meta as { env?: Record<string, string> }).env?.VITE_SUPABASE_PROJECT_ID;
+  const base = projectId
+    ? `https://${projectId}.supabase.co/functions/v1/og-image`
+    : `${APP_ORIGIN()}/functions/v1/og-image`;
+  const qs = new URLSearchParams({ kind: params.kind, title: params.title });
+  if (params.subtitle) qs.set("subtitle", params.subtitle);
+  if (params.score != null) qs.set("score", String(params.score));
+  if (params.code) qs.set("code", params.code);
+  return `${base}?${qs.toString()}`;
 }
 
 // ---------- Per-target message shaping ----------
@@ -207,7 +247,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 export function trackShare(
   target: ShareTarget,
   kind: ShareKind,
-  extra?: Record<string, unknown> & { room_code?: string; ref?: string },
+  extra?: Record<string, unknown> & { room_code?: string; ref?: string; sig?: string },
 ) {
   try {
     const payload = {
@@ -218,6 +258,7 @@ export function trackShare(
       kind,
       room_code: extra?.room_code ?? null,
       ref: extra?.ref ?? null,
+      sig: extra?.sig ?? null,
       extra: extra ?? {},
     };
     supabase.functions.invoke("track-event", { body: payload }).catch(() => {});
@@ -225,7 +266,7 @@ export function trackShare(
 }
 
 /** Fire a multiplayer join conversion, attributed to the last share ref. */
-export function trackJoinConversion(roomCode: string, ref: string | null) {
+export function trackJoinConversion(roomCode: string, ref: string | null, sig?: string | null) {
   try {
     supabase.functions
       .invoke("track-event", {
@@ -237,6 +278,7 @@ export function trackJoinConversion(roomCode: string, ref: string | null) {
           path: typeof window !== "undefined" ? window.location.pathname : null,
           room_code: roomCode,
           ref,
+          sig: sig ?? null,
         },
       })
       .catch(() => {});

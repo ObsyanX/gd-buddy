@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { UAParser } from "https://esm.sh/ua-parser-js@2.0.10";
+import { verifyShareRef } from "../_shared/share-sig.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -154,32 +155,32 @@ serve(async (req) => {
           device, browser, os, country,
         },
       });
-    } else if (type === "share") {
-      // Fire-and-forget share click. Unauthenticated calls are OK — visitor_id
-      // (client-generated cookie) is the attribution key.
+    } else if (type === "share" || type === "share_conversion") {
+      // Verify HMAC signature so installs/joins can't be spoofed with a
+      // fabricated `ref`. Unsigned events are still recorded (for backward
+      // compatibility with older shared links) but stored with verified=false
+      // so admin dashboards can filter them out.
+      const kind = String(body.kind || "generic");
+      const ref = body.ref ? String(body.ref) : null;
+      const signature = body.sig ? String(body.sig).slice(0, 64) : null;
+      const verified = ref && signature
+        ? await verifyShareRef(kind, ref, signature)
+        : false;
+
+      const eventType = type === "share"
+        ? "share"
+        : String(body.event_type || "install"); // 'install' | 'join'
+
       await admin.from("share_events").insert({
         visitor_id: visitorId,
         user_id: authedUserId,
-        kind: String(body.kind || "generic"),
-        event_type: "share",
-        target: body.target ? String(body.target) : null,
-        path: body.path || null,
-        ref: body.ref || null,
-        room_code: body.room_code || null,
-        device, browser, os, country,
-        extra: body.extra || {},
-      });
-    } else if (type === "share_conversion") {
-      // Install / join conversion attributed to the last-seen ref link.
-      const eventType = String(body.event_type || "install"); // 'install' | 'join'
-      await admin.from("share_events").insert({
-        visitor_id: visitorId,
-        user_id: authedUserId,
-        kind: String(body.kind || "generic"),
+        kind,
         event_type: eventType,
         target: body.target ? String(body.target) : null,
         path: body.path || null,
-        ref: body.ref || null,
+        ref,
+        signature,
+        verified,
         room_code: body.room_code || null,
         device, browser, os, country,
         extra: body.extra || {},
