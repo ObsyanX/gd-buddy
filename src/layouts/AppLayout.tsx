@@ -83,14 +83,12 @@ const AppLayout = () => {
                 <div className="relative w-10 h-10 md:w-11 md:h-11 rounded-2xl overflow-hidden shadow-copper ring-1 ring-primary/40 group-hover:ring-primary-glow/70 transition-all duration-slow ease-editorial group-hover:-rotate-6 group-hover:scale-105 gpu">
                   <img
                     src={gdLogo.url}
-                    srcSet={`${gdLogo.url}?w=80 80w, ${gdLogo.url}?w=160 160w, ${gdLogo.url}?w=240 240w`}
-                    sizes="(min-width: 768px) 44px, 40px"
                     width={44}
                     height={44}
                     decoding="async"
                     fetchPriority="high"
                     alt="GD Buddy logo"
-                    className="w-full h-full object-contain transition-transform duration-slow ease-editorial group-hover:scale-110 gpu"
+                    className="w-full h-full object-cover transition-transform duration-slow ease-editorial group-hover:scale-110 gpu"
                   />
                   {/* Sheen sweep on hover */}
                   <span
