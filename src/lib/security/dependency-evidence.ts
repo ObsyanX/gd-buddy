@@ -13,7 +13,7 @@
 // Static import: Vite/Rollup will tree-shake the unused surface and inline
 // the version string. Using `?.version` guards against unexpected shapes.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-import * as protobuf from "protobufjs/minimal.js";
+import protobufPkg from "protobufjs/package.json";
 
 // Advisory GHSA-xq3m-2v4x-88gg is fixed in 7.5.3.
 const PROTOBUFJS_FIX_VERSION = "7.5.3";
@@ -36,7 +36,7 @@ function cmpSemver(a: string, b: string): number {
 
 export function getProtobufjsEvidence(): DependencyEvidence {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const resolved = ((protobuf as any).VERSION as string | undefined) ?? "unknown";
+  const resolved = ((protobufPkg as { version?: string }).version) ?? "unknown";
   const patched = resolved !== "unknown" && cmpSemver(resolved, PROTOBUFJS_FIX_VERSION) >= 0;
   return {
     package: "protobufjs",
