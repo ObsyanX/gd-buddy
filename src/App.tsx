@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { lazy, Suspense, useEffect } from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import RouteBoundary from "@/components/RouteBoundary";
 import AdminGuard from "@/components/AdminGuard";
 import '@/lib/error-monitor'; // Initialize global error monitoring
 import { OfflineBanner } from "@/components/OfflineBanner";
@@ -200,29 +201,29 @@ const App = () => (
               <Route path="/" element={<LandingGuard />} />
 
               {/* Public SEO pages */}
-              <Route path="/gd-topics-for-placements" element={<GDTopics />} />
-              <Route path="/how-to-crack-group-discussion" element={<HowToCrackGD />} />
-              <Route path="/common-gd-mistakes" element={<CommonGDMistakes />} />
-              <Route path="/communication-skills-for-gd" element={<CommunicationSkills />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/group-discussion-preparation-guide" element={<GDPreparationGuide />} />
-              <Route path="/ai-gd-simulator" element={<AIGDSimulator />} />
-              <Route path="/how-to-speak-confidently-in-group-discussion" element={<SpeakConfidently />} />
-              <Route path="/how-to-start-group-discussion" element={<StartGD />} />
-              <Route path="/how-to-conclude-gd-round" element={<ConcludeGD />} />
-              <Route path="/body-language-tips-for-gd" element={<BodyLanguageTips />} />
-              <Route path="/gd-topic/:slug" element={<GDTopicPage />} />
+              <Route path="/gd-topics-for-placements" element={<RouteBoundary><Suspense fallback={<Loading />}><GDTopics /></Suspense></RouteBoundary>} />
+              <Route path="/how-to-crack-group-discussion" element={<RouteBoundary><Suspense fallback={<Loading />}><HowToCrackGD /></Suspense></RouteBoundary>} />
+              <Route path="/common-gd-mistakes" element={<RouteBoundary><Suspense fallback={<Loading />}><CommonGDMistakes /></Suspense></RouteBoundary>} />
+              <Route path="/communication-skills-for-gd" element={<RouteBoundary><Suspense fallback={<Loading />}><CommunicationSkills /></Suspense></RouteBoundary>} />
+              <Route path="/about" element={<RouteBoundary><Suspense fallback={<Loading />}><About /></Suspense></RouteBoundary>} />
+              <Route path="/group-discussion-preparation-guide" element={<RouteBoundary><Suspense fallback={<Loading />}><GDPreparationGuide /></Suspense></RouteBoundary>} />
+              <Route path="/ai-gd-simulator" element={<RouteBoundary><Suspense fallback={<Loading />}><AIGDSimulator /></Suspense></RouteBoundary>} />
+              <Route path="/how-to-speak-confidently-in-group-discussion" element={<RouteBoundary><Suspense fallback={<Loading />}><SpeakConfidently /></Suspense></RouteBoundary>} />
+              <Route path="/how-to-start-group-discussion" element={<RouteBoundary><Suspense fallback={<Loading />}><StartGD /></Suspense></RouteBoundary>} />
+              <Route path="/how-to-conclude-gd-round" element={<RouteBoundary><Suspense fallback={<Loading />}><ConcludeGD /></Suspense></RouteBoundary>} />
+              <Route path="/body-language-tips-for-gd" element={<RouteBoundary><Suspense fallback={<Loading />}><BodyLanguageTips /></Suspense></RouteBoundary>} />
+              <Route path="/gd-topic/:slug" element={<RouteBoundary><Suspense fallback={<Loading />}><GDTopicPage /></Suspense></RouteBoundary>} />
 
               {/* Blog (public) */}
-              <Route path="/blog" element={<Suspense fallback={<Loading />}><Blog /></Suspense>} />
-              <Route path="/blog/:slug" element={<Suspense fallback={<Loading />}><BlogArticle /></Suspense>} />
+              <Route path="/blog" element={<RouteBoundary><Suspense fallback={<Loading />}><Blog /></Suspense></RouteBoundary>} />
+              <Route path="/blog/:slug" element={<RouteBoundary><Suspense fallback={<Loading />}><BlogArticle /></Suspense></RouteBoundary>} />
 
               {/* Legal & policy pages (required for AdSense) */}
-              <Route path="/privacy" element={<Suspense fallback={<Loading />}><PrivacyPolicy /></Suspense>} />
-              <Route path="/terms" element={<Suspense fallback={<Loading />}><TermsOfService /></Suspense>} />
-              <Route path="/contact" element={<Suspense fallback={<Loading />}><Contact /></Suspense>} />
-              <Route path="/disclaimer" element={<Suspense fallback={<Loading />}><Disclaimer /></Suspense>} />
-              <Route path="/adsense-test" element={<Suspense fallback={<Loading />}><AdsenseTest /></Suspense>} />
+              <Route path="/privacy" element={<RouteBoundary><Suspense fallback={<Loading />}><PrivacyPolicy /></Suspense></RouteBoundary>} />
+              <Route path="/terms" element={<RouteBoundary><Suspense fallback={<Loading />}><TermsOfService /></Suspense></RouteBoundary>} />
+              <Route path="/contact" element={<RouteBoundary><Suspense fallback={<Loading />}><Contact /></Suspense></RouteBoundary>} />
+              <Route path="/disclaimer" element={<RouteBoundary><Suspense fallback={<Loading />}><Disclaimer /></Suspense></RouteBoundary>} />
+              <Route path="/adsense-test" element={<RouteBoundary><Suspense fallback={<Loading />}><AdsenseTest /></Suspense></RouteBoundary>} />
 
               {/* Public deep-link redirectors for shared URLs */}
               <Route path="/p/:userId" element={<ProfileDeepLink />} />
@@ -231,57 +232,57 @@ const App = () => (
               <Route path="/i/:ref" element={<InviteDeepLink />} />
 
               <Route path="/auth" element={<AuthGuard />} />
-              <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/auth/reset-password" element={<RouteBoundary><Suspense fallback={<Loading />}><ResetPassword /></Suspense></RouteBoundary>} />
 
               {/* Protected app routes under /home */}
               <Route path="/home" element={<ProtectedRoute><Suspense fallback={<Loading />}><AppLayout /></Suspense></ProtectedRoute>}>
-                <Route index element={<Suspense fallback={<HomeSkeleton />}><PageTransition><Home /></PageTransition></Suspense>} />
-                <Route path="dashboard" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Dashboard /></PageTransition></Suspense>} />
-                <Route path="practice" element={<Suspense fallback={<PracticeSkeleton />}><PageTransition><Practice /></PageTransition></Suspense>} />
-                <Route path="practice/setup" element={<Suspense fallback={<SessionSkeleton />}><PageTransition><PracticeSetup /></PageTransition></Suspense>} />
+                <Route index element={<RouteBoundary><Suspense fallback={<HomeSkeleton />}><PageTransition><Home /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="dashboard" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><Dashboard /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="practice" element={<RouteBoundary><Suspense fallback={<PracticeSkeleton />}><PageTransition><Practice /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="practice/setup" element={<RouteBoundary><Suspense fallback={<SessionSkeleton />}><PageTransition><PracticeSetup /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="session/:sessionId" element={<ErrorBoundary fallbackTitle="Session Error"><Suspense fallback={<SessionSkeleton />}><PageTransition><Session /></PageTransition></Suspense></ErrorBoundary>} />
                 <Route path="session/:sessionId/report" element={<ErrorBoundary fallbackTitle="Report Error"><Suspense fallback={<DashboardSkeleton />}><PageTransition><SessionReportPage /></PageTransition></Suspense></ErrorBoundary>} />
-                <Route path="multiplayer" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Multiplayer /></PageTransition></Suspense>} />
-                <Route path="multiplayer/topic" element={<Suspense fallback={<PageSkeleton />}><PageTransition><MultiplayerTopic /></PageTransition></Suspense>} />
-                <Route path="multiplayer/setup" element={<Suspense fallback={<SessionSkeleton />}><PageTransition><MultiplayerSetup /></PageTransition></Suspense>} />
+                <Route path="multiplayer" element={<RouteBoundary><Suspense fallback={<PageSkeleton />}><PageTransition><Multiplayer /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="multiplayer/topic" element={<RouteBoundary><Suspense fallback={<PageSkeleton />}><PageTransition><MultiplayerTopic /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="multiplayer/setup" element={<RouteBoundary><Suspense fallback={<SessionSkeleton />}><PageTransition><MultiplayerSetup /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="drills" element={<ErrorBoundary fallbackTitle="Drills Error"><Suspense fallback={<DrillsSkeleton />}><PageTransition><SkillDrills /></PageTransition></Suspense></ErrorBoundary>} />
-                <Route path="profile" element={<Suspense fallback={<ProfileSkeleton />}><PageTransition><Profile /></PageTransition></Suspense>} />
-                <Route path="settings" element={<Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense>} />
-                <Route path="instructor" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><InstructorDashboard /></PageTransition></Suspense>} />
+                <Route path="profile" element={<RouteBoundary><Suspense fallback={<ProfileSkeleton />}><PageTransition><Profile /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="settings" element={<RouteBoundary><Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="instructor" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><InstructorDashboard /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="admin" element={<AdminGuard><Suspense fallback={<DashboardSkeleton />}><AdminShell /></Suspense></AdminGuard>}>
-                  <Route index element={<Suspense fallback={<DashboardSkeleton />}><Admin /></Suspense>} />
-                  <Route path="analytics" element={<Suspense fallback={<DashboardSkeleton />}><AdminAnalytics /></Suspense>} />
-                  <Route path="articles" element={<Suspense fallback={<DashboardSkeleton />}><AdminArticles /></Suspense>} />
-                  <Route path="articles/new" element={<Suspense fallback={<DashboardSkeleton />}><AdminArticleEdit /></Suspense>} />
-                  <Route path="articles/:id/edit" element={<Suspense fallback={<DashboardSkeleton />}><AdminArticleEdit /></Suspense>} />
-                  <Route path="ads" element={<Suspense fallback={<DashboardSkeleton />}><AdminAds /></Suspense>} />
-                  <Route path="ads/new" element={<Suspense fallback={<DashboardSkeleton />}><AdminAdEdit /></Suspense>} />
-                  <Route path="ads/:id/edit" element={<Suspense fallback={<DashboardSkeleton />}><AdminAdEdit /></Suspense>} />
-                  <Route path="users" element={<Suspense fallback={<DashboardSkeleton />}><AdminUsers /></Suspense>} />
-                  <Route path="sessions" element={<Suspense fallback={<DashboardSkeleton />}><AdminSessions /></Suspense>} />
-                  <Route path="sessions/:id" element={<Suspense fallback={<DashboardSkeleton />}><AdminSessionDetail /></Suspense>} />
-                  <Route path="categories" element={<Suspense fallback={<DashboardSkeleton />}><AdminCategories /></Suspense>} />
-                  <Route path="tags" element={<Suspense fallback={<DashboardSkeleton />}><AdminTags /></Suspense>} />
-                  <Route path="campaigns" element={<Suspense fallback={<DashboardSkeleton />}><AdminCampaigns /></Suspense>} />
-                  <Route path="comments" element={<Suspense fallback={<DashboardSkeleton />}><AdminComments /></Suspense>} />
-                  <Route path="newsletter" element={<Suspense fallback={<DashboardSkeleton />}><AdminNewsletter /></Suspense>} />
-                  <Route path="reports" element={<Suspense fallback={<DashboardSkeleton />}><AdminReports /></Suspense>} />
-                  <Route path="reports/digest" element={<Suspense fallback={<DashboardSkeleton />}><AdminReportsDigest /></Suspense>} />
-                  <Route path="revenue" element={<Suspense fallback={<DashboardSkeleton />}><AdminRevenue /></Suspense>} />
-                  <Route path="intelligence" element={<Suspense fallback={<DashboardSkeleton />}><AdminIntelligence /></Suspense>} />
-                  <Route path="settings" element={<Suspense fallback={<DashboardSkeleton />}><AdminSettingsPage /></Suspense>} />
-                  <Route path="audit" element={<Suspense fallback={<DashboardSkeleton />}><AdminAudit /></Suspense>} />
-                  <Route path="edge-errors" element={<Suspense fallback={<DashboardSkeleton />}><AdminEdgeErrors /></Suspense>} />
-                  <Route path="auth-errors" element={<Suspense fallback={<DashboardSkeleton />}><AdminAuthErrors /></Suspense>} />
-                  <Route path="performance" element={<Suspense fallback={<DashboardSkeleton />}><AdminPerformance /></Suspense>} />
-                  <Route path="shares" element={<Suspense fallback={<DashboardSkeleton />}><AdminShareAnalytics /></Suspense>} />
-                  <Route path="shares/:target" element={<Suspense fallback={<DashboardSkeleton />}><AdminShareDrilldown /></Suspense>} />
+                  <Route index element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><Admin /></Suspense></RouteBoundary>} />
+                  <Route path="analytics" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminAnalytics /></Suspense></RouteBoundary>} />
+                  <Route path="articles" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminArticles /></Suspense></RouteBoundary>} />
+                  <Route path="articles/new" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminArticleEdit /></Suspense></RouteBoundary>} />
+                  <Route path="articles/:id/edit" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminArticleEdit /></Suspense></RouteBoundary>} />
+                  <Route path="ads" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminAds /></Suspense></RouteBoundary>} />
+                  <Route path="ads/new" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminAdEdit /></Suspense></RouteBoundary>} />
+                  <Route path="ads/:id/edit" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminAdEdit /></Suspense></RouteBoundary>} />
+                  <Route path="users" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminUsers /></Suspense></RouteBoundary>} />
+                  <Route path="sessions" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminSessions /></Suspense></RouteBoundary>} />
+                  <Route path="sessions/:id" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminSessionDetail /></Suspense></RouteBoundary>} />
+                  <Route path="categories" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminCategories /></Suspense></RouteBoundary>} />
+                  <Route path="tags" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminTags /></Suspense></RouteBoundary>} />
+                  <Route path="campaigns" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminCampaigns /></Suspense></RouteBoundary>} />
+                  <Route path="comments" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminComments /></Suspense></RouteBoundary>} />
+                  <Route path="newsletter" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminNewsletter /></Suspense></RouteBoundary>} />
+                  <Route path="reports" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminReports /></Suspense></RouteBoundary>} />
+                  <Route path="reports/digest" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminReportsDigest /></Suspense></RouteBoundary>} />
+                  <Route path="revenue" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminRevenue /></Suspense></RouteBoundary>} />
+                  <Route path="intelligence" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminIntelligence /></Suspense></RouteBoundary>} />
+                  <Route path="settings" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminSettingsPage /></Suspense></RouteBoundary>} />
+                  <Route path="audit" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminAudit /></Suspense></RouteBoundary>} />
+                  <Route path="edge-errors" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminEdgeErrors /></Suspense></RouteBoundary>} />
+                  <Route path="auth-errors" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminAuthErrors /></Suspense></RouteBoundary>} />
+                  <Route path="performance" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminPerformance /></Suspense></RouteBoundary>} />
+                  <Route path="shares" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminShareAnalytics /></Suspense></RouteBoundary>} />
+                  <Route path="shares/:target" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminShareDrilldown /></Suspense></RouteBoundary>} />
                 </Route>
-                <Route path="governance" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Governance /></PageTransition></Suspense>} />
-                <Route path="feedback" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackHistory /></PageTransition></Suspense>} />
-                <Route path="health" element={<Suspense fallback={<Loading />}><PageTransition><Health /></PageTransition></Suspense>} />
-                <Route path="intelligence" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><Intelligence /></PageTransition></Suspense>} />
-                <Route path="adrs" element={<Suspense fallback={<DashboardSkeleton />}><PageTransition><ADRs /></PageTransition></Suspense>} />
+                <Route path="governance" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><Governance /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="feedback" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackHistory /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="health" element={<RouteBoundary><Suspense fallback={<Loading />}><PageTransition><Health /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="intelligence" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><Intelligence /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="adrs" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><ADRs /></PageTransition></Suspense></RouteBoundary>} />
               </Route>
 
 
