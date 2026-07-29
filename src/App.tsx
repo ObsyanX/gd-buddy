@@ -198,7 +198,7 @@ const App = () => (
           <Suspense fallback={<Loading />}>
             <Routes>
               {/* Public landing page — canonical ranking page */}
-              <Route path="/" element={<LandingGuard />} />
+              <Route path="/" element={<RouteBoundary title="Home unavailable"><LandingGuard /></RouteBoundary>} />
 
               {/* Public SEO pages */}
               <Route path="/gd-topics-for-placements" element={<RouteBoundary><Suspense fallback={<Loading />}><GDTopics /></Suspense></RouteBoundary>} />
@@ -226,26 +226,26 @@ const App = () => (
               <Route path="/adsense-test" element={<RouteBoundary><Suspense fallback={<Loading />}><AdsenseTest /></Suspense></RouteBoundary>} />
 
               {/* Public deep-link redirectors for shared URLs */}
-              <Route path="/p/:userId" element={<ProfileDeepLink />} />
-              <Route path="/r/:sessionId" element={<ReportDeepLink />} />
-              <Route path="/join/:code" element={<MultiplayerJoinDeepLink />} />
-              <Route path="/i/:ref" element={<InviteDeepLink />} />
+              <Route path="/p/:userId" element={<RouteBoundary><ProfileDeepLink /></RouteBoundary>} />
+              <Route path="/r/:sessionId" element={<RouteBoundary><ReportDeepLink /></RouteBoundary>} />
+              <Route path="/join/:code" element={<RouteBoundary><MultiplayerJoinDeepLink /></RouteBoundary>} />
+              <Route path="/i/:ref" element={<RouteBoundary><InviteDeepLink /></RouteBoundary>} />
 
-              <Route path="/auth" element={<AuthGuard />} />
+              <Route path="/auth" element={<RouteBoundary title="Sign in unavailable"><AuthGuard /></RouteBoundary>} />
               <Route path="/auth/reset-password" element={<RouteBoundary><Suspense fallback={<Loading />}><ResetPassword /></Suspense></RouteBoundary>} />
 
               {/* Protected app routes under /home */}
-              <Route path="/home" element={<ProtectedRoute><Suspense fallback={<Loading />}><AppLayout /></Suspense></ProtectedRoute>}>
+              <Route path="/home" element={<RouteBoundary title="App failed to load"><ProtectedRoute><Suspense fallback={<Loading />}><AppLayout /></Suspense></ProtectedRoute></RouteBoundary>}>
                 <Route index element={<RouteBoundary><Suspense fallback={<HomeSkeleton />}><PageTransition><Home /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="dashboard" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><Dashboard /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="practice" element={<RouteBoundary><Suspense fallback={<PracticeSkeleton />}><PageTransition><Practice /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="practice/setup" element={<RouteBoundary><Suspense fallback={<SessionSkeleton />}><PageTransition><PracticeSetup /></PageTransition></Suspense></RouteBoundary>} />
-                <Route path="session/:sessionId" element={<ErrorBoundary fallbackTitle="Session Error"><Suspense fallback={<SessionSkeleton />}><PageTransition><Session /></PageTransition></Suspense></ErrorBoundary>} />
-                <Route path="session/:sessionId/report" element={<ErrorBoundary fallbackTitle="Report Error"><Suspense fallback={<DashboardSkeleton />}><PageTransition><SessionReportPage /></PageTransition></Suspense></ErrorBoundary>} />
+                <Route path="session/:sessionId" element={<RouteBoundary title="Session Error"><Suspense fallback={<SessionSkeleton />}><PageTransition><Session /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="session/:sessionId/report" element={<RouteBoundary title="Report Error"><Suspense fallback={<DashboardSkeleton />}><PageTransition><SessionReportPage /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="multiplayer" element={<RouteBoundary><Suspense fallback={<PageSkeleton />}><PageTransition><Multiplayer /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="multiplayer/topic" element={<RouteBoundary><Suspense fallback={<PageSkeleton />}><PageTransition><MultiplayerTopic /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="multiplayer/setup" element={<RouteBoundary><Suspense fallback={<SessionSkeleton />}><PageTransition><MultiplayerSetup /></PageTransition></Suspense></RouteBoundary>} />
-                <Route path="drills" element={<ErrorBoundary fallbackTitle="Drills Error"><Suspense fallback={<DrillsSkeleton />}><PageTransition><SkillDrills /></PageTransition></Suspense></ErrorBoundary>} />
+                <Route path="drills" element={<RouteBoundary title="Drills Error"><Suspense fallback={<DrillsSkeleton />}><PageTransition><SkillDrills /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="profile" element={<RouteBoundary><Suspense fallback={<ProfileSkeleton />}><PageTransition><Profile /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="settings" element={<RouteBoundary><Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="instructor" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><InstructorDashboard /></PageTransition></Suspense></RouteBoundary>} />
