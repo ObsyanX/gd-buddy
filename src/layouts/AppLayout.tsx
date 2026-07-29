@@ -6,7 +6,7 @@ import {
   Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import gdLogo from "@/assets/gd-buddy-logo-v2.png.asset.json";
+import gdLogo from "@/assets/gd-buddy-logo.png";
 import SEOFooter from "@/components/SEOFooter";
 import NotificationBell from "@/components/NotificationBell";
 import BottomNav from "@/components/BottomNav";
@@ -82,7 +82,7 @@ const AppLayout = () => {
                 />
                 <div className="relative w-10 h-10 md:w-11 md:h-11 rounded-2xl overflow-hidden shadow-copper ring-1 ring-primary/40 group-hover:ring-primary-glow/70 transition-all duration-slow ease-editorial group-hover:-rotate-6 group-hover:scale-105 gpu">
                   <img
-                    src={gdLogo.url}
+                    src={gdLogo}
                     width={44}
                     height={44}
                     decoding="async"
