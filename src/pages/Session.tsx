@@ -1,10 +1,12 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect } from "react";
 import DiscussionRoom from "@/components/DiscussionRoom";
+import { useStickyRouteValue } from "@/hooks/useStickyRouteValue";
 
 const Session = () => {
   const navigate = useNavigate();
-  const { sessionId } = useParams<{ sessionId: string }>();
+  const params = useParams<{ sessionId: string }>();
+  const sessionId = useStickyRouteValue(params.sessionId);
 
   useEffect(() => {
     if (!sessionId) {
@@ -21,9 +23,9 @@ const Session = () => {
   };
 
   return (
-    <DiscussionRoom 
-      sessionId={sessionId} 
-      onComplete={handleComplete} 
+    <DiscussionRoom
+      sessionId={sessionId}
+      onComplete={handleComplete}
     />
   );
 };
