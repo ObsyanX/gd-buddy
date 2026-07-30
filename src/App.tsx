@@ -37,83 +37,83 @@ import {
 } from "@/components/DeepLinks";
 
 // Lazy — trims initial JS for landing visitors; prefetched on CTA hover.
-const Auth = lazy(() => import("./pages/Auth"));
+const Auth = lazy(() => import("./pages/Auth"), "Auth");
 
 // Layout
-const AppLayout = lazy(() => import("./layouts/AppLayout"));
+const AppLayout = lazy(() => import("./layouts/AppLayout"), "AppLayout");
 
 // Lazy load all app pages
-const Home = lazy(() => import("./pages/Home"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Practice = lazy(() => import("./pages/Practice"));
-const PracticeSetup = lazy(() => import("./pages/PracticeSetup"));
-const Session = lazy(() => import("./pages/Session"));
-const SessionReportPage = lazy(() => import("./pages/SessionReportPage"));
-const Multiplayer = lazy(() => import("./pages/Multiplayer"));
-const MultiplayerTopic = lazy(() => import("./pages/MultiplayerTopic"));
-const MultiplayerSetup = lazy(() => import("./pages/MultiplayerSetup"));
-const SkillDrills = lazy(() => import("./pages/SkillDrills"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Settings = lazy(() => import("./pages/Settings"));
-const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
-const Admin = lazy(() => import("./pages/Admin"));
-const Governance = lazy(() => import("./pages/Governance"));
-const FeedbackHistory = lazy(() => import("./pages/FeedbackHistory"));
-const Health = lazy(() => import("./pages/Health"));
-const Intelligence = lazy(() => import("./pages/Intelligence"));
-const ADRs = lazy(() => import("./pages/ADRs"));
+const Home = lazy(() => import("./pages/Home"), "Home");
+const ResetPassword = lazy(() => import("./pages/ResetPassword"), "ResetPassword");
+const Dashboard = lazy(() => import("./pages/Dashboard"), "Dashboard");
+const Practice = lazy(() => import("./pages/Practice"), "Practice");
+const PracticeSetup = lazy(() => import("./pages/PracticeSetup"), "PracticeSetup");
+const Session = lazy(() => import("./pages/Session"), "Session");
+const SessionReportPage = lazy(() => import("./pages/SessionReportPage"), "SessionReportPage");
+const Multiplayer = lazy(() => import("./pages/Multiplayer"), "Multiplayer");
+const MultiplayerTopic = lazy(() => import("./pages/MultiplayerTopic"), "MultiplayerTopic");
+const MultiplayerSetup = lazy(() => import("./pages/MultiplayerSetup"), "MultiplayerSetup");
+const SkillDrills = lazy(() => import("./pages/SkillDrills"), "SkillDrills");
+const Profile = lazy(() => import("./pages/Profile"), "Profile");
+const Settings = lazy(() => import("./pages/Settings"), "Settings");
+const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"), "InstructorDashboard");
+const Admin = lazy(() => import("./pages/Admin"), "Admin");
+const Governance = lazy(() => import("./pages/Governance"), "Governance");
+const FeedbackHistory = lazy(() => import("./pages/FeedbackHistory"), "FeedbackHistory");
+const Health = lazy(() => import("./pages/Health"), "Health");
+const Intelligence = lazy(() => import("./pages/Intelligence"), "Intelligence");
+const ADRs = lazy(() => import("./pages/ADRs"), "ADRs");
 
 // Legal pages
-const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
-const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"));
-const Contact = lazy(() => import("./pages/legal/Contact"));
-const Disclaimer = lazy(() => import("./pages/legal/Disclaimer"));
-const AdsenseTest = lazy(() => import("./pages/AdsenseTest"));
+const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"), "PrivacyPolicy");
+const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"), "TermsOfService");
+const Contact = lazy(() => import("./pages/legal/Contact"), "Contact");
+const Disclaimer = lazy(() => import("./pages/legal/Disclaimer"), "Disclaimer");
+const AdsenseTest = lazy(() => import("./pages/AdsenseTest"), "AdsenseTest");
 
 // Blog + admin phase 1
-const Blog = lazy(() => import("./pages/Blog"));
-const BlogArticle = lazy(() => import("./pages/BlogArticle"));
-const AdminShell = lazy(() => import("./components/admin/AdminShell"));
-const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
-const AdminArticles = lazy(() => import("./pages/admin/AdminArticles"));
-const AdminArticleEdit = lazy(() => import("./pages/admin/AdminArticleEdit"));
-const AdminAds = lazy(() => import("./pages/admin/AdminAds"));
-const AdminAdEdit = lazy(() => import("./pages/admin/AdminAdEdit"));
-const AdminPlaceholder = lazy(() => import("./pages/admin/AdminPlaceholder"));
-const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
-const AdminTags = lazy(() => import("./pages/admin/AdminTags"));
-const AdminComments = lazy(() => import("./pages/admin/AdminComments"));
-const AdminNewsletter = lazy(() => import("./pages/admin/AdminNewsletter"));
-const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettings"));
-const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
-const AdminCampaigns = lazy(() => import("./pages/admin/AdminCampaigns"));
-const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
-const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
-const AdminReportsDigest = lazy(() => import("./pages/admin/AdminReportsDigest"));
-const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
-const AdminIntelligence = lazy(() => import("./pages/admin/AdminIntelligence"));
-const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
-const AdminSessionDetail = lazy(() => import("./pages/admin/AdminSessionDetail"));
-const AdminEdgeErrors = lazy(() => import("./pages/admin/AdminEdgeErrors"));
-const AdminAuthErrors = lazy(() => import("./pages/admin/AdminAuthErrors"));
-const AdminPerformance = lazy(() => import("./pages/admin/AdminPerformance"));
-const AdminShareAnalytics = lazy(() => import("./pages/admin/AdminShareAnalytics"));
-const AdminShareDrilldown = lazy(() => import("./pages/admin/AdminShareDrilldown"));
+const Blog = lazy(() => import("./pages/Blog"), "Blog");
+const BlogArticle = lazy(() => import("./pages/BlogArticle"), "BlogArticle");
+const AdminShell = lazy(() => import("./components/admin/AdminShell"), "AdminShell");
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"), "AdminAnalytics");
+const AdminArticles = lazy(() => import("./pages/admin/AdminArticles"), "AdminArticles");
+const AdminArticleEdit = lazy(() => import("./pages/admin/AdminArticleEdit"), "AdminArticleEdit");
+const AdminAds = lazy(() => import("./pages/admin/AdminAds"), "AdminAds");
+const AdminAdEdit = lazy(() => import("./pages/admin/AdminAdEdit"), "AdminAdEdit");
+const AdminPlaceholder = lazy(() => import("./pages/admin/AdminPlaceholder"), "AdminPlaceholder");
+const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"), "AdminCategories");
+const AdminTags = lazy(() => import("./pages/admin/AdminTags"), "AdminTags");
+const AdminComments = lazy(() => import("./pages/admin/AdminComments"), "AdminComments");
+const AdminNewsletter = lazy(() => import("./pages/admin/AdminNewsletter"), "AdminNewsletter");
+const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettings"), "AdminSettings");
+const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"), "AdminAudit");
+const AdminCampaigns = lazy(() => import("./pages/admin/AdminCampaigns"), "AdminCampaigns");
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"), "AdminUsers");
+const AdminReports = lazy(() => import("./pages/admin/AdminReports"), "AdminReports");
+const AdminReportsDigest = lazy(() => import("./pages/admin/AdminReportsDigest"), "AdminReportsDigest");
+const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"), "AdminRevenue");
+const AdminIntelligence = lazy(() => import("./pages/admin/AdminIntelligence"), "AdminIntelligence");
+const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"), "AdminSessions");
+const AdminSessionDetail = lazy(() => import("./pages/admin/AdminSessionDetail"), "AdminSessionDetail");
+const AdminEdgeErrors = lazy(() => import("./pages/admin/AdminEdgeErrors"), "AdminEdgeErrors");
+const AdminAuthErrors = lazy(() => import("./pages/admin/AdminAuthErrors"), "AdminAuthErrors");
+const AdminPerformance = lazy(() => import("./pages/admin/AdminPerformance"), "AdminPerformance");
+const AdminShareAnalytics = lazy(() => import("./pages/admin/AdminShareAnalytics"), "AdminShareAnalytics");
+const AdminShareDrilldown = lazy(() => import("./pages/admin/AdminShareDrilldown"), "AdminShareDrilldown");
 
 // SEO content pages (public, indexable)
-const GDTopics = lazy(() => import("./pages/GDTopics"));
-const HowToCrackGD = lazy(() => import("./pages/HowToCrackGD"));
-const CommonGDMistakes = lazy(() => import("./pages/CommonGDMistakes"));
-const CommunicationSkills = lazy(() => import("./pages/CommunicationSkills"));
-const About = lazy(() => import("./pages/About"));
-const GDPreparationGuide = lazy(() => import("./pages/GDPreparationGuide"));
-const AIGDSimulator = lazy(() => import("./pages/AIGDSimulator"));
-const SpeakConfidently = lazy(() => import("./pages/SpeakConfidently"));
-const StartGD = lazy(() => import("./pages/StartGD"));
-const ConcludeGD = lazy(() => import("./pages/ConcludeGD"));
-const BodyLanguageTips = lazy(() => import("./pages/BodyLanguageTips"));
-const GDTopicPage = lazy(() => import("./pages/GDTopicPage"));
+const GDTopics = lazy(() => import("./pages/GDTopics"), "GDTopics");
+const HowToCrackGD = lazy(() => import("./pages/HowToCrackGD"), "HowToCrackGD");
+const CommonGDMistakes = lazy(() => import("./pages/CommonGDMistakes"), "CommonGDMistakes");
+const CommunicationSkills = lazy(() => import("./pages/CommunicationSkills"), "CommunicationSkills");
+const About = lazy(() => import("./pages/About"), "About");
+const GDPreparationGuide = lazy(() => import("./pages/GDPreparationGuide"), "GDPreparationGuide");
+const AIGDSimulator = lazy(() => import("./pages/AIGDSimulator"), "AIGDSimulator");
+const SpeakConfidently = lazy(() => import("./pages/SpeakConfidently"), "SpeakConfidently");
+const StartGD = lazy(() => import("./pages/StartGD"), "StartGD");
+const ConcludeGD = lazy(() => import("./pages/ConcludeGD"), "ConcludeGD");
+const BodyLanguageTips = lazy(() => import("./pages/BodyLanguageTips"), "BodyLanguageTips");
+const GDTopicPage = lazy(() => import("./pages/GDTopicPage"), "GDTopicPage");
 
 const queryClient = new QueryClient();
 
