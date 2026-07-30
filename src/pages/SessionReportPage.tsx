@@ -1,10 +1,12 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect } from "react";
 import SessionReport from "@/components/SessionReport";
+import { useStickyRouteValue } from "@/hooks/useStickyRouteValue";
 
 const SessionReportPage = () => {
   const navigate = useNavigate();
-  const { sessionId } = useParams<{ sessionId: string }>();
+  const params = useParams<{ sessionId: string }>();
+  const sessionId = useStickyRouteValue(params.sessionId);
 
   useEffect(() => {
     if (!sessionId) {
@@ -21,9 +23,9 @@ const SessionReportPage = () => {
   };
 
   return (
-    <SessionReport 
-      sessionId={sessionId} 
-      onStartNew={handleStartNew} 
+    <SessionReport
+      sessionId={sessionId}
+      onStartNew={handleStartNew}
     />
   );
 };

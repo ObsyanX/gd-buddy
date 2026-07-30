@@ -1,11 +1,13 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import SessionSetup from "@/components/SessionSetup";
+import { useStickyRouteValue } from "@/hooks/useStickyRouteValue";
 
 const PracticeSetup = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const topic = location.state?.topic;
+  // Sticky: router state briefly reads as null while the next route loads.
+  const topic = useStickyRouteValue(location.state?.topic);
 
   useEffect(() => {
     if (!topic) {
@@ -26,10 +28,10 @@ const PracticeSetup = () => {
   };
 
   return (
-    <SessionSetup 
-      topic={topic} 
-      onSessionCreated={handleSessionCreated} 
-      onBack={handleBack} 
+    <SessionSetup
+      topic={topic}
+      onSessionCreated={handleSessionCreated}
+      onBack={handleBack}
     />
   );
 };

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useStickyRouteValue } from "@/hooks/useStickyRouteValue";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +50,8 @@ const generateRoomCode = () => {
 const MultiplayerSetup = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const topic = location.state?.topic;
+  // Sticky: router state briefly reads as null while the next route loads.
+  const topic = useStickyRouteValue(location.state?.topic);
   const { user } = useAuth();
   const { toast } = useToast();
 
