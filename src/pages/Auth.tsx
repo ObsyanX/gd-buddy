@@ -46,6 +46,18 @@ const Auth = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
 
+  // Returning from an OAuth redirect: once the session lands, go home.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session) navigate("/home", { replace: true });
+    });
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate("/home", { replace: true });
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
