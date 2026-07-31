@@ -195,10 +195,34 @@ const Auth = () => {
     }
   };
 
+  // Lovable's managed OAuth broker lives behind the /~oauth/* proxy, which only
+  // exists on Lovable-served hosts. On other hosts (e.g. Vercel) fall back to a
+  // direct Supabase OAuth redirect.
+  const isLovableHost = () => {
+    const h = window.location.hostname;
+    return h === "localhost" || h.endsWith(".lovable.app") || h.endsWith(".lovable.dev");
+  };
+
   const handleGoogleSignIn = async () => {
     setGoogleError(null);
     setIsGoogleLoading(true);
     try {
+      if (!isLovableHost()) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/auth`,
+            queryParams: { prompt: "select_account" },
+          },
+        });
+        if (error) {
+          const mapped = mapAuthError(error, "google");
+          setGoogleError(mapped);
+          void logAuthError({ provider: "google", code: mapped.code, raw: error, context: { intent: activeTab, mode: "direct" } });
+        }
+        return;
+      }
+
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: `${window.location.origin}/auth`,
         extraParams: { prompt: "select_account" },
