@@ -71,6 +71,8 @@ export default function AdminAnalytics() {
   const [countries, setCountries] = useState<Array<{ name: string; value: number }>>([]);
   const [topArticles, setTopArticles] = useState<Array<{ title: string; view_count: number }>>([]);
   const [topAds, setTopAds] = useState<Array<{ title: string; click_count: number; view_count: number }>>([]);
+  const [drill, setDrill] = useState<KpiKey | null>(null);
+  const [ratio, setRatio] = useState<{ numerator: KpiKey; denominator: KpiKey; title: string; href?: string } | null>(null);
 
   useEffect(() => {
     (async () => {
