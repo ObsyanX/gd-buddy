@@ -250,30 +250,30 @@ export default function AdminAnalytics() {
           <LinkedStat label="New today" value={k.newToday} href="/home/admin/users?range=1d" hint="Users created in the last 24h" />
           <LinkedStat label="New this week" value={k.newWeek} href="/home/admin/users?range=7d" hint="Users created in the last 7 days" />
           <LinkedStat label="New this month" value={k.newMonth} href="/home/admin/users?range=30d" hint="Users created in the last 30 days" />
-          <LinkedStat label="DAU" value={k.dau} href="/home/admin/users?active=1d" hint="Daily active users" />
-          <LinkedStat label="WAU" value={k.wau} href="/home/admin/users?active=7d" hint="Weekly active users" />
-          <LinkedStat label="MAU" value={k.mau} href="/home/admin/users?active=30d" hint="Monthly active users" />
+          <LinkedStat label="DAU" value={k.dau} onClick={() => setDrill("dau")} hint="Daily active users — open trend" />
+          <LinkedStat label="WAU" value={k.wau} onClick={() => setDrill("wau")} hint="Weekly active users — open trend" />
+          <LinkedStat label="MAU" value={k.mau} onClick={() => setDrill("mau")} hint="Monthly active users — open trend" />
         </div>
       </section>
 
       <section aria-labelledby="auth-h" className="space-y-3">
         <h2 id="auth-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Authentication</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <LinkedStat label="Total logins" value={k.totalLogins} href="/home/admin/auth-errors" hint="See login history & failures" />
-          <LinkedStat label="Successful" value={k.successLogins} href="/home/admin/auth-errors?status=success" hint="Successful sign-ins" />
-          <LinkedStat label="Failed" value={k.failedLogins} href="/home/admin/auth-errors?status=failed" hint="Failed sign-in attempts" />
+          <LinkedStat label="Total logins" value={k.totalLogins} onClick={() => setDrill("totalLogins")} hint="Login volume over time" />
+          <LinkedStat label="Successful" value={k.successLogins} onClick={() => setDrill("successLogins")} hint="Successful sign-ins over time" />
+          <LinkedStat label="Failed" value={k.failedLogins} onClick={() => setDrill("failedLogins")} hint="Failed sign-in attempts over time" />
         </div>
       </section>
 
       <section aria-labelledby="traffic-h" className="space-y-3">
         <h2 id="traffic-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Traffic</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <LinkedStat label="Total visitors" value={k.totalVisitors} href="/home/admin/performance" hint="Visitor sessions & performance" />
-          <LinkedStat label="Unique visitors" value={k.uniqueVisitors} href="/home/admin/performance" hint="Distinct visitor IDs" />
-          <LinkedStat label="Page views" value={k.totalPageViews} href="/home/admin/performance" hint="Page view breakdown" />
-          <LinkedStat label="Avg session (s)" value={k.avgSessionSec} href="/home/admin/performance" hint="Average session duration" />
-          <LinkedStat label="Bounce rate %" value={k.bounceRate} href="/home/admin/performance" hint="Single-page-view sessions" />
-          <LinkedStat label="Pages / session" value={k.pagesPerSession} href="/home/admin/performance" hint="Pages per visitor session" />
+          <LinkedStat label="Total visitors" value={k.totalVisitors} onClick={() => setDrill("totalVisitors")} hint="Visitor sessions per day" />
+          <LinkedStat label="Unique visitors" value={k.uniqueVisitors} onClick={() => setDrill("uniqueVisitors")} hint="Distinct visitors per day" />
+          <LinkedStat label="Page views" value={k.totalPageViews} onClick={() => setDrill("pageViews")} hint="Page views per day" />
+          <LinkedStat label="Avg session (s)" value={k.avgSessionSec} onClick={() => setDrill("avgSession")} hint="Average session duration per day" />
+          <LinkedStat label="Bounce rate %" value={k.bounceRate} onClick={() => setDrill("bounceRate")} hint="Single-page sessions per day" />
+          <LinkedStat label="Pages / session" value={k.pagesPerSession} onClick={() => setDrill("pagesPerSession")} hint="Pages per session per day" />
         </div>
       </section>
 
@@ -282,8 +282,8 @@ export default function AdminAnalytics() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <LinkedStat label="GD sessions" value={k.gdSessions} href="/home/admin/sessions" hint="Browse all group discussions" />
           <LinkedStat label="Completed" value={k.completedSessions} href="/home/admin/sessions?status=completed" hint="Completed sessions" />
-          <LinkedStat label="Avg AI score" value={k.avgAiScore} href="/home/admin/sessions" hint="Average AI content score" />
-          <LinkedStat label="AI evaluations" value={k.totalAiEvals} href="/home/admin/intelligence" hint="AI cost & evaluation logs" />
+          <LinkedStat label="Avg AI score" value={k.avgAiScore} onClick={() => setDrill("avgAiScore")} hint="Average AI content score per day" />
+          <LinkedStat label="AI evaluations" value={k.totalAiEvals} onClick={() => setDrill("aiEvaluations")} hint="AI evaluations per day" />
           <LinkedStat label="Feedback given" value={k.totalFeedback} href="/home/admin/reports" hint="User feedback & reports" />
         </div>
       </section>
@@ -292,20 +292,31 @@ export default function AdminAnalytics() {
         <h2 id="ads-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Advertisements</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <LinkedStat label="Active ads" value={k.activeAds} href="/home/admin/ads?status=active" hint="Currently running ads" />
-          <LinkedStat label="Impressions" value={k.adImpressions} href="/home/admin/ads" hint="All ad impressions" />
-          <LinkedStat label="Clicks" value={k.adClicks} href="/home/admin/ads" hint="All ad clicks" />
-          <LinkedStat label="CTR %" value={k.ctr} href="/home/admin/campaigns" hint="Campaign performance" />
+          <LinkedStat label="Impressions" value={k.adImpressions} onClick={() => setDrill("adImpressions")} hint="Ad impressions per day" />
+          <LinkedStat label="Clicks" value={k.adClicks} onClick={() => setDrill("adClicks")} hint="Ad clicks per day" />
+          <LinkedStat
+            label="CTR %"
+            value={k.ctr}
+            onClick={() => { setDrill(null); setRatio({ numerator: "adClicks", denominator: "adImpressions", title: "Click-through rate", href: "/home/admin/campaigns" }); }}
+            hint="Click-through rate per day"
+          />
         </div>
       </section>
 
       <section aria-labelledby="sys-h" className="space-y-3">
         <h2 id="sys-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">System</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <LinkedStat label="AI requests" value={k.aiRequests} href="/home/admin/intelligence" hint="AI request & cost logs" />
-          <LinkedStat label="Token usage" value={k.tokenUsage} href="/home/admin/intelligence" hint="Token consumption details" />
-          <LinkedStat label="API errors" value={k.apiErrors} href="/home/admin/edge-errors" hint="Edge function errors" />
+          <LinkedStat label="AI requests" value={k.aiRequests} onClick={() => setDrill("aiRequests")} hint="AI requests per day" />
+          <LinkedStat label="Token usage" value={k.tokenUsage} onClick={() => setDrill("tokenUsage")} hint="Tokens consumed per day" />
+          <LinkedStat label="API errors" value={k.apiErrors} onClick={() => setDrill("apiErrors")} hint="Errors logged per day" />
         </div>
       </section>
+
+      <KpiDrilldown
+        kpi={drill}
+        ratio={ratio}
+        onOpenChange={(open) => { if (!open) { setDrill(null); setRatio(null); } }}
+      />
 
 
       <div className="grid md:grid-cols-2 gap-4">
