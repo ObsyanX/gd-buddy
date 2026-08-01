@@ -185,28 +185,31 @@ export default function AdminAnalytics() {
       setTopArticles((articles.data ?? []).map((r) => ({ title: r.title, view_count: r.view_count || 0 })));
       setTopAds(adsTop.data ?? []);
 
-      // Daily buckets (last 30d) — signups vs visitors vs impressions
+      // Daily buckets (last 30d) — signups vs visitors vs impressions.
+      // All range reads are paginated so a busy day is never truncated.
       const days = Array.from({ length: 30 }, (_, i) => subDays(new Date(), 29 - i));
       const [profilesRange, visRange, gdRange, impRange, clkRange] = await Promise.all([
-        supabase.from("profiles").select("created_at").gte("created_at", from30),
-        supabase.from("visitor_sessions").select("first_seen").gte("first_seen", from30),
-        supabase.from("gd_sessions").select("created_at").gte("created_at", from30),
-        supabase.from("ad_impressions").select("created_at").gte("created_at", from30),
-        supabase.from("ad_clicks").select("created_at").gte("created_at", from30),
+        fetchAllPaginated<{ created_at: string }>("profiles", "created_at", { gte: ["created_at", from30] }),
+        fetchAllPaginated<{ first_seen: string }>("visitor_sessions", "first_seen", { gte: ["first_seen", from30] }),
+        fetchAllPaginated<{ created_at: string }>("gd_sessions", "created_at", { gte: ["created_at", from30] }),
+        fetchAllPaginated<{ created_at: string }>("ad_impressions", "created_at", { gte: ["created_at", from30] }),
+        fetchAllPaginated<{ created_at: string }>("ad_clicks", "created_at", { gte: ["created_at", from30] }),
       ]);
-      const bucket = (col: Array<{ [k: string]: string }> | null | undefined, field: string) => {
+      const bucket = (col: Array<Record<string, unknown>>, field: string) => {
         const m = new Map<string, number>();
-        (col ?? []).forEach((r) => {
-          const d = format(new Date(r[field]), "yyyy-MM-dd");
+        col.forEach((r) => {
+          const raw = r[field];
+          if (!raw) return;
+          const d = format(new Date(String(raw)), "yyyy-MM-dd");
           m.set(d, (m.get(d) ?? 0) + 1);
         });
         return m;
       };
-      const s = bucket(profilesRange.data, "created_at");
-      const v = bucket(visRange.data, "first_seen");
-      const g = bucket(gdRange.data, "created_at");
-      const im = bucket(impRange.data, "created_at");
-      const cl = bucket(clkRange.data, "created_at");
+      const s = bucket(profilesRange, "created_at");
+      const v = bucket(visRange, "first_seen");
+      const g = bucket(gdRange, "created_at");
+      const im = bucket(impRange, "created_at");
+      const cl = bucket(clkRange, "created_at");
       setDaily(days.map((d) => {
         const key = format(d, "yyyy-MM-dd");
         return {
@@ -219,16 +222,15 @@ export default function AdminAnalytics() {
         };
       }));
 
-      // distributions
-      const { data: dist } = await supabase.from("visitor_sessions").select("device, browser, country");
+      // distributions — reuse the already-paginated session rows (exact)
       const count = (arr: Array<string | null>) => {
         const m = new Map<string, number>();
-        arr.forEach((x) => { const k = (x || "unknown"); m.set(k, (m.get(k) ?? 0) + 1); });
+        arr.forEach((x) => { const key = (x || "unknown"); m.set(key, (m.get(key) ?? 0) + 1); });
         return Array.from(m.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 6);
       };
-      setDevices(count((dist ?? []).map((r) => r.device)));
-      setBrowsers(count((dist ?? []).map((r) => r.browser)));
-      setCountries(count((dist ?? []).map((r) => r.country)));
+      setDevices(count(sessRows.map((r) => r.device)));
+      setBrowsers(count(sessRows.map((r) => r.browser)));
+      setCountries(count(sessRows.map((r) => r.country)));
     })().catch(console.error);
   }, []);
 
