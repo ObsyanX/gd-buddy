@@ -139,11 +139,11 @@ export default function AdminAnalytics() {
         ? sessRows.reduce((s, r) => s + ((new Date(r.last_seen).getTime() - new Date(r.first_seen).getTime()) / 1000), 0) / totalSessions
         : 0;
 
-      const avgAi = gdMetrics.data?.length
-        ? gdMetrics.data.reduce((s, r) => s + (r.content_score ?? 0), 0) / gdMetrics.data.length
+      const avgAi = gdMetrics.length
+        ? gdMetrics.reduce((s, r) => s + (r.content_score ?? 0), 0) / gdMetrics.length
         : 0;
 
-      const totalTok = (aiTok.data ?? []).reduce((s: number, r: { input_tokens?: number | null; output_tokens?: number | null }) => s + (r.input_tokens || 0) + (r.output_tokens || 0), 0);
+      const totalTok = aiTok.reduce((s, r) => s + (r.input_tokens || 0) + (r.output_tokens || 0), 0);
 
       const impCount = adImps.count ?? 0;
       const clickCount = adClicks.count ?? 0;
@@ -154,7 +154,7 @@ export default function AdminAnalytics() {
         newToday: profilesToday.count ?? 0,
         newWeek: profilesWeek.count ?? 0,
         newMonth: profilesMonth.count ?? 0,
-        dau: dauQ.count ?? 0, wau: wauQ.count ?? 0, mau: mauQ.count ?? 0,
+        dau: distinctActive(from1), wau: distinctActive(from7), mau: distinctActive(from30),
         totalLogins: loginsAll.count ?? 0,
         successLogins: loginsOk.count ?? 0,
         failedLogins: loginsFail.count ?? 0,
