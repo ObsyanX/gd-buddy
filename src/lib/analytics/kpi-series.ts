@@ -212,3 +212,30 @@ export const KPI_SPECS = {
 } satisfies Record<string, KpiSpec>;
 
 export type KpiKey = keyof typeof KPI_SPECS;
+
+/**
+ * Paginated select of an entire table (or window) so aggregates are exact
+ * instead of being silently truncated at PostgREST's 1000-row response cap.
+ */
+export async function fetchAllPaginated<T = Record<string, unknown>>(
+  table: string,
+  columns: string,
+  opts: { orderBy?: string; gte?: [string, string] } = {},
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q: any = supabase.from(table as never).select(columns).range(offset, offset + PAGE - 1);
+    if (opts.orderBy) q = q.order(opts.orderBy, { ascending: true });
+    if (opts.gte) q = q.gte(opts.gte[0], opts.gte[1]);
+    const { data, error } = await q;
+    if (error) {
+      console.error(`[kpi-series] paginated ${table} failed`, error);
+      break;
+    }
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return out;
+}
