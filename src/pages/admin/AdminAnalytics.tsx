@@ -80,10 +80,10 @@ export default function AdminAnalytics() {
 
       const [
         profilesTotal, profilesToday, profilesWeek, profilesMonth,
-        dauQ, wauQ, mauQ,
+        activeRows,
         loginsAll, loginsOk, loginsFail,
-        pv, pvUnique,
-        sess,
+        pv,
+        sessRows,
         gdAll, gdDone, gdMetrics,
         feedback,
         articles,
@@ -95,18 +95,23 @@ export default function AdminAnalytics() {
         supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", from1),
         supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", from7),
         supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", from30),
-        supabase.from("visitor_sessions").select("user_id", { count: "exact", head: true }).gte("last_seen", from1).not("user_id", "is", null),
-        supabase.from("visitor_sessions").select("user_id", { count: "exact", head: true }).gte("last_seen", from7).not("user_id", "is", null),
-        supabase.from("visitor_sessions").select("user_id", { count: "exact", head: true }).gte("last_seen", from30).not("user_id", "is", null),
+        // Distinct active users need the raw rows — a row count would inflate
+        // DAU/WAU/MAU because one user can own many visitor sessions.
+        fetchAllPaginated<{ user_id: string | null; last_seen: string }>(
+          "visitor_sessions", "user_id,last_seen", { gte: ["last_seen", from30] },
+        ),
         supabase.from("login_events").select("id", { count: "exact", head: true }),
         supabase.from("login_events").select("id", { count: "exact", head: true }).eq("success", true),
         supabase.from("login_events").select("id", { count: "exact", head: true }).eq("success", false),
-        supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", from30),
-        supabase.from("visitor_sessions").select("visitor_id"),
-        supabase.from("visitor_sessions").select("page_count, first_seen, last_seen").gte("last_seen", from30),
+        supabase.from("page_views").select("id", { count: "exact", head: true }),
+        // Full visitor-session table (paginated) so visitors / unique visitors /
+        // bounce rate / pages-per-session are exact rather than capped at 1000.
+        fetchAllPaginated<{ visitor_id: string; page_count: number | null; first_seen: string; last_seen: string; device: string | null; browser: string | null; country: string | null }>(
+          "visitor_sessions", "visitor_id,page_count,first_seen,last_seen,device,browser,country",
+        ),
         supabase.from("gd_sessions").select("id", { count: "exact", head: true }),
         supabase.from("gd_sessions").select("id", { count: "exact", head: true }).eq("status", "completed"),
-        supabase.from("gd_metrics").select("content_score"),
+        fetchAllPaginated<{ content_score: number | null }>("gd_metrics", "content_score"),
         supabase.from("user_feedback").select("id", { count: "exact", head: true }),
         supabase.from("articles").select("title,view_count").order("view_count", { ascending: false }).limit(5),
         supabase.from("advertisements").select("id", { count: "exact", head: true }).eq("status", "active"),
@@ -114,17 +119,24 @@ export default function AdminAnalytics() {
         supabase.from("ad_clicks").select("id", { count: "exact", head: true }),
         supabase.from("advertisements").select("title, click_count, view_count").order("click_count", { ascending: false }).limit(5),
         supabase.from("ai_costs").select("id", { count: "exact", head: true }),
-        supabase.from("token_usage").select("input_tokens, output_tokens"),
+        fetchAllPaginated<{ input_tokens: number | null; output_tokens: number | null }>("token_usage", "input_tokens,output_tokens"),
         supabase.from("error_logs").select("id", { count: "exact", head: true }),
       ]);
 
-      const uniq = new Set((pvUnique.data ?? []).map((r) => r.visitor_id)).size;
-      const totalSessions = sess.data?.length ?? 0;
-      const avgPages = totalSessions ? (sess.data!.reduce((s, r) => s + (r.page_count || 1), 0) / totalSessions) : 0;
-      const bounces = sess.data?.filter((r) => (r.page_count || 1) <= 1).length ?? 0;
+      const distinctActive = (sinceISO: string) =>
+        new Set(
+          activeRows
+            .filter((r) => r.user_id && r.last_seen >= sinceISO)
+            .map((r) => r.user_id as string),
+        ).size;
+
+      const uniq = new Set(sessRows.map((r) => r.visitor_id)).size;
+      const totalSessions = sessRows.length;
+      const avgPages = totalSessions ? (sessRows.reduce((s, r) => s + (r.page_count || 1), 0) / totalSessions) : 0;
+      const bounces = sessRows.filter((r) => (r.page_count || 1) <= 1).length;
       const bounceRate = totalSessions ? (bounces / totalSessions) * 100 : 0;
       const avgDur = totalSessions
-        ? sess.data!.reduce((s, r) => s + ((new Date(r.last_seen).getTime() - new Date(r.first_seen).getTime()) / 1000), 0) / totalSessions
+        ? sessRows.reduce((s, r) => s + ((new Date(r.last_seen).getTime() - new Date(r.first_seen).getTime()) / 1000), 0) / totalSessions
         : 0;
 
       const avgAi = gdMetrics.data?.length
