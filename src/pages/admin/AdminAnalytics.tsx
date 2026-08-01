@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Legend, CartesianGrid } from "recharts";
 import { StatCard, type StatCardProps } from "@/components/charts";
 import { format, subDays } from "date-fns";
+import { KpiDrilldown } from "@/components/admin/KpiDrilldown";
+import { fetchAllPaginated, type KpiKey } from "@/lib/analytics/kpi-series";
 
 /**
  * Local wrapper that automatically attaches tracking metadata (page + filters
@@ -69,6 +71,8 @@ export default function AdminAnalytics() {
   const [countries, setCountries] = useState<Array<{ name: string; value: number }>>([]);
   const [topArticles, setTopArticles] = useState<Array<{ title: string; view_count: number }>>([]);
   const [topAds, setTopAds] = useState<Array<{ title: string; click_count: number; view_count: number }>>([]);
+  const [drill, setDrill] = useState<KpiKey | null>(null);
+  const [ratio, setRatio] = useState<{ numerator: KpiKey; denominator: KpiKey; title: string; href?: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -78,10 +82,10 @@ export default function AdminAnalytics() {
 
       const [
         profilesTotal, profilesToday, profilesWeek, profilesMonth,
-        dauQ, wauQ, mauQ,
+        activeRows,
         loginsAll, loginsOk, loginsFail,
-        pv, pvUnique,
-        sess,
+        pv,
+        sessRows,
         gdAll, gdDone, gdMetrics,
         feedback,
         articles,
@@ -93,18 +97,23 @@ export default function AdminAnalytics() {
         supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", from1),
         supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", from7),
         supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", from30),
-        supabase.from("visitor_sessions").select("user_id", { count: "exact", head: true }).gte("last_seen", from1).not("user_id", "is", null),
-        supabase.from("visitor_sessions").select("user_id", { count: "exact", head: true }).gte("last_seen", from7).not("user_id", "is", null),
-        supabase.from("visitor_sessions").select("user_id", { count: "exact", head: true }).gte("last_seen", from30).not("user_id", "is", null),
+        // Distinct active users need the raw rows — a row count would inflate
+        // DAU/WAU/MAU because one user can own many visitor sessions.
+        fetchAllPaginated<{ user_id: string | null; last_seen: string }>(
+          "visitor_sessions", "user_id,last_seen", { gte: ["last_seen", from30] },
+        ),
         supabase.from("login_events").select("id", { count: "exact", head: true }),
         supabase.from("login_events").select("id", { count: "exact", head: true }).eq("success", true),
         supabase.from("login_events").select("id", { count: "exact", head: true }).eq("success", false),
-        supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", from30),
-        supabase.from("visitor_sessions").select("visitor_id"),
-        supabase.from("visitor_sessions").select("page_count, first_seen, last_seen").gte("last_seen", from30),
+        supabase.from("page_views").select("id", { count: "exact", head: true }),
+        // Full visitor-session table (paginated) so visitors / unique visitors /
+        // bounce rate / pages-per-session are exact rather than capped at 1000.
+        fetchAllPaginated<{ visitor_id: string; page_count: number | null; first_seen: string; last_seen: string; device: string | null; browser: string | null; country: string | null }>(
+          "visitor_sessions", "visitor_id,page_count,first_seen,last_seen,device,browser,country",
+        ),
         supabase.from("gd_sessions").select("id", { count: "exact", head: true }),
         supabase.from("gd_sessions").select("id", { count: "exact", head: true }).eq("status", "completed"),
-        supabase.from("gd_metrics").select("content_score"),
+        fetchAllPaginated<{ content_score: number | null }>("gd_metrics", "content_score"),
         supabase.from("user_feedback").select("id", { count: "exact", head: true }),
         supabase.from("articles").select("title,view_count").order("view_count", { ascending: false }).limit(5),
         supabase.from("advertisements").select("id", { count: "exact", head: true }).eq("status", "active"),
@@ -112,24 +121,31 @@ export default function AdminAnalytics() {
         supabase.from("ad_clicks").select("id", { count: "exact", head: true }),
         supabase.from("advertisements").select("title, click_count, view_count").order("click_count", { ascending: false }).limit(5),
         supabase.from("ai_costs").select("id", { count: "exact", head: true }),
-        supabase.from("token_usage").select("input_tokens, output_tokens"),
+        fetchAllPaginated<{ input_tokens: number | null; output_tokens: number | null }>("token_usage", "input_tokens,output_tokens"),
         supabase.from("error_logs").select("id", { count: "exact", head: true }),
       ]);
 
-      const uniq = new Set((pvUnique.data ?? []).map((r) => r.visitor_id)).size;
-      const totalSessions = sess.data?.length ?? 0;
-      const avgPages = totalSessions ? (sess.data!.reduce((s, r) => s + (r.page_count || 1), 0) / totalSessions) : 0;
-      const bounces = sess.data?.filter((r) => (r.page_count || 1) <= 1).length ?? 0;
+      const distinctActive = (sinceISO: string) =>
+        new Set(
+          activeRows
+            .filter((r) => r.user_id && r.last_seen >= sinceISO)
+            .map((r) => r.user_id as string),
+        ).size;
+
+      const uniq = new Set(sessRows.map((r) => r.visitor_id)).size;
+      const totalSessions = sessRows.length;
+      const avgPages = totalSessions ? (sessRows.reduce((s, r) => s + (r.page_count || 1), 0) / totalSessions) : 0;
+      const bounces = sessRows.filter((r) => (r.page_count || 1) <= 1).length;
       const bounceRate = totalSessions ? (bounces / totalSessions) * 100 : 0;
       const avgDur = totalSessions
-        ? sess.data!.reduce((s, r) => s + ((new Date(r.last_seen).getTime() - new Date(r.first_seen).getTime()) / 1000), 0) / totalSessions
+        ? sessRows.reduce((s, r) => s + ((new Date(r.last_seen).getTime() - new Date(r.first_seen).getTime()) / 1000), 0) / totalSessions
         : 0;
 
-      const avgAi = gdMetrics.data?.length
-        ? gdMetrics.data.reduce((s, r) => s + (r.content_score ?? 0), 0) / gdMetrics.data.length
+      const avgAi = gdMetrics.length
+        ? gdMetrics.reduce((s, r) => s + (r.content_score ?? 0), 0) / gdMetrics.length
         : 0;
 
-      const totalTok = (aiTok.data ?? []).reduce((s: number, r: { input_tokens?: number | null; output_tokens?: number | null }) => s + (r.input_tokens || 0) + (r.output_tokens || 0), 0);
+      const totalTok = aiTok.reduce((s, r) => s + (r.input_tokens || 0) + (r.output_tokens || 0), 0);
 
       const impCount = adImps.count ?? 0;
       const clickCount = adClicks.count ?? 0;
@@ -140,7 +156,7 @@ export default function AdminAnalytics() {
         newToday: profilesToday.count ?? 0,
         newWeek: profilesWeek.count ?? 0,
         newMonth: profilesMonth.count ?? 0,
-        dau: dauQ.count ?? 0, wau: wauQ.count ?? 0, mau: mauQ.count ?? 0,
+        dau: distinctActive(from1), wau: distinctActive(from7), mau: distinctActive(from30),
         totalLogins: loginsAll.count ?? 0,
         successLogins: loginsOk.count ?? 0,
         failedLogins: loginsFail.count ?? 0,
@@ -171,28 +187,31 @@ export default function AdminAnalytics() {
       setTopArticles((articles.data ?? []).map((r) => ({ title: r.title, view_count: r.view_count || 0 })));
       setTopAds(adsTop.data ?? []);
 
-      // Daily buckets (last 30d) — signups vs visitors vs impressions
+      // Daily buckets (last 30d) — signups vs visitors vs impressions.
+      // All range reads are paginated so a busy day is never truncated.
       const days = Array.from({ length: 30 }, (_, i) => subDays(new Date(), 29 - i));
       const [profilesRange, visRange, gdRange, impRange, clkRange] = await Promise.all([
-        supabase.from("profiles").select("created_at").gte("created_at", from30),
-        supabase.from("visitor_sessions").select("first_seen").gte("first_seen", from30),
-        supabase.from("gd_sessions").select("created_at").gte("created_at", from30),
-        supabase.from("ad_impressions").select("created_at").gte("created_at", from30),
-        supabase.from("ad_clicks").select("created_at").gte("created_at", from30),
+        fetchAllPaginated<{ created_at: string }>("profiles", "created_at", { gte: ["created_at", from30] }),
+        fetchAllPaginated<{ first_seen: string }>("visitor_sessions", "first_seen", { gte: ["first_seen", from30] }),
+        fetchAllPaginated<{ created_at: string }>("gd_sessions", "created_at", { gte: ["created_at", from30] }),
+        fetchAllPaginated<{ created_at: string }>("ad_impressions", "created_at", { gte: ["created_at", from30] }),
+        fetchAllPaginated<{ created_at: string }>("ad_clicks", "created_at", { gte: ["created_at", from30] }),
       ]);
-      const bucket = (col: Array<{ [k: string]: string }> | null | undefined, field: string) => {
+      const bucket = (col: Array<Record<string, unknown>>, field: string) => {
         const m = new Map<string, number>();
-        (col ?? []).forEach((r) => {
-          const d = format(new Date(r[field]), "yyyy-MM-dd");
+        col.forEach((r) => {
+          const raw = r[field];
+          if (!raw) return;
+          const d = format(new Date(String(raw)), "yyyy-MM-dd");
           m.set(d, (m.get(d) ?? 0) + 1);
         });
         return m;
       };
-      const s = bucket(profilesRange.data, "created_at");
-      const v = bucket(visRange.data, "first_seen");
-      const g = bucket(gdRange.data, "created_at");
-      const im = bucket(impRange.data, "created_at");
-      const cl = bucket(clkRange.data, "created_at");
+      const s = bucket(profilesRange, "created_at");
+      const v = bucket(visRange, "first_seen");
+      const g = bucket(gdRange, "created_at");
+      const im = bucket(impRange, "created_at");
+      const cl = bucket(clkRange, "created_at");
       setDaily(days.map((d) => {
         const key = format(d, "yyyy-MM-dd");
         return {
@@ -205,16 +224,15 @@ export default function AdminAnalytics() {
         };
       }));
 
-      // distributions
-      const { data: dist } = await supabase.from("visitor_sessions").select("device, browser, country");
+      // distributions — reuse the already-paginated session rows (exact)
       const count = (arr: Array<string | null>) => {
         const m = new Map<string, number>();
-        arr.forEach((x) => { const k = (x || "unknown"); m.set(k, (m.get(k) ?? 0) + 1); });
+        arr.forEach((x) => { const key = (x || "unknown"); m.set(key, (m.get(key) ?? 0) + 1); });
         return Array.from(m.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 6);
       };
-      setDevices(count((dist ?? []).map((r) => r.device)));
-      setBrowsers(count((dist ?? []).map((r) => r.browser)));
-      setCountries(count((dist ?? []).map((r) => r.country)));
+      setDevices(count(sessRows.map((r) => r.device)));
+      setBrowsers(count(sessRows.map((r) => r.browser)));
+      setCountries(count(sessRows.map((r) => r.country)));
     })().catch(console.error);
   }, []);
 
@@ -234,30 +252,30 @@ export default function AdminAnalytics() {
           <LinkedStat label="New today" value={k.newToday} href="/home/admin/users?range=1d" hint="Users created in the last 24h" />
           <LinkedStat label="New this week" value={k.newWeek} href="/home/admin/users?range=7d" hint="Users created in the last 7 days" />
           <LinkedStat label="New this month" value={k.newMonth} href="/home/admin/users?range=30d" hint="Users created in the last 30 days" />
-          <LinkedStat label="DAU" value={k.dau} href="/home/admin/users?active=1d" hint="Daily active users" />
-          <LinkedStat label="WAU" value={k.wau} href="/home/admin/users?active=7d" hint="Weekly active users" />
-          <LinkedStat label="MAU" value={k.mau} href="/home/admin/users?active=30d" hint="Monthly active users" />
+          <LinkedStat label="DAU" value={k.dau} onClick={() => setDrill("dau")} hint="Daily active users — open trend" />
+          <LinkedStat label="WAU" value={k.wau} onClick={() => setDrill("wau")} hint="Weekly active users — open trend" />
+          <LinkedStat label="MAU" value={k.mau} onClick={() => setDrill("mau")} hint="Monthly active users — open trend" />
         </div>
       </section>
 
       <section aria-labelledby="auth-h" className="space-y-3">
         <h2 id="auth-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Authentication</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <LinkedStat label="Total logins" value={k.totalLogins} href="/home/admin/auth-errors" hint="See login history & failures" />
-          <LinkedStat label="Successful" value={k.successLogins} href="/home/admin/auth-errors?status=success" hint="Successful sign-ins" />
-          <LinkedStat label="Failed" value={k.failedLogins} href="/home/admin/auth-errors?status=failed" hint="Failed sign-in attempts" />
+          <LinkedStat label="Total logins" value={k.totalLogins} onClick={() => setDrill("totalLogins")} hint="Login volume over time" />
+          <LinkedStat label="Successful" value={k.successLogins} onClick={() => setDrill("successLogins")} hint="Successful sign-ins over time" />
+          <LinkedStat label="Failed" value={k.failedLogins} onClick={() => setDrill("failedLogins")} hint="Failed sign-in attempts over time" />
         </div>
       </section>
 
       <section aria-labelledby="traffic-h" className="space-y-3">
         <h2 id="traffic-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Traffic</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <LinkedStat label="Total visitors" value={k.totalVisitors} href="/home/admin/performance" hint="Visitor sessions & performance" />
-          <LinkedStat label="Unique visitors" value={k.uniqueVisitors} href="/home/admin/performance" hint="Distinct visitor IDs" />
-          <LinkedStat label="Page views" value={k.totalPageViews} href="/home/admin/performance" hint="Page view breakdown" />
-          <LinkedStat label="Avg session (s)" value={k.avgSessionSec} href="/home/admin/performance" hint="Average session duration" />
-          <LinkedStat label="Bounce rate %" value={k.bounceRate} href="/home/admin/performance" hint="Single-page-view sessions" />
-          <LinkedStat label="Pages / session" value={k.pagesPerSession} href="/home/admin/performance" hint="Pages per visitor session" />
+          <LinkedStat label="Total visitors" value={k.totalVisitors} onClick={() => setDrill("totalVisitors")} hint="Visitor sessions per day" />
+          <LinkedStat label="Unique visitors" value={k.uniqueVisitors} onClick={() => setDrill("uniqueVisitors")} hint="Distinct visitors per day" />
+          <LinkedStat label="Page views" value={k.totalPageViews} onClick={() => setDrill("pageViews")} hint="Page views per day" />
+          <LinkedStat label="Avg session (s)" value={k.avgSessionSec} onClick={() => setDrill("avgSession")} hint="Average session duration per day" />
+          <LinkedStat label="Bounce rate %" value={k.bounceRate} onClick={() => setDrill("bounceRate")} hint="Single-page sessions per day" />
+          <LinkedStat label="Pages / session" value={k.pagesPerSession} onClick={() => setDrill("pagesPerSession")} hint="Pages per session per day" />
         </div>
       </section>
 
@@ -266,8 +284,8 @@ export default function AdminAnalytics() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <LinkedStat label="GD sessions" value={k.gdSessions} href="/home/admin/sessions" hint="Browse all group discussions" />
           <LinkedStat label="Completed" value={k.completedSessions} href="/home/admin/sessions?status=completed" hint="Completed sessions" />
-          <LinkedStat label="Avg AI score" value={k.avgAiScore} href="/home/admin/sessions" hint="Average AI content score" />
-          <LinkedStat label="AI evaluations" value={k.totalAiEvals} href="/home/admin/intelligence" hint="AI cost & evaluation logs" />
+          <LinkedStat label="Avg AI score" value={k.avgAiScore} onClick={() => setDrill("avgAiScore")} hint="Average AI content score per day" />
+          <LinkedStat label="AI evaluations" value={k.totalAiEvals} onClick={() => setDrill("aiEvaluations")} hint="AI evaluations per day" />
           <LinkedStat label="Feedback given" value={k.totalFeedback} href="/home/admin/reports" hint="User feedback & reports" />
         </div>
       </section>
@@ -276,20 +294,31 @@ export default function AdminAnalytics() {
         <h2 id="ads-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Advertisements</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <LinkedStat label="Active ads" value={k.activeAds} href="/home/admin/ads?status=active" hint="Currently running ads" />
-          <LinkedStat label="Impressions" value={k.adImpressions} href="/home/admin/ads" hint="All ad impressions" />
-          <LinkedStat label="Clicks" value={k.adClicks} href="/home/admin/ads" hint="All ad clicks" />
-          <LinkedStat label="CTR %" value={k.ctr} href="/home/admin/campaigns" hint="Campaign performance" />
+          <LinkedStat label="Impressions" value={k.adImpressions} onClick={() => setDrill("adImpressions")} hint="Ad impressions per day" />
+          <LinkedStat label="Clicks" value={k.adClicks} onClick={() => setDrill("adClicks")} hint="Ad clicks per day" />
+          <LinkedStat
+            label="CTR %"
+            value={k.ctr}
+            onClick={() => { setDrill(null); setRatio({ numerator: "adClicks", denominator: "adImpressions", title: "Click-through rate", href: "/home/admin/campaigns" }); }}
+            hint="Click-through rate per day"
+          />
         </div>
       </section>
 
       <section aria-labelledby="sys-h" className="space-y-3">
         <h2 id="sys-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">System</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <LinkedStat label="AI requests" value={k.aiRequests} href="/home/admin/intelligence" hint="AI request & cost logs" />
-          <LinkedStat label="Token usage" value={k.tokenUsage} href="/home/admin/intelligence" hint="Token consumption details" />
-          <LinkedStat label="API errors" value={k.apiErrors} href="/home/admin/edge-errors" hint="Edge function errors" />
+          <LinkedStat label="AI requests" value={k.aiRequests} onClick={() => setDrill("aiRequests")} hint="AI requests per day" />
+          <LinkedStat label="Token usage" value={k.tokenUsage} onClick={() => setDrill("tokenUsage")} hint="Tokens consumed per day" />
+          <LinkedStat label="API errors" value={k.apiErrors} onClick={() => setDrill("apiErrors")} hint="Errors logged per day" />
         </div>
       </section>
+
+      <KpiDrilldown
+        kpi={drill}
+        ratio={ratio}
+        onOpenChange={(open) => { if (!open) { setDrill(null); setRatio(null); } }}
+      />
 
 
       <div className="grid md:grid-cols-2 gap-4">
