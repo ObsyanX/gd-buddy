@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Legend, CartesianGrid } from "recharts";
 import { StatCard, type StatCardProps } from "@/components/charts";
 import { format, subDays } from "date-fns";
+import { KpiDrilldown } from "@/components/admin/KpiDrilldown";
+import { fetchAllPaginated, type KpiKey } from "@/lib/analytics/kpi-series";
 
 /**
  * Local wrapper that automatically attaches tracking metadata (page + filters
