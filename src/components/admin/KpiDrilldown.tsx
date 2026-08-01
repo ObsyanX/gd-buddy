@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, ArrowDownRight, Minus, ExternalLink } from "lucide-react";
 import {
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, defs as _defs,
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { KPI_SPECS, loadKpiSeries, type KpiKey, type KpiPoint } from "@/lib/analytics/kpi-series";
 import { cn } from "@/lib/utils";
