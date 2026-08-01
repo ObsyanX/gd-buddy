@@ -23,6 +23,12 @@ export interface KpiSpec {
   avgField?: string;
   /** Sum these numeric columns instead of counting rows. */
   sumFields?: string[];
+  /**
+   * Derived metrics that cannot be expressed as a single column:
+   * - `session_seconds`: average of (last_seen - first_seen) per visitor session
+   * - `bounce_rate`: % of sessions with a single page view
+   */
+  computed?: "session_seconds" | "bounce_rate";
   /** Optional route for the full detail page. */
   href?: string;
   /** Unit suffix for display. */
@@ -68,6 +74,8 @@ async function fetchRows(spec: KpiSpec, fromISO: string, toISO: string): Promise
     spec.distinctField,
     spec.avgField,
     ...(spec.sumFields ?? []),
+    ...(spec.computed === "session_seconds" ? ["first_seen", "last_seen"] : []),
+    ...(spec.computed === "bounce_rate" ? ["page_count"] : []),
   ].filter(Boolean).join(",");
 
   const out: Row[] = [];
@@ -92,6 +100,18 @@ async function fetchRows(spec: KpiSpec, fromISO: string, toISO: string): Promise
 }
 
 function reduceRows(spec: KpiSpec, rows: Row[]): number {
+  if (spec.computed === "session_seconds") {
+    if (!rows.length) return 0;
+    return rows.reduce((s, r) => s + Math.max(
+      0,
+      (new Date(String(r.last_seen)).getTime() - new Date(String(r.first_seen)).getTime()) / 1000,
+    ), 0) / rows.length;
+  }
+  if (spec.computed === "bounce_rate") {
+    if (!rows.length) return 0;
+    const bounced = rows.filter((r) => Number(r.page_count ?? 1) <= 1).length;
+    return (bounced / rows.length) * 100;
+  }
   if (spec.distinctField) {
     return new Set(rows.map((r) => String(r[spec.distinctField!] ?? ""))).size;
   }
@@ -132,7 +152,7 @@ export async function loadKpiSeries(spec: KpiSpec, days: number): Promise<KpiSer
     if (arr) arr.push(r); else buckets.set(key, [r]);
   });
 
-  const precision = spec.precision ?? (spec.avgField ? 1 : 0);
+  const precision = spec.precision ?? (spec.avgField || spec.computed ? 1 : 0);
   const points: KpiPoint[] = Array.from({ length: days }, (_, i) => {
     const d = subDays(now, days - 1 - i);
     const key = format(d, "yyyy-MM-dd");
@@ -159,9 +179,9 @@ export async function loadKpiSeries(spec: KpiSpec, days: number): Promise<KpiSer
     total,
     previousTotal,
     growthPct,
-    avgPerDay: round(total / days, spec.avgField ? 1 : 2),
+    avgPerDay: round(total / days, spec.avgField || spec.computed ? 1 : 2),
     best,
-    isAverage: Boolean(spec.avgField),
+    isAverage: Boolean(spec.avgField || spec.computed),
     unit: spec.unit,
   };
 }
@@ -196,7 +216,8 @@ export const KPI_SPECS = {
   totalVisitors: { title: "Visitor sessions", table: "visitor_sessions", dateField: "first_seen", href: "/home/admin/performance" },
   uniqueVisitors: { title: "Unique visitors", table: "visitor_sessions", dateField: "first_seen", distinctField: "visitor_id", href: "/home/admin/performance" },
   pageViews: { title: "Page views", table: "page_views", dateField: "created_at", href: "/home/admin/performance" },
-  avgSession: { title: "Avg session duration", table: "page_views", dateField: "created_at", avgField: "duration_ms", unit: "ms", href: "/home/admin/performance" },
+  avgSession: { title: "Avg session duration", table: "visitor_sessions", dateField: "first_seen", computed: "session_seconds", unit: "s", href: "/home/admin/performance" },
+  bounceRate: { title: "Bounce rate", table: "visitor_sessions", dateField: "first_seen", computed: "bounce_rate", unit: "%", href: "/home/admin/performance" },
   pagesPerSession: { title: "Pages per session", table: "visitor_sessions", dateField: "first_seen", avgField: "page_count", precision: 2, href: "/home/admin/performance" },
 
   avgAiScore: { title: "Average AI content score", table: "gd_metrics", dateField: "created_at", avgField: "content_score", href: "/home/admin/sessions" },
