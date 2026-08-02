@@ -131,12 +131,21 @@ function round(v: number, precision = 0) {
   return Math.round(v * p) / p;
 }
 
+const DAY_MS = 86_400_000;
+
 /** Build an exact daily series for the last `days` days plus previous-period comparison. */
 export async function loadKpiSeries(spec: KpiSpec, days: number): Promise<KpiSeriesResult> {
   const now = new Date();
-  const start = startOfDay(subDays(now, days - 1));
-  const prevStart = startOfDay(subDays(now, days * 2 - 1));
-  const toISO = new Date(now.getTime() + 60_000).toISOString();
+  return loadKpiSeriesBetween(spec, startOfDay(subDays(now, days - 1)), now);
+}
+
+/** Same as `loadKpiSeries` but for an explicit inclusive calendar-day range. */
+export async function loadKpiSeriesBetween(spec: KpiSpec, from: Date, to: Date): Promise<KpiSeriesResult> {
+  const start = startOfDay(from);
+  const endExclusive = new Date(startOfDay(to).getTime() + DAY_MS);
+  const days = Math.max(1, Math.round((endExclusive.getTime() - start.getTime()) / DAY_MS));
+  const prevStart = new Date(start.getTime() - days * DAY_MS);
+  const toISO = new Date(Math.min(endExclusive.getTime(), Date.now() + 60_000)).toISOString();
 
   const [rows, prevRows] = await Promise.all([
     fetchRows(spec, start.toISOString(), toISO),
@@ -154,7 +163,7 @@ export async function loadKpiSeries(spec: KpiSpec, days: number): Promise<KpiSer
 
   const precision = spec.precision ?? (spec.avgField || spec.computed ? 1 : 0);
   const points: KpiPoint[] = Array.from({ length: days }, (_, i) => {
-    const d = subDays(now, days - 1 - i);
+    const d = new Date(start.getTime() + i * DAY_MS);
     const key = format(d, "yyyy-MM-dd");
     return {
       day: key,
@@ -185,6 +194,7 @@ export async function loadKpiSeries(spec: KpiSpec, days: number): Promise<KpiSer
     unit: spec.unit,
   };
 }
+
 
 /** Exact all-time count (or distinct count) for a KPI, independent of the window. */
 export async function loadKpiTotal(spec: KpiSpec): Promise<number> {
