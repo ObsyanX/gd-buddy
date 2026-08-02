@@ -255,6 +255,9 @@ export default function AdminAnalytics() {
           <LinkedStat label="DAU" value={k.dau} onClick={() => setDrill("dau")} hint="Daily active users — open trend" />
           <LinkedStat label="WAU" value={k.wau} onClick={() => setDrill("wau")} hint="Weekly active users — open trend" />
           <LinkedStat label="MAU" value={k.mau} onClick={() => setDrill("mau")} hint="Monthly active users — open trend" />
+          <LinkedStat label="New users (30d)" value={k.newUsers30} onClick={() => openCustom("newUsers")} hint="Signups per day — open trend" />
+          <LinkedStat label="Returning users (30d)" value={k.returningUsers30} onClick={() => openCustom("returningUsers")} hint="Active users who signed up earlier — open trend" />
+
         </div>
       </section>
 
