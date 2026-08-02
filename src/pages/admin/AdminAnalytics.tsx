@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Legend, CartesianGrid } from "recharts";
 import { StatCard, type StatCardProps } from "@/components/charts";
 import { format, subDays } from "date-fns";
 import { KpiDrilldown } from "@/components/admin/KpiDrilldown";
-import { fetchAllPaginated, type KpiKey } from "@/lib/analytics/kpi-series";
+import { fetchAllPaginated, loadNewVsReturning, type KpiKey, type CustomKpiKey } from "@/lib/analytics/kpi-series";
+import { KpiMethodology } from "@/components/admin/KpiMethodology";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RefreshCw } from "lucide-react";
 
 /**
  * Local wrapper that automatically attaches tracking metadata (page + filters
@@ -30,6 +34,8 @@ const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondar
 
 interface Kpi {
   totalUsers: number;
+  newUsers30: number;
+  returningUsers30: number;
   newToday: number;
   newWeek: number;
   newMonth: number;
@@ -72,9 +78,15 @@ export default function AdminAnalytics() {
   const [topArticles, setTopArticles] = useState<Array<{ title: string; view_count: number }>>([]);
   const [topAds, setTopAds] = useState<Array<{ title: string; click_count: number; view_count: number }>>([]);
   const [drill, setDrill] = useState<KpiKey | null>(null);
+  const [customDrill, setCustomDrill] = useState<CustomKpiKey | null>(null);
+  const [refreshMs, setRefreshMs] = useState<number>(300_000);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const openCustom = (key: CustomKpiKey) => { setDrill(null); setRatio(null); setCustomDrill(key); };
   const [ratio, setRatio] = useState<{ numerator: KpiKey; denominator: KpiKey; title: string; href?: string } | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setRefreshing(true);
     (async () => {
       const from30 = subDays(new Date(), 30).toISOString();
       const from7 = subDays(new Date(), 7).toISOString();
@@ -364,7 +376,7 @@ export default function AdminAnalytics() {
         custom={customDrill}
 
         ratio={ratio}
-        onOpenChange={(open) => { if (!open) { setDrill(null); setRatio(null); } }}
+        onOpenChange={(open) => { if (!open) { setDrill(null); setRatio(null); setCustomDrill(null); } }}
       />
 
 
