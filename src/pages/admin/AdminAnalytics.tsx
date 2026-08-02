@@ -151,7 +151,13 @@ export default function AdminAnalytics() {
       const clickCount = adClicks.count ?? 0;
       const ctr = impCount ? (clickCount / impCount) * 100 : 0;
 
+      // New vs returning users over the trailing 30 days (cross-table).
+      const nr = await loadNewVsReturning(subDays(new Date(), 29), new Date());
+
       setK({
+        newUsers30: nr.newTotal,
+        returningUsers30: nr.returningTotal,
+
         totalUsers: profilesTotal.count ?? 0,
         newToday: profilesToday.count ?? 0,
         newWeek: profilesWeek.count ?? 0,
