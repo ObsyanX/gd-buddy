@@ -286,7 +286,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     console.log('[Multiplayer] Setting up realtime subscription for participants:', sessionId);
 
     const participantsChannel = supabase
-      .channel(`gd_participants_${sessionId}`)
+      .channel(`gd_participants_${sessionId}_${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {
@@ -321,7 +321,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     console.log('[Multiplayer] Setting up realtime subscription for session:', sessionId);
 
     const channel = supabase
-      .channel(`gd_messages_${sessionId}`)
+      .channel(`gd_messages_${sessionId}_${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {

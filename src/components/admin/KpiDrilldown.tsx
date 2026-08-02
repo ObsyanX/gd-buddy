@@ -2,20 +2,29 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ArrowDownRight, Minus, ExternalLink } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowUpRight, ArrowDownRight, Minus, ExternalLink, CalendarIcon } from "lucide-react";
+import { format, startOfDay, subDays } from "date-fns";
+import type { DateRange } from "react-day-picker";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
-import { KPI_SPECS, loadKpiSeries, type KpiKey, type KpiPoint } from "@/lib/analytics/kpi-series";
+import {
+  KPI_SPECS, loadKpiSeriesBetween, loadCustomKpiSeries, CUSTOM_KPI_TITLES,
+  type KpiKey, type KpiPoint, type CustomKpiKey,
+} from "@/lib/analytics/kpi-series";
+import { KpiMethodology } from "@/components/admin/KpiMethodology";
 import { cn } from "@/lib/utils";
 
-const RANGES = [7, 30, 90] as const;
-type Range = (typeof RANGES)[number];
+const PRESETS = [7, 30, 90] as const;
 
 export interface KpiDrilldownProps {
   kpi: KpiKey | null;
   /** Ratio KPIs (e.g. CTR) computed from two underlying series. */
   ratio?: { numerator: KpiKey; denominator: KpiKey; title: string; href?: string } | null;
+  /** Cross-table KPIs (new / returning users). */
+  custom?: CustomKpiKey | null;
   onOpenChange: (open: boolean) => void;
 }
 
@@ -30,15 +39,31 @@ interface State {
   unit?: string;
 }
 
-export function KpiDrilldown({ kpi, ratio, onOpenChange }: KpiDrilldownProps) {
-  const [range, setRange] = React.useState<Range>(30);
+export function KpiDrilldown({ kpi, ratio, custom, onOpenChange }: KpiDrilldownProps) {
+  const [range, setRange] = React.useState<DateRange>(() => ({
+    from: startOfDay(subDays(new Date(), 29)),
+    to: startOfDay(new Date()),
+  }));
   const [loading, setLoading] = React.useState(false);
   const [state, setState] = React.useState<State | null>(null);
 
-  const open = Boolean(kpi || ratio);
+  const open = Boolean(kpi || ratio || custom);
   const spec = kpi ? KPI_SPECS[kpi] : null;
-  const title = ratio?.title ?? spec?.title ?? "";
-  const href = ratio?.href ?? spec?.href;
+  const title = ratio?.title ?? (custom ? CUSTOM_KPI_TITLES[custom].title : spec?.title) ?? "";
+  const href = ratio?.href ?? (custom ? CUSTOM_KPI_TITLES[custom].href : spec?.href);
+
+  const from = range.from ?? startOfDay(subDays(new Date(), 29));
+  const to = range.to ?? from;
+  const dayCount = Math.max(1, Math.round((startOfDay(to).getTime() - startOfDay(from).getTime()) / 86_400_000) + 1);
+  const fromKey = format(from, "yyyy-MM-dd");
+  const toKey = format(to, "yyyy-MM-dd");
+
+  const setPreset = (days: number) =>
+    setRange({ from: startOfDay(subDays(new Date(), days - 1)), to: startOfDay(new Date()) });
+
+  const isPreset = (days: number) =>
+    fromKey === format(subDays(new Date(), days - 1), "yyyy-MM-dd") &&
+    toKey === format(new Date(), "yyyy-MM-dd");
 
   React.useEffect(() => {
     if (!open) { setState(null); return; }
@@ -48,8 +73,8 @@ export function KpiDrilldown({ kpi, ratio, onOpenChange }: KpiDrilldownProps) {
       try {
         if (ratio) {
           const [num, den] = await Promise.all([
-            loadKpiSeries(KPI_SPECS[ratio.numerator], range),
-            loadKpiSeries(KPI_SPECS[ratio.denominator], range),
+            loadKpiSeriesBetween(KPI_SPECS[ratio.numerator], from, to),
+            loadKpiSeriesBetween(KPI_SPECS[ratio.denominator], from, to),
           ]);
           const points = num.points.map((p, i) => {
             const d = den.points[i]?.value ?? 0;
@@ -65,8 +90,11 @@ export function KpiDrilldown({ kpi, ratio, onOpenChange }: KpiDrilldownProps) {
             best: points.reduce<KpiPoint | null>((b, p) => (b === null || p.value > b.value ? p : b), null),
             isAverage: true, unit: "%",
           });
+        } else if (custom) {
+          const res = await loadCustomKpiSeries(custom, from, to);
+          if (!cancelled) setState(res);
         } else if (spec) {
-          const res = await loadKpiSeries(spec, range);
+          const res = await loadKpiSeriesBetween(spec, from, to);
           if (cancelled) return;
           setState(res);
         }
@@ -78,39 +106,63 @@ export function KpiDrilldown({ kpi, ratio, onOpenChange }: KpiDrilldownProps) {
       }
     })();
     return () => { cancelled = true; };
-  }, [open, kpi, range, ratio?.numerator, ratio?.denominator]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, kpi, custom, fromKey, toKey, ratio?.numerator, ratio?.denominator]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const growth = state?.growthPct;
   const GrowthIcon = growth == null || growth === 0 ? Minus : growth > 0 ? ArrowUpRight : ArrowDownRight;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Daily values from live production data — last {range} days.
+            Daily values from live production data — {format(from, "MMM d, yyyy")} to {format(to, "MMM d, yyyy")} ({dayCount} days).
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-2">
-          {RANGES.map((r) => (
+        <div className="flex flex-wrap items-center gap-2">
+          {PRESETS.map((r) => (
             <Button
               key={r}
               size="sm"
-              variant={range === r ? "default" : "outline"}
-              onClick={() => setRange(r)}
+              variant={isPreset(r) ? "default" : "outline"}
+              onClick={() => setPreset(r)}
             >
               {r}d
             </Button>
           ))}
-          {href && (
-            <Button asChild size="sm" variant="ghost" className="ml-auto">
-              <Link to={href} onClick={() => onOpenChange(false)}>
-                Open detail page <ExternalLink className="ml-1 h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          )}
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="outline" className="font-normal">
+                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                {format(from, "MMM d")} – {format(to, "MMM d")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                selected={range}
+                onSelect={(r) => r && setRange(r)}
+                numberOfMonths={2}
+                disabled={{ after: new Date() }}
+                defaultMonth={from}
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <div className="ml-auto flex items-center gap-2">
+            <KpiMethodology />
+            {href && (
+              <Button asChild size="sm" variant="ghost">
+                <Link to={href} onClick={() => onOpenChange(false)}>
+                  Detail <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
 
         {loading && <div className="h-64 rounded-xl bg-muted/30 animate-pulse" />}

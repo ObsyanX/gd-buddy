@@ -50,8 +50,11 @@ export function useDiscussionHealth(sessionId: string | null) {
       if (!cancelled && data) setHealth(data as DiscussionHealthRow);
     })();
 
+    // Unique topic per mount: reusing a topic name while the previous channel is
+    // still tearing down makes supabase-js attach the callback to the old, already
+    // subscribed channel and throw "cannot add postgres_changes callbacks ... after subscribe()".
     const channel = supabase
-      .channel(`discussion_health:${sessionId}`)
+      .channel(`discussion_health:${sessionId}:${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "discussion_health", filter: `session_id=eq.${sessionId}` },
@@ -90,7 +93,7 @@ export function useParticipantBehaviour(sessionId: string | null) {
     })();
 
     const channel = supabase
-      .channel(`participant_behaviour:${sessionId}`)
+      .channel(`participant_behaviour:${sessionId}:${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "participant_behaviour", filter: `session_id=eq.${sessionId}` },

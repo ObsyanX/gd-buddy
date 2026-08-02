@@ -131,12 +131,21 @@ function round(v: number, precision = 0) {
   return Math.round(v * p) / p;
 }
 
+const DAY_MS = 86_400_000;
+
 /** Build an exact daily series for the last `days` days plus previous-period comparison. */
 export async function loadKpiSeries(spec: KpiSpec, days: number): Promise<KpiSeriesResult> {
   const now = new Date();
-  const start = startOfDay(subDays(now, days - 1));
-  const prevStart = startOfDay(subDays(now, days * 2 - 1));
-  const toISO = new Date(now.getTime() + 60_000).toISOString();
+  return loadKpiSeriesBetween(spec, startOfDay(subDays(now, days - 1)), now);
+}
+
+/** Same as `loadKpiSeries` but for an explicit inclusive calendar-day range. */
+export async function loadKpiSeriesBetween(spec: KpiSpec, from: Date, to: Date): Promise<KpiSeriesResult> {
+  const start = startOfDay(from);
+  const endExclusive = new Date(startOfDay(to).getTime() + DAY_MS);
+  const days = Math.max(1, Math.round((endExclusive.getTime() - start.getTime()) / DAY_MS));
+  const prevStart = new Date(start.getTime() - days * DAY_MS);
+  const toISO = new Date(Math.min(endExclusive.getTime(), Date.now() + 60_000)).toISOString();
 
   const [rows, prevRows] = await Promise.all([
     fetchRows(spec, start.toISOString(), toISO),
@@ -154,7 +163,7 @@ export async function loadKpiSeries(spec: KpiSpec, days: number): Promise<KpiSer
 
   const precision = spec.precision ?? (spec.avgField || spec.computed ? 1 : 0);
   const points: KpiPoint[] = Array.from({ length: days }, (_, i) => {
-    const d = subDays(now, days - 1 - i);
+    const d = new Date(start.getTime() + i * DAY_MS);
     const key = format(d, "yyyy-MM-dd");
     return {
       day: key,
@@ -185,6 +194,7 @@ export async function loadKpiSeries(spec: KpiSpec, days: number): Promise<KpiSer
     unit: spec.unit,
   };
 }
+
 
 /** Exact all-time count (or distinct count) for a KPI, independent of the window. */
 export async function loadKpiTotal(spec: KpiSpec): Promise<number> {
@@ -260,3 +270,146 @@ export async function fetchAllPaginated<T = Record<string, unknown>>(
   }
   return out;
 }
+
+/* ------------------------------------------------------------------ *
+ * Custom (cross-table) series: new vs returning users
+ * ------------------------------------------------------------------ */
+
+export type CustomKpiKey = "newUsers" | "returningUsers";
+
+export const CUSTOM_KPI_TITLES: Record<CustomKpiKey, { title: string; href?: string }> = {
+  newUsers: { title: "New users", href: "/home/admin/users" },
+  returningUsers: { title: "Returning users", href: "/home/admin/users" },
+};
+
+interface NewReturning {
+  newPoints: KpiPoint[];
+  returningPoints: KpiPoint[];
+  newTotal: number;
+  returningTotal: number;
+  prevNewTotal: number;
+  prevReturningTotal: number;
+}
+
+/**
+ * New user (day D)  = profile whose `created_at` falls on D.
+ * Returning user(D) = distinct user active on D (visitor_sessions.last_seen)
+ *                     whose profile was created strictly before D.
+ */
+export async function loadNewVsReturning(from: Date, to: Date): Promise<NewReturning> {
+  const start = startOfDay(from);
+  const endExclusive = new Date(startOfDay(to).getTime() + DAY_MS);
+  const days = Math.max(1, Math.round((endExclusive.getTime() - start.getTime()) / DAY_MS));
+  const prevStart = new Date(start.getTime() - days * DAY_MS);
+
+  const [profiles, sessions] = await Promise.all([
+    fetchAllPaginated<{ id: string; created_at: string }>(
+      "profiles", "id,created_at", { gte: ["created_at", new Date(0).toISOString()] },
+    ),
+    fetchAllPaginated<{ user_id: string | null; last_seen: string }>(
+      "visitor_sessions", "user_id,last_seen", { gte: ["last_seen", prevStart.toISOString()] },
+    ),
+  ]);
+
+  const createdAt = new Map(profiles.map((p) => [p.id, new Date(p.created_at).getTime()]));
+
+  const dayKey = (d: Date) => format(d, "yyyy-MM-dd");
+  const newByDay = new Map<string, number>();
+  profiles.forEach((p) => {
+    const k = dayKey(new Date(p.created_at));
+    newByDay.set(k, (newByDay.get(k) ?? 0) + 1);
+  });
+
+  const returningByDay = new Map<string, Set<string>>();
+  sessions.forEach((s) => {
+    if (!s.user_id) return;
+    const seen = new Date(s.last_seen);
+    const created = createdAt.get(s.user_id);
+    if (created === undefined) return;
+    if (created >= startOfDay(seen).getTime()) return; // signed up that same day → "new", not returning
+    const k = dayKey(seen);
+    const set = returningByDay.get(k) ?? new Set<string>();
+    set.add(s.user_id);
+    returningByDay.set(k, set);
+  });
+
+  const build = (offsetStart: Date): KpiPoint[] =>
+    Array.from({ length: days }, (_, i) => {
+      const d = new Date(offsetStart.getTime() + i * DAY_MS);
+      const k = dayKey(d);
+      return { day: k, label: format(d, "MMM d"), value: 0, _k: k } as KpiPoint & { _k: string };
+    });
+
+  const newPoints = build(start).map((p) => ({ ...p, value: newByDay.get(p.day) ?? 0 }));
+  const returningPoints = build(start).map((p) => ({ ...p, value: (returningByDay.get(p.day)?.size ?? 0) }));
+  const prevNew = build(prevStart).reduce((s, p) => s + (newByDay.get(p.day) ?? 0), 0);
+
+  const prevReturningUsers = new Set<string>();
+  build(prevStart).forEach((p) => returningByDay.get(p.day)?.forEach((u) => prevReturningUsers.add(u)));
+
+  const returningUnique = new Set<string>();
+  returningPoints.forEach((p) => returningByDay.get(p.day)?.forEach((u) => returningUnique.add(u)));
+
+  return {
+    newPoints,
+    returningPoints,
+    newTotal: newPoints.reduce((s, p) => s + p.value, 0),
+    returningTotal: returningUnique.size,
+    prevNewTotal: prevNew,
+    prevReturningTotal: prevReturningUsers.size,
+  };
+}
+
+/** Wrap the new/returning computation into the standard series shape. */
+export async function loadCustomKpiSeries(
+  key: CustomKpiKey, from: Date, to: Date,
+): Promise<KpiSeriesResult> {
+  const r = await loadNewVsReturning(from, to);
+  const points = key === "newUsers" ? r.newPoints : r.returningPoints;
+  const total = key === "newUsers" ? r.newTotal : r.returningTotal;
+  const previousTotal = key === "newUsers" ? r.prevNewTotal : r.prevReturningTotal;
+  const growthPct = previousTotal > 0
+    ? round(((total - previousTotal) / previousTotal) * 100, 1)
+    : total > 0 ? null : 0;
+  return {
+    points,
+    total,
+    previousTotal,
+    growthPct,
+    avgPerDay: round(total / Math.max(1, points.length), 2),
+    best: points.reduce<KpiPoint | null>((b, p) => (b === null || p.value > b.value ? p : b), null),
+    isAverage: false,
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Methodology — how every KPI is computed, and from which table.
+ * ------------------------------------------------------------------ */
+
+export interface MethodologyEntry {
+  title: string;
+  source: string;
+  formula: string;
+  notes?: string;
+}
+
+export const KPI_METHODOLOGY: MethodologyEntry[] = [
+  { title: "Total users", source: "profiles", formula: "exact row count of profiles (count: 'exact', head: true)" },
+  { title: "New users", source: "profiles.created_at", formula: "profiles created inside the selected day / range", notes: "A user counts as new only on their signup day." },
+  { title: "Returning users", source: "visitor_sessions.last_seen + profiles.created_at", formula: "distinct user_id active in the range whose profile was created before that day", notes: "Same-day signups are excluded so new and returning never double-count." },
+  { title: "DAU / WAU / MAU", source: "visitor_sessions", formula: "COUNT(DISTINCT user_id) where last_seen ≥ now − 1d / 7d / 30d", notes: "Rows are paginated in 1000-row pages so distinct counts are never truncated." },
+  { title: "Logins (total / success / failed)", source: "login_events", formula: "row count, optionally filtered by success = true / false" },
+  { title: "Total visitors", source: "visitor_sessions", formula: "row count of visitor sessions bucketed by first_seen" },
+  { title: "Unique visitors", source: "visitor_sessions.visitor_id", formula: "COUNT(DISTINCT visitor_id)" },
+  { title: "Page views", source: "page_views", formula: "exact row count bucketed by created_at" },
+  { title: "Avg session (s)", source: "visitor_sessions", formula: "mean of (last_seen − first_seen) in seconds" },
+  { title: "Bounce rate %", source: "visitor_sessions.page_count", formula: "sessions with page_count ≤ 1 ÷ all sessions × 100" },
+  { title: "Pages / session", source: "visitor_sessions.page_count", formula: "mean of page_count" },
+  { title: "GD sessions / Completed", source: "gd_sessions", formula: "row count; completed filters status = 'completed'" },
+  { title: "Avg AI score", source: "gd_metrics.content_score", formula: "mean of content_score across all metric rows" },
+  { title: "AI evaluations / AI requests", source: "ai_costs", formula: "row count bucketed by created_at" },
+  { title: "Token usage", source: "token_usage", formula: "SUM(input_tokens + output_tokens)" },
+  { title: "Ad impressions / clicks", source: "ad_impressions, ad_clicks", formula: "row counts bucketed by created_at" },
+  { title: "CTR %", source: "ad_clicks ÷ ad_impressions", formula: "daily clicks ÷ daily impressions × 100", notes: "Computed per day from two independent series, not a stored column." },
+  { title: "API errors", source: "error_logs", formula: "row count bucketed by created_at" },
+];

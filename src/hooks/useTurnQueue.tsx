@@ -55,7 +55,7 @@ export function useTurnQueue(sessionId: string | null) {
     if (!sessionId) return;
     refresh();
     const channel = supabase
-      .channel(`turns:${sessionId}`)
+      .channel(`turns:${sessionId}:${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'speaking_turns', filter: `session_id=eq.${sessionId}` },

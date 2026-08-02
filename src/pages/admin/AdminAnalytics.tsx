@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Legend, CartesianGrid } from "recharts";
 import { StatCard, type StatCardProps } from "@/components/charts";
 import { format, subDays } from "date-fns";
 import { KpiDrilldown } from "@/components/admin/KpiDrilldown";
-import { fetchAllPaginated, type KpiKey } from "@/lib/analytics/kpi-series";
+import { fetchAllPaginated, loadNewVsReturning, type KpiKey, type CustomKpiKey } from "@/lib/analytics/kpi-series";
+import { KpiMethodology } from "@/components/admin/KpiMethodology";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RefreshCw } from "lucide-react";
 
 /**
  * Local wrapper that automatically attaches tracking metadata (page + filters
@@ -30,6 +34,8 @@ const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondar
 
 interface Kpi {
   totalUsers: number;
+  newUsers30: number;
+  returningUsers30: number;
   newToday: number;
   newWeek: number;
   newMonth: number;
@@ -72,9 +78,15 @@ export default function AdminAnalytics() {
   const [topArticles, setTopArticles] = useState<Array<{ title: string; view_count: number }>>([]);
   const [topAds, setTopAds] = useState<Array<{ title: string; click_count: number; view_count: number }>>([]);
   const [drill, setDrill] = useState<KpiKey | null>(null);
+  const [customDrill, setCustomDrill] = useState<CustomKpiKey | null>(null);
+  const [refreshMs, setRefreshMs] = useState<number>(300_000);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const openCustom = (key: CustomKpiKey) => { setDrill(null); setRatio(null); setCustomDrill(key); };
   const [ratio, setRatio] = useState<{ numerator: KpiKey; denominator: KpiKey; title: string; href?: string } | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setRefreshing(true);
     (async () => {
       const from30 = subDays(new Date(), 30).toISOString();
       const from7 = subDays(new Date(), 7).toISOString();
@@ -151,7 +163,13 @@ export default function AdminAnalytics() {
       const clickCount = adClicks.count ?? 0;
       const ctr = impCount ? (clickCount / impCount) * 100 : 0;
 
+      // New vs returning users over the trailing 30 days (cross-table).
+      const nr = await loadNewVsReturning(subDays(new Date(), 29), new Date());
+
       setK({
+        newUsers30: nr.newTotal,
+        returningUsers30: nr.returningTotal,
+
         totalUsers: profilesTotal.count ?? 0,
         newToday: profilesToday.count ?? 0,
         newWeek: profilesWeek.count ?? 0,
@@ -233,17 +251,53 @@ export default function AdminAnalytics() {
       setDevices(count(sessRows.map((r) => r.device)));
       setBrowsers(count(sessRows.map((r) => r.browser)));
       setCountries(count(sessRows.map((r) => r.country)));
-    })().catch(console.error);
+      setLastUpdated(new Date());
+    })().catch(console.error).finally(() => setRefreshing(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Auto-refresh: re-pull every KPI on the selected cadence (paused when the tab
+  // is hidden so background tabs don't hammer the database).
+  useEffect(() => {
+    if (!refreshMs) return;
+    const id = window.setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, refreshMs);
+    return () => window.clearInterval(id);
+  }, [refreshMs, load]);
+
 
   if (!k) return <div className="text-muted-foreground p-6">Loading analytics…</div>;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
-        <p className="text-sm text-muted-foreground">Live KPIs from real user activity.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
+          <p className="text-sm text-muted-foreground">
+            Live KPIs from real user activity.
+            {lastUpdated && <> Updated {format(lastUpdated, "HH:mm:ss")}.</>}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={String(refreshMs)} onValueChange={(v) => setRefreshMs(Number(v))}>
+            <SelectTrigger className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Auto-refresh off</SelectItem>
+              <SelectItem value="60000">Every 1 min</SelectItem>
+              <SelectItem value="300000">Every 5 min</SelectItem>
+              <SelectItem value="900000">Every 15 min</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="outline" onClick={() => load()} disabled={refreshing}>
+            <RefreshCw className={refreshing ? "mr-1.5 h-4 w-4 animate-spin" : "mr-1.5 h-4 w-4"} />
+            Refresh
+          </Button>
+          <KpiMethodology />
+        </div>
       </div>
+
 
       <section aria-labelledby="users-h" className="space-y-3">
         <h2 id="users-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Users</h2>
@@ -255,6 +309,9 @@ export default function AdminAnalytics() {
           <LinkedStat label="DAU" value={k.dau} onClick={() => setDrill("dau")} hint="Daily active users — open trend" />
           <LinkedStat label="WAU" value={k.wau} onClick={() => setDrill("wau")} hint="Weekly active users — open trend" />
           <LinkedStat label="MAU" value={k.mau} onClick={() => setDrill("mau")} hint="Monthly active users — open trend" />
+          <LinkedStat label="New users (30d)" value={k.newUsers30} onClick={() => openCustom("newUsers")} hint="Signups per day — open trend" />
+          <LinkedStat label="Returning users (30d)" value={k.returningUsers30} onClick={() => openCustom("returningUsers")} hint="Active users who signed up earlier — open trend" />
+
         </div>
       </section>
 
@@ -316,8 +373,10 @@ export default function AdminAnalytics() {
 
       <KpiDrilldown
         kpi={drill}
+        custom={customDrill}
+
         ratio={ratio}
-        onOpenChange={(open) => { if (!open) { setDrill(null); setRatio(null); } }}
+        onOpenChange={(open) => { if (!open) { setDrill(null); setRatio(null); setCustomDrill(null); } }}
       />
 
 
