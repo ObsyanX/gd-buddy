@@ -355,6 +355,8 @@ export default function AdminAnalytics() {
 
       <KpiDrilldown
         kpi={drill}
+        custom={customDrill}
+
         ratio={ratio}
         onOpenChange={(open) => { if (!open) { setDrill(null); setRatio(null); } }}
       />
