@@ -240,10 +240,32 @@ export default function AdminAnalytics() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
-        <p className="text-sm text-muted-foreground">Live KPIs from real user activity.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
+          <p className="text-sm text-muted-foreground">
+            Live KPIs from real user activity.
+            {lastUpdated && <> Updated {format(lastUpdated, "HH:mm:ss")}.</>}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={String(refreshMs)} onValueChange={(v) => setRefreshMs(Number(v))}>
+            <SelectTrigger className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Auto-refresh off</SelectItem>
+              <SelectItem value="60000">Every 1 min</SelectItem>
+              <SelectItem value="300000">Every 5 min</SelectItem>
+              <SelectItem value="900000">Every 15 min</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="outline" onClick={() => load()} disabled={refreshing}>
+            <RefreshCw className={refreshing ? "mr-1.5 h-4 w-4 animate-spin" : "mr-1.5 h-4 w-4"} />
+            Refresh
+          </Button>
+          <KpiMethodology />
+        </div>
       </div>
+
 
       <section aria-labelledby="users-h" className="space-y-3">
         <h2 id="users-h" className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Users</h2>
