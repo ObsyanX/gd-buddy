@@ -233,8 +233,22 @@ export default function AdminAnalytics() {
       setDevices(count(sessRows.map((r) => r.device)));
       setBrowsers(count(sessRows.map((r) => r.browser)));
       setCountries(count(sessRows.map((r) => r.country)));
-    })().catch(console.error);
+      setLastUpdated(new Date());
+    })().catch(console.error).finally(() => setRefreshing(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Auto-refresh: re-pull every KPI on the selected cadence (paused when the tab
+  // is hidden so background tabs don't hammer the database).
+  useEffect(() => {
+    if (!refreshMs) return;
+    const id = window.setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, refreshMs);
+    return () => window.clearInterval(id);
+  }, [refreshMs, load]);
+
 
   if (!k) return <div className="text-muted-foreground p-6">Loading analytics…</div>;
 
