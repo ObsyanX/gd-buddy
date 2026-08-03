@@ -11,7 +11,10 @@ function pickAudit(audits: Record<string, { numericValue?: number }>, key: strin
   return audits?.[key]?.numericValue ?? null;
 }
 
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // reuse audits younger than 6h to protect the daily quota
+
 async function runPSI(url: string, strategy: "mobile" | "desktop") {
+
   const apiKey = Deno.env.get("PAGESPEED_API_KEY");
   const params = new URLSearchParams({ url, strategy, category: "performance" });
   if (apiKey) params.set("key", apiKey);
