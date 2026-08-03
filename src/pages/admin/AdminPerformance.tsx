@@ -141,10 +141,14 @@ export default function AdminPerformance() {
           <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
-          <Button onClick={runAudit} disabled={running}>
+          <Button onClick={() => runAudit(false)} disabled={running}>
             {running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Gauge className="h-4 w-4 mr-2" />}
             {running ? "Auditing…" : "Run PageSpeed audit"}
           </Button>
+          <Button variant="secondary" onClick={() => runAudit(true)} disabled={running}>
+            Force fresh
+          </Button>
+
         </div>
       </div>
 
