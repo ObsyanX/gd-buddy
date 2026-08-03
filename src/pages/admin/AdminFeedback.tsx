@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Mail, Download, RefreshCw } from "lucide-react";
 import { TableSkeleton, EmptyState } from "@/components/admin/TableSkeleton";
 import { toast } from "@/hooks/use-toast";
+import { feedbackFormUrl, openFeedbackInviteMail } from "@/lib/feedback-invite";
 
 interface FeedbackRow {
   id: string;
@@ -21,7 +22,7 @@ interface FeedbackRow {
   created_at: string;
 }
 
-const FORM_URL = `${typeof window !== "undefined" ? window.location.origin : ""}/home/feedback/new`;
+
 
 export default function AdminFeedback() {
   const [rows, setRows] = useState<FeedbackRow[]>([]);
@@ -91,14 +92,14 @@ export default function AdminFeedback() {
   }, [rows]);
 
   function copyLink() {
-    navigator.clipboard.writeText(FORM_URL);
+    navigator.clipboard.writeText(feedbackFormUrl());
     toast({ title: "Feedback form link copied" });
   }
 
   function mailAll() {
     const emails = [...new Set(filtered.map((r) => people[r.user_id]?.email).filter(Boolean))] as string[];
     if (!emails.length) return toast({ title: "No email addresses available", variant: "destructive" });
-    openMail(emails.join(","));
+    openFeedbackInviteMail(emails.join(","));
   }
 
   function exportCsv() {
@@ -208,14 +209,4 @@ export default function AdminFeedback() {
       </CardContent></Card>
     </div>
   );
-}
-
-/** Opens the user's mail client with a pre-filled feedback request. */
-export function openMail(to: string) {
-  const subject = encodeURIComponent("Quick favour: share your GD Buddy feedback");
-  const body = encodeURIComponent(
-    `Hi,\n\nThanks for using GD Buddy! We'd love to hear how your practice sessions are going.\n\n` +
-    `It takes under a minute: ${FORM_URL}\n\nYour ratings and comments go straight to our team and shape what we build next.\n\n— The GD Buddy team`,
-  );
-  window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
 }

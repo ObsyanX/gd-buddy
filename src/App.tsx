@@ -88,6 +88,8 @@ const AdminNewsletter = lazy(() => import("./pages/admin/AdminNewsletter"), "Adm
 const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettings"), "AdminSettings");
 const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"), "AdminAudit");
 const AdminCampaigns = lazy(() => import("./pages/admin/AdminCampaigns"), "AdminCampaigns");
+const AdminFeedback = lazy(() => import("./pages/admin/AdminFeedback"), "AdminFeedback");
+const FeedbackFormPage = lazy(() => import("./pages/FeedbackFormPage"), "FeedbackFormPage");
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"), "AdminUsers");
 const AdminReports = lazy(() => import("./pages/admin/AdminReports"), "AdminReports");
 const AdminReportsDigest = lazy(() => import("./pages/admin/AdminReportsDigest"), "AdminReportsDigest");
@@ -268,6 +270,7 @@ const App = () => (
                   <Route path="campaigns" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminCampaigns /></Suspense></RouteBoundary>} />
                   <Route path="comments" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminComments /></Suspense></RouteBoundary>} />
                   <Route path="newsletter" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminNewsletter /></Suspense></RouteBoundary>} />
+                  <Route path="feedback" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminFeedback /></Suspense></RouteBoundary>} />
                   <Route path="reports" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminReports /></Suspense></RouteBoundary>} />
                   <Route path="reports/digest" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminReportsDigest /></Suspense></RouteBoundary>} />
                   <Route path="revenue" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminRevenue /></Suspense></RouteBoundary>} />
@@ -283,6 +286,7 @@ const App = () => (
                 </Route>
                 <Route path="governance" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><Governance /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="feedback" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackHistory /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="feedback/new" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><FeedbackFormPage /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="health" element={<RouteBoundary><Suspense fallback={<Loading />}><PageTransition><Health /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="intelligence" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><Intelligence /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="adrs" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><ADRs /></PageTransition></Suspense></RouteBoundary>} />

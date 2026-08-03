@@ -27,6 +27,7 @@ const NAV: NavItem[] = [
   { to: "/home/admin/revenue",    label: "Revenue",        icon: DollarSign,      allow: ["admin", "analyst"] },
   { to: "/home/admin/comments",   label: "Comments",       icon: MessageSquare,   allow: ["admin", "editor"] },
   { to: "/home/admin/newsletter", label: "Newsletter",     icon: Mail,            allow: ["admin"] },
+  { to: "/home/admin/feedback",   label: "Feedback",       icon: MessageSquare,   allow: ["admin"] },
   { to: "/home/admin/reports",    label: "Reports",        icon: FileBarChart,    allow: ["admin", "analyst"] },
   { to: "/home/admin/intelligence", label: "AI Intelligence", icon: Sparkles,      allow: ["admin", "analyst"] },
   { to: "/home/admin/incidents", label: "Incidents",     icon: AlertTriangle,   allow: ["admin"] },
