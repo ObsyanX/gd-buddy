@@ -69,7 +69,7 @@ const FeedbackForm = ({ sessionId, onSubmitted }: { sessionId?: string | null; o
     setSubmitting(true);
     const payload = {
       user_id: user.id,
-      session_id: sessionId,
+      session_id: sessionId ?? null,
       stars,
       quality_rating: quality || null,
       ai_accuracy_rating: aiAcc || null,
@@ -87,11 +87,13 @@ const FeedbackForm = ({ sessionId, onSubmitted }: { sessionId?: string | null; o
       return;
     }
     toast({ title: existing ? 'Feedback updated' : 'Thanks for your feedback!' });
-    const { data } = await supabase
-      .from('user_feedback').select('*').eq('user_id', user.id).eq('session_id', sessionId).maybeSingle();
+    let rq = supabase.from('user_feedback').select('*').eq('user_id', user.id);
+    rq = sessionId ? rq.eq('session_id', sessionId) : rq.is('session_id', null);
+    const { data } = await rq.order('created_at', { ascending: false }).limit(1).maybeSingle();
     setExisting(data);
     onSubmitted?.();
   };
+
 
   return (
     <Card className="p-6 border-4 border-border space-y-4">
