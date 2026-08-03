@@ -135,21 +135,38 @@ serve(async (req) => {
     console.log('[Proxy] Payload keys:', Object.keys(backendPayload));
     console.log('[Proxy] Image length:', cleanBase64.length);
 
-    // Send to backend
+    // Send to backend. Keep well under the 150s platform idle timeout so we
+    // always answer with a JSON error instead of a 504 IDLE_TIMEOUT.
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 55000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-    const response = await fetch(`${BACKEND_URL}/analyze/base64`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey,
-      },
-      body: JSON.stringify(backendPayload),
-      signal: controller.signal,
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${BACKEND_URL}/analyze/base64`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': apiKey,
+        },
+        body: JSON.stringify(backendPayload),
+        signal: controller.signal,
+      });
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      const aborted = (fetchErr as Error)?.name === 'AbortError';
+      console.warn('[Proxy] Backend fetch failed:', aborted ? 'timeout after 20s' : String(fetchErr));
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: aborted ? 'Backend timed out (cold start)' : 'Backend unreachable',
+          backend_unreachable: true,
+        }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     clearTimeout(timeoutId);
+
 
     const responseText = await response.text();
     console.log('[Proxy] Backend status:', response.status);
