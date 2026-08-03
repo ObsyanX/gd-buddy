@@ -28,7 +28,7 @@ const StarRow = ({ value, onChange, label }: { value: number; onChange: (n: numb
   </div>
 );
 
-const FeedbackForm = ({ sessionId, onSubmitted }: { sessionId: string; onSubmitted?: () => void }) => {
+const FeedbackForm = ({ sessionId, onSubmitted }: { sessionId?: string | null; onSubmitted?: () => void }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [existing, setExisting] = useState<any>(null);
@@ -43,12 +43,9 @@ const FeedbackForm = ({ sessionId, onSubmitted }: { sessionId: string; onSubmitt
   useEffect(() => {
     (async () => {
       if (!user) return;
-      const { data } = await supabase
-        .from('user_feedback')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('session_id', sessionId)
-        .maybeSingle();
+      let q = supabase.from('user_feedback').select('*').eq('user_id', user.id);
+      q = sessionId ? q.eq('session_id', sessionId) : q.is('session_id', null);
+      const { data } = await q.order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (data) {
         setExisting(data);
         setStars(data.stars || 0);
@@ -60,6 +57,7 @@ const FeedbackForm = ({ sessionId, onSubmitted }: { sessionId: string; onSubmitt
       }
     })();
   }, [user, sessionId]);
+
 
   const canEdit = !existing || Date.now() - new Date(existing.created_at).getTime() < 24 * 3600 * 1000;
 
