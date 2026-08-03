@@ -1,0 +1,4 @@
+CREATE POLICY "Admins can view all participants" ON public.gd_participants FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can view all messages" ON public.gd_messages FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can view all metrics" ON public.gd_metrics FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can view all session scores" ON public.session_scores FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role));

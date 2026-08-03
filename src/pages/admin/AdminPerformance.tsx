@@ -83,23 +83,26 @@ export default function AdminPerformance() {
     loadData();
   }, []);
 
-  async function runAudit() {
+  async function runAudit(force = false) {
     setRunning(true);
-    toast.info("Running PageSpeed audit — this takes ~30s");
+    toast.info(force ? "Running fresh PageSpeed audit — this takes ~30s" : "Fetching PageSpeed audit…");
     try {
       const { data, error } = await supabase.functions.invoke("pagespeed-audit", {
-        body: { url: AUDIT_URL },
+        body: { url: AUDIT_URL, force },
       });
       if (error) throw error;
-      const resp = data as { ok?: boolean; error?: string; quota_exceeded?: boolean };
+      const resp = data as { ok?: boolean; error?: string; quota_exceeded?: boolean; cached?: boolean };
       if (resp?.quota_exceeded) {
         toast.warning(resp.error || "PageSpeed daily quota exceeded — showing cached results.");
       } else if (resp?.ok === false && resp.error) {
         throw new Error(resp.error);
+      } else if (resp?.cached) {
+        toast.success("Showing audit from the last 6 hours (quota-friendly)");
       } else {
         toast.success("Audit complete");
       }
       await loadData();
+
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Audit failed");
     } finally {
@@ -138,10 +141,14 @@ export default function AdminPerformance() {
           <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
-          <Button onClick={runAudit} disabled={running}>
+          <Button onClick={() => runAudit(false)} disabled={running}>
             {running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Gauge className="h-4 w-4 mr-2" />}
             {running ? "Auditing…" : "Run PageSpeed audit"}
           </Button>
+          <Button variant="secondary" onClick={() => runAudit(true)} disabled={running}>
+            Force fresh
+          </Button>
+
         </div>
       </div>
 
