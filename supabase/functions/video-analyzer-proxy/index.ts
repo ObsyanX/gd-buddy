@@ -60,12 +60,16 @@ serve(async (req) => {
     // Handle health check action
     if (requestData.action === 'health') {
       console.log('[Proxy] Health check requested');
+      const healthController = new AbortController();
+      const healthTimeout = setTimeout(() => healthController.abort(), 8000);
       try {
         const healthResponse = await fetch(`${BACKEND_URL}/health`, {
           method: 'GET',
-          headers: { 'X-API-Key': apiKey }
+          headers: { 'X-API-Key': apiKey },
+          signal: healthController.signal,
         });
-        
+        clearTimeout(healthTimeout);
+
         return new Response(
           JSON.stringify({ 
             success: healthResponse.ok, 
@@ -74,7 +78,8 @@ serve(async (req) => {
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
-      } catch (error) {
+      } catch (_error) {
+        clearTimeout(healthTimeout);
         console.log('[Proxy] Health check failed - backend may be warming up');
         return new Response(
           JSON.stringify({ success: false, error: 'Backend warming up', backend_unreachable: true }),
@@ -82,6 +87,7 @@ serve(async (req) => {
         );
       }
     }
+
 
     // Extract base64 image - check common field names
     let base64Image: string | null = null;
