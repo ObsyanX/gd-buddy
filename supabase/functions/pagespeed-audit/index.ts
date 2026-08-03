@@ -92,7 +92,27 @@ Deno.serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
+    // Serve a recent cached audit instead of burning quota (unless force=true).
+    if (!body.force) {
+      const { data: recent } = await admin
+        .from("pagespeed_reports")
+        .select("*")
+        .eq("url", url)
+        .gte("created_at", new Date(Date.now() - CACHE_TTL_MS).toISOString())
+        .order("created_at", { ascending: false })
+        .limit(10);
+      const rm = recent?.find((r) => r.strategy === "mobile") ?? null;
+      const rd = recent?.find((r) => r.strategy === "desktop") ?? null;
+      if (rm && rd) {
+        return new Response(
+          JSON.stringify({ ok: true, cached: true, url, mobile: rm, desktop: rd }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
     let mobile, desktop;
+
     try {
       [mobile, desktop] = await Promise.all([
         runPSI(url, "mobile"),
