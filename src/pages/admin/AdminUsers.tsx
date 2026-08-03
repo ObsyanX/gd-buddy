@@ -10,9 +10,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 
 import { toast } from "@/hooks/use-toast";
 import { useUserRoles, type AppRole } from "@/hooks/useUserRoles";
-import { Eye, Users2, Trophy, Clock, MessageSquare, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Eye, Users2, Trophy, Clock, MessageSquare, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, X, Mail, Copy } from "lucide-react";
 import { TableSkeleton, EmptyState } from "@/components/admin/TableSkeleton";
 import { rangeToDays, safeSearch } from "@/lib/admin-query-params";
+import { feedbackFormUrl, openFeedbackInviteMail } from "@/lib/feedback-invite";
 
 type UsersSortKey = "display_name" | "created_at";
 const USERS_PAGE_SIZE = 25;
@@ -20,6 +21,7 @@ const USERS_PAGE_SIZE = 25;
 interface Row {
   id: string;
   display_name: string | null;
+  email: string | null;
   avatar_url: string | null;
   created_at: string;
   roles: AppRole[];
@@ -126,10 +128,10 @@ export default function AdminUsers() {
 
         let query = supabase
           .from("profiles")
-          .select("id, display_name, avatar_url, created_at", { count: "exact" })
+          .select("id, display_name, email, avatar_url, created_at", { count: "exact" })
           .order(sortKey, { ascending: sortDir === "asc", nullsFirst: false })
           .range(page * USERS_PAGE_SIZE, page * USERS_PAGE_SIZE + USERS_PAGE_SIZE - 1);
-        if (qDebounced) query = query.or(`display_name.ilike.%${qDebounced}%,id.eq.${/^[0-9a-f-]{8,}$/i.test(qDebounced) ? qDebounced : "00000000-0000-0000-0000-000000000000"}`);
+        if (qDebounced) query = query.or(`display_name.ilike.%${qDebounced}%,email.ilike.%${qDebounced}%,id.eq.${/^[0-9a-f-]{8,}$/i.test(qDebounced) ? qDebounced : "00000000-0000-0000-0000-000000000000"}`);
         if (rangeDays) {
           const since = new Date(Date.now() - rangeDays * 86400_000).toISOString();
           query = query.gte("created_at", since);
@@ -252,7 +254,7 @@ export default function AdminUsers() {
             {loading ? "Loading…" : `${total} profiles · page ${page + 1} of ${totalPages}`} · {isAdmin ? "role management enabled" : "read-only"}
           </p>
         </div>
-        <Input placeholder="Search name or id…" value={q} onChange={(e) => setQ(e.target.value)} className="w-64" />
+        <Input placeholder="Search name, email or id…" value={q} onChange={(e) => setQ(e.target.value)} className="w-64" />
       </div>
 
       {(rangeParam || activeParam) && (
@@ -272,6 +274,7 @@ export default function AdminUsers() {
             <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <UsersSortableTh label="User" active={sortKey === "display_name"} dir={sortDir} onClick={() => toggleSort("display_name")} />
+                <th className="text-left px-3 py-2">Email</th>
                 <th className="text-left px-3 py-2">Roles</th>
                 <UsersSortableTh label="Joined" active={sortKey === "created_at"} dir={sortDir} onClick={() => toggleSort("created_at")} />
                 <th className="text-left px-3 py-2">Details</th>
@@ -285,6 +288,18 @@ export default function AdminUsers() {
                     <div className="font-medium">{r.display_name ?? "(no name)"}</div>
                     <div className="text-xs font-mono text-muted-foreground">{r.id.slice(0, 8)}</div>
                   </td>
+                  <td className="px-3 py-2">
+                    {r.email ? (
+                      <div className="flex items-center gap-1">
+                        <a href={`mailto:${r.email}`} className="text-xs underline break-all">{r.email}</a>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(r.email!); toast({ title: "Email copied" }); }}
+                          className="text-muted-foreground hover:text-foreground"
+                          title="Copy email"
+                        ><Copy className="h-3 w-3" /></button>
+                      </div>
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
+                  </td>
                   <td className="px-3 py-2 space-x-1 space-y-1">
                     {r.roles.map((role) => (
                       <span key={role} className="inline-flex items-center gap-1">
@@ -297,9 +312,20 @@ export default function AdminUsers() {
                   </td>
                   <td className="px-3 py-2 text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
                   <td className="px-3 py-2">
-                    <Button size="sm" variant="outline" onClick={() => openDetail(r)}>
-                      <Eye className="h-3.5 w-3.5 mr-1" /> View
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" onClick={() => openDetail(r)}>
+                        <Eye className="h-3.5 w-3.5 mr-1" /> View
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!r.email}
+                        title={r.email ? "Email this user the feedback form" : "No email on file"}
+                        onClick={() => openFeedbackInviteMail(r.email!, r.display_name)}
+                      >
+                        <Mail className="h-3.5 w-3.5 mr-1" /> Feedback
+                      </Button>
+                    </div>
                   </td>
                   {isAdmin && (
                     <td className="px-3 py-2">
@@ -317,9 +343,9 @@ export default function AdminUsers() {
                   )}
                 </tr>
               ))}
-              {loading && <TableSkeleton rows={6} cols={isAdmin ? 5 : 4} />}
+              {loading && <TableSkeleton rows={6} cols={isAdmin ? 6 : 5} />}
               {!loading && loadError && (
-                <tr><td colSpan={isAdmin ? 5 : 4}>
+                <tr><td colSpan={isAdmin ? 6 : 5}>
                   <EmptyState
                     title="Couldn't load users"
                     description={loadError}
@@ -328,7 +354,7 @@ export default function AdminUsers() {
                 </td></tr>
               )}
               {!loading && !loadError && rows.length === 0 && (
-                <tr><td colSpan={isAdmin ? 5 : 4}>
+                <tr><td colSpan={isAdmin ? 6 : 5}>
                   <EmptyState
                     title="No users match these filters"
                     description={qDebounced || rangeParam || activeParam
