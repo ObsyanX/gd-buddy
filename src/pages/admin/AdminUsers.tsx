@@ -254,7 +254,16 @@ export default function AdminUsers() {
             {loading ? "Loading…" : `${total} profiles · page ${page + 1} of ${totalPages}`} · {isAdmin ? "role management enabled" : "read-only"}
           </p>
         </div>
-        <Input placeholder="Search name, email or id…" value={q} onChange={(e) => setQ(e.target.value)} className="w-64" />
+        <div className="flex gap-2 items-center">
+          <Input placeholder="Search name, email or id…" value={q} onChange={(e) => setQ(e.target.value)} className="w-64" />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => { navigator.clipboard.writeText(feedbackFormUrl()); toast({ title: "Feedback form link copied" }); }}
+          >
+            <Copy className="h-3.5 w-3.5 mr-1" /> Feedback link
+          </Button>
+        </div>
       </div>
 
       {(rangeParam || activeParam) && (
