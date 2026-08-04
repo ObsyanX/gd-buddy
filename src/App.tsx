@@ -29,6 +29,28 @@ import PageTransition from "@/components/PageTransition";
 // Eager load core pages
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
+
+// Public content pages (eagerly loaded for AdSense/SEO crawlers)
+import About from "./pages/About";
+import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
+import TermsOfService from "./pages/legal/TermsOfService";
+import Contact from "./pages/legal/Contact";
+import Disclaimer from "./pages/legal/Disclaimer";
+import GDTopics from "./pages/GDTopics";
+import HowToCrackGD from "./pages/HowToCrackGD";
+import CommonGDMistakes from "./pages/CommonGDMistakes";
+import CommunicationSkills from "./pages/CommunicationSkills";
+import GDPreparationGuide from "./pages/GDPreparationGuide";
+import AIGDSimulator from "./pages/AIGDSimulator";
+import SpeakConfidently from "./pages/SpeakConfidently";
+import StartGD from "./pages/StartGD";
+import ConcludeGD from "./pages/ConcludeGD";
+import BodyLanguageTips from "./pages/BodyLanguageTips";
+import GDTopicPage from "./pages/GDTopicPage";
+import Blog from "./pages/Blog";
+import BlogArticle from "./pages/BlogArticle";
+import AdsenseTest from "./pages/AdsenseTest";
+
 import {
   ProfileDeepLink,
   ReportDeepLink,
