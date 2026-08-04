@@ -165,7 +165,10 @@ const LandingBelow = () => {
         </div>
       </section>
 
+      <LandingAdSection />
+
       {/* FAQ */}
+
       <section
         className="container mx-auto px-4 md:px-6 py-16"
         aria-label="Frequently asked questions"
