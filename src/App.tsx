@@ -195,6 +195,7 @@ const App = () => (
           <Sonner />
           <OfflineBanner />
           <PWAInstallBanner />
+          <CookieConsent />
           <A11yBootstrap />
           <ErrorBoundary fallbackTitle="Application Error">
           <Suspense fallback={<Loading />}>
