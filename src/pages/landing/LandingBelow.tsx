@@ -1,23 +1,23 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Zap, Compass, Users, Mic, Radar } from "lucide-react";
+import { ArrowRight, Zap, Compass, Users, Mic, Radar, Newspaper } from "lucide-react";
 import { stagger } from "@/lib/motion";
 import SEOFooter from "@/components/SEOFooter";
+import { LandingAdSection } from "@/components/ads/LandingAdSection";
 import {
   BENTO, BentoTile, WaveLine, ConnectorLine, LANDING_FAQS,
 } from "./parts";
 
+
 /**
  * Below-the-fold sections of the landing page.
- * Lazy-loaded via React.lazy in Landing.tsx to shrink initial JS.
- * Wrapped with `content-visibility: auto` so the browser can skip
- * layout/paint work until each section scrolls into view.
+ *
+ * Previously lazy-loaded, but now rendered eagerly so AdSense and search
+ * crawlers can index the full page content without executing a dynamic import.
  */
 const LandingBelow = () => {
   const navigate = useNavigate();
-
-  const cvStyle = { contentVisibility: "auto" as never, containIntrinsicSize: "600px" };
 
   return (
     <>
@@ -26,7 +26,6 @@ const LandingBelow = () => {
         id="features"
         className="container mx-auto px-4 md:px-6 py-16"
         aria-label="Features"
-        style={cvStyle}
       >
         <div className="max-w-3xl mb-10">
           <p className="text-micro text-primary-glow mb-4">Features · Craftsmanship</p>
@@ -52,7 +51,6 @@ const LandingBelow = () => {
       <section
         className="container mx-auto px-4 md:px-6 py-16"
         aria-label="How it works"
-        style={cvStyle}
       >
         <div className="glass-strong rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden">
           <WaveLine className="absolute inset-x-0 top-1/2 w-full h-24 text-primary/20 -translate-y-1/2 pointer-events-none" />
@@ -98,11 +96,48 @@ const LandingBelow = () => {
         </div>
       </section>
 
+      {/* Editorial about section */}
+      <section
+        className="container mx-auto px-4 md:px-6 py-16"
+        aria-label="About GD Buddy"
+      >
+        <div className="max-w-3xl">
+          <p className="text-micro text-primary-glow mb-4">The platform</p>
+          <h2 className="text-h1 font-display leading-tight mb-6">
+            Practice group discussions the way <span className="italic-accent copper-text">top campuses</span> expect them.
+          </h2>
+          <div className="space-y-4 text-muted-foreground leading-relaxed">
+            <p>
+              GD Buddy is a free AI-powered practice platform for students preparing for campus placement rounds.
+              We combine realistic AI participants, real-time coaching, and structured analytics so you can
+              rehearse the exact skills recruiters evaluate: clarity, structure, leadership, empathy, and presence.
+            </p>
+            <p>
+              Unlike generic speaking apps, GD Buddy simulates a real group discussion room. AI personas interrupt,
+              disagree, ask follow-ups, and summarize — just like a live panel. After every session you receive a
+              detailed report with scores, filler-word counts, pace analysis, and actionable next steps.
+            </p>
+            <p>
+              The platform also includes a curated library of 150+ placement topics, strategy guides, and a blog
+              with fresh GD and interview advice every week. Everything is designed to help you walk into your next
+              GD round with confidence.
+            </p>
+          </div>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/about">Read more about us <ArrowRight className="w-4 h-4" /></Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/blog">Visit the blog <Newspaper className="w-4 h-4" /></Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Resources */}
       <section
         className="container mx-auto px-4 md:px-6 py-16"
         aria-label="GD preparation resources"
-        style={cvStyle}
       >
         <div className="max-w-2xl mb-10">
           <p className="text-micro text-primary-glow mb-4">Library</p>
@@ -130,11 +165,13 @@ const LandingBelow = () => {
         </div>
       </section>
 
+      <LandingAdSection />
+
       {/* FAQ */}
+
       <section
         className="container mx-auto px-4 md:px-6 py-16"
         aria-label="Frequently asked questions"
-        style={cvStyle}
       >
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
@@ -159,7 +196,6 @@ const LandingBelow = () => {
       <section
         className="container mx-auto px-4 md:px-6 py-16"
         aria-label="Call to action"
-        style={cvStyle}
       >
         <div className="glass-strong rounded-[2.5rem] p-8 md:p-16 text-center relative overflow-hidden">
           <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[80%] h-96 bg-gradient-copper opacity-20 blur-3xl" aria-hidden="true" />

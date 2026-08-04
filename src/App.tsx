@@ -12,6 +12,7 @@ import AdminGuard from "@/components/AdminGuard";
 import '@/lib/error-monitor'; // Initialize global error monitoring
 import { OfflineBanner } from "@/components/OfflineBanner";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
+import { CookieConsent } from "@/components/ads/CookieConsent";
 import { LazyMotionProvider } from "@/components/motion/LazyMotionProvider";
 import A11yBootstrap from "@/components/A11yBootstrap";
 import {
@@ -29,6 +30,28 @@ import PageTransition from "@/components/PageTransition";
 // Eager load core pages
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
+
+// Public content pages (eagerly loaded for AdSense/SEO crawlers)
+import About from "./pages/About";
+import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
+import TermsOfService from "./pages/legal/TermsOfService";
+import Contact from "./pages/legal/Contact";
+import Disclaimer from "./pages/legal/Disclaimer";
+import GDTopics from "./pages/GDTopics";
+import HowToCrackGD from "./pages/HowToCrackGD";
+import CommonGDMistakes from "./pages/CommonGDMistakes";
+import CommunicationSkills from "./pages/CommunicationSkills";
+import GDPreparationGuide from "./pages/GDPreparationGuide";
+import AIGDSimulator from "./pages/AIGDSimulator";
+import SpeakConfidently from "./pages/SpeakConfidently";
+import StartGD from "./pages/StartGD";
+import ConcludeGD from "./pages/ConcludeGD";
+import BodyLanguageTips from "./pages/BodyLanguageTips";
+import GDTopicPage from "./pages/GDTopicPage";
+import Blog from "./pages/Blog";
+import BlogArticle from "./pages/BlogArticle";
+import AdsenseTest from "./pages/AdsenseTest";
+
 import {
   ProfileDeepLink,
   ReportDeepLink,
@@ -36,13 +59,11 @@ import {
   InviteDeepLink,
 } from "@/components/DeepLinks";
 
-// Lazy — trims initial JS for landing visitors; prefetched on CTA hover.
+// Auth + layout
 const Auth = lazy(() => import("./pages/Auth"), "Auth");
-
-// Layout
 const AppLayout = lazy(() => import("./layouts/AppLayout"), "AppLayout");
 
-// Lazy load all app pages
+// Lazy load authenticated app pages
 const Home = lazy(() => import("./pages/Home"), "Home");
 const ResetPassword = lazy(() => import("./pages/ResetPassword"), "ResetPassword");
 const Dashboard = lazy(() => import("./pages/Dashboard"), "Dashboard");
@@ -64,16 +85,7 @@ const Health = lazy(() => import("./pages/Health"), "Health");
 const Intelligence = lazy(() => import("./pages/Intelligence"), "Intelligence");
 const ADRs = lazy(() => import("./pages/ADRs"), "ADRs");
 
-// Legal pages
-const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"), "PrivacyPolicy");
-const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"), "TermsOfService");
-const Contact = lazy(() => import("./pages/legal/Contact"), "Contact");
-const Disclaimer = lazy(() => import("./pages/legal/Disclaimer"), "Disclaimer");
-const AdsenseTest = lazy(() => import("./pages/AdsenseTest"), "AdsenseTest");
-
-// Blog + admin phase 1
-const Blog = lazy(() => import("./pages/Blog"), "Blog");
-const BlogArticle = lazy(() => import("./pages/BlogArticle"), "BlogArticle");
+// Admin shell + pages
 const AdminShell = lazy(() => import("./components/admin/AdminShell"), "AdminShell");
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"), "AdminAnalytics");
 const AdminArticles = lazy(() => import("./pages/admin/AdminArticles"), "AdminArticles");
@@ -103,20 +115,6 @@ const AdminAuthErrors = lazy(() => import("./pages/admin/AdminAuthErrors"), "Adm
 const AdminPerformance = lazy(() => import("./pages/admin/AdminPerformance"), "AdminPerformance");
 const AdminShareAnalytics = lazy(() => import("./pages/admin/AdminShareAnalytics"), "AdminShareAnalytics");
 const AdminShareDrilldown = lazy(() => import("./pages/admin/AdminShareDrilldown"), "AdminShareDrilldown");
-
-// SEO content pages (public, indexable)
-const GDTopics = lazy(() => import("./pages/GDTopics"), "GDTopics");
-const HowToCrackGD = lazy(() => import("./pages/HowToCrackGD"), "HowToCrackGD");
-const CommonGDMistakes = lazy(() => import("./pages/CommonGDMistakes"), "CommonGDMistakes");
-const CommunicationSkills = lazy(() => import("./pages/CommunicationSkills"), "CommunicationSkills");
-const About = lazy(() => import("./pages/About"), "About");
-const GDPreparationGuide = lazy(() => import("./pages/GDPreparationGuide"), "GDPreparationGuide");
-const AIGDSimulator = lazy(() => import("./pages/AIGDSimulator"), "AIGDSimulator");
-const SpeakConfidently = lazy(() => import("./pages/SpeakConfidently"), "SpeakConfidently");
-const StartGD = lazy(() => import("./pages/StartGD"), "StartGD");
-const ConcludeGD = lazy(() => import("./pages/ConcludeGD"), "ConcludeGD");
-const BodyLanguageTips = lazy(() => import("./pages/BodyLanguageTips"), "BodyLanguageTips");
-const GDTopicPage = lazy(() => import("./pages/GDTopicPage"), "GDTopicPage");
 
 const queryClient = new QueryClient();
 
@@ -197,6 +195,7 @@ const App = () => (
           <Sonner />
           <OfflineBanner />
           <PWAInstallBanner />
+          <CookieConsent />
           <A11yBootstrap />
           <ErrorBoundary fallbackTitle="Application Error">
           <Suspense fallback={<Loading />}>
@@ -204,30 +203,30 @@ const App = () => (
               {/* Public landing page — canonical ranking page */}
               <Route path="/" element={<RouteBoundary title="Home unavailable"><LandingGuard /></RouteBoundary>} />
 
-              {/* Public SEO pages */}
-              <Route path="/gd-topics-for-placements" element={<RouteBoundary><Suspense fallback={<Loading />}><GDTopics /></Suspense></RouteBoundary>} />
-              <Route path="/how-to-crack-group-discussion" element={<RouteBoundary><Suspense fallback={<Loading />}><HowToCrackGD /></Suspense></RouteBoundary>} />
-              <Route path="/common-gd-mistakes" element={<RouteBoundary><Suspense fallback={<Loading />}><CommonGDMistakes /></Suspense></RouteBoundary>} />
-              <Route path="/communication-skills-for-gd" element={<RouteBoundary><Suspense fallback={<Loading />}><CommunicationSkills /></Suspense></RouteBoundary>} />
-              <Route path="/about" element={<RouteBoundary><Suspense fallback={<Loading />}><About /></Suspense></RouteBoundary>} />
-              <Route path="/group-discussion-preparation-guide" element={<RouteBoundary><Suspense fallback={<Loading />}><GDPreparationGuide /></Suspense></RouteBoundary>} />
-              <Route path="/ai-gd-simulator" element={<RouteBoundary><Suspense fallback={<Loading />}><AIGDSimulator /></Suspense></RouteBoundary>} />
-              <Route path="/how-to-speak-confidently-in-group-discussion" element={<RouteBoundary><Suspense fallback={<Loading />}><SpeakConfidently /></Suspense></RouteBoundary>} />
-              <Route path="/how-to-start-group-discussion" element={<RouteBoundary><Suspense fallback={<Loading />}><StartGD /></Suspense></RouteBoundary>} />
-              <Route path="/how-to-conclude-gd-round" element={<RouteBoundary><Suspense fallback={<Loading />}><ConcludeGD /></Suspense></RouteBoundary>} />
-              <Route path="/body-language-tips-for-gd" element={<RouteBoundary><Suspense fallback={<Loading />}><BodyLanguageTips /></Suspense></RouteBoundary>} />
-              <Route path="/gd-topic/:slug" element={<RouteBoundary><Suspense fallback={<Loading />}><GDTopicPage /></Suspense></RouteBoundary>} />
+              {/* Public SEO pages — eagerly imported for crawlers */}
+              <Route path="/gd-topics-for-placements" element={<RouteBoundary><GDTopics /></RouteBoundary>} />
+              <Route path="/how-to-crack-group-discussion" element={<RouteBoundary><HowToCrackGD /></RouteBoundary>} />
+              <Route path="/common-gd-mistakes" element={<RouteBoundary><CommonGDMistakes /></RouteBoundary>} />
+              <Route path="/communication-skills-for-gd" element={<RouteBoundary><CommunicationSkills /></RouteBoundary>} />
+              <Route path="/about" element={<RouteBoundary><About /></RouteBoundary>} />
+              <Route path="/group-discussion-preparation-guide" element={<RouteBoundary><GDPreparationGuide /></RouteBoundary>} />
+              <Route path="/ai-gd-simulator" element={<RouteBoundary><AIGDSimulator /></RouteBoundary>} />
+              <Route path="/how-to-speak-confidently-in-group-discussion" element={<RouteBoundary><SpeakConfidently /></RouteBoundary>} />
+              <Route path="/how-to-start-group-discussion" element={<RouteBoundary><StartGD /></RouteBoundary>} />
+              <Route path="/how-to-conclude-gd-round" element={<RouteBoundary><ConcludeGD /></RouteBoundary>} />
+              <Route path="/body-language-tips-for-gd" element={<RouteBoundary><BodyLanguageTips /></RouteBoundary>} />
+              <Route path="/gd-topic/:slug" element={<RouteBoundary><GDTopicPage /></RouteBoundary>} />
 
               {/* Blog (public) */}
-              <Route path="/blog" element={<RouteBoundary><Suspense fallback={<Loading />}><Blog /></Suspense></RouteBoundary>} />
-              <Route path="/blog/:slug" element={<RouteBoundary><Suspense fallback={<Loading />}><BlogArticle /></Suspense></RouteBoundary>} />
+              <Route path="/blog" element={<RouteBoundary><Blog /></RouteBoundary>} />
+              <Route path="/blog/:slug" element={<RouteBoundary><BlogArticle /></RouteBoundary>} />
 
               {/* Legal & policy pages (required for AdSense) */}
-              <Route path="/privacy" element={<RouteBoundary><Suspense fallback={<Loading />}><PrivacyPolicy /></Suspense></RouteBoundary>} />
-              <Route path="/terms" element={<RouteBoundary><Suspense fallback={<Loading />}><TermsOfService /></Suspense></RouteBoundary>} />
-              <Route path="/contact" element={<RouteBoundary><Suspense fallback={<Loading />}><Contact /></Suspense></RouteBoundary>} />
-              <Route path="/disclaimer" element={<RouteBoundary><Suspense fallback={<Loading />}><Disclaimer /></Suspense></RouteBoundary>} />
-              <Route path="/adsense-test" element={<RouteBoundary><Suspense fallback={<Loading />}><AdsenseTest /></Suspense></RouteBoundary>} />
+              <Route path="/privacy" element={<RouteBoundary><PrivacyPolicy /></RouteBoundary>} />
+              <Route path="/terms" element={<RouteBoundary><TermsOfService /></RouteBoundary>} />
+              <Route path="/contact" element={<RouteBoundary><Contact /></RouteBoundary>} />
+              <Route path="/disclaimer" element={<RouteBoundary><Disclaimer /></RouteBoundary>} />
+              <Route path="/adsense-test" element={<RouteBoundary><AdsenseTest /></RouteBoundary>} />
 
               {/* Public deep-link redirectors for shared URLs */}
               <Route path="/p/:userId" element={<RouteBoundary><ProfileDeepLink /></RouteBoundary>} />

@@ -13,9 +13,11 @@ const DEFAULT_FLAGS = [
   { key: "ads.enable_video", value: true, desc: "Serve video-format ads." },
   { key: "ads.enable_popup", value: false, desc: "Show popup ads on landing." },
   { key: "ads.enable_sticky_footer", value: false, desc: "Show sticky-footer ads." },
+  { key: "ads.landing_page_ad_slot", value: "", desc: "AdSense ad slot ID rendered in the landing page footer (empty = hidden)." },
   { key: "articles.autosave_ms", value: 30000, desc: "Article editor autosave interval (ms)." },
   { key: "comments.require_moderation", value: true, desc: "Hold new comments until an admin approves." },
 ];
+
 
 export default function AdminSettings() {
   const [rows, setRows] = useState<Flag[]>([]);
