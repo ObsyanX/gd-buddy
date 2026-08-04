@@ -350,31 +350,10 @@ const Landing = () => {
         </section>
 
         {/*
-          Everything below the hero (Bento, HowItWorks, Resources, FAQ, CTA,
-          Footer) is lazy-loaded together. SEOFooter is included inside the
-          lazy chunk so it never mid-shifts while LandingBelow hydrates —
-          this is what fixes the 0.11 CLS from the earlier audit.
+          Below-the-fold content is now rendered eagerly so AdSense and search
+          crawlers can see the full page without waiting for a lazy chunk.
         */}
-        <Suspense
-          fallback={
-            <div
-              className="container mx-auto px-4 md:px-6 py-16 space-y-6"
-              aria-busy="true"
-              style={{ minHeight: "1400px" }}
-            >
-              <div className="rounded-[2.5rem] h-40 skeleton-shimmer" />
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="rounded-3xl h-48 skeleton-shimmer" />
-                <div className="rounded-3xl h-48 skeleton-shimmer" />
-                <div className="rounded-3xl h-48 skeleton-shimmer" />
-              </div>
-              <div className="rounded-[2.5rem] h-80 skeleton-shimmer" />
-              <div className="rounded-[2.5rem] h-64 skeleton-shimmer" />
-            </div>
-          }
-        >
-          <LandingBelow />
-        </Suspense>
+        <LandingBelow />
       </main>
     </div>
   );
