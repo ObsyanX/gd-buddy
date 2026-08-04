@@ -50,7 +50,7 @@ function eventLabel(e: AdEvent): string {
  */
 export function AdSenseDiagnostics() {
   const [events, setEvents] = useState<AdEvent[]>([]);
-  const [consent, setConsentState] = useState<ConsentState>("granted");
+  const [consent, setConsentState] = useState<ConsentState>("pending");
 
   useEffect(() => {
     installAdSenseConsoleTap();
