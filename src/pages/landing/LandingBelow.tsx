@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Zap, Compass, Users, Mic, Radar } from "lucide-react";
+import { ArrowRight, Zap, Compass, Users, Mic, Radar, BookOpen, Newspaper } from "lucide-react";
 import { stagger } from "@/lib/motion";
 import SEOFooter from "@/components/SEOFooter";
 import {
@@ -10,9 +10,11 @@ import {
 
 /**
  * Below-the-fold sections of the landing page.
- * Lazy-loaded via React.lazy in Landing.tsx to shrink initial JS.
- * Wrapped with `content-visibility: auto` so the browser can skip
- * layout/paint work until each section scrolls into view.
+ *
+ * Previously lazy-loaded, but now rendered eagerly so AdSense and search
+ * crawlers can index the full page content without executing a dynamic import.
+ * We keep scroll-triggered animations, but avoid `content-visibility: auto`
+ * on the main sections to ensure crawlers see the text immediately.
  */
 const LandingBelow = () => {
   const navigate = useNavigate();
