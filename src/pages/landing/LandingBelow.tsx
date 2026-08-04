@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Compass, Users, Mic, Radar, Newspaper } from "lucide-react";
 import { stagger } from "@/lib/motion";
 import SEOFooter from "@/components/SEOFooter";
+import { LandingAdSection } from "@/components/ads/LandingAdSection";
 import {
   BENTO, BentoTile, WaveLine, ConnectorLine, LANDING_FAQS,
 } from "./parts";
+
 
 /**
  * Below-the-fold sections of the landing page.
