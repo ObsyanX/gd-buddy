@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
-import { lazy, Suspense, useCallback } from "react";
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquare, Mic, Target, ArrowRight, Play, Sparkles, Feather, Gauge, Star, Waves,
@@ -9,9 +9,7 @@ import SEOHead from "@/components/SEOHead";
 import { fadeRise, stagger, wordRise } from "@/lib/motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DotGrid, RadarRings, TiltCard, LANDING_FAQS } from "./landing/parts";
-
-/* Lazy-load everything below the hero — big win for LCP + TBT. */
-const LandingBelow = lazy(() => import("./landing/LandingBelow"));
+import LandingBelow from "./landing/LandingBelow";
 
 const faqJsonLd = {
   "@context": "https://schema.org",
