@@ -19,8 +19,6 @@ import {
 const LandingBelow = () => {
   const navigate = useNavigate();
 
-  const cvStyle = { contentVisibility: "auto" as never, containIntrinsicSize: "600px" };
-
   return (
     <>
       {/* BENTO features */}
