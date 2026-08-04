@@ -12,6 +12,7 @@ import AdminGuard from "@/components/AdminGuard";
 import '@/lib/error-monitor'; // Initialize global error monitoring
 import { OfflineBanner } from "@/components/OfflineBanner";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
+import { CookieConsent } from "@/components/ads/CookieConsent";
 import { LazyMotionProvider } from "@/components/motion/LazyMotionProvider";
 import A11yBootstrap from "@/components/A11yBootstrap";
 import {
