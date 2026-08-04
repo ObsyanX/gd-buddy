@@ -26,7 +26,6 @@ const LandingBelow = () => {
         id="features"
         className="container mx-auto px-4 md:px-6 py-16"
         aria-label="Features"
-        style={cvStyle}
       >
         <div className="max-w-3xl mb-10">
           <p className="text-micro text-primary-glow mb-4">Features · Craftsmanship</p>
