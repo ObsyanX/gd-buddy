@@ -201,30 +201,30 @@ const App = () => (
               {/* Public landing page — canonical ranking page */}
               <Route path="/" element={<RouteBoundary title="Home unavailable"><LandingGuard /></RouteBoundary>} />
 
-              {/* Public SEO pages */}
-              <Route path="/gd-topics-for-placements" element={<RouteBoundary><Suspense fallback={<Loading />}><GDTopics /></Suspense></RouteBoundary>} />
-              <Route path="/how-to-crack-group-discussion" element={<RouteBoundary><Suspense fallback={<Loading />}><HowToCrackGD /></Suspense></RouteBoundary>} />
-              <Route path="/common-gd-mistakes" element={<RouteBoundary><Suspense fallback={<Loading />}><CommonGDMistakes /></Suspense></RouteBoundary>} />
-              <Route path="/communication-skills-for-gd" element={<RouteBoundary><Suspense fallback={<Loading />}><CommunicationSkills /></Suspense></RouteBoundary>} />
-              <Route path="/about" element={<RouteBoundary><Suspense fallback={<Loading />}><About /></Suspense></RouteBoundary>} />
-              <Route path="/group-discussion-preparation-guide" element={<RouteBoundary><Suspense fallback={<Loading />}><GDPreparationGuide /></Suspense></RouteBoundary>} />
-              <Route path="/ai-gd-simulator" element={<RouteBoundary><Suspense fallback={<Loading />}><AIGDSimulator /></Suspense></RouteBoundary>} />
-              <Route path="/how-to-speak-confidently-in-group-discussion" element={<RouteBoundary><Suspense fallback={<Loading />}><SpeakConfidently /></Suspense></RouteBoundary>} />
-              <Route path="/how-to-start-group-discussion" element={<RouteBoundary><Suspense fallback={<Loading />}><StartGD /></Suspense></RouteBoundary>} />
-              <Route path="/how-to-conclude-gd-round" element={<RouteBoundary><Suspense fallback={<Loading />}><ConcludeGD /></Suspense></RouteBoundary>} />
-              <Route path="/body-language-tips-for-gd" element={<RouteBoundary><Suspense fallback={<Loading />}><BodyLanguageTips /></Suspense></RouteBoundary>} />
-              <Route path="/gd-topic/:slug" element={<RouteBoundary><Suspense fallback={<Loading />}><GDTopicPage /></Suspense></RouteBoundary>} />
+              {/* Public SEO pages — eagerly imported for crawlers */}
+              <Route path="/gd-topics-for-placements" element={<RouteBoundary><GDTopics /></RouteBoundary>} />
+              <Route path="/how-to-crack-group-discussion" element={<RouteBoundary><HowToCrackGD /></RouteBoundary>} />
+              <Route path="/common-gd-mistakes" element={<RouteBoundary><CommonGDMistakes /></RouteBoundary>} />
+              <Route path="/communication-skills-for-gd" element={<RouteBoundary><CommunicationSkills /></RouteBoundary>} />
+              <Route path="/about" element={<RouteBoundary><About /></RouteBoundary>} />
+              <Route path="/group-discussion-preparation-guide" element={<RouteBoundary><GDPreparationGuide /></RouteBoundary>} />
+              <Route path="/ai-gd-simulator" element={<RouteBoundary><AIGDSimulator /></RouteBoundary>} />
+              <Route path="/how-to-speak-confidently-in-group-discussion" element={<RouteBoundary><SpeakConfidently /></RouteBoundary>} />
+              <Route path="/how-to-start-group-discussion" element={<RouteBoundary><StartGD /></RouteBoundary>} />
+              <Route path="/how-to-conclude-gd-round" element={<RouteBoundary><ConcludeGD /></RouteBoundary>} />
+              <Route path="/body-language-tips-for-gd" element={<RouteBoundary><BodyLanguageTips /></RouteBoundary>} />
+              <Route path="/gd-topic/:slug" element={<RouteBoundary><GDTopicPage /></RouteBoundary>} />
 
               {/* Blog (public) */}
-              <Route path="/blog" element={<RouteBoundary><Suspense fallback={<Loading />}><Blog /></Suspense></RouteBoundary>} />
-              <Route path="/blog/:slug" element={<RouteBoundary><Suspense fallback={<Loading />}><BlogArticle /></Suspense></RouteBoundary>} />
+              <Route path="/blog" element={<RouteBoundary><Blog /></RouteBoundary>} />
+              <Route path="/blog/:slug" element={<RouteBoundary><BlogArticle /></RouteBoundary>} />
 
               {/* Legal & policy pages (required for AdSense) */}
-              <Route path="/privacy" element={<RouteBoundary><Suspense fallback={<Loading />}><PrivacyPolicy /></Suspense></RouteBoundary>} />
-              <Route path="/terms" element={<RouteBoundary><Suspense fallback={<Loading />}><TermsOfService /></Suspense></RouteBoundary>} />
-              <Route path="/contact" element={<RouteBoundary><Suspense fallback={<Loading />}><Contact /></Suspense></RouteBoundary>} />
-              <Route path="/disclaimer" element={<RouteBoundary><Suspense fallback={<Loading />}><Disclaimer /></Suspense></RouteBoundary>} />
-              <Route path="/adsense-test" element={<RouteBoundary><Suspense fallback={<Loading />}><AdsenseTest /></Suspense></RouteBoundary>} />
+              <Route path="/privacy" element={<RouteBoundary><PrivacyPolicy /></RouteBoundary>} />
+              <Route path="/terms" element={<RouteBoundary><TermsOfService /></RouteBoundary>} />
+              <Route path="/contact" element={<RouteBoundary><Contact /></RouteBoundary>} />
+              <Route path="/disclaimer" element={<RouteBoundary><Disclaimer /></RouteBoundary>} />
+              <Route path="/adsense-test" element={<RouteBoundary><AdsenseTest /></RouteBoundary>} />
 
               {/* Public deep-link redirectors for shared URLs */}
               <Route path="/p/:userId" element={<RouteBoundary><ProfileDeepLink /></RouteBoundary>} />
