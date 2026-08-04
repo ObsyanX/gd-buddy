@@ -14,7 +14,7 @@ export const ADSENSE_CLIENT = "ca-pub-7535496448152688";
 const SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
 const CONSENT_KEY = "ads_consent";
 
-export type ConsentState = "granted" | "denied";
+export type ConsentState = "granted" | "denied" | "pending";
 
 export type AdEvent =
   | { type: "consent"; state: ConsentState; at: number }
@@ -54,13 +54,14 @@ export function getAdEventHistory(): AdEvent[] {
 // ---------- consent ----------
 
 export function getConsent(): ConsentState {
-  if (typeof window === "undefined") return "granted";
+  if (typeof window === "undefined") return "pending";
   try {
     const v = window.localStorage.getItem(CONSENT_KEY);
+    if (v === "granted") return "granted";
     if (v === "denied") return "denied";
-    return "granted"; // default granted
+    return "pending"; // require explicit choice
   } catch {
-    return "granted";
+    return "pending";
   }
 }
 
