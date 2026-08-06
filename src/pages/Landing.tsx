@@ -200,7 +200,7 @@ const Landing = () => {
                     <div className="w-10 h-10 rounded-full border-2 border-background bg-gradient-copper flex items-center justify-center text-micro text-primary-foreground">+2k</div>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    <span className="text-foreground font-medium">2,400+ students</span> practicing now
+                    <span className="text-foreground font-medium">240+ students</span> practicing now
                   </p>
                 </motion.div>
               </div>
