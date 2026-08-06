@@ -5,6 +5,7 @@ import { ArrowRight, Zap, Compass, Users, Mic, Radar, Newspaper } from "lucide-r
 import { stagger } from "@/lib/motion";
 import SEOFooter from "@/components/SEOFooter";
 import { LandingAdSection } from "@/components/ads/LandingAdSection";
+import { SupportSection } from "@/components/support/SupportSection";
 import {
   BENTO, BentoTile, WaveLine, ConnectorLine, LANDING_FAQS,
 } from "./parts";
