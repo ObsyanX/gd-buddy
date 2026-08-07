@@ -16,6 +16,7 @@ export function SupportSection({ compact = false }: { compact?: boolean }) {
   const bmc = useFeatureFlag<string>("support.buymeacoffee_handle", "");
   const patreon = useFeatureFlag<string>("support.patreon_handle", "");
   const upi = useFeatureFlag<string>("support.upi_id", "duttasayan947595-2@oksbi");
+  const qrUpload = useFeatureFlag<string>("support.upi_qr_url", "");
   const [copied, setCopied] = useState(false);
 
   const upiId = upi?.trim();
@@ -29,6 +30,7 @@ export function SupportSection({ compact = false }: { compact?: boolean }) {
   if (links.length === 0) return null;
 
   const upiUrl = links.find((l) => l.id === "upi")?.url;
+  const customQr = qrUpload?.trim();
 
   const copyUpi = async () => {
     if (!upiId) return;
@@ -67,18 +69,31 @@ export function SupportSection({ compact = false }: { compact?: boolean }) {
           ))}
         </div>
 
-        {upiId && upiUrl && (
+        {(customQr || (upiId && upiUrl)) && (
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-5">
             <div className="rounded-xl bg-background p-3 border border-border/60">
-              <QRCodeSVG value={upiUrl} size={132} includeMargin={false} aria-label="UPI payment QR code" />
+              {customQr ? (
+                <img
+                  src={customQr}
+                  alt="Payment QR code"
+                  width={132}
+                  height={132}
+                  loading="lazy"
+                  className="h-[132px] w-[132px] object-contain"
+                />
+              ) : (
+                <QRCodeSVG value={upiUrl!} size={132} includeMargin={false} aria-label="UPI payment QR code" />
+              )}
             </div>
             <div className="text-left">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Scan to pay via UPI</p>
-              <p className="mt-1 font-mono text-sm break-all">{upiId}</p>
-              <Button variant="outline" size="sm" className="mt-2" onClick={copyUpi}>
-                {copied ? <Check className="h-4 w-4 mr-1.5" /> : <Copy className="h-4 w-4 mr-1.5" />}
-                {copied ? "Copied" : "Copy UPI ID"}
-              </Button>
+              {upiId && <p className="mt-1 font-mono text-sm break-all">{upiId}</p>}
+              {upiId && (
+                <Button variant="outline" size="sm" className="mt-2" onClick={copyUpi}>
+                  {copied ? <Check className="h-4 w-4 mr-1.5" /> : <Copy className="h-4 w-4 mr-1.5" />}
+                  {copied ? "Copied" : "Copy UPI ID"}
+                </Button>
+              )}
             </div>
           </div>
         )}
