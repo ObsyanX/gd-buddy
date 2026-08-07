@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { Github, Linkedin, Mail, MessageSquare } from "lucide-react";
+import { SupportSection } from "@/components/support/SupportSection";
 
 const SEOFooter = () => (
   <footer className="relative z-10 py-12 px-4 md:px-6 mt-16" role="contentinfo">
     <div className="container mx-auto">
+      <SupportSection compact />
       <div className="glass rounded-[2rem] p-8 md:p-12">
         <div className="grid md:grid-cols-4 gap-8 mb-10">
           <div className="md:col-span-1">
