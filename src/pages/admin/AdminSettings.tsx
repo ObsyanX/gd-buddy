@@ -24,6 +24,7 @@ const DEFAULT_FLAGS = [
   { key: "support.buymeacoffee_handle", value: "", desc: "Buy Me a Coffee handle." },
   { key: "support.patreon_handle", value: "", desc: "Patreon handle." },
   { key: "support.upi_id", value: "duttasayan947595-2@oksbi", desc: "UPI ID for direct India-friendly tipping (also renders a scannable QR code)." },
+  { key: "support.upi_qr_url", value: "", desc: "Uploaded payment QR image. When set, it replaces the auto-generated UPI QR everywhere." },
   { key: "articles.autosave_ms", value: 30000, desc: "Article editor autosave interval (ms)." },
   { key: "comments.require_moderation", value: true, desc: "Hold new comments until an admin approves." },
 ];
