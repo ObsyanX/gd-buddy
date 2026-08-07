@@ -62,10 +62,20 @@ export default function AdminSettings() {
       </div>
 
       <div className="space-y-3">
-        {rows.map((r) => (
-          <FlagCard key={r.key} row={r} onSave={saveOne} saving={saving === r.key} />
-        ))}
+        {rows.map((r) =>
+          r.key === "support.upi_qr_url" ? (
+            <QrUploadCard
+              key={r.key}
+              value={typeof r.value === "string" ? r.value : ""}
+              onSave={(k, v) => saveOne(k, v)}
+              saving={saving === r.key}
+            />
+          ) : (
+            <FlagCard key={r.key} row={r} onSave={saveOne} saving={saving === r.key} />
+          )
+        )}
       </div>
+
     </div>
   );
 }
