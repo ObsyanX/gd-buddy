@@ -51,10 +51,14 @@ export default function AdminSettings() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from("admin_settings") as any).upsert({ key, value: parsed, updated_at: new Date().toISOString() });
     setSaving(null);
-    if (error) return toast({ title: "Save failed", description: error.message, variant: "destructive" });
+    if (error) {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      return false;
+    }
     publishFeatureFlag(key, parsed);
     toast({ title: `Saved ${key}` });
-    load();
+    await load();
+    return true;
   }
 
   return (
@@ -70,7 +74,7 @@ export default function AdminSettings() {
             <QrUploadCard
               key={r.key}
               value={typeof r.value === "string" ? r.value : ""}
-              onSave={(k, v) => saveOne(k, v)}
+              onSave={saveOne}
               saving={saving === r.key}
             />
           ) : (

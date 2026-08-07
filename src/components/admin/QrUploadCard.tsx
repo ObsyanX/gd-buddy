@@ -21,7 +21,7 @@ export function QrUploadCard({
   saving,
 }: {
   value: string;
-  onSave: (key: string, jsonValue: string) => void;
+  onSave: (key: string, jsonValue: string) => Promise<boolean>;
   saving: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -96,7 +96,8 @@ export function QrUploadCard({
       if (uploadError) throw uploadError;
       const { data } = supabase.storage.from("avatars").getPublicUrl(path);
       if (!data.publicUrl) throw new Error("The uploaded QR URL could not be created.");
-      onSave("support.upi_qr_url", JSON.stringify(data.publicUrl));
+      const saved = await onSave("support.upi_qr_url", JSON.stringify(data.publicUrl));
+      if (!saved) throw new Error("The QR image uploaded, but its setting could not be saved. Please retry.");
       URL.revokeObjectURL(source.url);
       setSource(null);
     } catch (e) {
@@ -147,7 +148,7 @@ export function QrUploadCard({
               size="sm"
               variant="outline"
               disabled={busy || saving}
-              onClick={() => onSave("support.upi_qr_url", JSON.stringify(""))}
+               onClick={() => void onSave("support.upi_qr_url", JSON.stringify(""))}
             >
               <Trash2 className="h-4 w-4 mr-1.5" />
               Remove
