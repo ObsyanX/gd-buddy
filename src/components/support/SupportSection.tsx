@@ -75,25 +75,32 @@ export function SupportSection({ compact = false }: { compact?: boolean }) {
               {customQr ? (
                 <img
                   src={customQr}
-                  alt="Payment QR code"
+                  alt="GD Buddy payment QR code for UPI contributions"
                   width={132}
                   height={132}
                   loading="lazy"
                   className="h-[132px] w-[132px] object-contain"
                 />
               ) : (
-                <QRCodeSVG value={upiUrl!} size={132} includeMargin={false} aria-label="UPI payment QR code" />
+                <QRCodeSVG value={upiUrl!} size={132} includeMargin={false} role="img" aria-label="GD Buddy payment QR code for UPI contributions" />
               )}
             </div>
             <div className="text-left">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Scan to pay via UPI</p>
               {upiId && <p className="mt-1 font-mono text-sm break-all">{upiId}</p>}
               {upiId && (
-                <Button variant="outline" size="sm" className="mt-2" onClick={copyUpi}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 min-h-11"
+                  onClick={copyUpi}
+                  aria-label={copied ? "UPI ID copied" : "Copy GD Buddy UPI ID to clipboard"}
+                >
                   {copied ? <Check className="h-4 w-4 mr-1.5" /> : <Copy className="h-4 w-4 mr-1.5" />}
                   {copied ? "Copied" : "Copy UPI ID"}
                 </Button>
               )}
+              <span className="sr-only" aria-live="polite">{copied ? "UPI ID copied to clipboard" : ""}</span>
             </div>
           </div>
         )}
