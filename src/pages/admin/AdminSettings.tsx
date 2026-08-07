@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { QrUploadCard } from "@/components/admin/QrUploadCard";
 
 interface Flag { key: string; value: unknown; }
 
