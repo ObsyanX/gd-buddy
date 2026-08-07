@@ -23,7 +23,7 @@ const DEFAULT_FLAGS = [
   { key: "support.kofi_handle", value: "", desc: "Ko-fi handle for the reader-support section (empty = hidden)." },
   { key: "support.buymeacoffee_handle", value: "", desc: "Buy Me a Coffee handle." },
   { key: "support.patreon_handle", value: "", desc: "Patreon handle." },
-  { key: "support.upi_id", value: "", desc: "UPI ID for direct India-friendly tipping." },
+  { key: "support.upi_id", value: "duttasayan947595-2@oksbi", desc: "UPI ID for direct India-friendly tipping (also renders a scannable QR code)." },
   { key: "articles.autosave_ms", value: 30000, desc: "Article editor autosave interval (ms)." },
   { key: "comments.require_moderation", value: true, desc: "Hold new comments until an admin approves." },
 ];
