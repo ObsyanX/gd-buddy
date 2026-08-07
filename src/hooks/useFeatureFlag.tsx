@@ -35,3 +35,9 @@ export function useFeatureFlag<T = unknown>(key: string, fallback: T): T {
 export function invalidateFeatureFlag(key: string) {
   cache.delete(key);
 }
+
+/** Update the in-memory flag immediately after an admin save. */
+export function publishFeatureFlag(key: string, value: unknown) {
+  cache.set(key, value);
+  listeners.get(key)?.forEach((listener) => listener(value));
+}

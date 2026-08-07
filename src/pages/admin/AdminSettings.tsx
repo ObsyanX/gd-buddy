@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { QrUploadCard } from "@/components/admin/QrUploadCard";
+import { publishFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface Flag { key: string; value: unknown; }
 
@@ -51,6 +52,7 @@ export default function AdminSettings() {
     const { error } = await (supabase.from("admin_settings") as any).upsert({ key, value: parsed, updated_at: new Date().toISOString() });
     setSaving(null);
     if (error) return toast({ title: "Save failed", description: error.message, variant: "destructive" });
+    publishFeatureFlag(key, parsed);
     toast({ title: `Saved ${key}` });
     load();
   }
