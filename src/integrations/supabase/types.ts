@@ -4165,6 +4165,16 @@ export type Database = {
       delete_user_data: { Args: { _user_id: string }; Returns: undefined }
       expire_stale_turns: { Args: never; Returns: number }
       export_user_data: { Args: { _user_id: string }; Returns: Json }
+      find_session_by_code: {
+        Args: { _room_code: string }
+        Returns: {
+          id: string
+          is_multiplayer: boolean
+          room_code: string
+          status: Database["public"]["Enums"]["discussion_status"]
+          topic: string
+        }[]
+      }
       get_feature_flag: { Args: { _key: string }; Returns: Json }
       has_role: {
         Args: {
