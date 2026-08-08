@@ -178,6 +178,7 @@ async function callGroq(body: AIRequestBody, apiKey: string): Promise<Response> 
 export async function callAI(body: AIRequestBody): Promise<AIResponse> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+  const fnName = inferFunctionName();
 
   let lovableStatus = 0;
   let lovableErrorText = "";
@@ -192,8 +193,10 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
       if (response.ok) {
         const json = await response.json();
         json._provider = "lovable";
+        await recordUsage(json as AIResponse, body.model ?? "", "lovable", fnName);
         return json as AIResponse;
       }
+
 
       lovableErrorText = await response.text();
       console.warn(
