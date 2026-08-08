@@ -231,7 +231,7 @@ export const KPI_SPECS = {
   pagesPerSession: { title: "Pages per session", table: "visitor_sessions", dateField: "first_seen", avgField: "page_count", precision: 2, href: "/home/admin/performance" },
 
   avgAiScore: { title: "Average AI content score", table: "gd_metrics", dateField: "created_at", avgField: "content_score", href: "/home/admin/sessions" },
-  aiEvaluations: { title: "AI evaluations", table: "ai_costs", dateField: "created_at", href: "/home/admin/intelligence" },
+  aiEvaluations: { title: "AI evaluations", table: "gd_metrics", dateField: "created_at", href: "/home/admin/intelligence" },
 
   activeAds: { title: "Ad impressions (active ads)", table: "ad_impressions", dateField: "created_at", href: "/home/admin/ads?status=active" },
   adImpressions: { title: "Ad impressions", table: "ad_impressions", dateField: "created_at", href: "/home/admin/ads" },
