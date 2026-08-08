@@ -47,19 +47,13 @@ const MultiplayerLobby = ({
     setIsJoining(true);
     try {
       const normalizedCode = joinCode.toUpperCase().trim();
-      console.log('Searching for room with code:', normalizedCode);
-
-      // Find session by room code
-      const { data: sessions, error: sessionError } = await supabase.
-      from('gd_sessions').
-      select('*').
-      eq('room_code', normalizedCode).
-      eq('is_multiplayer', true);
-
-      console.log('Session search result:', sessions, sessionError);
+      // Look up the session through a code-scoped RPC so open rooms cannot be enumerated.
+      const { data: sessions, error: sessionError } = await supabase.rpc('find_session_by_code', {
+        _room_code: normalizedCode
+      });
 
       if (sessionError) {
-        console.error('Session query error:', sessionError);
+        console.error('Session lookup error:', sessionError);
         throw new Error('Could not search for room. Please try again.');
       }
       if (!sessions || sessions.length === 0) {
@@ -67,9 +61,6 @@ const MultiplayerLobby = ({
       }
 
       const session = sessions[0];
-      if (session.status === 'completed') {
-        throw new Error('This session has already ended.');
-      }
 
       // Check if already joined
       const { data: existingParticipant } = await supabase.
