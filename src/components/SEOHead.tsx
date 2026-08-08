@@ -66,7 +66,7 @@ const SEOHead = ({
       <meta name="keywords" content={keywords} />
       <link rel="canonical" href={canonicalUrl} />
 
-      {noindex ? (
+      {blockIndexing ? (
         <meta name="robots" content="noindex, nofollow" />
       ) : (
         <meta name="robots" content="index, follow" />
