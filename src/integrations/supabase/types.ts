@@ -4187,6 +4187,10 @@ export type Database = {
       increment_article_share: { Args: { _slug: string }; Returns: undefined }
       increment_article_view: { Args: { _slug: string }; Returns: undefined }
       is_joinable_session: { Args: { _session_id: string }; Returns: boolean }
+      log_login_event: {
+        Args: { _reason?: string; _success: boolean; _user_agent?: string }
+        Returns: undefined
+      }
       migrate_session_host: {
         Args: { _idle_seconds?: number; _session_id: string }
         Returns: Json
