@@ -14,6 +14,7 @@ import { MessageSquare, Loader2, AlertCircle, RefreshCw, X } from "lucide-react"
 import { z } from "zod";
 import { Link } from "react-router-dom";
 import SEOFooter from "@/components/SEOFooter";
+import SEOHead from "@/components/SEOHead";
 import { Skeleton } from "@/components/ui/skeleton";
 import { mapAuthError, logAuthError, type MappedAuthError } from "@/lib/auth-errors";
 
