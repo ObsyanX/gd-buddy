@@ -240,7 +240,9 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
     if (response.ok) {
       const json = await response.json();
       json._provider = "groq";
+      await recordUsage(json as AIResponse, mapToGroqModel(body.model ?? ""), "groq", fnName);
       return json as AIResponse;
+
     }
     const groqErrorText = await response.text();
     console.error(
