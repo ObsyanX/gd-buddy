@@ -23,9 +23,31 @@ export default function Blog() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
-      <SEOHead title="Blog · GD Buddy" description="Interview tips, GD strategy, and communication guides from GD Buddy." />
+      <SEOHead
+        title="Blog · GD Buddy"
+        description="In-depth group discussion guides: how to open and close a GD, body language, common mistakes, and how to practice GD rounds with AI."
+        path="/blog"
+      />
       <h1 className="text-3xl font-bold mb-2">GD Buddy Blog</h1>
-      <p className="text-muted-foreground mb-8">Interview tips, GD strategy, and career guides.</p>
+      <p className="text-muted-foreground mb-6 max-w-3xl">
+        Practical, placement-focused writing on group discussions. Every guide below is
+        written from what actually decides GD rounds — how you open, how much air time you
+        take, how you handle interruptions, and how you close with a summary the panel
+        remembers.
+      </p>
+      <div className="mb-8 max-w-3xl space-y-3 text-sm text-muted-foreground">
+        <p>
+          <strong className="text-foreground">New to GD rounds?</strong> Start with the
+          preparation guide, then read the opening and closing playbooks. Those three cover
+          the moments panellists score hardest.
+        </p>
+        <p>
+          <strong className="text-foreground">Already practising?</strong> Work through the
+          common-mistakes and body-language guides, then run a simulated discussion with AI
+          participants to test the habits under time pressure.
+        </p>
+      </div>
+
 
       <AdSlot placement="blog.top_banner" className="mb-8" />
 

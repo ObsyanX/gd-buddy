@@ -85,13 +85,6 @@
     <priority>0.5</priority>
   </url>
 
-  <url>
-    <loc>https://gd-buddy.vercel.app/auth</loc>
-    <lastmod>2026-03-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
   <!-- Blog and editorial articles -->
   <url>
     <loc>https://gd-buddy.vercel.app/blog</loc>
