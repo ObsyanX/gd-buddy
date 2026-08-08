@@ -15,12 +15,20 @@ const BASE_TITLE = "GD Buddy";
 const DEFAULT_DESC = "Practice group discussions with AI, get instant feedback, improve communication skills, and crack placement GD rounds.";
 const DEFAULT_KEYWORDS = "group discussion buddy, group discussion practice, GD practice online, AI group discussion practice, GD simulator for placements, group discussion preparation, GD preparation, AI GD simulator, placement preparation tool, communication skills for GD, group discussion simulator";
 
-const getCanonicalBase = () => {
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
-  return "https://gd-buddy.vercel.app";
-};
+/**
+ * The single public production host. Canonicals must ALWAYS point here —
+ * the app is also reachable on preview/staging hosts, and letting those
+ * self-canonicalise created duplicate copies of every page (a common
+ * AdSense "insufficient / duplicated content" rejection trigger).
+ */
+export const SITE_URL = "https://gd-buddy.vercel.app";
+
+const PRIMARY_HOSTS = ["gd-buddy.vercel.app"];
+
+/** True on preview/staging hosts, which must never be indexed. */
+const isNonPrimaryHost = () =>
+  typeof window !== "undefined" && !PRIMARY_HOSTS.includes(window.location.hostname);
+
 
 const SEOHead = ({
   title,
