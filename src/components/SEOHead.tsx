@@ -40,7 +40,8 @@ const SEOHead = ({
   image,
   jsonLd,
 }: SEOHeadProps) => {
-  const base = getCanonicalBase();
+  const base = SITE_URL;
+  const blockIndexing = noindex || isNonPrimaryHost();
   const fullTitle = title ? `${title} | ${BASE_TITLE}` : `${BASE_TITLE} – AI Group Discussion Practice for Placements`;
   const canonicalUrl = `${base}${path}`;
   const ogImage = image || `${base}/og-image.png`;
