@@ -16,6 +16,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Records sign-in outcomes so admin analytics reflect real login volume.
+async function recordLogin(success: boolean, reason?: string) {
+  try {
+    await supabase.rpc('log_login_event', {
+      _success: success,
+      _reason: reason ?? null,
+      _user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    });
+  } catch {
+    /* analytics must never block auth */
+  }
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -24,13 +37,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
         // Load experiments when user authenticates
         if (session?.user) {
           useExperimentStore.getState().loadExperiments(session.user.id);
+        }
+        // Log one success per real sign-in (token refreshes and tab focus re-emit
+        // SIGNED_IN with the same access token, so dedupe on it).
+        if (event === 'SIGNED_IN' && session?.access_token) {
+          const key = `login-logged:${session.access_token.slice(-24)}`;
+          if (!sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, '1');
+            setTimeout(() => recordLogin(true), 0);
+          }
         }
       }
     );
@@ -58,6 +80,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     });
+    if (error) void recordLogin(false, `signup: ${error.message}`);
     return { error };
   };
 
@@ -66,6 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       email,
       password,
     });
+    if (error) void recordLogin(false, error.message);
     return { error };
   };
 

@@ -188,7 +188,8 @@ export default function AdminAnalytics() {
         completedSessions: gdDone.count ?? 0,
         avgSessionTime: 0,
         avgAiScore: Math.round(avgAi),
-        totalAiEvals: ai.count ?? 0,
+        // AI evaluations are the scored discussion metrics rows, not billing rows.
+        totalAiEvals: gdMetrics.length,
         totalFeedback: feedback.count ?? 0,
         articleViews: (articles.data ?? []).reduce((s, r) => s + (r.view_count || 0), 0),
         activeAds: adsActive.count ?? 0,

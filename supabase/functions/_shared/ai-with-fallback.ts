@@ -55,8 +55,82 @@ export interface AIResponse {
       }>;
     };
   }>;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
   _provider?: "lovable" | "groq";
 }
+
+// Best-effort name of the edge function that issued the call, inferred from the
+// stack so existing call sites need no changes.
+function inferFunctionName(): string {
+  const stack = new Error().stack ?? "";
+  const m = stack.match(/functions\/([a-z0-9-_]+)\/[a-z0-9-_.]+\.ts/i);
+  return m?.[1] ?? "unknown";
+}
+
+// Rough per-million-token pricing used only for dashboard estimates.
+function estimateCostUsd(model: string, inTok: number, outTok: number): number {
+  const m = (model || "").toLowerCase();
+  const rate = m.includes("pro") ? { i: 1.25, o: 5 } : { i: 0.1, o: 0.4 };
+  return (inTok / 1e6) * rate.i + (outTok / 1e6) * rate.o;
+}
+
+async function recordUsage(
+  json: AIResponse,
+  model: string,
+  provider: "lovable" | "groq",
+  functionName: string,
+) {
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) return;
+
+    const inTok = json.usage?.prompt_tokens ?? 0;
+    const outTok = json.usage?.completion_tokens ?? 0;
+    const cost = estimateCostUsd(model, inTok, outTok);
+    const headers = {
+      "Content-Type": "application/json",
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      Prefer: "return=minimal",
+    };
+
+    await Promise.all([
+      fetch(`${url}/rest/v1/ai_costs`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          function_name: functionName,
+          model_id: model,
+          input_tokens: inTok,
+          output_tokens: outTok,
+          cost_estimate: cost,
+          metadata: { provider },
+        }),
+      }),
+      fetch(`${url}/rest/v1/token_usage`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          function_name: functionName,
+          model,
+          input_tokens: inTok,
+          output_tokens: outTok,
+          cached: false,
+          cost_estimate: cost,
+        }),
+      }),
+    ]);
+  } catch (e) {
+    console.warn("[ai-fallback] usage logging failed:", (e as Error).message);
+  }
+}
+
+
 
 // Errors that the caller may want to handle distinctly even after fallback fails.
 export class AIProviderError extends Error {
@@ -104,6 +178,7 @@ async function callGroq(body: AIRequestBody, apiKey: string): Promise<Response> 
 export async function callAI(body: AIRequestBody): Promise<AIResponse> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+  const fnName = inferFunctionName();
 
   let lovableStatus = 0;
   let lovableErrorText = "";
@@ -118,8 +193,10 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
       if (response.ok) {
         const json = await response.json();
         json._provider = "lovable";
+        await recordUsage(json as AIResponse, body.model ?? "", "lovable", fnName);
         return json as AIResponse;
       }
+
 
       lovableErrorText = await response.text();
       console.warn(
@@ -163,7 +240,9 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
     if (response.ok) {
       const json = await response.json();
       json._provider = "groq";
+      await recordUsage(json as AIResponse, mapToGroqModel(body.model ?? ""), "groq", fnName);
       return json as AIResponse;
+
     }
     const groqErrorText = await response.text();
     console.error(
