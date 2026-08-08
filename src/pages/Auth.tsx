@@ -261,6 +261,13 @@ const Auth = () => {
 
   return (
     <div className="min-h-dvh flex flex-col relative overflow-hidden">
+      {/* Sign-in is a utility page with no editorial content — keep it out of the index. */}
+      <SEOHead
+        title="Sign in"
+        description="Sign in or create a free GD Buddy account to practice group discussions with AI."
+        path="/auth"
+        noindex
+      />
       {/* Ambient orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10" aria-hidden="true">
         <div className="ambient-orb w-[60vw] h-[60vw] -top-[20%] -left-[10%]" style={{ background: "hsl(29 60% 45% / 0.5)" }} />
