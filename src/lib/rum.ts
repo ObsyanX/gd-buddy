@@ -3,6 +3,8 @@
 import { onLCP, onINP, onCLS, onFCP, onTTFB, type Metric } from "web-vitals";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/analytics/visitor-id";
+import { isRumSampled } from "@/lib/analytics/sampling";
+
 import { collectDependencyEvidence } from "@/lib/security/dependency-evidence";
 
 /** One-shot: log resolved versions of security-critical transitive packages. */
@@ -41,11 +43,16 @@ export function startRUM() {
   started = true;
   logDependencyEvidence();
 
-
   const device = detectDevice();
   const visitor_id = getVisitorId();
+
+  // Telemetry-only sampling: keeps web_vitals_events growth flat without
+  // touching user data, sessions or auth events.
+  if (!isRumSampled(visitor_id)) return;
+
   const path = location.pathname;
   const ua = navigator.userAgent;
+
 
   const send = (m: Metric) => {
     const row = {
