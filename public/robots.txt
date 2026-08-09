@@ -1,8 +1,38 @@
-User-agent: *
+User-agent: Googlebot
 Allow: /
-
+Disallow: /auth
+Disallow: /auth/
 Disallow: /home
 Disallow: /home/
-Disallow: /auth/reset-password
+Disallow: /adsense-test
+Disallow: /p/
+Disallow: /r/
+Disallow: /i/
+Disallow: /join/
+Disallow: /*?*
+
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: AdsBot-Google
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+Disallow: /auth
+Disallow: /home/
+Disallow: /adsense-test
+
+User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /auth/
+Disallow: /home
+Disallow: /home/
+Disallow: /adsense-test
+Disallow: /p/
+Disallow: /r/
+Disallow: /i/
+Disallow: /join/
 
 Sitemap: https://gd-buddy.vercel.app/sitemap.xml
