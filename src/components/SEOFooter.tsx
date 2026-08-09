@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Github, Linkedin, Mail, MessageSquare } from "lucide-react";
 import { SupportSection } from "@/components/support/SupportSection";
+import { AdsPrivacyNotice } from "@/components/legal/AdsPrivacyNotice";
 
 const SEOFooter = () => (
   <footer className="relative z-10 py-12 px-4 md:px-6 mt-16" role="contentinfo">
