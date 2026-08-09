@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Github, Linkedin, Mail, MessageSquare } from "lucide-react";
 import { SupportSection } from "@/components/support/SupportSection";
+import { AdsPrivacyNotice } from "@/components/legal/AdsPrivacyNotice";
 
 const SEOFooter = () => (
   <footer className="relative z-10 py-12 px-4 md:px-6 mt-16" role="contentinfo">
@@ -78,7 +79,10 @@ const SEOFooter = () => (
           </nav>
         </div>
 
-        <div className="pt-6 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-3">
+        <AdsPrivacyNotice />
+
+        <div className="pt-6 mt-6 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-3">
+
           <p className="text-micro text-muted-foreground">© {new Date().getFullYear()} GD Buddy · Rehearsal, refined.</p>
           <p className="text-micro text-muted-foreground italic-accent">Editorial group discussion practice.</p>
         </div>
