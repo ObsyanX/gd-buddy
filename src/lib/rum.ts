@@ -3,6 +3,8 @@
 import { onLCP, onINP, onCLS, onFCP, onTTFB, type Metric } from "web-vitals";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/analytics/visitor-id";
+import { isRumSampled, RUM_SAMPLE_RATE } from "@/lib/analytics/sampling";
+
 import { collectDependencyEvidence } from "@/lib/security/dependency-evidence";
 
 /** One-shot: log resolved versions of security-critical transitive packages. */
