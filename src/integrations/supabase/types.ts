@@ -4199,6 +4199,7 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
+      prune_telemetry_data: { Args: never; Returns: Json }
       related_articles: {
         Args: { _article_id: string; _limit?: number }
         Returns: {
