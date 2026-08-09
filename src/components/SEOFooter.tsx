@@ -79,7 +79,10 @@ const SEOFooter = () => (
           </nav>
         </div>
 
-        <div className="pt-6 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-3">
+        <AdsPrivacyNotice />
+
+        <div className="pt-6 mt-6 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-3">
+
           <p className="text-micro text-muted-foreground">© {new Date().getFullYear()} GD Buddy · Rehearsal, refined.</p>
           <p className="text-micro text-muted-foreground italic-accent">Editorial group discussion practice.</p>
         </div>
