@@ -41,11 +41,16 @@ export function startRUM() {
   started = true;
   logDependencyEvidence();
 
-
   const device = detectDevice();
   const visitor_id = getVisitorId();
+
+  // Telemetry-only sampling: keeps web_vitals_events growth flat without
+  // touching user data, sessions or auth events.
+  if (!isRumSampled(visitor_id)) return;
+
   const path = location.pathname;
   const ua = navigator.userAgent;
+
 
   const send = (m: Metric) => {
     const row = {
