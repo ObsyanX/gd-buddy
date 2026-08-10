@@ -113,6 +113,7 @@ const AdminEdgeErrors = lazy(() => import("./pages/admin/AdminEdgeErrors"), "Adm
 const AdminIncidents = lazy(() => import("./pages/admin/AdminIncidents"), "AdminIncidents");
 const AdminAuthErrors = lazy(() => import("./pages/admin/AdminAuthErrors"), "AdminAuthErrors");
 const AdminPerformance = lazy(() => import("./pages/admin/AdminPerformance"), "AdminPerformance");
+const AdminTelemetry = lazy(() => import("./pages/admin/AdminTelemetry"), "AdminTelemetry");
 const AdminShareAnalytics = lazy(() => import("./pages/admin/AdminShareAnalytics"), "AdminShareAnalytics");
 const AdminShareDrilldown = lazy(() => import("./pages/admin/AdminShareDrilldown"), "AdminShareDrilldown");
 
