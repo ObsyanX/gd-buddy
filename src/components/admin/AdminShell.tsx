@@ -34,6 +34,7 @@ const NAV: NavItem[] = [
   { to: "/home/admin/edge-errors", label: "Edge errors",   icon: AlertTriangle,   allow: ["admin"] },
   { to: "/home/admin/auth-errors", label: "Auth errors",   icon: ShieldAlert,     allow: ["admin"] },
   { to: "/home/admin/performance", label: "Performance",   icon: Gauge,           allow: ["admin", "analyst"] },
+  { to: "/home/admin/telemetry",  label: "Telemetry",      icon: Activity,        allow: ["admin"] },
   { to: "/home/admin/shares",     label: "Share analytics", icon: Share2,          allow: ["admin", "analyst"] },
   { to: "/home/admin/audit",      label: "Audit log",      icon: ShieldCheck,     allow: ["admin"] },
   { to: "/home/admin/settings",   label: "Settings",       icon: Settings,        allow: ["admin"] },
