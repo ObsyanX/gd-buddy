@@ -3364,6 +3364,45 @@ export type Database = {
         }
         Relationships: []
       }
+      rum_sampling_checks: {
+        Row: {
+          created_at: string
+          delta_pct: number | null
+          id: string
+          metric: string
+          n_all: number
+          n_sampled: number
+          p75_all: number | null
+          p75_sampled: number | null
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          delta_pct?: number | null
+          id?: string
+          metric: string
+          n_all?: number
+          n_sampled?: number
+          p75_all?: number | null
+          p75_sampled?: number | null
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          created_at?: string
+          delta_pct?: number | null
+          id?: string
+          metric?: string
+          n_all?: number
+          n_sampled?: number
+          p75_all?: number | null
+          p75_sampled?: number | null
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       safety_incidents: {
         Row: {
           created_at: string
@@ -3813,6 +3852,48 @@ export type Database = {
           },
         ]
       }
+      telemetry_prune_runs: {
+        Row: {
+          affected: Json
+          created_at: string
+          dry_run: boolean
+          duration_ms: number | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          skipped: boolean
+          started_at: string
+          total_rows: number
+          triggered_by: string
+        }
+        Insert: {
+          affected?: Json
+          created_at?: string
+          dry_run?: boolean
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          skipped?: boolean
+          started_at?: string
+          total_rows?: number
+          triggered_by?: string
+        }
+        Update: {
+          affected?: Json
+          created_at?: string
+          dry_run?: boolean
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          skipped?: boolean
+          started_at?: string
+          total_rows?: number
+          triggered_by?: string
+        }
+        Relationships: []
+      }
       token_usage: {
         Row: {
           cached: boolean | null
@@ -4110,10 +4191,12 @@ export type Database = {
           created_at: string
           device: string | null
           id: string
+          in_sample: boolean
           metric: string
           navigation_type: string | null
           path: string
           rating: string | null
+          sample_rate: number
           user_agent: string | null
           user_id: string | null
           value: number
@@ -4124,10 +4207,12 @@ export type Database = {
           created_at?: string
           device?: string | null
           id?: string
+          in_sample?: boolean
           metric: string
           navigation_type?: string | null
           path?: string
           rating?: string | null
+          sample_rate?: number
           user_agent?: string | null
           user_id?: string | null
           value: number
@@ -4138,10 +4223,12 @@ export type Database = {
           created_at?: string
           device?: string | null
           id?: string
+          in_sample?: boolean
           metric?: string
           navigation_type?: string | null
           path?: string
           rating?: string | null
+          sample_rate?: number
           user_agent?: string | null
           user_id?: string | null
           value?: number
@@ -4154,6 +4241,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_run_rum_sampling_check: {
+        Args: { _hours?: number }
+        Returns: {
+          created_at: string
+          delta_pct: number | null
+          id: string
+          metric: string
+          n_all: number
+          n_sampled: number
+          p75_all: number | null
+          p75_sampled: number | null
+          window_end: string
+          window_start: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "rum_sampling_checks"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       can_access_session: {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
@@ -4199,7 +4307,12 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
-      prune_telemetry_data: { Args: never; Returns: Json }
+      prune_telemetry_data:
+        | { Args: never; Returns: Json }
+        | {
+            Args: { _dry_run?: boolean; _triggered_by?: string }
+            Returns: Json
+          }
       related_articles: {
         Args: { _article_id: string; _limit?: number }
         Returns: {
@@ -4240,6 +4353,36 @@ export type Database = {
       request_mic: {
         Args: { _kind?: string; _session_id: string; _source?: string }
         Returns: Json
+      }
+      run_rum_sampling_check: {
+        Args: { _hours?: number }
+        Returns: {
+          created_at: string
+          delta_pct: number | null
+          id: string
+          metric: string
+          n_all: number
+          n_sampled: number
+          p75_all: number | null
+          p75_sampled: number | null
+          window_end: string
+          window_start: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "rum_sampling_checks"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      telemetry_prune_dry_run: { Args: never; Returns: Json }
+      telemetry_table_volumes: {
+        Args: never
+        Returns: {
+          row_estimate: number
+          table_name: string
+          total_bytes: number
+        }[]
       }
     }
     Enums: {
