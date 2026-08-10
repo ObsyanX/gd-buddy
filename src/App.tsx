@@ -281,6 +281,8 @@ const App = () => (
                   <Route path="edge-errors" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminEdgeErrors /></Suspense></RouteBoundary>} />
                   <Route path="auth-errors" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminAuthErrors /></Suspense></RouteBoundary>} />
                   <Route path="performance" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminPerformance /></Suspense></RouteBoundary>} />
+                  <Route path="telemetry" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminTelemetry /></Suspense></RouteBoundary>} />
+
                   <Route path="shares" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminShareAnalytics /></Suspense></RouteBoundary>} />
                   <Route path="shares/:target" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminShareDrilldown /></Suspense></RouteBoundary>} />
                 </Route>
