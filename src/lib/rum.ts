@@ -3,7 +3,7 @@
 import { onLCP, onINP, onCLS, onFCP, onTTFB, type Metric } from "web-vitals";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/analytics/visitor-id";
-import { isRumSampled } from "@/lib/analytics/sampling";
+import { isRumSampled, loadRumSamplingConfig } from "@/lib/analytics/sampling";
 
 import { collectDependencyEvidence } from "@/lib/security/dependency-evidence";
 
