@@ -3,7 +3,7 @@
 import { onLCP, onINP, onCLS, onFCP, onTTFB, type Metric } from "web-vitals";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/analytics/visitor-id";
-import { isRumSampled } from "@/lib/analytics/sampling";
+import { isRumSampled, loadRumSamplingConfig } from "@/lib/analytics/sampling";
 
 import { collectDependencyEvidence } from "@/lib/security/dependency-evidence";
 
@@ -45,56 +45,61 @@ export function startRUM() {
 
   const device = detectDevice();
   const visitor_id = getVisitorId();
-
-  // Telemetry-only sampling: keeps web_vitals_events growth flat without
-  // touching user data, sessions or auth events.
-  if (!isRumSampled(visitor_id)) return;
-
   const path = location.pathname;
   const ua = navigator.userAgent;
 
+  // Telemetry-only sampling: keeps web_vitals_events growth flat without
+  // touching user data, sessions or auth events. Runtime flags allow an
+  // instant rollback (sampling off ⇒ full capture) and a calibration window
+  // where everything is recorded but tagged, so accuracy can be verified.
+  void loadRumSamplingConfig().then((cfg) => {
+    const inSample = isRumSampled(visitor_id, cfg.rate);
+    if (!inSample && !cfg.calibrating) return;
 
-  const send = (m: Metric) => {
-    const row = {
-      visitor_id,
-      path,
-      metric: m.name,
-      value: m.value,
-      rating: m.rating,
-      device,
-      adsense_loaded: isAdsenseLoaded(),
-      navigation_type: m.navigationType,
-      user_agent: ua,
-    };
-    // fire-and-forget; use sendBeacon on unload metrics when possible.
-    try {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/web_vitals_events`;
-      const blob = new Blob([JSON.stringify(row)], { type: "application/json" });
-      const anon = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      if (navigator.sendBeacon && anon) {
-        // sendBeacon can't set custom headers; fall back to fetch keepalive.
-        fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: anon,
-            Authorization: `Bearer ${anon}`,
-            Prefer: "return=minimal",
-          },
-          body: blob,
-          keepalive: true,
-        }).catch(() => void 0);
-      } else {
-        void supabase.from("web_vitals_events").insert(row as never);
+    const send = (m: Metric) => {
+      const row = {
+        visitor_id,
+        path,
+        metric: m.name,
+        value: m.value,
+        rating: m.rating,
+        device,
+        adsense_loaded: isAdsenseLoaded(),
+        navigation_type: m.navigationType,
+        user_agent: ua,
+        in_sample: inSample,
+        sample_rate: cfg.rate,
+      };
+      // fire-and-forget; use sendBeacon on unload metrics when possible.
+      try {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/web_vitals_events`;
+        const blob = new Blob([JSON.stringify(row)], { type: "application/json" });
+        const anon = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        if (navigator.sendBeacon && anon) {
+          // sendBeacon can't set custom headers; fall back to fetch keepalive.
+          fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: anon,
+              Authorization: `Bearer ${anon}`,
+              Prefer: "return=minimal",
+            },
+            body: blob,
+            keepalive: true,
+          }).catch(() => void 0);
+        } else {
+          void supabase.from("web_vitals_events").insert(row as never);
+        }
+      } catch {
+        /* never break UX */
       }
-    } catch {
-      /* never break UX */
-    }
-  };
+    };
 
-  onLCP(send);
-  onINP(send);
-  onCLS(send);
-  onFCP(send);
-  onTTFB(send);
+    onLCP(send);
+    onINP(send);
+    onCLS(send);
+    onFCP(send);
+    onTTFB(send);
+  });
 }
