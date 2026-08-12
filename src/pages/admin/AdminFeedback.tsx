@@ -49,11 +49,18 @@ export default function AdminFeedback() {
     setRows(list);
     const ids = [...new Set(list.map((r) => r.user_id))];
     if (ids.length) {
-      const { data: profs } = await supabase.from("profiles").select("id, display_name, email").in("id", ids);
+      const { data: profs } = await supabase.from("profiles").select("id, display_name").in("id", ids);
+      // Emails are admin-only and fetched through a security-definer RPC.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: emailRows } = await (supabase as any).rpc("admin_profile_emails", { _ids: ids });
+      const emailMap = new Map<string, string | null>();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (emailRows as any[] | null)?.forEach((r) => emailMap.set(r.id, r.email));
       const map: Record<string, { name: string | null; email: string | null }> = {};
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (profs as any[] | null)?.forEach((p) => { map[p.id] = { name: p.display_name, email: p.email }; });
+      (profs as any[] | null)?.forEach((p) => { map[p.id] = { name: p.display_name, email: emailMap.get(p.id) ?? null }; });
       setPeople(map);
+
     }
     setLoading(false);
   }, []);
