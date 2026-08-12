@@ -128,10 +128,10 @@ export default function AdminUsers() {
 
         let query = supabase
           .from("profiles")
-          .select("id, display_name, email, avatar_url, created_at", { count: "exact" })
+          .select("id, display_name, avatar_url, created_at", { count: "exact" })
           .order(sortKey, { ascending: sortDir === "asc", nullsFirst: false })
           .range(page * USERS_PAGE_SIZE, page * USERS_PAGE_SIZE + USERS_PAGE_SIZE - 1);
-        if (qDebounced) query = query.or(`display_name.ilike.%${qDebounced}%,email.ilike.%${qDebounced}%,id.eq.${/^[0-9a-f-]{8,}$/i.test(qDebounced) ? qDebounced : "00000000-0000-0000-0000-000000000000"}`);
+        if (qDebounced) query = query.or(`display_name.ilike.%${qDebounced}%,id.eq.${/^[0-9a-f-]{8,}$/i.test(qDebounced) ? qDebounced : "00000000-0000-0000-0000-000000000000"}`);
         if (rangeDays) {
           const since = new Date(Date.now() - rangeDays * 86400_000).toISOString();
           query = query.gte("created_at", since);
@@ -145,6 +145,14 @@ export default function AdminUsers() {
         const { data: roles } = ids.length
           ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
           : { data: [] as { user_id: string; role: AppRole }[] };
+        // Emails are admin-only and fetched through a security-definer RPC.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: emailRows } = ids.length
+          ? await (supabase as any).rpc("admin_profile_emails", { _ids: ids })
+          : { data: [] as { id: string; email: string | null }[] };
+        const emailMap = new Map<string, string | null>();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (emailRows ?? []).forEach((r: any) => emailMap.set(r.id, r.email));
         const map = new Map<string, AppRole[]>();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (roles ?? []).forEach((r: any) => {
@@ -152,7 +160,8 @@ export default function AdminUsers() {
           arr.push(r.role as AppRole); map.set(r.user_id, arr);
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setRows(((profiles as any[]) ?? []).map((p) => ({ ...p, roles: map.get(p.id) ?? ["user"] })));
+        setRows(((profiles as any[]) ?? []).map((p) => ({ ...p, email: emailMap.get(p.id) ?? null, roles: map.get(p.id) ?? ["user"] })));
+
         setTotal(count ?? 0);
       })()]);
     } catch (e) {
