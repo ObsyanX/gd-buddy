@@ -4241,6 +4241,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_profile_emails: {
+        Args: { _ids: string[] }
+        Returns: {
+          email: string
+          id: string
+        }[]
+      }
       admin_run_rum_sampling_check: {
         Args: { _hours?: number }
         Returns: {
@@ -4284,6 +4291,7 @@ export type Database = {
         }[]
       }
       get_feature_flag: { Args: { _key: string }; Returns: Json }
+      get_my_email: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
