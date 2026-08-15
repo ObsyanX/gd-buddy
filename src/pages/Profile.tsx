@@ -40,7 +40,7 @@ const Profile = () => {
     if (!user) return;
     try {
       const [profRes, achRes, allAchRes, sessRes, fbRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+        supabase.from('profiles').select('id, display_name, avatar_url, created_at, updated_at, xp, level, bio').eq('id', user.id).maybeSingle(),
         supabase.from('user_achievements').select('*, achievements(*)').eq('user_id', user.id).order('earned_at', { ascending: false }),
         supabase.from('achievements').select('*').order('xp_reward'),
         supabase.from('gd_sessions').select('id, topic, status, created_at, is_multiplayer').or(`user_id.eq.${user.id},host_user_id.eq.${user.id}`).order('created_at', { ascending: false }).limit(10),
