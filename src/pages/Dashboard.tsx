@@ -40,7 +40,7 @@ const Dashboard = () => {
       // Load profile
       const { data: profileData } = await supabase.
       from('profiles').
-      select('*').
+      select('id, display_name, avatar_url, created_at, updated_at, xp, level, bio').
       eq('id', user?.id).
       single();
       setProfile(profileData);

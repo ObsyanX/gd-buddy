@@ -118,15 +118,15 @@ const Admin = () => {
     const [profRes, sessRes, fbRes, errRes,
            usersTotal, sessionsTotal, feedbackTotal, errorsTotal,
            activeUsersCnt, activeSessionsCnt] = await Promise.all([
-      supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(500),
+      supabase.from('profiles').select('id, display_name, avatar_url, created_at, updated_at, xp, level, bio').order('created_at', { ascending: false }).limit(500),
       supabase.from('gd_sessions').select('id, topic, status, created_at, is_multiplayer, user_id, last_activity_at').order('created_at', { ascending: false }).limit(500),
       supabase.from('user_feedback').select('*, gd_sessions(topic)').order('created_at', { ascending: false }).limit(500),
       supabase.from('error_logs').select('*').order('created_at', { ascending: false }).limit(500),
-      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('gd_sessions').select('*', { count: 'exact', head: true }),
       supabase.from('user_feedback').select('*', { count: 'exact', head: true }),
       supabase.from('error_logs').select('*', { count: 'exact', head: true }),
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('updated_at', activeCutoff),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('updated_at', activeCutoff),
       supabase.from('gd_sessions').select('*', { count: 'exact', head: true }).in('status', ['active', 'setup']).gte('last_activity_at', activeCutoff),
     ]);
     setUsers(profRes.data || []);
