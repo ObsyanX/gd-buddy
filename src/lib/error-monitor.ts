@@ -89,6 +89,22 @@ class ErrorMonitor {
     };
   }
 
+  /** Tag every subsequent error with the live discussion session. */
+  setSessionContext(sessionId: string | null, mode?: string | null) {
+    this.sessionId = sessionId;
+    this.sessionMode = mode ?? null;
+  }
+
+  /** Explicitly report a problem detected during a discussion session. */
+  captureSessionError(message: string, meta?: Record<string, unknown>) {
+    this.capture({
+      error_message: message,
+      error_source: 'session',
+      page_url: typeof window !== 'undefined' ? window.location.href : undefined,
+      metadata: meta,
+    });
+  }
+
   capture(entry: ErrorLogEntry) {
     const normalized = (entry.error_message || '').toLowerCase();
     if (this.IGNORED_MESSAGES.some((msg) => normalized.includes(msg))) {
@@ -102,12 +118,20 @@ class ErrorMonitor {
     this.recent.set(key, now);
 
     const severity = classifySeverity(entry.error_message || '');
+    const inSession = !!this.sessionId;
+    const source = entry.error_source ?? (inSession ? 'session' : 'client');
 
     this.queue.push({
       ...entry,
+      error_source: inSession && source === 'client' ? 'session' : source,
       page_url: entry.page_url || (typeof window !== 'undefined' ? window.location.href : undefined),
-      metadata: { ...(entry.metadata || {}), severity },
+      metadata: {
+        ...(entry.metadata || {}),
+        severity,
+        ...(this.sessionId ? { session_id: this.sessionId, session_mode: this.sessionMode } : {}),
+      },
     });
+
 
     if (this.queue.length >= this.MAX_QUEUE_SIZE) {
       this.flush();
