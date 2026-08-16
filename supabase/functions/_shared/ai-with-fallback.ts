@@ -257,6 +257,15 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
         response.status === 402 ||
         response.status >= 500;
 
+      await recordAiError({
+        provider: "lovable",
+        status: response.status,
+        message: lovableErrorText || `HTTP ${response.status}`,
+        model: body.model,
+        functionName: fnName,
+        fallbackUsed: isFallbackable,
+      });
+
       if (!isFallbackable) {
         throw new AIProviderError("lovable", response.status, lovableErrorText);
       }
@@ -265,7 +274,16 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
       lovableThrew = true;
       lovableErrorText = e instanceof Error ? e.message : String(e);
       console.warn(`[ai-fallback] Lovable AI threw: ${lovableErrorText}`);
+      await recordAiError({
+        provider: "lovable",
+        status: 0,
+        message: lovableErrorText,
+        model: body.model,
+        functionName: fnName,
+        fallbackUsed: true,
+      });
     }
+
   } else {
     console.warn("[ai-fallback] LOVABLE_API_KEY missing — going straight to Groq");
   }
