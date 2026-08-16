@@ -32,6 +32,8 @@ class ErrorMonitor {
   private queue: ErrorLogEntry[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private recent = new Map<string, number>();
+  private sessionId: string | null = null;
+  private sessionMode: string | null = null;
   private readonly FLUSH_INTERVAL = 5000;
   private readonly MAX_QUEUE_SIZE = 20;
   private readonly DEDUPE_MS = 60_000;
