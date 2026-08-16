@@ -42,8 +42,6 @@ const GROUPS: { key: GroupKey; label: string; icon: typeof Sparkles; hint: strin
 const PAGE_SIZE = 30;
 const REFRESH_MS = 30_000;
 
-type Query = ReturnType<typeof supabase.from>["select"] extends never ? never : unknown;
-
 function applyGroup<T extends { like: (c: string, p: string) => T; eq: (c: string, v: string) => T; not: (c: string, op: string, v: string) => T }>(
   q: T,
   group: GroupKey,
