@@ -110,6 +110,7 @@ const AdminIntelligence = lazy(() => import("./pages/admin/AdminIntelligence"), 
 const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"), "AdminSessions");
 const AdminSessionDetail = lazy(() => import("./pages/admin/AdminSessionDetail"), "AdminSessionDetail");
 const AdminEdgeErrors = lazy(() => import("./pages/admin/AdminEdgeErrors"), "AdminEdgeErrors");
+const AdminErrorMonitor = lazy(() => import("./pages/admin/AdminErrorMonitor"), "AdminErrorMonitor");
 const AdminIncidents = lazy(() => import("./pages/admin/AdminIncidents"), "AdminIncidents");
 const AdminAuthErrors = lazy(() => import("./pages/admin/AdminAuthErrors"), "AdminAuthErrors");
 const AdminPerformance = lazy(() => import("./pages/admin/AdminPerformance"), "AdminPerformance");
@@ -278,6 +279,7 @@ const App = () => (
                   <Route path="settings" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminSettingsPage /></Suspense></RouteBoundary>} />
                   <Route path="audit" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminAudit /></Suspense></RouteBoundary>} />
                   <Route path="incidents" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminIncidents /></Suspense></RouteBoundary>} />
+                  <Route path="error-monitor" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminErrorMonitor /></Suspense></RouteBoundary>} />
                   <Route path="edge-errors" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminEdgeErrors /></Suspense></RouteBoundary>} />
                   <Route path="auth-errors" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminAuthErrors /></Suspense></RouteBoundary>} />
                   <Route path="performance" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminPerformance /></Suspense></RouteBoundary>} />
