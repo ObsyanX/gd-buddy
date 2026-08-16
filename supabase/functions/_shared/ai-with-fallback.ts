@@ -130,6 +130,54 @@ async function recordUsage(
   }
 }
 
+/**
+ * Record a provider-specific AI failure into public.error_logs so the admin
+ * "AI & error monitor" can differentiate Lovable AI vs Groq vs total failure.
+ */
+export async function recordAiError(input: {
+  provider: "lovable" | "groq" | "both";
+  status: number;
+  message: string;
+  model?: string;
+  functionName: string;
+  fallbackUsed?: boolean;
+  sessionId?: string | null;
+}) {
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) return;
+    await fetch(`${url}/rest/v1/error_logs`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        error_message: `[${input.provider}] ${input.message}`.slice(0, 2000),
+        error_source: `ai_${input.provider}`,
+        error_stack: null,
+        page_url: null,
+        metadata: {
+          provider: input.provider,
+          status: input.status,
+          model: input.model ?? null,
+          function_name: input.functionName,
+          fallback_used: input.fallbackUsed ?? false,
+          session_id: input.sessionId ?? null,
+          severity: input.provider === "both" ? "critical" : "high",
+        },
+      }),
+    });
+  } catch (e) {
+    console.warn("[ai-fallback] error logging failed:", (e as Error).message);
+  }
+}
+
+
+
 
 
 // Errors that the caller may want to handle distinctly even after fallback fails.
