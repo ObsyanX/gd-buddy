@@ -290,6 +290,13 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
 
   // --- 2. Fallback to Groq ---
   if (!GROQ_API_KEY) {
+    await recordAiError({
+      provider: "both",
+      status: lovableStatus || 500,
+      message: `Lovable AI failed and GROQ_API_KEY is not configured. ${lovableErrorText}`,
+      model: body.model,
+      functionName: fnName,
+    });
     throw new AIProviderError(
       "lovable",
       lovableStatus || 500,
@@ -314,11 +321,33 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
     console.error(
       `[ai-fallback] Groq fallback failed ${response.status}: ${groqErrorText.slice(0, 200)}`,
     );
+    await recordAiError({
+      provider: "groq",
+      status: response.status,
+      message: groqErrorText || `HTTP ${response.status}`,
+      model: mapToGroqModel(body.model ?? ""),
+      functionName: fnName,
+    });
+    await recordAiError({
+      provider: "both",
+      status: response.status,
+      message: `Lovable(${lovableStatus || "threw"}) + Groq(${response.status}) both failed`,
+      model: body.model,
+      functionName: fnName,
+    });
     throw new AIProviderError("both", response.status, groqErrorText);
   } catch (e) {
     if (e instanceof AIProviderError) throw e;
     const msg = e instanceof Error ? e.message : String(e);
     console.error(`[ai-fallback] Groq fallback threw: ${msg}`);
+    await recordAiError({
+      provider: "groq",
+      status: 0,
+      message: msg,
+      model: mapToGroqModel(body.model ?? ""),
+      functionName: fnName,
+    });
     throw new AIProviderError("both", 500, msg);
+
   }
 }
