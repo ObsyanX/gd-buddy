@@ -5,7 +5,7 @@ export type ErrorSeverity = 'critical' | 'high' | 'medium' | 'low';
 interface ErrorLogEntry {
   error_message: string;
   error_stack?: string;
-  error_source?: 'client' | 'edge_function' | 'network';
+  error_source?: 'client' | 'edge_function' | 'network' | 'session' | 'ai_client';
   page_url?: string;
   metadata?: Record<string, unknown>;
 }
