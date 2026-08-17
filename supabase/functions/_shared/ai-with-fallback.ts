@@ -53,6 +53,8 @@ function mapToCerebrasModel(model: string): string {
 }
 
 
+export type Provider = "lovable" | "groq" | "mistral" | "cerebras";
+
 export interface AIRequestBody {
   model?: string;
   messages: Array<{ role: string; content: string }>;
@@ -81,7 +83,7 @@ export interface AIResponse {
     completion_tokens?: number;
     total_tokens?: number;
   };
-  _provider?: "lovable" | "groq";
+  _provider?: Provider;
 }
 
 // Best-effort name of the edge function that issued the call, inferred from the
@@ -102,7 +104,7 @@ function estimateCostUsd(model: string, inTok: number, outTok: number): number {
 async function recordUsage(
   json: AIResponse,
   model: string,
-  provider: "lovable" | "groq",
+  provider: Provider,
   functionName: string,
 ) {
   try {
@@ -156,7 +158,7 @@ async function recordUsage(
  * "AI & error monitor" can differentiate Lovable AI vs Groq vs total failure.
  */
 export async function recordAiError(input: {
-  provider: "lovable" | "groq" | "both";
+  provider: Provider | "both";
   status: number;
   message: string;
   model?: string;
@@ -204,9 +206,9 @@ export async function recordAiError(input: {
 // Errors that the caller may want to handle distinctly even after fallback fails.
 export class AIProviderError extends Error {
   status: number;
-  provider: "lovable" | "groq" | "both";
+  provider: Provider | "both";
   body: string;
-  constructor(provider: "lovable" | "groq" | "both", status: number, body: string) {
+  constructor(provider: Provider | "both", status: number, body: string) {
     super(`AI provider error (${provider}, status ${status}): ${body.slice(0, 300)}`);
     this.provider = provider;
     this.status = status;
@@ -240,13 +242,31 @@ async function callGroq(body: AIRequestBody, apiKey: string): Promise<Response> 
   });
 }
 
+async function callProvider(
+  url: string,
+  apiKey: string,
+  body: AIRequestBody,
+  model: string,
+): Promise<Response> {
+  return await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ...body, model }),
+  });
+}
+
 /**
- * Call Lovable AI with automatic Groq fallback.
+ * Call Lovable AI with automatic fallback: Groq → Mistral → Cerebras.
  * Returns the parsed OpenAI-format response. Adds `_provider` for logging.
  */
 export async function callAI(body: AIRequestBody): Promise<AIResponse> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+  const MISTRAL_API_KEY = Deno.env.get("MISTRALAI_API_KEY");
+  const CEREBRAS_API_KEY = Deno.env.get("CEREBRAS_API_KEY");
   const fnName = inferFunctionName();
 
   let lovableStatus = 0;
@@ -306,7 +326,7 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
     }
 
   } else {
-    console.warn("[ai-fallback] LOVABLE_API_KEY missing — going straight to Groq");
+    console.warn("[ai-fallback] LOVABLE_API_KEY missing — going straight to fallback chain");
   }
 
   // --- 2. Fallback chain: Groq → Mistral → Cerebras ---
