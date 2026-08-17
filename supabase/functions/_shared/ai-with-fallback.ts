@@ -20,6 +20,8 @@
 
 const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions";
+const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
 
 // Map Lovable/Gemini model names → Groq-supported model names.
 function mapToGroqModel(model: string): string {
@@ -31,6 +33,25 @@ function mapToGroqModel(model: string): string {
   // Default / balanced / pro tier → strongest commonly available Groq model
   return "llama-3.3-70b-versatile";
 }
+
+// Map model names → Mistral-supported model names.
+function mapToMistralModel(model: string): string {
+  const m = (model || "").toLowerCase();
+  if (m.includes("flash-lite") || m.includes("nano") || m.includes("mini")) {
+    return "mistral-small-latest";
+  }
+  return "mistral-large-latest";
+}
+
+// Map model names → Cerebras-supported model names.
+function mapToCerebrasModel(model: string): string {
+  const m = (model || "").toLowerCase();
+  if (m.includes("flash-lite") || m.includes("nano") || m.includes("mini")) {
+    return "llama3.1-8b";
+  }
+  return "llama-3.3-70b";
+}
+
 
 export interface AIRequestBody {
   model?: string;
