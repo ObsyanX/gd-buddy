@@ -20,6 +20,8 @@
 
 const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions";
+const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
 
 // Map Lovable/Gemini model names → Groq-supported model names.
 function mapToGroqModel(model: string): string {
@@ -31,6 +33,27 @@ function mapToGroqModel(model: string): string {
   // Default / balanced / pro tier → strongest commonly available Groq model
   return "llama-3.3-70b-versatile";
 }
+
+// Map model names → Mistral-supported model names.
+function mapToMistralModel(model: string): string {
+  const m = (model || "").toLowerCase();
+  if (m.includes("flash-lite") || m.includes("nano") || m.includes("mini")) {
+    return "mistral-small-latest";
+  }
+  return "mistral-large-latest";
+}
+
+// Map model names → Cerebras-supported model names.
+function mapToCerebrasModel(model: string): string {
+  const m = (model || "").toLowerCase();
+  if (m.includes("flash-lite") || m.includes("nano") || m.includes("mini")) {
+    return "llama3.1-8b";
+  }
+  return "llama-3.3-70b";
+}
+
+
+export type Provider = "lovable" | "groq" | "mistral" | "cerebras";
 
 export interface AIRequestBody {
   model?: string;
@@ -60,7 +83,7 @@ export interface AIResponse {
     completion_tokens?: number;
     total_tokens?: number;
   };
-  _provider?: "lovable" | "groq";
+  _provider?: Provider;
 }
 
 // Best-effort name of the edge function that issued the call, inferred from the
@@ -81,7 +104,7 @@ function estimateCostUsd(model: string, inTok: number, outTok: number): number {
 async function recordUsage(
   json: AIResponse,
   model: string,
-  provider: "lovable" | "groq",
+  provider: Provider,
   functionName: string,
 ) {
   try {
@@ -135,7 +158,7 @@ async function recordUsage(
  * "AI & error monitor" can differentiate Lovable AI vs Groq vs total failure.
  */
 export async function recordAiError(input: {
-  provider: "lovable" | "groq" | "both";
+  provider: Provider | "both";
   status: number;
   message: string;
   model?: string;
@@ -183,9 +206,9 @@ export async function recordAiError(input: {
 // Errors that the caller may want to handle distinctly even after fallback fails.
 export class AIProviderError extends Error {
   status: number;
-  provider: "lovable" | "groq" | "both";
+  provider: Provider | "both";
   body: string;
-  constructor(provider: "lovable" | "groq" | "both", status: number, body: string) {
+  constructor(provider: Provider | "both", status: number, body: string) {
     super(`AI provider error (${provider}, status ${status}): ${body.slice(0, 300)}`);
     this.provider = provider;
     this.status = status;
@@ -204,28 +227,32 @@ async function callLovable(body: AIRequestBody, apiKey: string): Promise<Respons
   });
 }
 
-async function callGroq(body: AIRequestBody, apiKey: string): Promise<Response> {
-  const groqBody: AIRequestBody = {
-    ...body,
-    model: mapToGroqModel(body.model || ""),
-  };
-  return await fetch(GROQ_URL, {
+
+async function callProvider(
+  url: string,
+  apiKey: string,
+  body: AIRequestBody,
+  model: string,
+): Promise<Response> {
+  return await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(groqBody),
+    body: JSON.stringify({ ...body, model }),
   });
 }
 
 /**
- * Call Lovable AI with automatic Groq fallback.
+ * Call Lovable AI with automatic fallback: Groq → Mistral → Cerebras.
  * Returns the parsed OpenAI-format response. Adds `_provider` for logging.
  */
 export async function callAI(body: AIRequestBody): Promise<AIResponse> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+  const MISTRAL_API_KEY = Deno.env.get("MISTRALAI_API_KEY");
+  const CEREBRAS_API_KEY = Deno.env.get("CEREBRAS_API_KEY");
   const fnName = inferFunctionName();
 
   let lovableStatus = 0;
@@ -285,69 +312,80 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
     }
 
   } else {
-    console.warn("[ai-fallback] LOVABLE_API_KEY missing — going straight to Groq");
+    console.warn("[ai-fallback] LOVABLE_API_KEY missing — going straight to fallback chain");
   }
 
-  // --- 2. Fallback to Groq ---
-  if (!GROQ_API_KEY) {
-    await recordAiError({
-      provider: "both",
-      status: lovableStatus || 500,
-      message: `Lovable AI failed and GROQ_API_KEY is not configured. ${lovableErrorText}`,
-      model: body.model,
-      functionName: fnName,
-    });
-    throw new AIProviderError(
-      "lovable",
-      lovableStatus || 500,
-      `Lovable AI failed and GROQ_API_KEY is not configured. ${lovableErrorText}`,
-    );
-  }
+  // --- 2. Fallback chain: Groq → Mistral → Cerebras ---
+  const chain: Array<{
+    name: Provider;
+    key?: string;
+    url: string;
+    map: (m: string) => string;
+  }> = [
+    { name: "groq", key: GROQ_API_KEY, url: GROQ_URL, map: mapToGroqModel },
+    { name: "mistral", key: MISTRAL_API_KEY, url: MISTRAL_URL, map: mapToMistralModel },
+    { name: "cerebras", key: CEREBRAS_API_KEY, url: CEREBRAS_URL, map: mapToCerebrasModel },
+  ];
 
-  console.log(
-    `[ai-fallback] Falling back to Groq (lovable_status=${lovableStatus}, threw=${lovableThrew})`,
-  );
+  const failures: string[] = [`lovable(${lovableThrew ? "threw" : lovableStatus || "n/a"})`];
+  let lastStatus = lovableStatus || 500;
 
-  try {
-    const response = await callGroq(body, GROQ_API_KEY);
-    if (response.ok) {
-      const json = await response.json();
-      json._provider = "groq";
-      await recordUsage(json as AIResponse, mapToGroqModel(body.model ?? ""), "groq", fnName);
-      return json as AIResponse;
-
+  for (const provider of chain) {
+    if (!provider.key) {
+      console.warn(`[ai-fallback] ${provider.name.toUpperCase()}_API_KEY missing — skipping`);
+      failures.push(`${provider.name}(no key)`);
+      continue;
     }
-    const groqErrorText = await response.text();
-    console.error(
-      `[ai-fallback] Groq fallback failed ${response.status}: ${groqErrorText.slice(0, 200)}`,
-    );
-    await recordAiError({
-      provider: "groq",
-      status: response.status,
-      message: groqErrorText || `HTTP ${response.status}`,
-      model: mapToGroqModel(body.model ?? ""),
-      functionName: fnName,
-    });
-    await recordAiError({
-      provider: "both",
-      status: response.status,
-      message: `Lovable(${lovableStatus || "threw"}) + Groq(${response.status}) both failed`,
-      model: body.model,
-      functionName: fnName,
-    });
-    throw new AIProviderError("both", response.status, groqErrorText);
-  } catch (e) {
-    if (e instanceof AIProviderError) throw e;
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error(`[ai-fallback] Groq fallback threw: ${msg}`);
-    await recordAiError({
-      provider: "groq",
-      status: 0,
-      message: msg,
-      model: mapToGroqModel(body.model ?? ""),
-      functionName: fnName,
-    });
-    throw new AIProviderError("both", 500, msg);
 
+    const mappedModel = provider.map(body.model ?? "");
+    console.log(`[ai-fallback] Trying ${provider.name} with model ${mappedModel}`);
+
+    try {
+      const response = await callProvider(provider.url, provider.key, body, mappedModel);
+      if (response.ok) {
+        const json = await response.json();
+        json._provider = provider.name;
+        await recordUsage(json as AIResponse, mappedModel, provider.name, fnName);
+        return json as AIResponse;
+      }
+      const errText = await response.text();
+      lastStatus = response.status;
+      failures.push(`${provider.name}(${response.status})`);
+      console.error(
+        `[ai-fallback] ${provider.name} failed ${response.status}: ${errText.slice(0, 200)}`,
+      );
+      await recordAiError({
+        provider: provider.name,
+        status: response.status,
+        message: errText || `HTTP ${response.status}`,
+        model: mappedModel,
+        functionName: fnName,
+        fallbackUsed: true,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      failures.push(`${provider.name}(threw)`);
+      console.error(`[ai-fallback] ${provider.name} threw: ${msg}`);
+      await recordAiError({
+        provider: provider.name,
+        status: 0,
+        message: msg,
+        model: mappedModel,
+        functionName: fnName,
+        fallbackUsed: true,
+      });
+    }
   }
+
+  // --- 3. Every provider failed ---
+  const summary = `All AI providers failed: ${failures.join(" + ")}. ${lovableErrorText.slice(0, 300)}`;
+  await recordAiError({
+    provider: "both",
+    status: lastStatus,
+    message: summary,
+    model: body.model,
+    functionName: fnName,
+  });
+  throw new AIProviderError("both", lastStatus, summary);
 }
+
