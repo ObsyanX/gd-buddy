@@ -23,11 +23,21 @@ const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions";
 const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
 
+// "gemini" contains the substring "mini" — strip the vendor prefix before
+// doing tier detection so balanced models aren't downgraded.
+function normalizeModel(model: string): string {
+  return (model || "").toLowerCase().replace(/gemini/g, "gem");
+}
+
+function isLightTier(m: string): boolean {
+  return m.includes("flash-lite") || m.includes("nano") || m.includes("mini") || m.includes("8b");
+}
+
 // Map Lovable/Gemini model names → Groq-supported model names.
 function mapToGroqModel(model: string): string {
-  const m = (model || "").toLowerCase();
+  const m = normalizeModel(model);
   // Lightweight / fast tier
-  if (m.includes("flash-lite") || m.includes("nano") || m.includes("mini")) {
+  if (isLightTier(m)) {
     return "llama-3.1-8b-instant";
   }
   // Default / balanced / pro tier → strongest commonly available Groq model
@@ -36,8 +46,8 @@ function mapToGroqModel(model: string): string {
 
 // Map model names → Mistral-supported model names.
 function mapToMistralModel(model: string): string {
-  const m = (model || "").toLowerCase();
-  if (m.includes("flash-lite") || m.includes("nano") || m.includes("mini")) {
+  const m = normalizeModel(model);
+  if (isLightTier(m)) {
     return "mistral-small-latest";
   }
   return "mistral-large-latest";
@@ -45,8 +55,8 @@ function mapToMistralModel(model: string): string {
 
 // Map model names → Cerebras-supported model names.
 function mapToCerebrasModel(model: string): string {
-  const m = (model || "").toLowerCase();
-  if (m.includes("flash-lite") || m.includes("nano") || m.includes("mini")) {
+  const m = normalizeModel(model);
+  if (isLightTier(m)) {
     return "llama3.1-8b";
   }
   return "llama-3.3-70b";
