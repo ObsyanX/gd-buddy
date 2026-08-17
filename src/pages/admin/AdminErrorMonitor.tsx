@@ -26,13 +26,15 @@ interface ErrRow {
   metadata: Record<string, unknown> | null;
 }
 
-type GroupKey = "all" | "ai_lovable" | "ai_groq" | "ai_both" | "edge" | "session" | "client" | "auth";
+type GroupKey = "all" | "ai_lovable" | "ai_groq" | "ai_mistral" | "ai_cerebras" | "ai_both" | "edge" | "session" | "client" | "auth";
 
 const GROUPS: { key: GroupKey; label: string; icon: typeof Sparkles; hint: string }[] = [
   { key: "all", label: "All", icon: AlertTriangle, hint: "Every recorded failure" },
   { key: "ai_lovable", label: "Lovable AI", icon: Sparkles, hint: "Gateway rejected / failed" },
   { key: "ai_groq", label: "Groq", icon: Zap, hint: "Fallback provider failures" },
-  { key: "ai_both", label: "AI total outage", icon: ShieldAlert, hint: "Both providers failed" },
+  { key: "ai_mistral", label: "Mistral", icon: Zap, hint: "Second fallback provider failures" },
+  { key: "ai_cerebras", label: "Cerebras", icon: Zap, hint: "Third fallback provider failures" },
+  { key: "ai_both", label: "AI total outage", icon: ShieldAlert, hint: "All providers failed" },
   { key: "edge", label: "Edge functions", icon: ServerCog, hint: "Server-side function errors" },
   { key: "session", label: "Discussion sessions", icon: Users, hint: "Errors inside a live room" },
   { key: "client", label: "Client", icon: MonitorSmartphone, hint: "Browser runtime errors" },
@@ -49,6 +51,8 @@ function applyGroup<T extends { like: (c: string, p: string) => T; eq: (c: strin
   switch (group) {
     case "ai_lovable": return q.eq("error_source", "ai_lovable");
     case "ai_groq": return q.eq("error_source", "ai_groq");
+    case "ai_mistral": return q.eq("error_source", "ai_mistral");
+    case "ai_cerebras": return q.eq("error_source", "ai_cerebras");
     case "ai_both": return q.eq("error_source", "ai_both");
     case "edge": return q.like("error_source", "edge_%");
     case "session": return q.eq("error_source", "session");

@@ -227,20 +227,6 @@ async function callLovable(body: AIRequestBody, apiKey: string): Promise<Respons
   });
 }
 
-async function callGroq(body: AIRequestBody, apiKey: string): Promise<Response> {
-  const groqBody: AIRequestBody = {
-    ...body,
-    model: mapToGroqModel(body.model || ""),
-  };
-  return await fetch(GROQ_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(groqBody),
-  });
-}
 
 async function callProvider(
   url: string,
