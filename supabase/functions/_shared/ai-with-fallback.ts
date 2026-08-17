@@ -309,66 +309,77 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
     console.warn("[ai-fallback] LOVABLE_API_KEY missing — going straight to Groq");
   }
 
-  // --- 2. Fallback to Groq ---
-  if (!GROQ_API_KEY) {
-    await recordAiError({
-      provider: "both",
-      status: lovableStatus || 500,
-      message: `Lovable AI failed and GROQ_API_KEY is not configured. ${lovableErrorText}`,
-      model: body.model,
-      functionName: fnName,
-    });
-    throw new AIProviderError(
-      "lovable",
-      lovableStatus || 500,
-      `Lovable AI failed and GROQ_API_KEY is not configured. ${lovableErrorText}`,
-    );
-  }
+  // --- 2. Fallback chain: Groq → Mistral → Cerebras ---
+  const chain: Array<{
+    name: Provider;
+    key?: string;
+    url: string;
+    map: (m: string) => string;
+  }> = [
+    { name: "groq", key: GROQ_API_KEY, url: GROQ_URL, map: mapToGroqModel },
+    { name: "mistral", key: MISTRAL_API_KEY, url: MISTRAL_URL, map: mapToMistralModel },
+    { name: "cerebras", key: CEREBRAS_API_KEY, url: CEREBRAS_URL, map: mapToCerebrasModel },
+  ];
 
-  console.log(
-    `[ai-fallback] Falling back to Groq (lovable_status=${lovableStatus}, threw=${lovableThrew})`,
-  );
+  const failures: string[] = [`lovable(${lovableThrew ? "threw" : lovableStatus || "n/a"})`];
+  let lastStatus = lovableStatus || 500;
 
-  try {
-    const response = await callGroq(body, GROQ_API_KEY);
-    if (response.ok) {
-      const json = await response.json();
-      json._provider = "groq";
-      await recordUsage(json as AIResponse, mapToGroqModel(body.model ?? ""), "groq", fnName);
-      return json as AIResponse;
-
+  for (const provider of chain) {
+    if (!provider.key) {
+      console.warn(`[ai-fallback] ${provider.name.toUpperCase()}_API_KEY missing — skipping`);
+      failures.push(`${provider.name}(no key)`);
+      continue;
     }
-    const groqErrorText = await response.text();
-    console.error(
-      `[ai-fallback] Groq fallback failed ${response.status}: ${groqErrorText.slice(0, 200)}`,
-    );
-    await recordAiError({
-      provider: "groq",
-      status: response.status,
-      message: groqErrorText || `HTTP ${response.status}`,
-      model: mapToGroqModel(body.model ?? ""),
-      functionName: fnName,
-    });
-    await recordAiError({
-      provider: "both",
-      status: response.status,
-      message: `Lovable(${lovableStatus || "threw"}) + Groq(${response.status}) both failed`,
-      model: body.model,
-      functionName: fnName,
-    });
-    throw new AIProviderError("both", response.status, groqErrorText);
-  } catch (e) {
-    if (e instanceof AIProviderError) throw e;
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error(`[ai-fallback] Groq fallback threw: ${msg}`);
-    await recordAiError({
-      provider: "groq",
-      status: 0,
-      message: msg,
-      model: mapToGroqModel(body.model ?? ""),
-      functionName: fnName,
-    });
-    throw new AIProviderError("both", 500, msg);
 
+    const mappedModel = provider.map(body.model ?? "");
+    console.log(`[ai-fallback] Trying ${provider.name} with model ${mappedModel}`);
+
+    try {
+      const response = await callProvider(provider.url, provider.key, body, mappedModel);
+      if (response.ok) {
+        const json = await response.json();
+        json._provider = provider.name;
+        await recordUsage(json as AIResponse, mappedModel, provider.name, fnName);
+        return json as AIResponse;
+      }
+      const errText = await response.text();
+      lastStatus = response.status;
+      failures.push(`${provider.name}(${response.status})`);
+      console.error(
+        `[ai-fallback] ${provider.name} failed ${response.status}: ${errText.slice(0, 200)}`,
+      );
+      await recordAiError({
+        provider: provider.name,
+        status: response.status,
+        message: errText || `HTTP ${response.status}`,
+        model: mappedModel,
+        functionName: fnName,
+        fallbackUsed: true,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      failures.push(`${provider.name}(threw)`);
+      console.error(`[ai-fallback] ${provider.name} threw: ${msg}`);
+      await recordAiError({
+        provider: provider.name,
+        status: 0,
+        message: msg,
+        model: mappedModel,
+        functionName: fnName,
+        fallbackUsed: true,
+      });
+    }
   }
+
+  // --- 3. Every provider failed ---
+  const summary = `All AI providers failed: ${failures.join(" + ")}. ${lovableErrorText.slice(0, 300)}`;
+  await recordAiError({
+    provider: "both",
+    status: lastStatus,
+    message: summary,
+    model: body.model,
+    functionName: fnName,
+  });
+  throw new AIProviderError("both", lastStatus, summary);
 }
+
