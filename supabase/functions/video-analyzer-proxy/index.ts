@@ -81,9 +81,10 @@ serve(async (req) => {
       } catch (_error) {
         clearTimeout(healthTimeout);
         console.log('[Proxy] Health check failed - backend may be warming up');
+        // Return 200 so the client SDK doesn't treat a cold start as a thrown error
         return new Response(
           JSON.stringify({ success: false, error: 'Backend warming up', backend_unreachable: true }),
-          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
@@ -161,7 +162,7 @@ serve(async (req) => {
           error: aborted ? 'Backend timed out (cold start)' : 'Backend unreachable',
           backend_unreachable: true,
         }),
-        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -212,7 +213,7 @@ serve(async (req) => {
         error: errorMessage,
         backend_unreachable: true
       }),
-      { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
