@@ -34,32 +34,38 @@ function isLightTier(m: string): boolean {
 }
 
 // Map Lovable/Gemini model names → Groq-supported model names.
-function mapToGroqModel(model: string): string {
+function mapToGroqModel(model: string): string[] {
   const m = normalizeModel(model);
   // Lightweight / fast tier
   if (isLightTier(m)) {
-    return "llama-3.1-8b-instant";
+    return ["llama-3.1-8b-instant", "openai/gpt-oss-20b", "llama-3.3-70b-versatile"];
   }
-  // Default / balanced / pro tier → strongest commonly available Groq model
-  return "llama-3.3-70b-versatile";
+  // Default / balanced / pro tier → candidates tried in order (models get
+  // decommissioned on Groq, so keep several fallbacks).
+  return [
+    "llama-3.3-70b-versatile",
+    "openai/gpt-oss-120b",
+    "moonshotai/kimi-k2-instruct",
+    "llama-3.1-8b-instant",
+  ];
 }
 
 // Map model names → Mistral-supported model names.
-function mapToMistralModel(model: string): string {
+function mapToMistralModel(model: string): string[] {
   const m = normalizeModel(model);
   if (isLightTier(m)) {
-    return "mistral-small-latest";
+    return ["mistral-small-latest", "mistral-large-latest"];
   }
-  return "mistral-large-latest";
+  return ["mistral-large-latest", "mistral-small-latest"];
 }
 
 // Map model names → Cerebras-supported model names.
-function mapToCerebrasModel(model: string): string {
+function mapToCerebrasModel(model: string): string[] {
   const m = normalizeModel(model);
   if (isLightTier(m)) {
-    return "llama3.1-8b";
+    return ["llama3.1-8b", "llama-3.3-70b"];
   }
-  return "llama-3.3-70b";
+  return ["llama-3.3-70b", "llama3.1-8b"];
 }
 
 
@@ -330,7 +336,7 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
     name: Provider;
     key?: string;
     url: string;
-    map: (m: string) => string;
+    map: (m: string) => string[];
   }> = [
     { name: "groq", key: GROQ_API_KEY, url: GROQ_URL, map: mapToGroqModel },
     { name: "mistral", key: MISTRAL_API_KEY, url: MISTRAL_URL, map: mapToMistralModel },
@@ -347,43 +353,52 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
       continue;
     }
 
-    const mappedModel = provider.map(body.model ?? "");
-    console.log(`[ai-fallback] Trying ${provider.name} with model ${mappedModel}`);
+    const candidates = provider.map(body.model ?? "");
+    let modelMissing = false;
 
-    try {
-      const response = await callProvider(provider.url, provider.key, body, mappedModel);
-      if (response.ok) {
-        const json = await response.json();
-        json._provider = provider.name;
-        await recordUsage(json as AIResponse, mappedModel, provider.name, fnName);
-        return json as AIResponse;
+    for (const mappedModel of candidates) {
+      console.log(`[ai-fallback] Trying ${provider.name} with model ${mappedModel}`);
+      modelMissing = false;
+      try {
+        const response = await callProvider(provider.url, provider.key, body, mappedModel);
+        if (response.ok) {
+          const json = await response.json();
+          json._provider = provider.name;
+          await recordUsage(json as AIResponse, mappedModel, provider.name, fnName);
+          return json as AIResponse;
+        }
+        const errText = await response.text();
+        lastStatus = response.status;
+        failures.push(`${provider.name}(${response.status})`);
+        console.error(
+          `[ai-fallback] ${provider.name} failed ${response.status}: ${errText.slice(0, 200)}`,
+        );
+        await recordAiError({
+          provider: provider.name,
+          status: response.status,
+          message: errText || `HTTP ${response.status}`,
+          model: mappedModel,
+          functionName: fnName,
+          fallbackUsed: true,
+        });
+        // Only retry the same provider when the *model* is the problem.
+        modelMissing = response.status === 404 ||
+          /model_not_found|does not exist|decommissioned|unknown model/i.test(errText);
+        if (!modelMissing) break;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        failures.push(`${provider.name}(threw)`);
+        console.error(`[ai-fallback] ${provider.name} threw: ${msg}`);
+        await recordAiError({
+          provider: provider.name,
+          status: 0,
+          message: msg,
+          model: mappedModel,
+          functionName: fnName,
+          fallbackUsed: true,
+        });
+        break;
       }
-      const errText = await response.text();
-      lastStatus = response.status;
-      failures.push(`${provider.name}(${response.status})`);
-      console.error(
-        `[ai-fallback] ${provider.name} failed ${response.status}: ${errText.slice(0, 200)}`,
-      );
-      await recordAiError({
-        provider: provider.name,
-        status: response.status,
-        message: errText || `HTTP ${response.status}`,
-        model: mappedModel,
-        functionName: fnName,
-        fallbackUsed: true,
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      failures.push(`${provider.name}(threw)`);
-      console.error(`[ai-fallback] ${provider.name} threw: ${msg}`);
-      await recordAiError({
-        provider: provider.name,
-        status: 0,
-        message: msg,
-        model: mappedModel,
-        functionName: fnName,
-        fallbackUsed: true,
-      });
     }
   }
 

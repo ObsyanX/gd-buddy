@@ -2,6 +2,40 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { callAI, AIProviderError } from "../_shared/ai-with-fallback.ts";
 
+// Robustly extract a JSON object from an LLM reply. Some providers (Mistral,
+// Groq) occasionally emit malformed JSON — unquoted keys, stray parentheses,
+// duplicated quotes, or double colons. Repair the common cases before giving up.
+function parseAiJson(raw: string): any {
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  let text = (fenced ? fenced[1] : raw).trim();
+
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start > 0 || (end >= 0 && end < text.length - 1)) {
+    text = text.slice(start >= 0 ? start : 0, end >= 0 ? end + 1 : undefined);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (_) {
+    let fixed = text
+      // ("key":) value  →  "key": value
+      .replace(/\(\s*"([^"]+)"\s*:?\s*\)/g, '"$1":')
+      // ("key") value   →  "key": value
+      .replace(/\(\s*"([^"]+)"\s*\)\s*(?=[^:,\s])/g, '"$1": ')
+      // "key"" :        →  "key":
+      .replace(/"([A-Za-z0-9_]+)"+\s*"*\s*:/g, '"$1":')
+      // :: →  :
+      .replace(/:\s*:/g, ':')
+      // bare key:  →  "key":
+      .replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)"?\s*:/g, '$1"$2":')
+      // trailing commas
+      .replace(/,\s*([}\]])/g, '$1');
+    return JSON.parse(fixed);
+  }
+}
+
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -353,6 +387,7 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
         ],
+        response_format: { type: 'json_object' },
         temperature: 0.95,
         top_p: 0.95,
         frequency_penalty: 0.6,
@@ -388,10 +423,9 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
     // Parse JSON from response (handle potential markdown wrapping)
     let parsedResponse;
     try {
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || [null, content];
-      parsedResponse = JSON.parse(jsonMatch[1]);
+      parsedResponse = parseAiJson(content);
     } catch (e) {
-      console.error('Failed to parse AI response:', e);
+      console.error('Failed to parse AI response:', e, content?.slice(0, 500));
       parsedResponse = {
         session_id,
         timestamp_iso: new Date().toISOString(),
