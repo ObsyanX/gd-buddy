@@ -29,6 +29,7 @@ import MessageInput from "@/components/discussion/MessageInput";
 import SessionSidebar, { FeedbackGrid } from "@/components/discussion/SessionSidebar";
 import { updatePracticeStreak } from "@/lib/streak-updater";
 import { safeCloseAudioContext, safeDisconnectAudioNode, safeStopMediaStream } from "@/lib/audio-utils";
+import { roomMixer } from "@/lib/audio/room-mixer";
 
 interface DiscussionRoomProps {
   sessionId: string;
@@ -231,7 +232,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   // Register TTS stop with centralized cleanup so idle/unmount stops any playback
   useEffect(() => {
-    return registerCleanup(() => { try { stopSpeaking(); } catch {} });
+    return registerCleanup(() => { try { stopSpeaking(); roomMixer.stopAll(); } catch {} });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -621,12 +622,47 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       console.log('AI Response:', aiResponse);
 
-      // Process AI responses one by one (sequential text + TTS)
+      // Phase A — overlap-capable playback.
+      // 1) Pre-synthesise every reply in parallel (kills the per-turn TTS gap).
+      // 2) Schedule each clip through the room mixer, letting a persona flagged
+      //    as an interruption barge in `overlap_seconds` before the previous
+      //    speaker finishes (the other voice ducks instead of stopping).
       if (aiResponse?.participant_responses) {
-        for (const response of aiResponse.participant_responses) {
+        const responses = aiResponse.participant_responses as any[];
+
+        const clipPromises = autoPlayTTS
+          ? responses.map((r) => {
+              const p = participants.find((x) => x.id === r.participant_id);
+              const voice = r.participant_id === 'moderator' ? 'alloy' : p?.voice_name;
+              return roomMixer.prepare(r.text, voice);
+            })
+          : [];
+
+        for (let i = 0; i < responses.length; i++) {
+          const response = responses[i];
+          const seatIndex = Math.max(0, participants.findIndex((p) => p.id === response.participant_id));
+          const seat = participants.length > 1 ? seatIndex / (participants.length - 1) : 0.5;
+          const overlap = response.interruption ? Math.min(Number(response.overlap_seconds) || 1.2, 2.5) : 0;
+
+          const playClip = async (speakerId: string) => {
+            if (!autoPlayTTS) return;
+            try {
+              const clip = await clipPromises[i];
+              await roomMixer.waitForSlot(overlap);
+              await roomMixer.play(clip, {
+                speakerId,
+                speaker: response.participant_id === 'moderator' ? 'Moderator' : undefined,
+                seat: response.participant_id === 'moderator' ? 0.5 : seat,
+                overlapSeconds: overlap,
+                interruption: !!response.interruption,
+              });
+            } catch (e) {
+              console.error('TTS error:', e);
+            }
+          };
+
           // Handle moderator messages (no real participant_id in DB)
           if (response.participant_id === 'moderator') {
-            // Show moderator message in UI without DB insert
             const moderatorMsg = {
               id: `moderator-${Date.now()}`,
               session_id: sessionId,
@@ -641,14 +677,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
               },
             };
             setMessages(prev => [...prev, moderatorMsg]);
-            
-            if (autoPlayTTS) {
-              try {
-                await speak(response.text, 'Moderator', 'alloy');
-              } catch (e) {
-                console.error('TTS error:', e);
-              }
-            }
+            await playClip('moderator');
             continue;
           }
 
@@ -673,23 +702,12 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           if (!aiMsgError && aiMsg) {
             // Mark as processed BEFORE adding to state to prevent realtime handler duplication
             processedMessagesRef.current.add(aiMsg.id);
-            
-            // Add message to UI
             setMessages(prev => [...prev, aiMsg]);
-            
-            // Play TTS and wait for it to finish before next participant
-            if (autoPlayTTS) {
-              const participant = participants.find(p => p.id === response.participant_id);
-              try {
-                await speak(response.text, participant?.persona_name, participant?.voice_name);
-              } catch (e) {
-                // Continue even if TTS fails
-                console.error('TTS error:', e);
-              }
-            }
+            await playClip(response.participant_id);
           }
         }
       }
+
 
       // Update feedback
       if (aiResponse?.invigilator_signals) {
@@ -737,7 +755,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     if (newPaused) {
       // Pause: stop mic, TTS, update DB status
       stopListening();
-      stopSpeaking();
+      stopSpeaking(); roomMixer.stopAll();
       cancelPractice();
       runCentralizedCleanup();
       await supabase
@@ -758,7 +776,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const handleEndSession = async () => {
     try {
       // Stop all ongoing audio/speech activities
-      stopSpeaking();
+      stopSpeaking(); roomMixer.stopAll();
       stopListening();
       cancelPractice();
       runCentralizedCleanup();
@@ -909,7 +927,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     },
     onStopTTS: () => {
       if (isSpeaking) {
-        stopSpeaking();
+        stopSpeaking(); roomMixer.stopAll();
       } else if (isPlayingPractice) {
         stopPracticePlayback();
       }
