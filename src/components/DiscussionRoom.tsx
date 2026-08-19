@@ -232,7 +232,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   // Register TTS stop with centralized cleanup so idle/unmount stops any playback
   useEffect(() => {
-    return registerCleanup(() => { try { stopSpeaking(); } catch {} });
+    return registerCleanup(() => { try { stopSpeaking(); roomMixer.stopAll(); } catch {} });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -755,7 +755,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     if (newPaused) {
       // Pause: stop mic, TTS, update DB status
       stopListening();
-      stopSpeaking();
+      stopSpeaking(); roomMixer.stopAll();
       cancelPractice();
       runCentralizedCleanup();
       await supabase
@@ -776,7 +776,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const handleEndSession = async () => {
     try {
       // Stop all ongoing audio/speech activities
-      stopSpeaking();
+      stopSpeaking(); roomMixer.stopAll();
       stopListening();
       cancelPractice();
       runCentralizedCleanup();
@@ -927,7 +927,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     },
     onStopTTS: () => {
       if (isSpeaking) {
-        stopSpeaking();
+        stopSpeaking(); roomMixer.stopAll();
       } else if (isPlayingPractice) {
         stopPracticePlayback();
       }
