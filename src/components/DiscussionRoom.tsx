@@ -29,6 +29,7 @@ import MessageInput from "@/components/discussion/MessageInput";
 import SessionSidebar, { FeedbackGrid } from "@/components/discussion/SessionSidebar";
 import { updatePracticeStreak } from "@/lib/streak-updater";
 import { safeCloseAudioContext, safeDisconnectAudioNode, safeStopMediaStream } from "@/lib/audio-utils";
+import { roomMixer } from "@/lib/audio/room-mixer";
 
 interface DiscussionRoomProps {
   sessionId: string;
