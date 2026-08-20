@@ -660,12 +660,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       console.log('[AI Response Delay] Proceeding with AI response generation');
 
       // Get AI responses
-      const conversationHistory = messages.map(m => ({
-        who: m.gd_participants?.persona_name || 'Unknown',
-        text: m.text,
-        start_ts: m.start_ts,
-        end_ts: m.end_ts
-      }));
+
 
       // Reuse an in-flight speculative request when the final utterance matches
       // what we already started generating from the interim transcript.
