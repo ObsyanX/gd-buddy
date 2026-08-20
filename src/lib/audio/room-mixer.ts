@@ -22,7 +22,14 @@ export interface SpeakOptions {
   overlapSeconds?: number;
   /** True when this utterance is a barge-in (ducks the other speaker). */
   interruption?: boolean;
+  /** Relative loudness 0..1 (backchannels are quieter than full turns). */
+  gain?: number;
+  /** Prosody rate multiplier from SSML hints (multiplied with user speed). */
+  rate?: number;
+  /** Prosody pitch offset in cents from SSML hints. */
+  detune?: number;
 }
+
 
 export interface PreparedClip {
   text: string;
