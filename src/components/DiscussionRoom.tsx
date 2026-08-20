@@ -203,6 +203,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   // Phase B — live refs so speculative generation (fired from an interim
   // transcript, inside a callback created at mount) always sees fresh state.
   const sessionRef = useRef<any>(null);
+  const isPausedRef = useRef(false);
+  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
   const participantsRef = useRef<any[]>([]);
   const messagesRef = useRef<any[]>([]);
   useEffect(() => { sessionRef.current = session; }, [session]);
@@ -607,6 +609,22 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       setMessages(prev => [...prev, userMessage]);
       processedMessagesRef.current.add(userMessage.id); // Prevent realtime handler from re-playing TTS
+
+      // Phase B — immediate room reaction ("mm-hm", "right") from a random AI
+      // persona while the real reply is still being generated. Cached clips
+      // only, so this never adds a TTS round-trip.
+      if (autoPlayTTS) {
+        const aiPeers = participants.filter((p: any) => !p.is_user);
+        if (aiPeers.length > 0) {
+          const reactor = aiPeers[Math.floor(Math.random() * aiPeers.length)];
+          const seatIdx = participants.findIndex((p: any) => p.id === reactor.id);
+          void playBackchannel({
+            voice: reactor.voice_name,
+            speakerId: reactor.id,
+            seat: participants.length > 1 ? Math.max(0, seatIdx) / (participants.length - 1) : 0.5,
+          }).catch(() => {});
+        }
+      }
       setUserInput("");
       clearTranscription();
       
@@ -649,48 +667,12 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         end_ts: m.end_ts
       }));
 
-      const { data: aiResponse, error: aiError } = await invokeWithAuth('gd-conductor', {
-        body: {
-          session_id: sessionId,
-          topic: session.topic,
-          topic_meta: {
-            category: session.topic_category,
-            difficulty: session.topic_difficulty,
-            tags: session.topic_tags
-          },
-          participants: participants.map(p => ({
-            id: p.id,
-            is_user: p.is_user,
-            persona: {
-              name: p.persona_name,
-              role: p.persona_role,
-              tone: p.persona_tone,
-              verbosity: p.persona_verbosity,
-              interrupt_level: p.persona_interrupt_level,
-              agreeability: p.persona_agreeability,
-              vocab_level: p.persona_vocab_level
-            },
-            voice: {
-              voice_name: p.voice_name,
-              rate_pct: p.voice_rate_pct,
-              pitch_pct: p.voice_pitch_pct,
-              style: p.voice_style
-            },
-            order_index: p.order_index
-          })),
-          conversation_history: conversationHistory,
-          latest_user_utterance: messageText,
-          config: {
-            max_reply_words: 55,
-            interruption_mode: 'light',
-            invigilator_mode: 'coaching',
-            moderator_mode: localStorage.getItem(`gd-moderator-${sessionId}`) === 'true',
-            citation_mode: localStorage.getItem(`gd-citation-${sessionId}`) === 'true',
-            originality_mode: 'strict',
-          },
-          request: 'generate_responses'
-        }
-      });
+      // Reuse an in-flight speculative request when the final utterance matches
+      // what we already started generating from the interim transcript.
+      const speculated = claimSpeculation(messageText);
+      const { data: aiResponse, error: aiError } = speculated
+        ? await speculated
+        : await invokeWithAuth('gd-conductor', { body: buildConductorBody(messageText) });
 
       if (aiError) {
         console.error('AI Error:', aiError);
@@ -725,8 +707,16 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             if (!autoPlayTTS) return;
             try {
               const clip = await clipPromises[i];
+              const persona = participants.find((x: any) => x.id === response.participant_id);
+              const prosody = parseProsody(
+                response.tts_ssml,
+                response.voice?.rate_pct ?? persona?.voice_rate_pct,
+                response.voice?.pitch_pct ?? persona?.voice_pitch_pct,
+              );
               await roomMixer.waitForSlot(overlap);
               await roomMixer.play(clip, {
+                rate: prosody.rate,
+                detune: prosody.detune,
                 speakerId,
                 speaker: response.participant_id === 'moderator' ? 'Moderator' : undefined,
                 seat: response.participant_id === 'moderator' ? 0.5 : seat,
