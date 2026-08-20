@@ -30,6 +30,9 @@ import SessionSidebar, { FeedbackGrid } from "@/components/discussion/SessionSid
 import { updatePracticeStreak } from "@/lib/streak-updater";
 import { safeCloseAudioContext, safeDisconnectAudioNode, safeStopMediaStream } from "@/lib/audio-utils";
 import { roomMixer } from "@/lib/audio/room-mixer";
+import { primeBackchannels, playBackchannel, clearBackchannels } from "@/lib/audio/backchannels";
+import { parseProsody } from "@/lib/audio/prosody";
+import { speculate, claimSpeculation, clearSpeculation } from "@/lib/discussion/speculative";
 
 interface DiscussionRoomProps {
   sessionId: string;
@@ -197,6 +200,66 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
 
   
+  // Phase B — live refs so speculative generation (fired from an interim
+  // transcript, inside a callback created at mount) always sees fresh state.
+  const sessionRef = useRef<any>(null);
+  const participantsRef = useRef<any[]>([]);
+  const messagesRef = useRef<any[]>([]);
+  useEffect(() => { sessionRef.current = session; }, [session]);
+  useEffect(() => { participantsRef.current = participants; }, [participants]);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  /** Single source of truth for the gd-conductor payload (speculative + real). */
+  const buildConductorBody = (latestText: string) => {
+    const sess = sessionRef.current;
+    const parts = participantsRef.current || [];
+    return {
+      session_id: sessionId,
+      topic: sess?.topic,
+      topic_meta: {
+        category: sess?.topic_category,
+        difficulty: sess?.topic_difficulty,
+        tags: sess?.topic_tags,
+      },
+      participants: parts.map((p: any) => ({
+        id: p.id,
+        is_user: p.is_user,
+        persona: {
+          name: p.persona_name,
+          role: p.persona_role,
+          tone: p.persona_tone,
+          verbosity: p.persona_verbosity,
+          interrupt_level: p.persona_interrupt_level,
+          agreeability: p.persona_agreeability,
+          vocab_level: p.persona_vocab_level,
+        },
+        voice: {
+          voice_name: p.voice_name,
+          rate_pct: p.voice_rate_pct,
+          pitch_pct: p.voice_pitch_pct,
+          style: p.voice_style,
+        },
+        order_index: p.order_index,
+      })),
+      conversation_history: (messagesRef.current || []).map((m: any) => ({
+        who: m.gd_participants?.persona_name || 'Unknown',
+        text: m.text,
+        start_ts: m.start_ts,
+        end_ts: m.end_ts,
+      })),
+      latest_user_utterance: latestText,
+      config: {
+        max_reply_words: 55,
+        interruption_mode: 'light',
+        invigilator_mode: 'coaching',
+        moderator_mode: localStorage.getItem(`gd-moderator-${sessionId}`) === 'true',
+        citation_mode: localStorage.getItem(`gd-citation-${sessionId}`) === 'true',
+        originality_mode: 'strict',
+      },
+      request: 'generate_responses',
+    } as Record<string, unknown>;
+  };
+
   // Streaming transcription for real-time voice input (like Google Keyboard)
   const { 
     isListening, 
@@ -208,7 +271,16 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     clearTranscription
   } = useStreamingTranscription({
     context: session?.topic,
-    onInterimResult: (text) => setUserInput(text),
+    onInterimResult: (text) => {
+      setUserInput(text);
+      // Start forming the AI reply while the user is still speaking.
+      if (!isPausedRef.current && !isInactiveRef.current) {
+        speculate(text, {
+          body: buildConductorBody(text),
+          invoke: (body) => invokeWithAuth('gd-conductor', { body }) as any,
+        });
+      }
+    },
     onFinalResult: (text) => {
       setUserInput(text);
       // If pending send, trigger it after correction completes
@@ -232,7 +304,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   // Register TTS stop with centralized cleanup so idle/unmount stops any playback
   useEffect(() => {
-    return registerCleanup(() => { try { stopSpeaking(); roomMixer.stopAll(); } catch {} });
+    return registerCleanup(() => { try { stopSpeaking(); roomMixer.stopAll(); clearSpeculation(); clearBackchannels(); } catch {} });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -482,6 +554,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       setSession(sessionData);
       setParticipants(participantsData);
+      // Pre-synthesise short reactions once per AI voice so the room can react
+      // within ~300ms of the user finishing, without a per-turn TTS call.
+      void primeBackchannels(
+        (participantsData || []).filter((p: any) => !p.is_user).map((p: any) => p.voice_name),
+      );
       setMessages(messagesData || []);
 
       // Update session status to active
