@@ -151,7 +151,7 @@ class RoomMixer {
       }
     }
 
-    const duration = clip.buffer.duration / speed;
+    const duration = clip.buffer.duration / rate;
     this.busyUntil = Math.max(this.busyUntil, startAt + duration);
 
     source.start(startAt);
