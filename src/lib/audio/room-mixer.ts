@@ -119,13 +119,18 @@ class RoomMixer {
     const overlap = opts.interruption ? Math.max(0, Math.min(opts.overlapSeconds ?? 1.2, MAX_OVERLAP)) : 0;
     const startAt = Math.max(ctx.currentTime + 0.02, this.busyUntil - overlap);
 
-    const speed = useVoiceStore.getState().speed || 1;
+    const userSpeed = useVoiceStore.getState().speed || 1;
+    const rate = Math.max(0.5, Math.min(2, userSpeed * (opts.rate ?? 1)));
     const source = ctx.createBufferSource();
     source.buffer = clip.buffer;
-    source.playbackRate.value = speed;
+    source.playbackRate.value = rate;
+    if (opts.detune && typeof (source as any).detune?.value === 'number') {
+      try { source.detune.value = Math.max(-1200, Math.min(1200, opts.detune)); } catch { /* noop */ }
+    }
 
     const gain = ctx.createGain();
-    gain.gain.value = 1;
+    gain.gain.value = Math.max(0, Math.min(1, opts.gain ?? 1));
+
 
     let tail: AudioNode = gain;
     if (typeof ctx.createStereoPanner === 'function') {
