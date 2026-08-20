@@ -45,7 +45,7 @@ type Listener = (speakers: string[]) => void;
 class RoomMixer {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
-  private active = new Map<string, { gain: GainNode; source: AudioBufferSourceNode }>();
+  private active = new Map<string, { gain: GainNode; source: AudioBufferSourceNode; base: number }>();
   private listeners = new Set<Listener>();
   private busyUntil = 0;
   private stopped = false;
@@ -145,9 +145,10 @@ class RoomMixer {
 
     // Duck whoever is already speaking when this is a barge-in.
     if (overlap > 0 && this.active.size > 0) {
-      for (const { gain: g } of this.active.values()) {
-        g.gain.cancelScheduledValues(startAt);
-        g.gain.setTargetAtTime(DUCK_GAIN, startAt, 0.12);
+      for (const entry of this.active.values()) {
+        if (!entry?.gain) continue;
+        entry.gain.gain.cancelScheduledValues(startAt);
+        entry.gain.gain.setTargetAtTime(DUCK_GAIN * entry.base, startAt, 0.12);
       }
     }
 
@@ -155,7 +156,7 @@ class RoomMixer {
     this.busyUntil = Math.max(this.busyUntil, startAt + duration);
 
     source.start(startAt);
-    this.active.set(opts.speakerId, { gain, source });
+    this.active.set(opts.speakerId, { gain, source, base: gain.gain.value });
     this.emit();
 
     await new Promise<void>((resolve) => {
@@ -163,9 +164,10 @@ class RoomMixer {
         try { source.disconnect(); gain.disconnect(); } catch { /* noop */ }
         this.active.delete(opts.speakerId);
         // Restore anyone we ducked.
-        for (const { gain: g } of this.active.values()) {
-          g.gain.cancelScheduledValues(ctx.currentTime);
-          g.gain.setTargetAtTime(1, ctx.currentTime, 0.15);
+        for (const entry of this.active.values()) {
+          if (!entry?.gain) continue;
+          entry.gain.gain.cancelScheduledValues(ctx.currentTime);
+          entry.gain.gain.setTargetAtTime(entry.base, ctx.currentTime, 0.15);
         }
         this.emit();
         resolve();
