@@ -286,7 +286,13 @@ RULES:
 6. Generate valid SSML for TTS.
 7. Provide helpful invigilator feedback for the user.
 8. Be interview-realistic: real GD participants COMPETE for airtime by adding value, not by agreeing.
-9. If a draft reply would violate the HARD BANS, rewrite it before emitting.`;
+9. If a draft reply would violate the HARD BANS, rewrite it before emitting.
+10. SPEECH REALISM — write spoken language, not written prose:
+   - Add a natural filled pause or hedge to roughly one reply in three ("Well—", "I mean,", "hmm,", "see,"). Never more than one per reply.
+   - Occasionally self-repair mid-sentence ("that costs—sorry, it saves about 12%") when the persona is thinking aloud; at most one repair per reply.
+   - Interrupting replies should START mid-thought ("—but that assumes...", "Hold on, the data says...").
+   - Do NOT add fillers to the moderator; the moderator stays crisp and neutral.
+   - Keep the SSML prosody consistent with the delivery: faster rate for interruptions and excited tones, slower for careful/analytical ones.`;
 
     // Build conversation context
     const conversationContext = conversation_history.map((turn: any) => 

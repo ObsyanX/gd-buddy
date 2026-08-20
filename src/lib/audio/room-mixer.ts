@@ -22,7 +22,14 @@ export interface SpeakOptions {
   overlapSeconds?: number;
   /** True when this utterance is a barge-in (ducks the other speaker). */
   interruption?: boolean;
+  /** Relative loudness 0..1 (backchannels are quieter than full turns). */
+  gain?: number;
+  /** Prosody rate multiplier from SSML hints (multiplied with user speed). */
+  rate?: number;
+  /** Prosody pitch offset in cents from SSML hints. */
+  detune?: number;
 }
+
 
 export interface PreparedClip {
   text: string;
@@ -38,7 +45,7 @@ type Listener = (speakers: string[]) => void;
 class RoomMixer {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
-  private active = new Map<string, { gain: GainNode; source: AudioBufferSourceNode }>();
+  private active = new Map<string, { gain: GainNode; source: AudioBufferSourceNode; base: number }>();
   private listeners = new Set<Listener>();
   private busyUntil = 0;
   private stopped = false;
@@ -112,13 +119,18 @@ class RoomMixer {
     const overlap = opts.interruption ? Math.max(0, Math.min(opts.overlapSeconds ?? 1.2, MAX_OVERLAP)) : 0;
     const startAt = Math.max(ctx.currentTime + 0.02, this.busyUntil - overlap);
 
-    const speed = useVoiceStore.getState().speed || 1;
+    const userSpeed = useVoiceStore.getState().speed || 1;
+    const rate = Math.max(0.5, Math.min(2, userSpeed * (opts.rate ?? 1)));
     const source = ctx.createBufferSource();
     source.buffer = clip.buffer;
-    source.playbackRate.value = speed;
+    source.playbackRate.value = rate;
+    if (opts.detune && typeof (source as any).detune?.value === 'number') {
+      try { source.detune.value = Math.max(-1200, Math.min(1200, opts.detune)); } catch { /* noop */ }
+    }
 
     const gain = ctx.createGain();
-    gain.gain.value = 1;
+    gain.gain.value = Math.max(0, Math.min(1, opts.gain ?? 1));
+
 
     let tail: AudioNode = gain;
     if (typeof ctx.createStereoPanner === 'function') {
@@ -133,17 +145,18 @@ class RoomMixer {
 
     // Duck whoever is already speaking when this is a barge-in.
     if (overlap > 0 && this.active.size > 0) {
-      for (const { gain: g } of this.active.values()) {
-        g.gain.cancelScheduledValues(startAt);
-        g.gain.setTargetAtTime(DUCK_GAIN, startAt, 0.12);
+      for (const entry of this.active.values()) {
+        if (!entry?.gain) continue;
+        entry.gain.gain.cancelScheduledValues(startAt);
+        entry.gain.gain.setTargetAtTime(DUCK_GAIN * entry.base, startAt, 0.12);
       }
     }
 
-    const duration = clip.buffer.duration / speed;
+    const duration = clip.buffer.duration / rate;
     this.busyUntil = Math.max(this.busyUntil, startAt + duration);
 
     source.start(startAt);
-    this.active.set(opts.speakerId, { gain, source });
+    this.active.set(opts.speakerId, { gain, source, base: gain.gain.value });
     this.emit();
 
     await new Promise<void>((resolve) => {
@@ -151,9 +164,10 @@ class RoomMixer {
         try { source.disconnect(); gain.disconnect(); } catch { /* noop */ }
         this.active.delete(opts.speakerId);
         // Restore anyone we ducked.
-        for (const { gain: g } of this.active.values()) {
-          g.gain.cancelScheduledValues(ctx.currentTime);
-          g.gain.setTargetAtTime(1, ctx.currentTime, 0.15);
+        for (const entry of this.active.values()) {
+          if (!entry?.gain) continue;
+          entry.gain.gain.cancelScheduledValues(ctx.currentTime);
+          entry.gain.gain.setTargetAtTime(entry.base, ctx.currentTime, 0.15);
         }
         this.emit();
         resolve();
