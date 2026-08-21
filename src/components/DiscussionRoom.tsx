@@ -33,6 +33,20 @@ import { roomMixer } from "@/lib/audio/room-mixer";
 import { primeBackchannels, playBackchannel, clearBackchannels } from "@/lib/audio/backchannels";
 import { parseProsody } from "@/lib/audio/prosody";
 import { speculate, claimSpeculation, clearSpeculation } from "@/lib/discussion/speculative";
+import RoundClock from "@/components/discussion/RoundClock";
+import ReadingWindow from "@/components/discussion/ReadingWindow";
+import ClosingRound from "@/components/discussion/ClosingRound";
+import {
+  computeWindows,
+  clockState,
+  closingOrder,
+  activeClosingSlot,
+  airtimeReport,
+  moderatorInterjection,
+  getFormat,
+  type ClockState,
+  type ProtocolWindows,
+} from "@/lib/discussion/gd-protocol";
 
 interface DiscussionRoomProps {
   sessionId: string;
