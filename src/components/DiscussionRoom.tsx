@@ -74,7 +74,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [isPaused, setIsPaused] = useState(false);
   const [autoSendEnabled, setAutoSendEnabled] = useState(true);
   const [autoSkipEnabled, setAutoSkipEnabled] = useState(true);
+  // ---- Phase D: GD protocol (reading window, round clock, closing round) ----
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [readingSkipped, setReadingSkipped] = useState(false);
+  const [closingDoneIds, setClosingDoneIds] = useState<string[]>([]);
+  const lastInterjectionAtRef = useRef(0);
+  const hardStopFiredRef = useRef(false);
+  const warnedStagesRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
+
   
   // Load auto-mic setting from Zustand store
   useEffect(() => {
