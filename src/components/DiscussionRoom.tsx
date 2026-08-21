@@ -33,6 +33,20 @@ import { roomMixer } from "@/lib/audio/room-mixer";
 import { primeBackchannels, playBackchannel, clearBackchannels } from "@/lib/audio/backchannels";
 import { parseProsody } from "@/lib/audio/prosody";
 import { speculate, claimSpeculation, clearSpeculation } from "@/lib/discussion/speculative";
+import RoundClock from "@/components/discussion/RoundClock";
+import ReadingWindow from "@/components/discussion/ReadingWindow";
+import ClosingRound from "@/components/discussion/ClosingRound";
+import {
+  computeWindows,
+  clockState,
+  closingOrder,
+  activeClosingSlot,
+  airtimeReport,
+  moderatorInterjection,
+  getFormat,
+  type ClockState,
+  type ProtocolWindows,
+} from "@/lib/discussion/gd-protocol";
 
 interface DiscussionRoomProps {
   sessionId: string;
@@ -60,7 +74,31 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [isPaused, setIsPaused] = useState(false);
   const [autoSendEnabled, setAutoSendEnabled] = useState(true);
   const [autoSkipEnabled, setAutoSkipEnabled] = useState(true);
+  // ---- Phase D: GD protocol (reading window, round clock, closing round) ----
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [readingSkipped, setReadingSkipped] = useState(false);
+  const [closingDoneIds, setClosingDoneIds] = useState<string[]>([]);
+  const lastInterjectionAtRef = useRef(0);
+  const hardStopFiredRef = useRef(false);
+  const warnedStagesRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
+
+  const protocolWindows: ProtocolWindows | null = useMemo(() => {
+    if (!session?.start_time) return null;
+    return computeWindows(session.start_time, session.gd_format, participants.length || 1);
+  }, [session?.start_time, session?.gd_format, participants.length]);
+
+  const clock: ClockState | null = protocolWindows ? clockState(nowMs, protocolWindows) : null;
+  const isReadingWindow = !!clock && clock.stage === 'reading' && !readingSkipped;
+  const isClosingRound = !!clock && clock.stage === 'closing';
+  const closingSlots = useMemo(
+    () => (protocolWindows ? closingOrder(participants as any[], protocolWindows) : []),
+    [participants, protocolWindows],
+  );
+  const activeSlot = isClosingRound ? activeClosingSlot(nowMs, closingSlots) : null;
+  const isUserClosingSlot = !!activeSlot?.isUser;
+  const floorLocked = isReadingWindow || (isClosingRound && !isUserClosingSlot);
+
   
   // Load auto-mic setting from Zustand store
   useEffect(() => {

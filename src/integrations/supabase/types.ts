@@ -2296,9 +2296,12 @@ export type Database = {
       }
       gd_sessions: {
         Row: {
+          closing_starts_at: string | null
           created_at: string
           end_time: string | null
           extension_used: boolean
+          gd_format: string
+          hard_stop_at: string | null
           host_user_id: string | null
           id: string
           is_multiplayer: boolean | null
@@ -2307,6 +2310,7 @@ export type Database = {
           mic_lock_holder: string | null
           org_id: string | null
           phase: string
+          reading_ends_at: string | null
           room_code: string | null
           silence_meta: Json | null
           start_time: string | null
@@ -2320,9 +2324,12 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          closing_starts_at?: string | null
           created_at?: string
           end_time?: string | null
           extension_used?: boolean
+          gd_format?: string
+          hard_stop_at?: string | null
           host_user_id?: string | null
           id?: string
           is_multiplayer?: boolean | null
@@ -2331,6 +2338,7 @@ export type Database = {
           mic_lock_holder?: string | null
           org_id?: string | null
           phase?: string
+          reading_ends_at?: string | null
           room_code?: string | null
           silence_meta?: Json | null
           start_time?: string | null
@@ -2344,9 +2352,12 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          closing_starts_at?: string | null
           created_at?: string
           end_time?: string | null
           extension_used?: boolean
+          gd_format?: string
+          hard_stop_at?: string | null
           host_user_id?: string | null
           id?: string
           is_multiplayer?: boolean | null
@@ -2355,6 +2366,7 @@ export type Database = {
           mic_lock_holder?: string | null
           org_id?: string | null
           phase?: string
+          reading_ends_at?: string | null
           room_code?: string | null
           silence_meta?: Json | null
           start_time?: string | null
