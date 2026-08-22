@@ -17,6 +17,7 @@ interface SessionHeaderProps {
   autoPlayTTS: boolean;
   usingFallbackTTS?: boolean;
   isPaused: boolean;
+  clockSlot?: React.ReactNode;
   onToggleAutoMic: () => void;
   onToggleTTS: () => void;
   onResetTutorial: () => void;
@@ -33,7 +34,7 @@ const formatTimer = (seconds: number): string => {
 const SessionHeader = ({
   session, messagesCount, isListening, isCorrecting,
   autoMicEnabled, autoMicSetting, autoPlayTTS, usingFallbackTTS,
-  isPaused, onToggleAutoMic, onToggleTTS, onResetTutorial, onEndSession, onTogglePause,
+  isPaused, clockSlot, onToggleAutoMic, onToggleTTS, onResetTutorial, onEndSession, onTogglePause,
 }: SessionHeaderProps) => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -86,6 +87,7 @@ const SessionHeader = ({
                 <Clock className="w-2.5 h-2.5 mr-0.5" />
                 {formatTimer(elapsedSeconds)}
               </Badge>
+              {clockSlot}
               <TurnQueueBadge sessionId={session?.id ?? null} />
               <DiscussionHealthMeter sessionId={session?.id ?? null} compact />
             </div>
@@ -198,6 +200,7 @@ const SessionHeader = ({
                   )}
                 </>
               )}
+              {clockSlot}
               <DiscussionHealthMeter sessionId={session?.id ?? null} />
             </div>
           </div>

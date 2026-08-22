@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -98,6 +98,36 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const activeSlot = isClosingRound ? activeClosingSlot(nowMs, closingSlots) : null;
   const isUserClosingSlot = !!activeSlot?.isUser;
   const floorLocked = isReadingWindow || (isClosingRound && !isUserClosingSlot);
+  const gdFormat = getFormat(session?.gd_format);
+
+  /** Protocol snapshot handed to gd-conductor on every request. */
+  const protocolContextRef = useRef<Record<string, unknown> | null>(null);
+  useEffect(() => {
+    if (!clock) { protocolContextRef.current = null; return; }
+    protocolContextRef.current = {
+      format: gdFormat.id,
+      format_label: gdFormat.label,
+      stage: clock.stage,
+      stage_label: clock.label,
+      seconds_in_stage: clock.secondsInStage,
+      seconds_remaining: clock.secondsRemaining,
+      mic_locked: clock.micLocked,
+      closing_speaker: activeSlot?.name ?? null,
+      airtime: airtimeReport(participants as any[], messages as any[]).rows.map((r) => ({
+        name: r.name,
+        share: Number(r.share.toFixed(3)),
+        words: r.words,
+      })),
+    };
+  }, [clock?.stage, clock?.secondsInStage, gdFormat.id, activeSlot?.name, participants, messages]);
+
+  // 1s protocol ticker — drives the clock, warnings, closing slots and hard stop.
+  useEffect(() => {
+    if (!protocolWindows || isPaused) return;
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [protocolWindows, isPaused]);
+
 
   
   // Load auto-mic setting from Zustand store
@@ -296,6 +326,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         citation_mode: localStorage.getItem(`gd-citation-${sessionId}`) === 'true',
         originality_mode: 'strict',
       },
+      protocol: protocolContextRef.current,
       request: 'generate_responses',
     } as Record<string, unknown>;
   };
@@ -619,8 +650,34 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   };
 
   // Direct send with specific text (used for auto-send after voice)
+  /** Insert a moderator line into the transcript (and speak it when TTS is on). */
+  const postModeratorLine = async (text: string) => {
+    const msg = {
+      id: `moderator-${Date.now()}`,
+      session_id: sessionId,
+      participant_id: 'moderator',
+      text,
+      created_at: new Date().toISOString(),
+      gd_participants: { persona_name: 'Moderator', is_user: false },
+    };
+    setMessages((prev) => [...prev, msg]);
+    if (autoPlayTTS) {
+      try { await speak(text, 'Moderator', 'alloy'); } catch { /* TTS is best-effort */ }
+    }
+  };
+
   const handleSendMessageDirect = async (textToSend: string) => {
     if (!textToSend.trim() || isProcessing || isPaused) return;
+    if (floorLocked) {
+      toast({
+        title: isReadingWindow ? 'Mic locked — topic reading' : 'Not your closing slot',
+        description: isReadingWindow
+          ? 'The floor opens when the reading window ends.'
+          : `Wait for your turn in the closing round${activeSlot ? ` — ${activeSlot.name} is summarising.` : '.'}`,
+      });
+      return;
+    }
+
 
     setIsProcessing(true);
     // Find the participant that matches the current authenticated user
@@ -808,6 +865,20 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         }
       }
 
+
+      // Phase D — airtime enforcement: nudge the floor back into balance.
+      if (!isClosingRound && Date.now() - lastInterjectionAtRef.current > 90_000) {
+        const line = moderatorInterjection(airtimeReport(participantsRef.current as any[], messagesRef.current as any[]));
+        if (line) {
+          lastInterjectionAtRef.current = Date.now();
+          await postModeratorLine(line);
+        }
+      }
+
+      // Mark the user's closing slot as delivered once they summarise.
+      if (isClosingRound && activeSlot?.isUser) {
+        setClosingDoneIds((prev) => (prev.includes(activeSlot.participantId) ? prev : [...prev, activeSlot.participantId]));
+      }
 
       // Update feedback
       if (aiResponse?.invigilator_signals) {
@@ -1040,6 +1111,43 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     </div>;
   }
 
+  // Persist protocol windows once the session is live so every client agrees.
+  useEffect(() => {
+    if (!protocolWindows || !session?.id) return;
+    if (session.hard_stop_at) return;
+    void supabase
+      .from('gd_sessions')
+      .update({
+        reading_ends_at: new Date(protocolWindows.readingEndsMs).toISOString(),
+        closing_starts_at: new Date(protocolWindows.closingStartsMs).toISOString(),
+        hard_stop_at: new Date(protocolWindows.hardStopMs).toISOString(),
+      } as any)
+      .eq('id', session.id)
+      .then(({ error }) => { if (error) console.error('[protocol] persist windows failed', error); });
+  }, [protocolWindows, session?.id, session?.hard_stop_at]);
+
+  // Stage announcements: T-2min, T-30s, closing round start.
+  useEffect(() => {
+    if (!clock || isPaused) return;
+    const announce: Record<string, string> = {
+      warning_2m: 'Two minutes left in the open discussion. Start converging.',
+      warning_30s: 'Thirty seconds — begin wrapping up your point.',
+      closing: 'Open discussion is over. We move to the closing round — one summary each.',
+    };
+    const line = announce[clock.stage];
+    if (!line || warnedStagesRef.current.has(clock.stage)) return;
+    warnedStagesRef.current.add(clock.stage);
+    void postModeratorLine(line);
+  }, [clock?.stage, isPaused]);
+
+  // Hard stop — the panel ends the GD on time.
+  useEffect(() => {
+    if (!clock || clock.stage !== 'over' || hardStopFiredRef.current) return;
+    hardStopFiredRef.current = true;
+    toast({ title: "Time's up", description: 'The discussion has ended — generating your report.' });
+    void handleEndSession();
+  }, [clock?.stage]);
+
   return (
     <div className="min-h-full bg-background flex flex-col overflow-visible lg:h-full lg:min-h-0 lg:overflow-hidden">
       {showTutorial && (
@@ -1061,6 +1169,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         onResetTutorial={resetTutorial}
         onEndSession={handleEndSession}
         usingFallbackTTS={usingFallbackTTS}
+        clockSlot={clock ? <RoundClock clock={clock} format={gdFormat} /> : null}
       />
 
       <div
@@ -1114,6 +1223,24 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             </div>
           )}
 
+          {isClosingRound && (
+            <ClosingRound
+              slots={closingSlots}
+              activeId={activeSlot?.participantId ?? null}
+              secondsInSlot={activeSlot ? Math.max(0, Math.ceil((activeSlot.endsMs - nowMs) / 1000)) : 0}
+              doneIds={closingDoneIds}
+            />
+          )}
+
+          {isReadingWindow ? (
+            <ReadingWindow
+              topic={session.topic}
+              category={session.topic_category}
+              seconds={clock?.secondsInStage ?? 0}
+              format={gdFormat}
+              onSkip={() => setReadingSkipped(true)}
+            />
+          ) : (
           <MessageInput
             userInput={userInput}
             isListening={isListening}
@@ -1121,7 +1248,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             isPracticing={isPracticing}
             isCorrecting={isCorrecting}
             isPaused={isPaused}
-            isBusy={isWaitingForSpeech || isSpeaking}
+            isBusy={isWaitingForSpeech || isSpeaking || floorLocked}
             autoSendEnabled={autoSendEnabled}
             autoSkipEnabled={autoSkipEnabled}
             onInputChange={setUserInput}
@@ -1138,6 +1265,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             onToggleAutoSend={() => setAutoSendEnabled(prev => !prev)}
             onToggleAutoSkip={() => setAutoSkipEnabled(prev => !prev)}
           />
+          )}
         </div>
 
         {/* Right Sidebar - Desktop Only */}
