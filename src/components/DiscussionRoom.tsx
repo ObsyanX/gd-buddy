@@ -1169,6 +1169,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         onResetTutorial={resetTutorial}
         onEndSession={handleEndSession}
         usingFallbackTTS={usingFallbackTTS}
+        clockSlot={clock ? <RoundClock clock={clock} format={gdFormat} /> : null}
       />
 
       <div
@@ -1222,6 +1223,24 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             </div>
           )}
 
+          {isClosingRound && (
+            <ClosingRound
+              slots={closingSlots}
+              activeId={activeSlot?.participantId ?? null}
+              secondsInSlot={activeSlot ? Math.max(0, Math.ceil((activeSlot.endsMs - nowMs) / 1000)) : 0}
+              doneIds={closingDoneIds}
+            />
+          )}
+
+          {isReadingWindow ? (
+            <ReadingWindow
+              topic={session.topic}
+              category={session.topic_category}
+              seconds={clock?.secondsInStage ?? 0}
+              format={gdFormat}
+              onSkip={() => setReadingSkipped(true)}
+            />
+          ) : (
           <MessageInput
             userInput={userInput}
             isListening={isListening}
@@ -1246,6 +1265,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             onToggleAutoSend={() => setAutoSendEnabled(prev => !prev)}
             onToggleAutoSkip={() => setAutoSkipEnabled(prev => !prev)}
           />
+          )}
         </div>
 
         {/* Right Sidebar - Desktop Only */}
