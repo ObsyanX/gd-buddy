@@ -18,6 +18,7 @@ import {
   PersonaTemplate
 } from "@/config/personas";
 import CustomPersonaForm from "./CustomPersonaForm";
+import { GD_FORMATS, type GdFormat } from "@/lib/discussion/gd-protocol";
 
 interface SessionSetupProps {
   topic: any;
