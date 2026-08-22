@@ -296,6 +296,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         citation_mode: localStorage.getItem(`gd-citation-${sessionId}`) === 'true',
         originality_mode: 'strict',
       },
+      protocol: protocolContextRef.current,
       request: 'generate_responses',
     } as Record<string, unknown>;
   };
