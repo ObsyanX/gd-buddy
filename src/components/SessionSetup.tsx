@@ -42,6 +42,7 @@ interface CustomPersona {
 type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
 
 const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) => {
+  const [gdFormat, setGdFormat] = useState<GdFormat>('free_form');
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
   const [selectedCustomPersonas, setSelectedCustomPersonas] = useState<string[]>([]);
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
@@ -210,6 +211,7 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
           topic: topic.title,
           topic_category: topic.category,
           topic_difficulty: topic.difficulty,
+          gd_format: gdFormat,
           topic_tags: topic.tags || [],
           status: 'setup'
         })
@@ -342,6 +344,37 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
                 <Badge key={i} variant="outline">{tag}</Badge>
               ))}
             </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 sm:p-6 border-4 border-border space-y-3">
+          <div>
+            <label className="text-sm font-bold text-muted-foreground">GD FORMAT</label>
+            <p className="text-xs text-muted-foreground font-mono">
+              Sets the reading window, discussion length and closing round.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {Object.values(GD_FORMATS).map((f) => {
+              const active = gdFormat === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setGdFormat(f.id)}
+                  aria-pressed={active}
+                  className={`text-left rounded-lg border-2 p-3 min-h-[44px] transition-colors ${
+                    active ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted/50'
+                  }`}
+                >
+                  <span className="font-bold text-sm block">{f.label}</span>
+                  <span className="text-xs text-muted-foreground block">{f.description}</span>
+                  <span className="text-[11px] font-mono text-muted-foreground block mt-1">
+                    {Math.round(f.readingSeconds / 60 * 10) / 10}m read · {f.discussionSeconds / 60}m discussion · {f.closingSlotSeconds}s closing each
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </Card>
 
