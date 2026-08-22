@@ -1248,7 +1248,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             isPracticing={isPracticing}
             isCorrecting={isCorrecting}
             isPaused={isPaused}
-            isBusy={isWaitingForSpeech || isSpeaking}
+            isBusy={isWaitingForSpeech || isSpeaking || floorLocked}
             autoSendEnabled={autoSendEnabled}
             autoSkipEnabled={autoSkipEnabled}
             onInputChange={setUserInput}
