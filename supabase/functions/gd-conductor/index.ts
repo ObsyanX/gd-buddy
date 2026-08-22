@@ -82,6 +82,7 @@ const inputSchema = z.object({
   metrics_so_far: z.any().optional(),
   benchmarks: z.any().optional(),
   config: z.any().optional(),
+  protocol: z.any().optional(),
   request: z.enum(['generate_responses', 'invigilator_update', 'post_session_report', 'topic_suggestions']).optional(),
 });
 
@@ -340,8 +341,18 @@ ${JSON.stringify(body.benchmarks, null, 2)}` : '';
       return 'a fresh angle the room has NOT yet covered';
     };
 
+    const protocol = (body as any).protocol || null;
+    const protocolInfo = protocol ? `
+GD PROTOCOL STATE (obey it — this is a timed, moderated discussion):
+- Format: ${protocol.format_label || protocol.format}
+- Stage: ${protocol.stage_label || protocol.stage} (${protocol.seconds_in_stage ?? '?'}s left in this stage, ${protocol.seconds_remaining ?? '?'}s to hard stop)
+${protocol.stage === 'warning_2m' ? '- Two minutes left: converge, stop opening brand-new threads.' : ''}
+${protocol.stage === 'warning_30s' ? '- Thirty seconds left: one short closing thought each, no new arguments.' : ''}
+${protocol.stage === 'closing' ? `- CLOSING ROUND: only ${protocol.closing_speaker || 'the current speaker'} may speak, and only a summary (no new claims).` : ''}
+${Array.isArray(protocol.airtime) && protocol.airtime.length ? `- Airtime so far: ${protocol.airtime.map((a: any) => `${a.name} ${Math.round((a.share || 0) * 100)}%`).join(', ')}. Yield the floor to under-represented voices; if a persona is already dominant, keep it silent this turn.` : ''}` : '';
+
     const userMessage = `Topic: ${topic}
-Category: ${topic_meta.category || 'General'}
+Category: ${topic_meta.category || 'General'}${protocolInfo}
 Difficulty: ${topic_meta.difficulty || 'Medium'}
 
 Participants:
