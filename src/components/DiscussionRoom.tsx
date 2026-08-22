@@ -650,8 +650,34 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   };
 
   // Direct send with specific text (used for auto-send after voice)
+  /** Insert a moderator line into the transcript (and speak it when TTS is on). */
+  const postModeratorLine = async (text: string) => {
+    const msg = {
+      id: `moderator-${Date.now()}`,
+      session_id: sessionId,
+      participant_id: 'moderator',
+      text,
+      created_at: new Date().toISOString(),
+      gd_participants: { persona_name: 'Moderator', is_user: false },
+    };
+    setMessages((prev) => [...prev, msg]);
+    if (autoPlayTTS) {
+      try { await speak(text, 'alloy'); } catch { /* TTS is best-effort */ }
+    }
+  };
+
   const handleSendMessageDirect = async (textToSend: string) => {
     if (!textToSend.trim() || isProcessing || isPaused) return;
+    if (floorLocked) {
+      toast({
+        title: isReadingWindow ? 'Mic locked — topic reading' : 'Not your closing slot',
+        description: isReadingWindow
+          ? 'The floor opens when the reading window ends.'
+          : `Wait for your turn in the closing round${activeSlot ? ` — ${activeSlot.name} is summarising.` : '.'}`,
+      });
+      return;
+    }
+
 
     setIsProcessing(true);
     // Find the participant that matches the current authenticated user
