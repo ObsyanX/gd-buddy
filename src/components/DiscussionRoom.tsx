@@ -98,6 +98,36 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const activeSlot = isClosingRound ? activeClosingSlot(nowMs, closingSlots) : null;
   const isUserClosingSlot = !!activeSlot?.isUser;
   const floorLocked = isReadingWindow || (isClosingRound && !isUserClosingSlot);
+  const gdFormat = getFormat(session?.gd_format);
+
+  /** Protocol snapshot handed to gd-conductor on every request. */
+  const protocolContextRef = useRef<Record<string, unknown> | null>(null);
+  useEffect(() => {
+    if (!clock) { protocolContextRef.current = null; return; }
+    protocolContextRef.current = {
+      format: gdFormat.id,
+      format_label: gdFormat.label,
+      stage: clock.stage,
+      stage_label: clock.label,
+      seconds_in_stage: clock.secondsInStage,
+      seconds_remaining: clock.secondsRemaining,
+      mic_locked: clock.micLocked,
+      closing_speaker: activeSlot?.name ?? null,
+      airtime: airtimeReport(participants as any[], messages as any[]).rows.map((r) => ({
+        name: r.name,
+        share: Number(r.share.toFixed(3)),
+        words: r.words,
+      })),
+    };
+  }, [clock?.stage, clock?.secondsInStage, gdFormat.id, activeSlot?.name, participants, messages]);
+
+  // 1s protocol ticker — drives the clock, warnings, closing slots and hard stop.
+  useEffect(() => {
+    if (!protocolWindows || isPaused) return;
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [protocolWindows, isPaused]);
+
 
   
   // Load auto-mic setting from Zustand store
