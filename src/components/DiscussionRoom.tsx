@@ -662,7 +662,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     };
     setMessages((prev) => [...prev, msg]);
     if (autoPlayTTS) {
-      try { await speak(text, 'alloy'); } catch { /* TTS is best-effort */ }
+      try { await speak(text, 'Moderator', 'alloy'); } catch { /* TTS is best-effort */ }
     }
   };
 
@@ -865,6 +865,20 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         }
       }
 
+
+      // Phase D — airtime enforcement: nudge the floor back into balance.
+      if (!isClosingRound && Date.now() - lastInterjectionAtRef.current > 90_000) {
+        const line = moderatorInterjection(airtimeReport(participantsRef.current as any[], messagesRef.current as any[]));
+        if (line) {
+          lastInterjectionAtRef.current = Date.now();
+          await postModeratorLine(line);
+        }
+      }
+
+      // Mark the user's closing slot as delivered once they summarise.
+      if (isClosingRound && activeSlot?.isUser) {
+        setClosingDoneIds((prev) => (prev.includes(activeSlot.participantId) ? prev : [...prev, activeSlot.participantId]));
+      }
 
       // Update feedback
       if (aiResponse?.invigilator_signals) {
@@ -1096,6 +1110,43 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       <p className="text-xl font-mono">LOADING SESSION...</p>
     </div>;
   }
+
+  // Persist protocol windows once the session is live so every client agrees.
+  useEffect(() => {
+    if (!protocolWindows || !session?.id) return;
+    if (session.hard_stop_at) return;
+    void supabase
+      .from('gd_sessions')
+      .update({
+        reading_ends_at: new Date(protocolWindows.readingEndsMs).toISOString(),
+        closing_starts_at: new Date(protocolWindows.closingStartsMs).toISOString(),
+        hard_stop_at: new Date(protocolWindows.hardStopMs).toISOString(),
+      } as any)
+      .eq('id', session.id)
+      .then(({ error }) => { if (error) console.error('[protocol] persist windows failed', error); });
+  }, [protocolWindows, session?.id, session?.hard_stop_at]);
+
+  // Stage announcements: T-2min, T-30s, closing round start.
+  useEffect(() => {
+    if (!clock || isPaused) return;
+    const announce: Record<string, string> = {
+      warning_2m: 'Two minutes left in the open discussion. Start converging.',
+      warning_30s: 'Thirty seconds — begin wrapping up your point.',
+      closing: 'Open discussion is over. We move to the closing round — one summary each.',
+    };
+    const line = announce[clock.stage];
+    if (!line || warnedStagesRef.current.has(clock.stage)) return;
+    warnedStagesRef.current.add(clock.stage);
+    void postModeratorLine(line);
+  }, [clock?.stage, isPaused]);
+
+  // Hard stop — the panel ends the GD on time.
+  useEffect(() => {
+    if (!clock || clock.stage !== 'over' || hardStopFiredRef.current) return;
+    hardStopFiredRef.current = true;
+    toast({ title: "Time's up", description: 'The discussion has ended — generating your report.' });
+    void handleEndSession();
+  }, [clock?.stage]);
 
   return (
     <div className="min-h-full bg-background flex flex-col overflow-visible lg:h-full lg:min-h-0 lg:overflow-hidden">
