@@ -1105,12 +1105,6 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     },
   });
 
-  if (!session) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-      <p className="text-xl font-mono">LOADING SESSION...</p>
-    </div>;
-  }
-
   // Persist protocol windows once the session is live so every client agrees.
   useEffect(() => {
     if (!protocolWindows || !session?.id) return;
@@ -1147,6 +1141,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     toast({ title: "Time's up", description: 'The discussion has ended — generating your report.' });
     void handleEndSession();
   }, [clock?.stage]);
+
+  if (!session) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <p className="text-xl font-mono">LOADING SESSION...</p>
+    </div>;
+  }
+
 
   return (
     <div className="min-h-full bg-background flex flex-col overflow-visible lg:h-full lg:min-h-0 lg:overflow-hidden">
