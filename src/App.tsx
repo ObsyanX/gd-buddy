@@ -223,6 +223,8 @@ const App = () => (
         <LazyMotionProvider>
         <TooltipProvider>
           <RouteTracker />
+          <ScrollLockGuard />
+
           <Toaster />
           <Sonner />
           <OfflineBanner />
