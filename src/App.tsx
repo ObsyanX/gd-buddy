@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Suspense, useEffect } from "react";
 import { lazyRetry as lazy } from "@/lib/lazy-retry";
@@ -186,6 +186,36 @@ import { useTracker } from "@/hooks/useTracker";
 
 const RouteTracker = () => { useTracker(); return null; };
 
+/**
+ * Safety net: a dialog/sheet that unmounts mid-transition can leave the body
+ * scroll-locked (overflow:hidden / position:fixed / pointer-events:none),
+ * which reads as "the page won't scroll" on phones. Clear stray locks on every
+ * route change when no Radix overlay is actually open.
+ */
+const ScrollLockGuard = () => {
+  const location = useLocation();
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      const overlayOpen = document.querySelector(
+        '[data-state="open"][role="dialog"], [data-radix-popper-content-wrapper]'
+      );
+      if (overlayOpen) return;
+      const s = document.body.style;
+      if (s.overflow === "hidden") s.removeProperty("overflow");
+      if (s.position === "fixed") {
+        s.removeProperty("position");
+        s.removeProperty("top");
+        s.removeProperty("width");
+      }
+      if (s.pointerEvents === "none") s.removeProperty("pointer-events");
+      document.body.removeAttribute("data-scroll-locked");
+    }, 120);
+    return () => window.clearTimeout(id);
+  }, [location.pathname]);
+  return null;
+};
+
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
@@ -193,6 +223,8 @@ const App = () => (
         <LazyMotionProvider>
         <TooltipProvider>
           <RouteTracker />
+          <ScrollLockGuard />
+
           <Toaster />
           <Sonner />
           <OfflineBanner />
