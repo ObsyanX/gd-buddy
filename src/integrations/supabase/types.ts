@@ -4404,6 +4404,7 @@ export type Database = {
           total_bytes: number
         }[]
       }
+      visible_profile_ids: { Args: never; Returns: string[] }
     }
     Enums: {
       ad_rotation: "random" | "weighted" | "sequential" | "priority"
