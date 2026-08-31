@@ -35,6 +35,3 @@ verify_jwt = false
 
 [functions.newsletter-digest]
 verify_jwt = false
-
-[functions.ai-model-probe]
-verify_jwt = false
