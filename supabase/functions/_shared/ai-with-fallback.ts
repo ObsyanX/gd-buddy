@@ -351,20 +351,48 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
     }
 
     const candidates = provider.map(body.model ?? "");
-    let modelMissing = false;
 
     for (const mappedModel of candidates) {
       console.log(`[ai-fallback] Trying ${provider.name} with model ${mappedModel}`);
-      modelMissing = false;
       try {
-        const response = await callProvider(provider.url, provider.key, body, mappedModel);
+        let response = await callProvider(provider.url, provider.key, body, mappedModel);
+        let errText = "";
+
+        if (!response.ok) {
+          errText = await response.text();
+          // Some Groq models reject strict JSON mode (json_validate_failed /
+          // tool_use_failed) even though the model itself works. Retry once
+          // without `response_format`, asking for raw JSON in the prompt —
+          // callers already run the output through a tolerant JSON parser.
+          const jsonModeFailure =
+            !!body.response_format &&
+            /json_validate_failed|tool_use_failed|Failed to (?:generate|validate) JSON/i.test(errText);
+          if (jsonModeFailure) {
+            console.warn(`[ai-fallback] ${provider.name} JSON mode failed — retrying as plain text`);
+            const { response_format: _rf, ...rest } = body;
+            const degraded: AIRequestBody = {
+              ...rest,
+              messages: [
+                ...body.messages,
+                {
+                  role: "system",
+                  content:
+                    "Respond with a single valid JSON object only. No markdown fences, no prose.",
+                },
+              ],
+            };
+            response = await callProvider(provider.url, provider.key, degraded, mappedModel);
+            if (!response.ok) errText = await response.text();
+          }
+        }
+
         if (response.ok) {
           const json = await response.json();
           json._provider = provider.name;
           await recordUsage(json as AIResponse, mappedModel, provider.name, fnName);
           return json as AIResponse;
         }
-        const errText = await response.text();
+
         lastStatus = response.status;
         failures.push(`${provider.name}(${response.status})`);
         console.error(
@@ -378,8 +406,15 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
           functionName: fnName,
           fallbackUsed: true,
         });
+
+        // Account-level failures (no credits / plan / bad key) apply to every
+        // model on this provider — stop hammering it and move to the next one.
+        const accountBlocked =
+          response.status === 401 || response.status === 402 || response.status === 403;
+        if (accountBlocked) break;
+
         // Only retry the same provider when the *model* is the problem.
-        modelMissing = response.status === 404 ||
+        const modelMissing = response.status === 404 ||
           /model_not_found|does not exist|decommissioned|unknown model/i.test(errText);
         if (!modelMissing) break;
       } catch (e) {
@@ -397,6 +432,7 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
         break;
       }
     }
+
   }
 
   // --- 3. Every provider failed ---
