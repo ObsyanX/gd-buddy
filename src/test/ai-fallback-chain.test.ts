@@ -82,7 +82,7 @@ describe("callAI provider fallback chain", () => {
     const res = await callAI(REQUEST);
     expect(res._provider).toBe("groq");
     expect(calls.at(-1)?.host).toBe("api.groq.com");
-    expect(calls.at(-1)?.model).toBe("llama-3.3-70b-versatile");
+    expect(calls.at(-1)?.model).toBe("openai/gpt-oss-120b");
   });
 
   it("falls back to Mistral when Lovable and Groq both fail", async () => {
@@ -95,7 +95,7 @@ describe("callAI provider fallback chain", () => {
       "api.groq.com",
       "api.mistral.ai",
     ]);
-    expect(calls.at(-1)?.model).toBe("mistral-large-latest");
+    expect(calls.at(-1)?.model).toBe("mistral-medium-latest");
   });
 
   it("falls back to Cerebras when Lovable, Groq and Mistral fail", async () => {
@@ -113,7 +113,7 @@ describe("callAI provider fallback chain", () => {
       "api.mistral.ai",
       "api.cerebras.ai",
     ]);
-    expect(calls.at(-1)?.model).toBe("llama-3.3-70b");
+    expect(calls.at(-1)?.model).toBe("gpt-oss-120b");
   });
 
   it("maps lightweight models to each provider's small tier", async () => {
@@ -124,9 +124,9 @@ describe("callAI provider fallback chain", () => {
     ]);
     const { callAI } = await loadCallAI();
     await callAI({ ...REQUEST, model: "google/gemini-2.5-flash-lite" });
-    expect(calls[1].model).toBe("llama-3.1-8b-instant");
+    expect(calls[1].model).toBe("openai/gpt-oss-20b");
     expect(calls[2].model).toBe("mistral-small-latest");
-    expect(calls[3].model).toBe("llama3.1-8b");
+    expect(calls[3].model).toBe("gpt-oss-120b");
   });
 
   it("recovers when a provider throws a network error", async () => {
