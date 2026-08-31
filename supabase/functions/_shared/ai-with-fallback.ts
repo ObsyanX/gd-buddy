@@ -34,39 +34,36 @@ function isLightTier(m: string): boolean {
 }
 
 // Map Lovable/Gemini model names → Groq-supported model names.
+// Verified against https://api.groq.com/openai/v1/models — the old
+// llama-3.x ids were decommissioned and now return 404 model_not_found.
 function mapToGroqModel(model: string): string[] {
   const m = normalizeModel(model);
-  // Lightweight / fast tier
   if (isLightTier(m)) {
-    return ["llama-3.1-8b-instant", "openai/gpt-oss-20b", "llama-3.3-70b-versatile"];
+    return ["openai/gpt-oss-20b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b"];
   }
-  // Default / balanced / pro tier → candidates tried in order (models get
-  // decommissioned on Groq, so keep several fallbacks).
-  return [
-    "llama-3.3-70b-versatile",
-    "openai/gpt-oss-120b",
-    "moonshotai/kimi-k2-instruct",
-    "llama-3.1-8b-instant",
-  ];
+  return ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"];
 }
 
 // Map model names → Mistral-supported model names.
+// `mistral-large-latest` is not available on this account's subscription tier
+// (403 tier_not_allowed), so it is intentionally excluded.
 function mapToMistralModel(model: string): string[] {
   const m = normalizeModel(model);
   if (isLightTier(m)) {
-    return ["mistral-small-latest", "mistral-large-latest"];
+    return ["mistral-small-latest", "ministral-8b-latest"];
   }
-  return ["mistral-large-latest", "mistral-small-latest"];
+  return ["mistral-medium-latest", "mistral-small-latest"];
 }
 
 // Map model names → Cerebras-supported model names.
 function mapToCerebrasModel(model: string): string[] {
   const m = normalizeModel(model);
   if (isLightTier(m)) {
-    return ["llama3.1-8b", "llama-3.3-70b"];
+    return ["gpt-oss-120b", "gemma-4-31b"];
   }
-  return ["llama-3.3-70b", "llama3.1-8b"];
+  return ["gpt-oss-120b", "gemma-4-31b"];
 }
+
 
 
 export type Provider = "lovable" | "groq" | "mistral" | "cerebras";
