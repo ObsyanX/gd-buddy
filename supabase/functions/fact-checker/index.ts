@@ -2,34 +2,24 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { requireSessionAccess } from "../_shared/auth-guard.ts";
+import { callAI } from "../_shared/ai-with-fallback.ts";
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 
-async function callAI(prompt: string): Promise<string | null> {
-  const body = {
-    model: LOVABLE_API_KEY ? 'google/gemini-2.5-flash' : 'llama-3.3-70b-versatile',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0,
-    response_format: { type: 'json_object' },
-  };
-  const url = LOVABLE_API_KEY
-    ? 'https://ai.gateway.lovable.dev/v1/chat/completions'
-    : 'https://api.groq.com/openai/v1/chat/completions';
-  const key = LOVABLE_API_KEY ?? GROQ_API_KEY;
-  if (!key) return null;
+async function askAI(prompt: string): Promise<string | null> {
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify(body),
+    const data = await callAI({
+      model: 'google/gemini-2.5-flash',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0,
+      response_format: { type: 'json_object' },
     });
-    if (!res.ok) return null;
-    const data = await res.json();
     return data.choices?.[0]?.message?.content ?? null;
-  } catch { return null; }
+  } catch (e) {
+    console.error('fact-checker AI failed', (e as Error).message);
+    return null;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -51,7 +41,7 @@ If there are no factual claims, return {"claims":[]}.
 
 Utterance: """${content}"""`;
 
-    const raw = await callAI(prompt);
+    const raw = await askAI(prompt);
     if (!raw) {
       return new Response(JSON.stringify({ claims: [] }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
