@@ -1,6 +1,7 @@
 // fallacy-detector — heuristic pre-filter + AI classification of logical fallacies.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { callAI } from '../_shared/ai-with-fallback.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -34,32 +35,23 @@ function heuristicHints(text: string) {
 }
 
 async function classifyAI(text: string) {
-  const body = {
-    model: LOVABLE_API_KEY ? 'google/gemini-2.5-flash' : 'llama-3.3-70b-versatile',
-    messages: [{
-      role: 'user',
-      content:
-        `Identify logical fallacies (if any) in this utterance. Reply STRICT JSON: {"fallacies":[{"type":"ad_hominem|straw_man|false_dichotomy|appeal_to_authority|appeal_to_emotion|hasty_generalization|slippery_slope|circular_reasoning|red_herring|whataboutism","confidence":0-1,"explanation":"..."}]}. Return {"fallacies":[]} when there are none.\n\nUtterance: """${text}"""`,
-    }],
-    temperature: 0,
-    response_format: { type: 'json_object' },
-  };
-  const url = LOVABLE_API_KEY
-    ? 'https://ai.gateway.lovable.dev/v1/chat/completions'
-    : 'https://api.groq.com/openai/v1/chat/completions';
-  const key = LOVABLE_API_KEY ?? GROQ_API_KEY;
-  if (!key) return { fallacies: [] };
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify(body),
+    const data = await callAI({
+      model: 'google/gemini-2.5-flash',
+      messages: [{
+        role: 'user',
+        content:
+          `Identify logical fallacies (if any) in this utterance. Reply STRICT JSON: {"fallacies":[{"type":"ad_hominem|straw_man|false_dichotomy|appeal_to_authority|appeal_to_emotion|hasty_generalization|slippery_slope|circular_reasoning|red_herring|whataboutism","confidence":0-1,"explanation":"..."}]}. Return {"fallacies":[]} when there are none.\n\nUtterance: """${text}"""`,
+      }],
+      temperature: 0,
+      response_format: { type: 'json_object' },
     });
-    if (!res.ok) return { fallacies: [] };
-    const data = await res.json();
     const raw = data.choices?.[0]?.message?.content ?? '{"fallacies":[]}';
     try { return JSON.parse(raw); } catch { return { fallacies: [] }; }
-  } catch { return { fallacies: [] }; }
+  } catch (e) {
+    console.error('fallacy-detector AI failed', (e as Error).message);
+    return { fallacies: [] };
+  }
 }
 
 Deno.serve(async (req) => {
