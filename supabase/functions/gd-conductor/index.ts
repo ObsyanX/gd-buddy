@@ -425,8 +425,22 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
             { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+        // Every provider failed (quota exhausted / outage): degrade gracefully
+        // instead of a raw 500 so the room keeps running without AI voices.
+        return new Response(
+          JSON.stringify({
+            error: 'ai_unavailable',
+            degraded: true,
+            message: 'AI participants are temporarily unavailable.',
+            participant_responses: [],
+            invigilator_note:
+              'AI participants are temporarily unavailable. Continue the discussion — your speech is still being recorded and scored.',
+          }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       throw e;
+
     }
 
     const content = aiResponse.choices?.[0]?.message?.content;
