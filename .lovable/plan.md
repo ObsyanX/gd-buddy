@@ -1,95 +1,74 @@
-# Real-World Discussion Room — Analysis & Realism Plan
+# Fix low AI member switching in discussion room
 
-## 1. What the room does today
+## Verified root causes
 
-**Working well**
-- Personas with real traits (role, tone, verbosity, agreeability, interrupt_level, vocab level, distinct voice).
-- Conductor prompt with a strong "originality engine": bans echoing, enforces intent distribution (contradict / evidence / question / agree-with-addition), locks each persona to its professional lens.
-- Turn queue backed by the database (`speaking_turns`, request/release mic RPCs) with fair promotion and realtime sync.
-- Phase machine (lobby → intro → discussion → conclusion → ended) with AI intro, AI closing summary, one-time extension.
-- Voice in both directions: streaming transcription in, ElevenLabs TTS out with browser fallback, per-persona voices.
-- Live behavioural layer: silence detection, WPM, video/posture metrics, coaching overlay, discussion health meter.
-- Post-session scoring, report, replay.
+1. **AI only speaks after a human message.** `DiscussionRoom.tsx:handleSendMessageDirect` is the only path to `gd-conductor`; there is no autonomous loop or silence watchdog to make AI participants talk to each other.
+2. **Conductor caps replies at 2 AI participants per round.** `gd-conductor/index.ts:284` instructs the model to pick "at most 2 AI participants", so most personas stay silent every round by design.
+3. **`next_expected_speaker` is generated but never consumed.** The client does not use it to rotate speakers or balance airtime.
+4. **No AI floor-request mechanism.** `speaking_turns` supports `participant_kind = 'ai'`, but no code ever requests the mic on behalf of an AI persona during open discussion.
+5. **Artificial delay before each conductor call.** `DiscussionRoom.tsx:731-753` waits 1-15s (a synthetic "human speech length") before invoking the conductor, lengthening dead air.
+6. **Serial playback.** `room-mixer.ts` plays replies one after another, so even the 1-2 replies that return consume wall-clock time sequentially.
+7. **"Skip turn" is a no-op for the room.** When the user skips, the mic reopens but no AI is prompted to speak, creating the long silent stretches seen in the transcript (e.g. 3:38-7:00).
 
-**Where it breaks the illusion of a real GD room**
-1. **Speech is sequential, never simultaneous.** The conductor emits `interruption` and `overlap_seconds`, but the client plays each reply one after another; nobody ever cuts in, nobody ever talks over anyone.
-2. **No fight for the floor.** In a real GD, 3-4 people start at once and the loudest/fastest wins. Here the AI politely waits for the user to finish and press send.
-3. **Turn-taking is request-based, not behavioural.** The AI never grabs the mic on its own; it responds to a round-trip.
-4. **Latency is unnatural.** Model + TTS round-trip creates 2-6s of dead air; humans respond in 200-700ms with fillers ("hmm", "right, but—").
-5. **No spatial audio / no room presence.** All voices come from the same mono point. A real room has voices placed around a table, ambient noise, paper, chairs.
-6. **Timing is not GD-authentic.** Real GDs: 1 min topic reading, 15-20 min discussion, hard warnings at T-2 min, a strict cut-off. Currently the phase caps are generic and there's no visible round clock or reading window.
-7. **No non-verbal channel from the AI side.** AI participants have no avatars showing nodding, raised hand, leaning in, or "wants to speak" pressure.
-8. **No moderator/panelist presence with authority** — the moderator only speaks at intro/conclusion. Real invigilators interject: "let her finish", "you've spoken thrice, let's hear others".
-9. **No group dynamics memory.** Personas don't form alliances, don't reference *each other* by name across turns, don't hold grudges or build coalitions.
-10. **No entry/exit realism** — no seating order, no "who speaks first" scramble, no closing round-robin where each person gives a 20s summary.
+## Goal
 
-## 2. Can AI participants replace real humans?
+Make the room feel like a real GD where members naturally cut in, the moderator enforces balance, and silence does not last more than a few seconds.
 
-Honest answer, split by dimension:
+## Implementation plan
 
-| Dimension | Replaceable today | With this plan | Ceiling |
-|---|---|---|---|
-| Argument quality / content | Yes | Yes | Already at or above average peer |
-| Persona consistency | Yes | Yes | Better than humans |
-| Turn-taking pressure | No | Mostly | Good |
-| Interruption & overlap | No | Yes (simulated) | Good |
-| Reaction latency | No | Mostly (fillers + speculative pre-gen) | Acceptable |
-| Non-verbal / body language read | No | Partly (avatar cues) | Limited without video AI participants |
-| Unpredictability, emotion escalation | Partly | Yes | Good |
-| Real social risk / stakes | No | No | Fundamentally not replicable |
+### 1. AI floor-request path
+- Add `request_mic_for_ai(_session_id, _participant_id)` RPC or extend `request_mic` to accept `kind = 'ai'` and a `participant_id` source.
+- In `DiscussionRoom.tsx`, create an `aiFloorArbiter` that, when the floor is open and nobody has spoken for a configurable silence threshold (default 4s), picks 1-2 AI participants based on:
+  - `interrupt_level` (assertiveness),
+  - time since last spoke,
+  - topic relevance from recent transcript embeddings,
+  - whether they are already in `speaking_turns` queue.
+- The arbiter calls `request_mic` with `participant_kind = 'ai'` and then invokes `gd-conductor` with a flag indicating "AI-triggered" so the model knows the user did not speak.
 
-Conclusion: the room can become a **high-fidelity rehearsal environment** — good enough that the muscle memory transfers (floor-grabbing, interruption recovery, time discipline, summarising under pressure). It cannot replicate genuine social stakes. Target "indistinguishable for training purposes", not "indistinguishable from reality".
+### 2. Use the turn queue for open discussion
+- Reuse `useTurnQueue` for AI participants during the open-discussion phase (not just closing round).
+- When an AI participant wins the floor, lock the mic briefly while it speaks; when it releases, promote the next queued participant (AI or human).
+- Add a `last_spoke_at` timestamp per participant in client state to drive rotation.
 
-## 3. Implementation plan
+### 3. Conductor changes for rotation
+- Remove or raise the "at most 2 AI participants" cap when the trigger is silence/AI floor request; instead instruct the model to pick the single most appropriate next speaker, then let the arbiter call again if the floor remains open.
+- Consume `next_expected_speaker` on the client: store it in `useSessionStore` and prefer that participant in the next arbiter decision.
+- Add a system prompt section that encourages AI personas to respond to the **last AI speaker by name**, not only to the user.
 
-### Phase A — Real-time floor dynamics (highest impact)
-- **Barge-in**: while a user is speaking, if a persona's `interrupt_level` × topic-heat exceeds a threshold, start that AI's audio at an overlap point instead of waiting. Duck the other speaker's volume rather than stopping it.
-- **Overlap playback engine**: replace the sequential `await speak()` loop with a scheduler that can play up to 2 audio tracks with a configurable overlap window (use the `overlap_seconds` the conductor already returns).
-- **Floor contention**: AI participants request the mic through the same `speaking_turns` queue as humans; add an AI arbiter that decides who wins based on assertiveness, time since last spoke, and topic relevance.
-- **Interrupt-recovery coaching**: if the user yields the floor every time they're interrupted, flag it in the report ("you surrendered the floor 4/5 times").
+### 4. Silence watchdog
+- Add a `useEffect` in `DiscussionRoom.tsx` that starts a 4s timer whenever the room is in `discussion` stage, no one is speaking, and the user is not holding the mic.
+- On expiry, the watchdog calls the AI floor arbiter.
+- Reset the timer on any human message, AI message start, or mic state change.
 
-### Phase B — Latency and speech naturalism
-- **Speculative generation**: start generating AI replies while the user is still speaking, using the partial transcript; discard/regenerate if the utterance changes direction.
-- **Backchannel layer**: short pre-cached audio ("mm-hm", "right", "hold on", "but—") played within 300ms so the room is never silent.
-- **Prosody from SSML**: actually consume the `tts_ssml` the conductor emits (rate/pitch per persona and per emotion) instead of flat TTS.
-- **Filled pauses and self-repair** in generated text ("I mean—", "sorry, to add to that").
+### 5. Moderator/invigilator interventions
+- Add a `moderatorIntervention` helper in `gd-protocol.ts` that fires when airtime is unbalanced (reuse `airtimeReport`/`moderatorInterjection`).
+- When a hog crosses 1.8x fair share or a quiet member falls below 0.35x, the moderator grabs the floor via the same queue and says the interjection line.
+- In `gd-conductor`, add a `moderator_override` mode where the model is told to produce only a short moderator line and release the floor.
 
-### Phase C — Room environment
-- **Spatial audio**: place each persona at a fixed seat angle using Web Audio `PannerNode`; the user is at the head of the table.
-- **Ambient room bed**: very low-level room tone, optional, toggleable.
-- **Seating table UI**: circular table view with avatars; visual states for speaking, wants-to-speak (raised hand / leaning in), listening, and disengaged.
-- **Live floor indicator**: who holds the floor, who is queued, cumulative airtime per person.
+### 6. Remove or shorten artificial delays
+- Replace the fixed 1-15s `humanSpeechDelay` with a much shorter filler/backchannel window (0.5-1.5s) plus speculative pre-generation.
+- When the user explicitly skips, treat it as a silence event and immediately trigger the watchdog instead of waiting.
 
-### Phase D — Authentic GD protocol and timing
-- **Reading window**: 60s topic-reading phase before intro where the mic is locked.
-- **Structured formats**: pick a format at setup — Free-form GD, Structured (opening statement round → open debate → closing round), Case-study GD, Abstract-topic GD.
-- **Visible round clock** with T-2min warning, T-30s warning, hard stop.
-- **Closing round-robin**: each participant gets a fixed 20-30s summary slot, enforced by the queue.
-- **Airtime enforcement**: moderator interjects when one person exceeds a share threshold or when someone has stayed silent past a limit.
+### 7. Parallel/overlap playback for AI replies
+- When 2 AI participants are queued back-to-back, allow `room-mixer.ts` to start preparing the second clip while the first plays and to begin playback with a configurable overlap (up to 1.5s) so the second speaker can barge in.
+- Duck the first speaker's gain rather than waiting for full completion.
 
-### Phase E — Group dynamics
-- **Cross-persona addressing**: personas reference each other by name and respond to each other, not only to the user.
-- **Coalitions and friction**: a lightweight stance model per persona per sub-claim; agreement forms blocs, disagreement escalates tone over turns.
-- **Emotion escalation curve**: tone hardens as a thread stays contested, cools after moderator intervention.
-- **Persona memory across sessions** (optional): "last time you argued the opposite".
+### 8. Metrics and reporting
+- Track "AI-initiated turns" and "moderator interventions" per session.
+- Add a report card: "Group dynamism" score based on number of distinct speakers, average gap between turns, and interruption/overlap count.
+- Track "user floor yield rate" for coaching.
 
-### Phase F — Evaluation realism
-- Score the new dimensions: floor-grabbing success rate, interruption handling, airtime share, time discipline, closing quality.
-- Panelist-style verdict ("would this candidate be shortlisted?") with the reasoning shown.
+## Suggested build order
 
-## 4. Suggested build order
+1. AI floor-request RPC + client arbiter + silence watchdog (biggest impact).
+2. Conductor rotation + `next_expected_speaker` consumption.
+3. Moderator interventions for airtime balance.
+4. Parallel/overlap playback for queued AI replies.
+5. Report metrics for group dynamism.
 
-1. Phase A overlap engine + AI floor contention (biggest realism jump).
-2. Phase B backchannels + speculative generation (kills the dead air).
-3. Phase D reading window, round clock, closing round-robin (protocol authenticity).
-4. Phase C table UI + spatial audio (presence).
-5. Phase E cross-persona dynamics.
-6. Phase F scoring extension.
+## Technical notes
 
-## 5. Technical notes
-
-- Overlap playback needs a small audio mixer module (Web Audio graph: per-persona `GainNode` → `PannerNode` → destination) replacing the single `HTMLAudioElement` in `useTextToSpeech`.
-- Backchannel clips should be pre-synthesised once per persona voice and cached in storage, not generated per turn.
-- Speculative generation doubles AI calls in the worst case — gate it behind a setting and the existing cost optimizer.
-- AI floor requests reuse `speaking_turns` with `participant_kind = 'ai'`, so no schema change is required for Phase A.
-- The GD format, reading window, and round clock need new columns on `gd_sessions` (format, reading_ends_at, hard_stop_at).
+- No schema change is required for the queue; `speaking_turns.participant_kind = 'ai'` already exists.
+- Add a new optional column `gd_participants.ai_floor_weight` if we want per-persona assertiveness tuning; otherwise derive from `personas.interrupt_level`.
+- Keep the existing `gd_format`/timing windows (`gd-protocol.ts`) intact; this work only affects open-discussion behavior.
+- Gate the new proactive AI behavior behind the existing `autoMicSetting`/experiment flag so it can be A/B tested.
