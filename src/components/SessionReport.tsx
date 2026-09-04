@@ -1366,7 +1366,22 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             </div>
           )}
 
-          {!aiFeedback && !isLoadingFeedback && (
+          {!aiFeedback && !isLoadingFeedback && feedbackError && (
+            <div className="p-4 border-2 border-border rounded space-y-3 text-center">
+              <p className="text-sm text-muted-foreground">{feedbackError.message}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFeedbackError(null);
+                  loadAiFeedback();
+                }}>
+                Try again
+              </Button>
+            </div>
+          )}
+
+          {!aiFeedback && !isLoadingFeedback && !feedbackError && (
             <p className="text-sm text-muted-foreground text-center py-4">
               AI feedback will generate automatically…
             </p>
