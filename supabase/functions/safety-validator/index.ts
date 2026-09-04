@@ -11,6 +11,8 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
+import { callAI } from "../_shared/ai-with-fallback.ts";
+
 
 const BodySchema = z.object({
   session_id: z.string().uuid().nullable().optional(),
