@@ -654,6 +654,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   const loadAiFeedback = async () => {
     if (!session || !calculatedStats || aiFeedback) return;
     setIsLoadingFeedback(true);
+    setFeedbackError(null);
     try {
       const conversation = messages.map((m) => ({
         who: m.gd_participants?.persona_name || 'Unknown',
@@ -672,7 +673,10 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
 
       if (error) throw error;
       if (data?.error) {
-        toast({ title: "AI Feedback Error", description: data.error, variant: "destructive" });
+        setFeedbackError({
+          message: data.message || data.error,
+          credits: isCreditError(data.error) || isCreditError(data.message),
+        });
       } else if (data) {
         setAiFeedback(data);
         // Persist AI sub-scores into gd_metrics for analytics
@@ -689,11 +693,18 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       }
     } catch (err: any) {
       console.error('AI feedback error:', err);
-      toast({ title: "Could not generate AI feedback", description: err.message, variant: "destructive" });
+      const credits = isCreditError(err?.message) || isCreditError(err?.context?.status);
+      setFeedbackError({
+        message: credits
+          ? 'AI credits are exhausted, so written feedback could not be generated. Your scores and charts below are complete.'
+          : (err?.message || 'AI feedback is temporarily unavailable.'),
+        credits,
+      });
     } finally {
       setIsLoadingFeedback(false);
     }
   };
+
 
   const getBenchmarkComparison = (metric: string, value: number): {status: 'excellent' | 'good' | 'needs-work';label: string;} => {
     const benchmark = BENCHMARKS[metric as keyof typeof BENCHMARKS];
