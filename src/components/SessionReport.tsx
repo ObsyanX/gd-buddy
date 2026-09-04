@@ -651,6 +651,9 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     }
   };
 
+  const isCreditError = (v: any) =>
+    v === 402 || /402|payment_required|credits?\b.*(deplet|exhaust)|add (more )?credits/i.test(String(v ?? ''));
+
   const loadAiFeedback = async () => {
     if (!session || !calculatedStats || aiFeedback) return;
     setIsLoadingFeedback(true);
