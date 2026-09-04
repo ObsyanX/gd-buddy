@@ -89,6 +89,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   const [videoMetrics, setVideoMetrics] = useState<any>(null);
   const [aiFeedback, setAiFeedback] = useState<any>(null);
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<{ message: string; credits: boolean } | null>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(true);
   const [chartData, setChartData] = useState<{
     timeline: any[];
@@ -650,9 +651,13 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     }
   };
 
+  const isCreditError = (v: any) =>
+    v === 402 || /402|payment_required|credits?\b.*(deplet|exhaust)|add (more )?credits/i.test(String(v ?? ''));
+
   const loadAiFeedback = async () => {
     if (!session || !calculatedStats || aiFeedback) return;
     setIsLoadingFeedback(true);
+    setFeedbackError(null);
     try {
       const conversation = messages.map((m) => ({
         who: m.gd_participants?.persona_name || 'Unknown',
@@ -671,7 +676,10 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
 
       if (error) throw error;
       if (data?.error) {
-        toast({ title: "AI Feedback Error", description: data.error, variant: "destructive" });
+        setFeedbackError({
+          message: data.message || data.error,
+          credits: isCreditError(data.error) || isCreditError(data.message),
+        });
       } else if (data) {
         setAiFeedback(data);
         // Persist AI sub-scores into gd_metrics for analytics
@@ -688,11 +696,18 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       }
     } catch (err: any) {
       console.error('AI feedback error:', err);
-      toast({ title: "Could not generate AI feedback", description: err.message, variant: "destructive" });
+      const credits = isCreditError(err?.message) || isCreditError(err?.context?.status);
+      setFeedbackError({
+        message: credits
+          ? 'AI credits are exhausted, so written feedback could not be generated. Your scores and charts below are complete.'
+          : (err?.message || 'AI feedback is temporarily unavailable.'),
+        credits,
+      });
     } finally {
       setIsLoadingFeedback(false);
     }
   };
+
 
   const getBenchmarkComparison = (metric: string, value: number): {status: 'excellent' | 'good' | 'needs-work';label: string;} => {
     const benchmark = BENCHMARKS[metric as keyof typeof BENCHMARKS];
@@ -1284,7 +1299,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
               <Sparkles className="w-6 h-6 text-primary" />
               AI FEEDBACK
             </h3>
-            {!aiFeedback && !isLoadingFeedback && (
+            {!aiFeedback && !isLoadingFeedback && !feedbackError && (
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             )}
           </div>
@@ -1351,7 +1366,22 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             </div>
           )}
 
-          {!aiFeedback && !isLoadingFeedback && (
+          {!aiFeedback && !isLoadingFeedback && feedbackError && (
+            <div className="p-4 border-2 border-border rounded space-y-3 text-center">
+              <p className="text-sm text-muted-foreground">{feedbackError.message}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFeedbackError(null);
+                  loadAiFeedback();
+                }}>
+                Try again
+              </Button>
+            </div>
+          )}
+
+          {!aiFeedback && !isLoadingFeedback && !feedbackError && (
             <p className="text-sm text-muted-foreground text-center py-4">
               AI feedback will generate automatically…
             </p>
