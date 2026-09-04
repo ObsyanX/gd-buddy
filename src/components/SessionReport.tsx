@@ -1299,7 +1299,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
               <Sparkles className="w-6 h-6 text-primary" />
               AI FEEDBACK
             </h3>
-            {!aiFeedback && !isLoadingFeedback && (
+            {!aiFeedback && !isLoadingFeedback && !feedbackError && (
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             )}
           </div>
