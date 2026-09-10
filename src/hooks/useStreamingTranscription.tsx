@@ -213,6 +213,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
 
   // Clear the transcription state
   const clearTranscription = useCallback(() => {
+    prefixRef.current = '';
     finalTextRef.current = '';
     setFinalText('');
     setInterimText('');
