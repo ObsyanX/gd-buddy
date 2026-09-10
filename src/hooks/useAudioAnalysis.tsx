@@ -167,7 +167,9 @@ export const useAudioAnalysis = (options: UseAudioAnalysisOptions = {}) => {
 
       stoppingRef.current = false;
       // Use existing stream or create new one
-      const stream = existingStream || await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = existingStream || await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
       streamRef.current = stream;
       ownsStreamRef.current = !existingStream;
 

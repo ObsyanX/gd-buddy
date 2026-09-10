@@ -39,15 +39,16 @@ const MessageInput = ({
   const autoSkipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sendCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const skipCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const onSendMessageRef = useRef(onSendMessage);
+  const onSendMessageRef = useRef(onSendWithVoice);
   const onSkipTurnRef = useRef(onSkipTurn);
 
   const [countdown, setCountdown] = useState<number | null>(null);
   const [skipCountdown, setSkipCountdown] = useState<number | null>(null);
 
   useEffect(() => {
-    onSendMessageRef.current = onSendMessage;
-  }, [onSendMessage]);
+    // Auto-send goes through the voice-aware path so the mic is closed first.
+    onSendMessageRef.current = onSendWithVoice;
+  }, [onSendWithVoice]);
 
   useEffect(() => {
     onSkipTurnRef.current = onSkipTurn;
@@ -58,7 +59,9 @@ const MessageInput = ({
     if (autoSendTimer.current) clearTimeout(autoSendTimer.current);
     if (sendCountdownRef.current) clearInterval(sendCountdownRef.current);
 
-    const canAutoSend = autoSendEnabled && !isPaused && Boolean(userInput.trim()) && !isProcessing && !isPracticing && !isCorrecting;
+    // Never count down while an AI is speaking, playback is pending, or the
+    // floor is locked — the turn cannot be taken anyway.
+    const canAutoSend = autoSendEnabled && !isPaused && !isBusy && Boolean(userInput.trim()) && !isProcessing && !isPracticing && !isCorrecting;
 
     if (!canAutoSend) {
       setCountdown(null);
@@ -83,7 +86,7 @@ const MessageInput = ({
       if (autoSendTimer.current) clearTimeout(autoSendTimer.current);
       if (sendCountdownRef.current) clearInterval(sendCountdownRef.current);
     };
-  }, [userInput, isProcessing, isPracticing, isCorrecting, autoSendEnabled, isPaused]);
+  }, [userInput, isProcessing, isPracticing, isCorrecting, autoSendEnabled, isPaused, isBusy]);
 
   // Auto-skip after 12s when there is still no spoken/typed input
   useEffect(() => {
