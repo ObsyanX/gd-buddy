@@ -31,6 +31,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
   const [isCorrecting, setIsCorrecting] = useState(false);
   
   const recognitionRef = useRef<any>(null);
+  const prefixRef = useRef('');
   const finalTextRef = useRef('');
   const hasSpokenRef = useRef(false);
   const isMountedRef = useRef(true);
@@ -71,8 +72,12 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
     }
   }, [context, enableAICorrection, onCorrectionStart, onCorrectionEnd]);
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback((existingText?: string) => {
+    // Anything the user already typed is preserved and prepended to whatever
+    // the recogniser hears, so switching the mic on never wipes typed text.
+    prefixRef.current = existingText && existingText.trim() ? existingText.trim() + ' ' : '';
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
     
     if (!SpeechRecognition) {
       console.error('Speech recognition not supported');
