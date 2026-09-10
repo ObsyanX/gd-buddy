@@ -370,6 +370,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   });
   
   const { isSpeaking, currentSpeaker, usingFallbackTTS, speak, stop: stopSpeaking } = useTextToSpeech();
+
+  // Never leave the mic open while an AI participant is talking — otherwise the
+  // recogniser transcribes the AI's own voice back into the user's input.
+  useEffect(() => {
+    if (isSpeaking && isListening) {
+      stopListening();
+    }
+  }, [isSpeaking, isListening, stopListening]);
   const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial({ autoOpen: false });
   const { estimatedWordCount, updateFromAudioLevel, reset: resetWordCount } = useWordCountEstimator();
 
@@ -888,7 +896,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       // Auto-reopen mic after AI responses complete (if enabled and setting allows)
       if (autoMicEnabled && autoMicSetting && isSpeechSupported) {
         scheduleSessionTimeout(() => {
-          startListening();
+          if (!isSpeakingRef.current) startListening();
         }, 500);
       }
 
@@ -1059,7 +1067,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     if (isListening) {
       stopListening();
     } else {
-      startListening();
+      // Keep whatever the user already typed instead of overwriting it.
+      startListening(userInput);
     }
   };
 
@@ -1258,6 +1267,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             onVoiceInput={handleVoiceInput}
             onStartPractice={startPracticeRecording}
             onSkipTurn={() => {
+              // Close the mic first so a skip never captures room audio.
+              if (isListening) stopListening();
               const lastUserMsg = [...messages].reverse().find(m => m.gd_participants?.is_user && m.gd_participants?.real_user_id === currentUserId);
               if (lastUserMsg?.text === "[Skipped turn]" && isProcessing) return;
               handleSendMessageDirect("[Skipped turn]");
