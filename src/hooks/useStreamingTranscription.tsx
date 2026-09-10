@@ -100,7 +100,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
       if (!isMountedRef.current) return;
       setIsListening(true);
       finalTextRef.current = '';
-      setFinalText('');
+      setFinalText(prefixRef.current);
       setInterimText('');
       hasSpokenRef.current = false;
       console.log('Speech recognition started');
@@ -129,14 +129,14 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
       }
 
       // Update final text reference with complete final transcript
-      finalTextRef.current = fullFinal;
-      setFinalText(fullFinal);
+      finalTextRef.current = prefixRef.current + fullFinal;
+      setFinalText(finalTextRef.current);
 
       // Update interim text with only the latest non-final segment
       setInterimText(latestInterim);
       
-      // Callback with complete text (final + current interim)
-      const displayText = (fullFinal + latestInterim).trim();
+      // Callback with complete text (typed prefix + final + current interim)
+      const displayText = (prefixRef.current + fullFinal + latestInterim).trim();
       onInterimResult?.(displayText);
     };
 
