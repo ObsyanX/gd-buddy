@@ -371,6 +371,9 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   
   const { isSpeaking, currentSpeaker, usingFallbackTTS, speak, stop: stopSpeaking } = useTextToSpeech();
 
+  const isSpeakingRef = useRef(false);
+  useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
+
   // Never leave the mic open while an AI participant is talking — otherwise the
   // recogniser transcribes the AI's own voice back into the user's input.
   useEffect(() => {

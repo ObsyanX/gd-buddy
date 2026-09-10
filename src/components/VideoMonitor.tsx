@@ -182,7 +182,12 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
           height: { ideal: 480 },
           facingMode: 'user'
         },
-        audio: true
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
       });
       
       streamRef.current = stream;
