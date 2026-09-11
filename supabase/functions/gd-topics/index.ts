@@ -138,29 +138,38 @@ Difficulty: ${difficulty}
 
 Create engaging ${categoryName.toLowerCase()} that will spark meaningful discussion.`;
 
-    const aiResponse = await callAI({
-      model: 'google/gemini-2.5-flash',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage }
-      ],
-      temperature: 0.9,
-    });
-    console.log(`AI provider used: ${aiResponse._provider}`);
-    const content = aiResponse.choices?.[0]?.message?.content;
+    let parsedResponse: { topics?: unknown[] } | null = null;
 
-    if (!content) {
-      throw new Error('No content in AI response');
-    }
-
-    // Parse JSON from response
-    let parsedResponse;
     try {
+      const aiResponse = await callAI({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        temperature: 0.9,
+      });
+      console.log(`AI provider used: ${aiResponse._provider}`);
+      const content = aiResponse.choices?.[0]?.message?.content;
+
+      if (!content) {
+        throw new Error('No content in AI response');
+      }
+
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || [null, content];
       parsedResponse = JSON.parse(jsonMatch[1]);
-    } catch (e) {
-      console.error('Failed to parse AI response:', e);
-      throw new Error('Failed to parse topic data');
+
+      if (!Array.isArray(parsedResponse?.topics) || parsedResponse!.topics!.length === 0) {
+        throw new Error('AI returned no usable topics');
+      }
+    } catch (aiError) {
+      // Every provider unavailable (credit/quota limits) or unparsable output:
+      // serve a curated topic bank so the user can still start a discussion.
+      console.error('Topic AI generation failed, serving fallback bank:', aiError);
+      parsedResponse = {
+        topics: buildFallbackTopics(category, categoryName, difficulty, count),
+        degraded: true,
+      } as { topics: unknown[] };
     }
 
     return new Response(
@@ -170,6 +179,7 @@ Create engaging ${categoryName.toLowerCase()} that will spark meaningful discuss
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
+
 
   } catch (error) {
     console.error('Topic generator error:', error);
