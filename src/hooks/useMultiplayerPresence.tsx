@@ -7,6 +7,7 @@ export interface ParticipantPresence {
   oderId: string;
   isOnline: boolean;
   isTyping: boolean;
+  isSpeaking: boolean;
   lastSeen: string;
   displayName?: string;
 }
@@ -21,6 +22,8 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
   const [presenceState, setPresenceState] = useState<Record<string, ParticipantPresence>>({});
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const mountedRef = useRef(true);
+  // Local mirror of what we last broadcast, so updating one flag never clears the other.
+  const selfStateRef = useRef({ isTyping: false, isSpeaking: false });
 
   useEffect(() => {
     mountedRef.current = true;
@@ -56,6 +59,7 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
               oderId: key,
               isOnline: true,
               isTyping: presence.isTyping || false,
+              isSpeaking: presence.isSpeaking || false,
               lastSeen: presence.lastSeen || new Date().toISOString(),
               displayName: presence.displayName,
             };
@@ -73,6 +77,7 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
               oderId: key,
               isOnline: true,
               isTyping: presence.isTyping || false,
+              isSpeaking: presence.isSpeaking || false,
               lastSeen: new Date().toISOString(),
               displayName: presence.displayName,
             },
@@ -91,8 +96,10 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
+          selfStateRef.current = { isTyping: false, isSpeaking: false };
           await presenceChannel.track({
             isTyping: false,
+            isSpeaking: false,
             lastSeen: new Date().toISOString(),
             displayName: user.email?.split('@')[0] || 'User',
           });
@@ -110,23 +117,31 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
     };
   }, [sessionId, user, enabled]);
 
-  const setTyping = useCallback(async (isTyping: boolean) => {
-    if (channel && user) {
-      await channel.track({
-        isTyping,
-        lastSeen: new Date().toISOString(),
-        displayName: user.email?.split('@')[0] || 'User',
-      });
-    }
+  const broadcastSelf = useCallback(async (patch: Partial<{ isTyping: boolean; isSpeaking: boolean }>) => {
+    if (!channel || !user) return;
+    const next = { ...selfStateRef.current, ...patch };
+    if (next.isTyping === selfStateRef.current.isTyping && next.isSpeaking === selfStateRef.current.isSpeaking) return;
+    selfStateRef.current = next;
+    await channel.track({
+      ...next,
+      lastSeen: new Date().toISOString(),
+      displayName: user.email?.split('@')[0] || 'User',
+    });
   }, [channel, user]);
+
+  const setTyping = useCallback((isTyping: boolean) => broadcastSelf({ isTyping }), [broadcastSelf]);
+  const setSpeaking = useCallback((isSpeaking: boolean) => broadcastSelf({ isSpeaking }), [broadcastSelf]);
 
   const onlineParticipants = Object.values(presenceState).filter(p => p.isOnline);
   const typingParticipants = Object.values(presenceState).filter(p => p.isTyping);
+  const speakingParticipants = Object.values(presenceState).filter(p => p.isSpeaking);
 
   return {
     presenceState,
     onlineParticipants,
     typingParticipants,
+    speakingParticipants,
     setTyping,
+    setSpeaking,
   };
 };
