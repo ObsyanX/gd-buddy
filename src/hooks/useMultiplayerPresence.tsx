@@ -96,8 +96,10 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
+          selfStateRef.current = { isTyping: false, isSpeaking: false };
           await presenceChannel.track({
             isTyping: false,
+            isSpeaking: false,
             lastSeen: new Date().toISOString(),
             displayName: user.email?.split('@')[0] || 'User',
           });
