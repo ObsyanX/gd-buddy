@@ -7,6 +7,7 @@ export interface ParticipantPresence {
   oderId: string;
   isOnline: boolean;
   isTyping: boolean;
+  isSpeaking: boolean;
   lastSeen: string;
   displayName?: string;
 }
@@ -21,6 +22,8 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
   const [presenceState, setPresenceState] = useState<Record<string, ParticipantPresence>>({});
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const mountedRef = useRef(true);
+  // Local mirror of what we last broadcast, so updating one flag never clears the other.
+  const selfStateRef = useRef({ isTyping: false, isSpeaking: false });
 
   useEffect(() => {
     mountedRef.current = true;
