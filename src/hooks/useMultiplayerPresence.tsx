@@ -59,6 +59,7 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
               oderId: key,
               isOnline: true,
               isTyping: presence.isTyping || false,
+              isSpeaking: presence.isSpeaking || false,
               lastSeen: presence.lastSeen || new Date().toISOString(),
               displayName: presence.displayName,
             };
@@ -76,6 +77,7 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
               oderId: key,
               isOnline: true,
               isTyping: presence.isTyping || false,
+              isSpeaking: presence.isSpeaking || false,
               lastSeen: new Date().toISOString(),
               displayName: presence.displayName,
             },
