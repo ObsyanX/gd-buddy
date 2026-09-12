@@ -117,23 +117,31 @@ export const useMultiplayerPresence = ({ sessionId, enabled = true }: UseMultipl
     };
   }, [sessionId, user, enabled]);
 
-  const setTyping = useCallback(async (isTyping: boolean) => {
-    if (channel && user) {
-      await channel.track({
-        isTyping,
-        lastSeen: new Date().toISOString(),
-        displayName: user.email?.split('@')[0] || 'User',
-      });
-    }
+  const broadcastSelf = useCallback(async (patch: Partial<{ isTyping: boolean; isSpeaking: boolean }>) => {
+    if (!channel || !user) return;
+    const next = { ...selfStateRef.current, ...patch };
+    if (next.isTyping === selfStateRef.current.isTyping && next.isSpeaking === selfStateRef.current.isSpeaking) return;
+    selfStateRef.current = next;
+    await channel.track({
+      ...next,
+      lastSeen: new Date().toISOString(),
+      displayName: user.email?.split('@')[0] || 'User',
+    });
   }, [channel, user]);
+
+  const setTyping = useCallback((isTyping: boolean) => broadcastSelf({ isTyping }), [broadcastSelf]);
+  const setSpeaking = useCallback((isSpeaking: boolean) => broadcastSelf({ isSpeaking }), [broadcastSelf]);
 
   const onlineParticipants = Object.values(presenceState).filter(p => p.isOnline);
   const typingParticipants = Object.values(presenceState).filter(p => p.isTyping);
+  const speakingParticipants = Object.values(presenceState).filter(p => p.isSpeaking);
 
   return {
     presenceState,
     onlineParticipants,
     typingParticipants,
+    speakingParticipants,
     setTyping,
+    setSpeaking,
   };
 };
