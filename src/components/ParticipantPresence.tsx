@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { User, Bot, Circle, Loader2 } from 'lucide-react';
+import { User, Bot, Circle, Loader2, Mic } from 'lucide-react';
 import { ParticipantPresence as PresenceType } from '@/hooks/useMultiplayerPresence';
 
 interface ParticipantPresenceProps {
@@ -21,6 +21,7 @@ const ParticipantPresence = ({
         const presence = p.real_user_id ? presenceState[p.real_user_id] : null;
         const isOnline = presence?.isOnline ?? false;
         const isTyping = presence?.isTyping ?? false;
+        const isSpeaking = presence?.isSpeaking ?? false;
         
         return (
           <div 
