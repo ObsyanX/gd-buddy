@@ -52,7 +52,13 @@ const ParticipantPresence = ({
                   Online
                 </Badge>
               )}
-              {isTyping && (
+              {isSpeaking && (
+                <Badge variant="outline" className="text-[10px] h-5 px-1.5 bg-primary/10 text-primary border-primary/50 animate-pulse">
+                  <Mic className="w-2.5 h-2.5 mr-0.5" />
+                  Speaking
+                </Badge>
+              )}
+              {isTyping && !isSpeaking && (
                 <Badge variant="outline" className="text-[10px] h-5 px-1.5 animate-pulse">
                   <Loader2 className="w-2.5 h-2.5 mr-0.5 animate-spin" />
                   Typing
@@ -62,7 +68,16 @@ const ParticipantPresence = ({
           </div>
         );
       })}
-      
+
+      {isMultiplayer && speakingParticipants.length > 0 && (
+        <div className="text-xs text-primary font-mono pt-2 border-t border-border">
+          {speakingParticipants.length === 1
+            ? `${speakingParticipants[0].displayName || 'Someone'} is speaking...`
+            : `${speakingParticipants.length} people are speaking...`
+          }
+        </div>
+      )}
+
       {isMultiplayer && typingParticipants.length > 0 && (
         <div className="text-xs text-muted-foreground font-mono pt-2 border-t border-border">
           {typingParticipants.length === 1 
