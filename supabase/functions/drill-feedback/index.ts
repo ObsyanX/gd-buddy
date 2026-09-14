@@ -141,21 +141,37 @@ Provide detailed feedback as JSON:
 }`;
 
     const aiStartTime = performance.now();
-    const aiResponse = await callAI({
-      model: 'google/gemini-2.5-flash',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage }
-      ],
-      temperature: 0.7,
-    });
+    let aiResponse;
+    try {
+      aiResponse = await callAI({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        temperature: 0.7,
+      });
+    } catch (aiError) {
+      // Every provider unavailable (credits/quota): return heuristic feedback so
+      // the drill still completes instead of failing with a 500.
+      log('warn', 'AI unavailable, returning heuristic drill feedback', {
+        error: aiError instanceof Error ? aiError.message : 'Unknown',
+      });
+      return new Response(
+        JSON.stringify(buildHeuristicFeedback(user_response, time_limit_seconds)),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     const aiLatencyMs = Math.round(performance.now() - aiStartTime);
     log('info', 'AI call completed', { provider: aiResponse._provider, ai_latency_ms: aiLatencyMs });
 
     const content = aiResponse.choices?.[0]?.message?.content;
 
     if (!content) {
-      throw new Error('No content in AI response');
+      return new Response(
+        JSON.stringify(buildHeuristicFeedback(user_response, time_limit_seconds)),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     let feedback;
