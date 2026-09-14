@@ -396,6 +396,12 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     sessionId,
     enabled: (session?.is_multiplayer ?? false) && !isPaused,
   });
+
+  // Let other people in the room see when this user has the mic open.
+  useEffect(() => {
+    setSpeaking(isListening && !isSpeaking);
+  }, [isListening, isSpeaking, setSpeaking]);
+
   const {
     isPracticing,
     isRecordingPractice,
