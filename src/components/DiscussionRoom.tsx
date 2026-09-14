@@ -788,6 +788,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       console.log('AI Response:', aiResponse);
 
+      // AI providers unavailable (credits/quota): the room keeps running without
+      // AI voices instead of throwing and blanking the screen.
+      if (aiResponse?.degraded) {
+        toast({
+          title: aiResponse.error === 'payment_required' ? 'AI participants paused' : 'AI participants unavailable',
+          description: aiResponse.message || 'Your speech is still being recorded and scored.',
+        });
+      }
+
       // Phase A — overlap-capable playback.
       // 1) Pre-synthesise every reply in parallel (kills the per-turn TTS gap).
       // 2) Schedule each clip through the room mixer, letting a persona flagged
