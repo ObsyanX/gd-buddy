@@ -392,7 +392,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   
   // Multiplayer presence
-  const { presenceState, typingParticipants, setTyping } = useMultiplayerPresence({
+  const { presenceState, typingParticipants, speakingParticipants, setTyping, setSpeaking } = useMultiplayerPresence({
     sessionId,
     enabled: (session?.is_multiplayer ?? false) && !isPaused,
   });
