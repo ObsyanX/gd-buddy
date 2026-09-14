@@ -1300,6 +1300,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           userInput={userInput}
           presenceState={presenceState}
           typingParticipants={typingParticipants}
+          speakingParticipants={speakingParticipants}
           practiceHistory={practiceHistory}
           currentPlayingId={currentPlayingId}
           onVideoMetricsUpdate={handleVideoMetricsUpdate}
@@ -1333,6 +1334,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                 participants={participants}
                 presenceState={presenceState}
                 typingParticipants={typingParticipants}
+                speakingParticipants={speakingParticipants}
                 isMultiplayer={session?.is_multiplayer ?? false}
               />
             </Card>

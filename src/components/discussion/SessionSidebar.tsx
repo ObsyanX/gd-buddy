@@ -16,6 +16,7 @@ interface SessionSidebarProps {
   userInput: string;
   presenceState: Record<string, PresenceType>;
   typingParticipants: PresenceType[];
+  speakingParticipants?: PresenceType[];
   practiceHistory: PracticeRecording[];
   currentPlayingId: string | null;
   onVideoMetricsUpdate: (metrics: VideoMetrics) => void;
@@ -117,7 +118,7 @@ const FeedbackGrid = ({ feedback, liveVoiceMetrics }: { feedback: any; liveVoice
 
 const SessionSidebar = ({
   session, participants, feedback, liveVoiceMetrics, isListening, isSpeaking, userInput,
-  presenceState, typingParticipants, practiceHistory, currentPlayingId,
+  presenceState, typingParticipants, speakingParticipants = [], practiceHistory, currentPlayingId,
   onVideoMetricsUpdate, onPlayHistory, onDeleteHistory, onVoiceMetricsUpdate,
 }: SessionSidebarProps) => {
   return (
@@ -148,6 +149,7 @@ const SessionSidebar = ({
           participants={participants}
           presenceState={presenceState}
           typingParticipants={typingParticipants}
+          speakingParticipants={speakingParticipants}
           isMultiplayer={session?.is_multiplayer ?? false}
         />
       </Card>
