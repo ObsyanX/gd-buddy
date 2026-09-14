@@ -30,6 +30,48 @@ const inputSchema = z.object({
   scenario: z.string().max(1000).optional(),
 });
 
+// Offline scoring used when every AI provider is unavailable (credits/quota).
+const FILLERS = /\b(um|uh|like|you know|basically|actually|literally|sort of|kind of)\b/gi;
+function buildHeuristicFeedback(response: string, timeLimit?: number) {
+  const words = response.trim().split(/\s+/).filter(Boolean);
+  const sentences = response.split(/[.!?]+/).map((s) => s.trim()).filter(Boolean);
+  const fillerCount = (response.match(FILLERS) || []).length;
+  const fillerRate = words.length ? fillerCount / words.length : 0;
+  const avgSentence = sentences.length ? words.length / sentences.length : words.length;
+
+  let score = 70;
+  if (words.length >= 80) score += 8;
+  else if (words.length < 30) score -= 12;
+  if (sentences.length >= 4) score += 6;
+  if (fillerRate > 0.05) score -= 12;
+  else if (fillerRate === 0) score += 4;
+  if (avgSentence > 30) score -= 6;
+  score = Math.max(35, Math.min(92, Math.round(score)));
+
+  const strengths: string[] = [];
+  const improvements: string[] = [];
+  if (words.length >= 60) strengths.push(`Solid length — ${words.length} words gives the panel enough substance.`);
+  if (sentences.length >= 4) strengths.push("Your answer is broken into multiple clear points.");
+  if (fillerCount === 0) strengths.push("No filler words detected — that reads as confident.");
+  if (!strengths.length) strengths.push("You attempted the drill and got a response on record.");
+
+  if (words.length < 60) improvements.push("Expand your answer — aim for 80-120 words with one concrete example.");
+  if (fillerCount > 0) improvements.push(`Cut filler words (${fillerCount} found) — pause instead of saying them.`);
+  if (avgSentence > 30) improvements.push("Shorten sentences; one idea per sentence is easier to follow.");
+  if (!improvements.length) improvements.push("Add a crisp one-line conclusion to close strongly.");
+
+  return {
+    score,
+    strengths,
+    improvements,
+    specific_tip: timeLimit
+      ? `Rehearse hitting your key point within the first ${Math.round(timeLimit / 3)} seconds.`
+      : "Open with your position, give one example, then close in a single line.",
+    degraded: true,
+    note: "AI coaching is temporarily unavailable, so this score is based on speech-structure analysis.",
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -141,21 +183,37 @@ Provide detailed feedback as JSON:
 }`;
 
     const aiStartTime = performance.now();
-    const aiResponse = await callAI({
-      model: 'google/gemini-2.5-flash',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage }
-      ],
-      temperature: 0.7,
-    });
+    let aiResponse;
+    try {
+      aiResponse = await callAI({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        temperature: 0.7,
+      });
+    } catch (aiError) {
+      // Every provider unavailable (credits/quota): return heuristic feedback so
+      // the drill still completes instead of failing with a 500.
+      log('warn', 'AI unavailable, returning heuristic drill feedback', {
+        error: aiError instanceof Error ? aiError.message : 'Unknown',
+      });
+      return new Response(
+        JSON.stringify(buildHeuristicFeedback(user_response, time_limit_seconds)),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     const aiLatencyMs = Math.round(performance.now() - aiStartTime);
     log('info', 'AI call completed', { provider: aiResponse._provider, ai_latency_ms: aiLatencyMs });
 
     const content = aiResponse.choices?.[0]?.message?.content;
 
     if (!content) {
-      throw new Error('No content in AI response');
+      return new Response(
+        JSON.stringify(buildHeuristicFeedback(user_response, time_limit_seconds)),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     let feedback;

@@ -392,10 +392,16 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   
   // Multiplayer presence
-  const { presenceState, typingParticipants, setTyping } = useMultiplayerPresence({
+  const { presenceState, typingParticipants, speakingParticipants, setTyping, setSpeaking } = useMultiplayerPresence({
     sessionId,
     enabled: (session?.is_multiplayer ?? false) && !isPaused,
   });
+
+  // Let other people in the room see when this user has the mic open.
+  useEffect(() => {
+    setSpeaking(isListening && !isSpeaking);
+  }, [isListening, isSpeaking, setSpeaking]);
+
   const {
     isPracticing,
     isRecordingPractice,
@@ -781,6 +787,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       }
 
       console.log('AI Response:', aiResponse);
+
+      // AI providers unavailable (credits/quota): the room keeps running without
+      // AI voices instead of throwing and blanking the screen.
+      if (aiResponse?.degraded) {
+        toast({
+          title: aiResponse.error === 'payment_required' ? 'AI participants paused' : 'AI participants unavailable',
+          description: aiResponse.message || 'Your speech is still being recorded and scored.',
+        });
+      }
 
       // Phase A — overlap-capable playback.
       // 1) Pre-synthesise every reply in parallel (kills the per-turn TTS gap).
@@ -1294,6 +1309,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           userInput={userInput}
           presenceState={presenceState}
           typingParticipants={typingParticipants}
+          speakingParticipants={speakingParticipants}
           practiceHistory={practiceHistory}
           currentPlayingId={currentPlayingId}
           onVideoMetricsUpdate={handleVideoMetricsUpdate}
@@ -1327,6 +1343,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                 participants={participants}
                 presenceState={presenceState}
                 typingParticipants={typingParticipants}
+                speakingParticipants={speakingParticipants}
                 isMultiplayer={session?.is_multiplayer ?? false}
               />
             </Card>
