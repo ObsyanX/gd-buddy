@@ -6,6 +6,7 @@ interface ParticipantPresenceProps {
   participants: any[];
   presenceState: Record<string, PresenceType>;
   typingParticipants: PresenceType[];
+  speakingParticipants?: PresenceType[];
   isMultiplayer: boolean;
 }
 
@@ -13,6 +14,7 @@ const ParticipantPresence = ({
   participants, 
   presenceState, 
   typingParticipants,
+  speakingParticipants = [],
   isMultiplayer 
 }: ParticipantPresenceProps) => {
   return (

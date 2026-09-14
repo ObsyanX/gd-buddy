@@ -420,9 +420,20 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
           );
         }
         if (e.status === 402) {
+          // Credits depleted on every provider: degrade gracefully with a 200 so
+          // the discussion room keeps running instead of blanking out.
           return new Response(
-            JSON.stringify({ error: 'payment_required', message: 'AI credits depleted. Please add more credits.' }),
-            { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({
+              error: 'payment_required',
+              degraded: true,
+              message: 'AI credits depleted. AI participants are paused.',
+              participant_responses: [],
+              invigilator_note:
+                'AI participants are paused because AI credits ran out. Continue speaking — your session is still recorded and scored.',
+              invigilator_signals: { live_hint: 'AI participants are paused (credits depleted).' },
+              session_updates: {},
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
         // Every provider failed (quota exhausted / outage): degrade gracefully
@@ -435,8 +446,10 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
             participant_responses: [],
             invigilator_note:
               'AI participants are temporarily unavailable. Continue the discussion — your speech is still being recorded and scored.',
+            invigilator_signals: { live_hint: 'AI participants are temporarily unavailable.' },
+            session_updates: {},
           }),
-          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       throw e;
