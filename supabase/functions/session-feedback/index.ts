@@ -115,22 +115,34 @@ Provide your structured feedback as JSON.`;
     console.log(`session-feedback provider: ${data._provider}`);
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     
-    if (toolCall?.function?.arguments) {
-      const feedback = JSON.parse(toolCall.function.arguments);
-      return new Response(JSON.stringify(feedback), {
+    // Tolerant parsing: truncated or fence-wrapped JSON is repaired instead of
+    // being thrown back at the report UI as raw escaped text.
+    const feedback = parseAiJson<Record<string, unknown>>(toolCall?.function?.arguments)
+      ?? parseAiJson<Record<string, unknown>>(data.choices?.[0]?.message?.content);
+
+    if (feedback && typeof feedback.summary === "string") {
+      const tips = Array.isArray(feedback.tips)
+        ? (feedback.tips as unknown[]).filter((t) => typeof t === "string" && t.trim().length > 3)
+        : [];
+      return new Response(JSON.stringify({
+        overall_rating: feedback.overall_rating ?? 6,
+        summary: feedback.summary,
+        communication: feedback.communication ?? "Not enough data to assess communication in detail.",
+        content_quality: feedback.content_quality ?? "Not enough data to assess content in detail.",
+        group_dynamics: feedback.group_dynamics ?? "Not enough data to assess group interaction in detail.",
+        body_language: feedback.body_language ?? "No video data available for this session.",
+        tips: tips.length ? tips : [
+          "Support each point with a concrete example or data point.",
+          "Speak for 10-15 seconds per turn to make your contribution land.",
+          "Acknowledge the previous speaker before adding your view.",
+        ],
+        sentiment_score: feedback.sentiment_score ?? 50,
+        leadership_score: feedback.leadership_score ?? 50,
+        teamwork_score: feedback.teamwork_score ?? 50,
+        grammar_score: feedback.grammar_score ?? 50,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    }
-
-    // Fallback: try parsing content directly
-    const content = data.choices?.[0]?.message?.content;
-    if (content) {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return new Response(jsonMatch[0], {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
     }
 
     throw new Error("Failed to parse AI feedback response");
