@@ -158,7 +158,8 @@ Create engaging ${categoryName.toLowerCase()} that will spark meaningful discuss
       }
 
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || [null, content];
-      parsedResponse = JSON.parse(jsonMatch[1]);
+      parsedResponse = parseAiJson(jsonMatch[1]) as typeof parsedResponse;
+      if (!parsedResponse) throw new Error('AI returned unparsable topic JSON');
 
       if (!Array.isArray(parsedResponse?.topics) || parsedResponse!.topics!.length === 0) {
         throw new Error('AI returned no usable topics');
