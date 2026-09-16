@@ -68,6 +68,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [videoMetricsRef, setVideoMetricsRef] = useState<VideoMetrics | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pendingSendRef = useRef(false);
+  const userInputRef = useRef("");
   const skipWaitRef = useRef<(() => void) | null>(null);
   const [isWaitingForSpeech, setIsWaitingForSpeech] = useState(false);
   const [isMobileMetricsOpen, setIsMobileMetricsOpen] = useState(false);
