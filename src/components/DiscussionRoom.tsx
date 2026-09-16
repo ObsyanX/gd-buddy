@@ -69,6 +69,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pendingSendRef = useRef(false);
   const userInputRef = useRef("");
+  useEffect(() => { userInputRef.current = userInput; }, [userInput]);
   const skipWaitRef = useRef<(() => void) | null>(null);
   const [isWaitingForSpeech, setIsWaitingForSpeech] = useState(false);
   const [isMobileMetricsOpen, setIsMobileMetricsOpen] = useState(false);
