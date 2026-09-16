@@ -13,8 +13,9 @@ function stripWrappers(raw: string): string {
   let text = raw.trim();
   // ```json ... ``` fences
   text = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
-  // Leading prose before the first object
-  const start = text.indexOf("{");
+  // Leading prose before the first object/array
+  const candidates = [text.indexOf("{"), text.indexOf("[")].filter((i) => i >= 0);
+  const start = candidates.length ? Math.min(...candidates) : -1;
   if (start > 0) text = text.slice(start);
   return text;
 }
