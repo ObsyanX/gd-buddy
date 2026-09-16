@@ -163,6 +163,15 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
         if (autoSend && corrected.trim()) {
           onAutoSend?.(corrected);
         }
+      } else {
+        // Nothing was recognised. Whatever the user typed before opening the
+        // mic must still be reported, otherwise a pending send is dropped.
+        const typed = prefixRef.current.trim();
+        setFinalText(typed);
+        onFinalResult?.(typed);
+        if (autoSend && typed) {
+          onAutoSend?.(typed);
+        }
       }
       
       console.log('Speech recognition ended');

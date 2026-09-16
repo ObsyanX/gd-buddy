@@ -68,6 +68,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [videoMetricsRef, setVideoMetricsRef] = useState<VideoMetrics | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pendingSendRef = useRef(false);
+  const userInputRef = useRef("");
+  useEffect(() => { userInputRef.current = userInput; }, [userInput]);
   const skipWaitRef = useRef<(() => void) | null>(null);
   const [isWaitingForSpeech, setIsWaitingForSpeech] = useState(false);
   const [isMobileMetricsOpen, setIsMobileMetricsOpen] = useState(false);
@@ -354,11 +356,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     },
     onFinalResult: (text) => {
       setUserInput(text);
-      // If pending send, trigger it after correction completes
-      if (pendingSendRef.current && text.trim()) {
+      // If pending send, trigger it after correction completes. When nothing was
+      // recognised, fall back to whatever is currently typed so the message is
+      // never silently dropped.
+      if (pendingSendRef.current) {
         pendingSendRef.current = false;
-        // Small delay to ensure state is updated
-        scheduleSessionTimeout(() => handleSendMessageDirect(text), 100);
+        const toSend = text.trim() || userInputRef.current.trim();
+        if (toSend) {
+          scheduleSessionTimeout(() => handleSendMessageDirect(toSend), 100);
+        }
       }
     },
     onCorrectionStart: () => {
@@ -914,7 +920,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       // Auto-reopen mic after AI responses complete (if enabled and setting allows)
       if (autoMicEnabled && autoMicSetting && isSpeechSupported) {
         scheduleSessionTimeout(() => {
-          if (!isSpeakingRef.current) startListening();
+          if (!isSpeakingRef.current) startListening(userInputRef.current);
         }, 500);
       }
 
