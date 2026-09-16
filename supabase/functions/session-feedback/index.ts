@@ -97,6 +97,8 @@ Provide your structured feedback as JSON.`;
           },
         ],
         tool_choice: { type: "function", function: { name: "provide_feedback" } },
+        // Enough headroom that the structured feedback is never cut off mid-sentence.
+        max_tokens: 2000,
       });
     } catch (e) {
       if (e instanceof AIProviderError) {
