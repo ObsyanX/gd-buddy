@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callAI } from "../_shared/ai-with-fallback.ts";
+import { parseAiJson } from "../_shared/parse-ai-json.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
