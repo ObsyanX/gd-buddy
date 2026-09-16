@@ -920,7 +920,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       // Auto-reopen mic after AI responses complete (if enabled and setting allows)
       if (autoMicEnabled && autoMicSetting && isSpeechSupported) {
         scheduleSessionTimeout(() => {
-          if (!isSpeakingRef.current) startListening();
+          if (!isSpeakingRef.current) startListening(userInputRef.current);
         }, 500);
       }
 
