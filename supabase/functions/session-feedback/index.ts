@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { callAI, AIProviderError } from "../_shared/ai-with-fallback.ts";
+import { parseAiJson } from "../_shared/parse-ai-json.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
