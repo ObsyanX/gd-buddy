@@ -134,8 +134,8 @@ If no data, give general beginner tips. Sort by priority.`;
 
     const content = aiData.choices?.[0]?.message?.content || '[]';
     
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    const insights = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    const parsedInsights = parseAiJson<unknown>(content);
+    const insights = Array.isArray(parsedInsights) ? parsedInsights : [];
 
     const totalLatencyMs = Math.round(performance.now() - startTime);
     log('info', 'Insights generated', { 
