@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { callAI } from "../_shared/ai-with-fallback.ts";
+import { parseAiJson } from "../_shared/parse-ai-json.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -216,11 +217,9 @@ Provide detailed feedback as JSON:
       );
     }
 
-    let feedback;
-    try {
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || [null, content];
-      feedback = JSON.parse(jsonMatch[1]);
-    } catch (e) {
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || [null, content];
+    let feedback = parseAiJson<Record<string, unknown>>(jsonMatch[1]);
+    if (!feedback) {
       log('warn', 'Failed to parse AI feedback JSON', { raw_content_length: content.length });
       feedback = {
         score: 70,
