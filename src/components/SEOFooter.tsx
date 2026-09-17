@@ -178,28 +178,9 @@ const SEOFooter = () => (
         </div>
 
         {/* Launchstag Featured Badge */}
-        <div className="my-6 flex w-full items-center justify-center px-4">
-          <a
-            href="https://launchstag.com/p/gd-buddy"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Featured on Launchstag"
-            className="inline-flex items-center justify-center
-               rounded-lg transition-all duration-300
-               hover:-translate-y-1 hover:opacity-90
-               focus-visible:outline-2
-               focus-visible:outline-offset-4"
-          >
-            <img
-              src="https://launchstag.com/badge-light.svg"
-              alt="Featured on Launchstag"
-              width={198}
-              height={62}
-              loading="lazy"
-              className="block h-auto w-[198px] max-w-full object-contain"
-            />
-          </a>
-        </div>
+        <a href="https://launchstag.com/p/gd-buddy" target="_blank" rel="noopener">
+          <img src="https://launchstag.com/badge-light.svg" alt="Featured on Launchstag" width="198" height="62" />
+        </a>
         <AdsPrivacyNotice />
 
         <div className="pt-6 mt-6 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-3">
