@@ -16,53 +16,135 @@ const SEOFooter = () => (
               </div>
               <span className="font-display text-xl">GD Buddy</span>
             </Link>
-            <p className="text-sm text-muted-foreground italic-accent">
-              Rehearsal, refined.
-            </p>
+            <p className="text-sm text-muted-foreground italic-accent">Rehearsal, refined.</p>
           </div>
 
           <nav aria-label="Footer navigation" className="md:col-span-3 grid grid-cols-2 sm:grid-cols-5 gap-6">
             <div>
               <h3 className="text-micro text-primary-glow mb-3">Practice</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/home/practice" className="text-muted-foreground story-link hover:text-foreground">Solo Practice</Link></li>
-                <li><Link to="/home/multiplayer" className="text-muted-foreground story-link hover:text-foreground">Multiplayer</Link></li>
-                <li><Link to="/home/drills" className="text-muted-foreground story-link hover:text-foreground">Skill Drills</Link></li>
+                <li>
+                  <Link to="/home/practice" className="text-muted-foreground story-link hover:text-foreground">
+                    Solo Practice
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/home/multiplayer" className="text-muted-foreground story-link hover:text-foreground">
+                    Multiplayer
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/home/drills" className="text-muted-foreground story-link hover:text-foreground">
+                    Skill Drills
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
               <h3 className="text-micro text-primary-glow mb-3">Resources</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/gd-topics-for-placements" className="text-muted-foreground story-link hover:text-foreground">GD Topics</Link></li>
-                <li><Link to="/how-to-crack-group-discussion" className="text-muted-foreground story-link hover:text-foreground">How to Crack GD</Link></li>
-                <li><Link to="/communication-skills-for-gd" className="text-muted-foreground story-link hover:text-foreground">Communication</Link></li>
-                <li><Link to="/common-gd-mistakes" className="text-muted-foreground story-link hover:text-foreground">Common Mistakes</Link></li>
+                <li>
+                  <Link
+                    to="/gd-topics-for-placements"
+                    className="text-muted-foreground story-link hover:text-foreground"
+                  >
+                    GD Topics
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/how-to-crack-group-discussion"
+                    className="text-muted-foreground story-link hover:text-foreground"
+                  >
+                    How to Crack GD
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/communication-skills-for-gd"
+                    className="text-muted-foreground story-link hover:text-foreground"
+                  >
+                    Communication
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/common-gd-mistakes" className="text-muted-foreground story-link hover:text-foreground">
+                    Common Mistakes
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
               <h3 className="text-micro text-primary-glow mb-3">Learn</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/group-discussion-preparation-guide" className="text-muted-foreground story-link hover:text-foreground">Preparation Guide</Link></li>
-                <li><Link to="/ai-gd-simulator" className="text-muted-foreground story-link hover:text-foreground">AI Simulator</Link></li>
-                <li><Link to="/home/dashboard" className="text-muted-foreground story-link hover:text-foreground">Dashboard</Link></li>
-                <li><Link to="/about" className="text-muted-foreground story-link hover:text-foreground">About</Link></li>
+                <li>
+                  <Link
+                    to="/group-discussion-preparation-guide"
+                    className="text-muted-foreground story-link hover:text-foreground"
+                  >
+                    Preparation Guide
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/ai-gd-simulator" className="text-muted-foreground story-link hover:text-foreground">
+                    AI Simulator
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/home/dashboard" className="text-muted-foreground story-link hover:text-foreground">
+                    Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/about" className="text-muted-foreground story-link hover:text-foreground">
+                    About
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
               <h3 className="text-micro text-primary-glow mb-3">Account</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/home/profile" className="text-muted-foreground story-link hover:text-foreground">Profile</Link></li>
-                <li><Link to="/home/settings" className="text-muted-foreground story-link hover:text-foreground">Settings</Link></li>
-                <li><Link to="/contact" className="text-muted-foreground story-link hover:text-foreground">Contact</Link></li>
+                <li>
+                  <Link to="/home/profile" className="text-muted-foreground story-link hover:text-foreground">
+                    Profile
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/home/settings" className="text-muted-foreground story-link hover:text-foreground">
+                    Settings
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="text-muted-foreground story-link hover:text-foreground">
+                    Contact
+                  </Link>
+                </li>
               </ul>
               <div className="flex gap-3 mt-4">
-                <a href="https://github.com/ObsyanX" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="w-9 h-9 rounded-full glass-subtle flex items-center justify-center text-muted-foreground hover:text-primary-glow transition-colors">
+                <a
+                  href="https://github.com/ObsyanX"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GitHub"
+                  className="w-9 h-9 rounded-full glass-subtle flex items-center justify-center text-muted-foreground hover:text-primary-glow transition-colors"
+                >
                   <Github className="w-4 h-4" />
                 </a>
-                <a href="https://www.linkedin.com/in/sayan-dutta-exceptional98/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="w-9 h-9 rounded-full glass-subtle flex items-center justify-center text-muted-foreground hover:text-primary-glow transition-colors">
+                <a
+                  href="https://www.linkedin.com/in/sayan-dutta-exceptional98/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn"
+                  className="w-9 h-9 rounded-full glass-subtle flex items-center justify-center text-muted-foreground hover:text-primary-glow transition-colors"
+                >
                   <Linkedin className="w-4 h-4" />
                 </a>
-                <a href="mailto:duttasayan947595@gmail.com" aria-label="Email" className="w-9 h-9 rounded-full glass-subtle flex items-center justify-center text-muted-foreground hover:text-primary-glow transition-colors">
+                <a
+                  href="mailto:duttasayan947595@gmail.com"
+                  aria-label="Email"
+                  className="w-9 h-9 rounded-full glass-subtle flex items-center justify-center text-muted-foreground hover:text-primary-glow transition-colors"
+                >
                   <Mail className="w-4 h-4" />
                 </a>
               </div>
@@ -70,20 +152,60 @@ const SEOFooter = () => (
             <div>
               <h3 className="text-micro text-primary-glow mb-3">Legal</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/privacy" className="text-muted-foreground story-link hover:text-foreground">Privacy Policy</Link></li>
-                <li><Link to="/terms" className="text-muted-foreground story-link hover:text-foreground">Terms of Service</Link></li>
-                <li><Link to="/disclaimer" className="text-muted-foreground story-link hover:text-foreground">Disclaimer</Link></li>
-                <li><Link to="/contact" className="text-muted-foreground story-link hover:text-foreground">Contact Us</Link></li>
+                <li>
+                  <Link to="/privacy" className="text-muted-foreground story-link hover:text-foreground">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="text-muted-foreground story-link hover:text-foreground">
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/disclaimer" className="text-muted-foreground story-link hover:text-foreground">
+                    Disclaimer
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="text-muted-foreground story-link hover:text-foreground">
+                    Contact Us
+                  </Link>
+                </li>
               </ul>
             </div>
           </nav>
         </div>
 
+        {/* Launchstag Featured Badge */}
+        <div className="my-6 flex w-full items-center justify-center px-4">
+          <a
+            href="https://launchstag.com/p/gd-buddy"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Featured on Launchstag"
+            className="inline-flex items-center justify-center
+               rounded-lg transition-all duration-300
+               hover:-translate-y-1 hover:opacity-90
+               focus-visible:outline-2
+               focus-visible:outline-offset-4"
+          >
+            <img
+              src="https://launchstag.com/badge-light.svg"
+              alt="Featured on Launchstag"
+              width={198}
+              height={62}
+              loading="lazy"
+              className="block h-auto w-[198px] max-w-full object-contain"
+            />
+          </a>
+        </div>
         <AdsPrivacyNotice />
 
         <div className="pt-6 mt-6 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-3">
-
-          <p className="text-micro text-muted-foreground">© {new Date().getFullYear()} GD Buddy · Rehearsal, refined.</p>
+          <p className="text-micro text-muted-foreground">
+            © {new Date().getFullYear()} GD Buddy · Rehearsal, refined.
+          </p>
           <p className="text-micro text-muted-foreground italic-accent">Editorial group discussion practice.</p>
         </div>
       </div>
