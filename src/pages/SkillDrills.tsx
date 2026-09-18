@@ -123,8 +123,7 @@ const SkillDrills = () => {
     isSupported: isSpeechSupported,
     isCorrecting,
     startListening,
-    stopListening,
-    clearTranscription
+    stopListening
   } = useStreamingTranscription({
     context: topic,
     onInterimResult: (text) => setUserResponse(text),
@@ -177,8 +176,9 @@ const SkillDrills = () => {
       stopListening();
       stopTimer();
     } else {
-      clearTranscription();
-      startListening();
+      // Keep whatever the user already typed so a no-speech mic stop can
+      // never wipe their answer.
+      startListening(userResponse);
       if (selectedDrill) {
         startTimer(selectedDrill.timeLimit);
       }

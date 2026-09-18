@@ -82,7 +82,11 @@ function unwrap(value: unknown, depth = 0): unknown {
     const keys = Object.keys(obj);
     if (keys.length === 1) {
       const inner = unwrap(obj[keys[0]], depth + 1);
-      if (inner && typeof inner === "object") return inner;
+      // Only collapse a single-key wrapper when the inner value is a plain
+      // object (double-encoded payload). Collapsing an array would destroy
+      // legitimate shapes like { "topics": [ ... ] }.
+      if (inner && typeof inner === "object" && !Array.isArray(inner)) return inner;
+      if (Array.isArray(inner)) obj[keys[0]] = inner;
     }
     // Un-stringify any nested JSON-looking values.
     for (const k of keys) {
