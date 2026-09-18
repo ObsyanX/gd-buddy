@@ -124,7 +124,7 @@ const SkillDrills = () => {
     isCorrecting,
     startListening,
     stopListening,
-    clearTranscription
+    clearTranscription: _clearTranscription
   } = useStreamingTranscription({
     context: topic,
     onInterimResult: (text) => setUserResponse(text),
