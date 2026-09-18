@@ -167,10 +167,12 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
         // Nothing was recognised. Whatever the user typed before opening the
         // mic must still be reported, otherwise a pending send is dropped.
         const typed = prefixRef.current.trim();
-        setFinalText(typed);
-        onFinalResult?.(typed);
-        if (autoSend && typed) {
-          onAutoSend?.(typed);
+        if (typed) {
+          setFinalText(typed);
+          onFinalResult?.(typed);
+          if (autoSend) {
+            onAutoSend?.(typed);
+          }
         }
       }
       
