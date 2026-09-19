@@ -362,16 +362,31 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
 
         if (!response.ok) {
           errText = await response.text();
-          // Some Groq models reject strict JSON mode (json_validate_failed /
-          // tool_use_failed) even though the model itself works. Retry once
-          // without `response_format`, asking for raw JSON in the prompt —
-          // callers already run the output through a tolerant JSON parser.
+          // Some models reject strict JSON / forced tool calls
+          // (json_validate_failed / tool_use_failed) even though the model
+          // itself works and produced perfectly good JSON. Two recoveries:
+          //   1) salvage `failed_generation` from the error body,
+          //   2) retry once without response_format/tools, asking for raw JSON.
+          // Callers already run output through a tolerant JSON parser.
           const jsonModeFailure =
-            !!body.response_format &&
-            /json_validate_failed|tool_use_failed|Failed to (?:generate|validate) JSON/i.test(errText);
+            (!!body.response_format || !!body.tools) &&
+            /json_validate_failed|tool_use_failed|did not call a tool|Failed to (?:generate|validate) JSON/i
+              .test(errText);
+
           if (jsonModeFailure) {
-            console.warn(`[ai-fallback] ${provider.name} JSON mode failed — retrying as plain text`);
-            const { response_format: _rf, ...rest } = body;
+            const salvaged = extractFailedGeneration(errText);
+            if (salvaged) {
+              console.warn(`[ai-fallback] ${provider.name} tool/JSON mode failed — salvaged failed_generation`);
+              const synthetic = {
+                choices: [{ message: { content: salvaged } }],
+                _provider: provider.name,
+              } as unknown as AIResponse;
+              await recordUsage(synthetic, mappedModel, provider.name, fnName);
+              return synthetic;
+            }
+
+            console.warn(`[ai-fallback] ${provider.name} tool/JSON mode failed — retrying as plain text`);
+            const { response_format: _rf, tools: _t, tool_choice: _tc, ...rest } = body;
             const degraded: AIRequestBody = {
               ...rest,
               messages: [
