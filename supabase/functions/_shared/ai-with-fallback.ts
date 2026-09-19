@@ -36,10 +36,12 @@ function isLightTier(m: string): boolean {
 // Map Lovable/Gemini model names → Groq-supported model names.
 // Verified against https://api.groq.com/openai/v1/models — the old
 // llama-3.x ids were decommissioned and now return 404 model_not_found.
+// Only models that are `active` and advertise the `tools` feature are listed,
+// so tool/JSON-mode calls never land on a model that cannot honour them.
 function mapToGroqModel(model: string): string[] {
   const m = normalizeModel(model);
   if (isLightTier(m)) {
-    return ["openai/gpt-oss-20b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b"];
+    return ["openai/gpt-oss-20b", "qwen/qwen3.8-27b", "openai/gpt-oss-120b"];
   }
   return ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"];
 }
