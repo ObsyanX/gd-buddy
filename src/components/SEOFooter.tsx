@@ -181,6 +181,9 @@ const SEOFooter = () => (
         <a href="https://launchstag.com/p/gd-buddy" target="_blank" rel="noopener">
           <img src="https://launchstag.com/badge-light.svg" alt="Featured on Launchstag" width="198" height="62" />
         </a>
+        <a href="https://launchstag.com/p/gd-buddy" target="_blank" rel="noopener">
+          <img src="https://launchstag.com/badge-dark.svg" alt="Featured on Launchstag" width="198" height="62" />
+        </a>
         <AdsPrivacyNotice />
 
         <div className="pt-6 mt-6 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-3">
