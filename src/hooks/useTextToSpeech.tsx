@@ -88,7 +88,8 @@ export const useTextToSpeech = () => {
         elevenLabsSuccessRef.current = true;
 
         // Convert base64 to audio and play
-        const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
+        const audioMime = data.audioFormat === 'wav' ? 'audio/wav' : 'audio/mpeg';
+        const audioBlob = base64ToBlob(data.audioContent, audioMime);
         const audioUrl = URL.createObjectURL(audioBlob);
         
         const audio = new Audio(audioUrl);

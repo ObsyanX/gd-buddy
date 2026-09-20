@@ -176,6 +176,22 @@ serve(async (req) => {
     }
 
     if (!response || !response.ok) {
+      // ElevenLabs failed for all keys (e.g. quota exhausted) — fall back to Lovable AI TTS
+      const fallbackAudio = await callLovableTTS(text, voice);
+      if (fallbackAudio && fallbackAudio.byteLength > 0) {
+        console.log('Lovable TTS fallback succeeded, audio size:', fallbackAudio.byteLength);
+        const fbBytes = new Uint8Array(fallbackAudio);
+        const chunkSize = 8192;
+        let fbBase64 = '';
+        for (let i = 0; i < fbBytes.length; i += chunkSize) {
+          const chunk = fbBytes.subarray(i, Math.min(i + chunkSize, fbBytes.length));
+          fbBase64 += String.fromCharCode.apply(null, Array.from(chunk));
+        }
+        return new Response(
+          JSON.stringify({ audioContent: btoa(fbBase64), audioFormat: 'wav', provider: 'lovable' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       // Return 200 with fallback flag to avoid client runtime popups from 5xx responses
       return new Response(
         JSON.stringify({
