@@ -68,6 +68,21 @@ function mapToCerebrasModel(model: string): string[] {
 
 
 
+// Some providers reject a tool/JSON-mode response but still include the model's
+// raw output under `error.failed_generation`. Salvage it when present.
+function extractFailedGeneration(errText: string): string | null {
+  try {
+    const parsed = JSON.parse(errText) as {
+      error?: { failed_generation?: string };
+      failed_generation?: string;
+    };
+    const salvaged = parsed?.error?.failed_generation ?? parsed?.failed_generation;
+    return typeof salvaged === "string" && salvaged.trim() ? salvaged : null;
+  } catch {
+    return null;
+  }
+}
+
 export type Provider = "lovable" | "groq" | "mistral" | "cerebras";
 
 export interface AIRequestBody {
