@@ -92,7 +92,7 @@ const Settings = () => {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
       const byteArray = new Uint8Array(byteNumbers);
-      const audioBlob = new Blob([byteArray], { type: 'audio/mpeg' });
+      const audioBlob = new Blob([byteArray], { type: data?.audioFormat === 'wav' ? 'audio/wav' : 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(audioBlob);
 
       const audio = new Audio(audioUrl);
