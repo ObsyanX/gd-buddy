@@ -44,6 +44,48 @@ const VOICE_MAP: Record<string, string> = {
   'bill': 'pqHfZKP75CvOlQylNhV4',
 };
 
+// Map request voice names to Gemini-TTS prebuilt voices (Lovable AI fallback)
+const GEMINI_VOICE_MAP: Record<string, string> = {
+  alloy: 'Kore', echo: 'Charon', fable: 'Aoede', onyx: 'Fenrir', nova: 'Leda', shimmer: 'Callirrhoe',
+  aria: 'Achernar', roger: 'Algenib', sarah: 'Kore', laura: 'Aoede', charlie: 'Puck',
+  george: 'Charon', callum: 'Orus', river: 'Zephyr', liam: 'Iapetus', charlotte: 'Vindemiatrix',
+  alice: 'Gacrux', matilda: 'Aoede', will: 'Rasalgethi', jessica: 'Callirrhoe', eric: 'Algieba',
+  chris: 'Schedar', brian: 'Sadaltager', daniel: 'Fenrir', lily: 'Leda', bill: 'Enceladus',
+};
+
+// Fallback: Lovable AI Gateway TTS (Gemini) — returns a WAV ArrayBuffer or null.
+async function callLovableTTS(text: string, voice?: string): Promise<ArrayBuffer | null> {
+  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!apiKey) return null;
+  const voiceName = GEMINI_VOICE_MAP[(voice || '').toLowerCase()] || 'Kore';
+  try {
+    const resp = await fetch('https://ai.gateway.lovable.dev/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3.1-flash-tts-preview',
+        stream_format: 'audio',
+        contents: [{ role: 'user', parts: [{ text }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } },
+        },
+      }),
+    });
+    if (!resp.ok) {
+      console.warn('Lovable TTS fallback failed:', resp.status, await resp.text().catch(() => ''));
+      return null;
+    }
+    return await resp.arrayBuffer();
+  } catch (e) {
+    console.warn('Lovable TTS fallback error:', e);
+    return null;
+  }
+}
+
 // Helper to call ElevenLabs API with a specific key
 async function callElevenLabs(apiKey: string, text: string, voiceId: string): Promise<Response> {
   return await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
