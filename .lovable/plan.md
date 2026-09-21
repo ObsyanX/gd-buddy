@@ -1,74 +1,62 @@
-# Fix low AI member switching in discussion room
+# Bring Your Own API Keys (BYOK) for GD Buddy
 
-## Verified root causes
+## What exists today (verified)
 
-1. **AI only speaks after a human message.** `DiscussionRoom.tsx:handleSendMessageDirect` is the only path to `gd-conductor`; there is no autonomous loop or silence watchdog to make AI participants talk to each other.
-2. **Conductor caps replies at 2 AI participants per round.** `gd-conductor/index.ts:284` instructs the model to pick "at most 2 AI participants", so most personas stay silent every round by design.
-3. **`next_expected_speaker` is generated but never consumed.** The client does not use it to rotate speakers or balance airtime.
-4. **No AI floor-request mechanism.** `speaking_turns` supports `participant_kind = 'ai'`, but no code ever requests the mic on behalf of an AI persona during open discussion.
-5. **Artificial delay before each conductor call.** `DiscussionRoom.tsx:731-753` waits 1-15s (a synthetic "human speech length") before invoking the conductor, lengthening dead air.
-6. **Serial playback.** `room-mixer.ts` plays replies one after another, so even the 1-2 replies that return consume wall-clock time sequentially.
-7. **"Skip turn" is a no-op for the room.** When the user skips, the mic reopens but no AI is prompted to speak, creating the long silent stretches seen in the transcript (e.g. 3:38-7:00).
+- All text AI (topics, conductor, feedback, drills, detectors, moderation, analytics — 18 functions) already goes through one shared router: Lovable AI -> Groq -> Mistral -> Cerebras, with usage logging, error logging and salvage/retry logic.
+- Voice (text-to-speech) uses ElevenLabs first, then the Lovable voice engine, then the browser voice.
+- Speech-to-text runs two ways: in the browser (Whisper, no key) and a server function that currently uses an OpenAI key.
+- Vision/behaviour analysis uses an external analyzer service plus AI image analysis.
+- Keys today are platform-wide (shared by all users), stored as backend secrets. There is no per-user key storage.
 
-## Goal
+## What will be built
 
-Make the room feel like a real GD where members naturally cut in, the moderator enforces balance, and silence does not last more than a few seconds.
+### 1. Personal keys, stored safely
+A new "AI Providers & API Keys" page in Settings where a signed-in user can add their own keys. Keys are encrypted before being saved, are never sent back to the browser (only the last 4 characters and a status), are never written to logs, and only the owner can see or change them.
 
-## Implementation plan
+Supported to start (matching what GD Buddy actually uses):
+- Text AI: Groq, OpenAI, Google Gemini, Mistral, Anthropic, Cerebras
+- Voice: ElevenLabs, OpenAI TTS, Google TTS
+- Speech-to-text: Groq Whisper, OpenAI Whisper, Deepgram, AssemblyAI
+- Vision/image analysis: OpenAI, Gemini
 
-### 1. AI floor-request path
-- Add `request_mic_for_ai(_session_id, _participant_id)` RPC or extend `request_mic` to accept `kind = 'ai'` and a `participant_id` source.
-- In `DiscussionRoom.tsx`, create an `aiFloorArbiter` that, when the floor is open and nobody has spoken for a configurable silence threshold (default 4s), picks 1-2 AI participants based on:
-  - `interrupt_level` (assertiveness),
-  - time since last spoke,
-  - topic relevance from recent transcript embeddings,
-  - whether they are already in `speaking_turns` queue.
-- The arbiter calls `request_mic` with `participant_kind = 'ai'` and then invokes `gd-conductor` with a flag indicating "AI-triggered" so the model knows the user did not speak.
+Providers that GD Buddy has no use for will not be added; anything skipped is listed in the final summary with the reason.
 
-### 2. Use the turn queue for open discussion
-- Reuse `useTurnQueue` for AI participants during the open-discussion phase (not just closing round).
-- When an AI participant wins the floor, lock the mic briefly while it speaks; when it releases, promote the next queued participant (AI or human).
-- Add a `last_spoke_at` timestamp per participant in client state to drive rotation.
+### 2. Provider cards
+One card per provider showing: logo, category, masked key, show/hide, save, "Test key", enable/disable, model (or voice) picker, remove with confirmation, last validated time, last used time, and a live status badge — Not configured / Validating / Connected / Invalid key / Rate limited / Quota exhausted / Unavailable / Disabled / Fallback active.
 
-### 3. Conductor changes for rotation
-- Remove or raise the "at most 2 AI participants" cap when the trigger is silence/AI floor request; instead instruct the model to pick the single most appropriate next speaker, then let the arbiter call again if the floor remains open.
-- Consume `next_expected_speaker` on the client: store it in `useSessionStore` and prefer that participant in the next arbiter decision.
-- Add a system prompt section that encourages AI personas to respond to the **last AI speaker by name**, not only to the user.
+### 3. Notifications under each card
+When a provider fails, the message appears directly under that provider's card (not just a toast): what happened, when, which provider and model actually served the request instead, plus Retry and Fix key buttons. Repeat failures collapse into one entry; resolved ones can be dismissed.
 
-### 4. Silence watchdog
-- Add a `useEffect` in `DiscussionRoom.tsx` that starts a 4s timer whenever the room is in `discussion` stage, no one is speaking, and the user is not holding the mic.
-- On expiry, the watchdog calls the AI floor arbiter.
-- Reset the timer on any human message, AI message start, or mic state change.
+### 4. Routing and fallback
+The existing router is extended (not replaced) so each request tries, in order:
+1. the user's preferred provider for that task,
+2. their other enabled providers in the order they arranged,
+3. GD Buddy's built-in models (only if the user leaves platform fallback on),
+4. otherwise a clear error — never a silent switch.
 
-### 5. Moderator/invigilator interventions
-- Add a `moderatorIntervention` helper in `gd-protocol.ts` that fires when airtime is unbalanced (reuse `airtimeReport`/`moderatorInterjection`).
-- When a hog crosses 1.8x fair share or a quiet member falls below 0.35x, the moderator grabs the floor via the same queue and says the interjection line.
-- In `gd-conductor`, add a `moderator_override` mode where the model is told to produce only a short moderator line and release the floor.
+Users can set a preferred provider per category, drag to reorder, toggle platform fallback, and see which provider/model handled each request.
 
-### 6. Remove or shorten artificial delays
-- Replace the fixed 1-15s `humanSpeechDelay` with a much shorter filler/backchannel window (0.5-1.5s) plus speculative pre-generation.
-- When the user explicitly skips, treat it as a silence event and immediately trigger the watchdog instead of waiting.
+### 5. Failure handling
+Errors are classified properly: invalid key, quota exhausted, rate limit (honouring retry headers), server error, timeout, network, unsupported model, bad request, permission, missing key, bad audio, safety refusal. Only transient errors retry; safety refusals are never routed around. Per-user, per-provider circuit breakers pause a failing key briefly and re-test it — one user's exhausted quota never affects anyone else.
 
-### 7. Parallel/overlap playback for AI replies
-- When 2 AI participants are queued back-to-back, allow `room-mixer.ts` to start preparing the second clip while the first plays and to begin playback with a configurable overlap (up to 1.5s) so the second speaker can barge in.
-- Duck the first speaker's gain rather than waiting for full completion.
-
-### 8. Metrics and reporting
-- Track "AI-initiated turns" and "moderator interventions" per session.
-- Add a report card: "Group dynamism" score based on number of distinct speakers, average gap between turns, and interruption/overlap count.
-- Track "user floor yield rate" for coaching.
-
-## Suggested build order
-
-1. AI floor-request RPC + client arbiter + silence watchdog (biggest impact).
-2. Conductor rotation + `next_expected_speaker` consumption.
-3. Moderator interventions for airtime balance.
-4. Parallel/overlap playback for queued AI replies.
-5. Report metrics for group dynamism.
+### 6. Usage
+Where a provider reports real usage/quota, it is fetched on the backend and shown with a sync timestamp. Where it does not, the card says "Quota information unavailable" and shows locally counted requests and errors plus a link to the provider's dashboard. No invented numbers.
 
 ## Technical notes
 
-- No schema change is required for the queue; `speaking_turns.participant_kind = 'ai'` already exists.
-- Add a new optional column `gd_participants.ai_floor_weight` if we want per-persona assertiveness tuning; otherwise derive from `personas.interrupt_level`.
-- Keep the existing `gd_format`/timing windows (`gd-protocol.ts`) intact; this work only affects open-discussion behavior.
-- Gate the new proactive AI behavior behind the existing `autoMicSetting`/experiment flag so it can be A/B tested.
+- Tables (all with row-level security limiting rows to `auth.uid()`, plus grants): `user_provider_credentials` (encrypted key, masked tail, category, model, enabled, validation status, timestamps), `user_ai_preferences` (preferred provider per category, priority order, fallback switches), `ai_provider_events` (classified failures, fallback used, correlation id), `ai_usage_events` (outcome + usage, marked reported vs estimated). Retention trim for the two event tables.
+- Encryption: AES-256-GCM in the edge functions using a new backend-only encryption secret, generated and stored separately from the database. Plaintext keys exist only for the duration of a single provider call.
+- New edge function `ai-keys` handling save / validate / list / update / delete / usage / events / preferences, all JWT-authenticated and ownership-checked.
+- New shared modules under `supabase/functions/_shared/ai/`: `credentials`, `adapters` (one per provider, normalising requests, responses, errors, model ids), `router`, `fallback`, `errors`, `health`, `usage`. `callAI` keeps its current signature and delegates to the router, so the 18 existing call sites need no changes beyond passing the caller's user id where available; the voice and transcription functions get the same treatment for TTS/STT.
+- Every AI response carries the provider/model actually used so the UI can show it.
+- Frontend: new `src/pages/settings/AiProviders.tsx` with provider-card components and a hook for statuses/events, reusing existing design tokens and layout conventions; linked from Settings. No other pages restyled.
+- Tests (vitest): encryption round-trip and redaction, ownership enforcement, error classification per status, fallback order including platform-fallback-off, circuit breaker, no-duplicate-output on stream failure, usage recording, plus regression runs of existing suites. Provider failures are mocked; no real quotas burned. Live verification afterwards through the running app for one full discussion flow.
+
+## Rollout order
+
+1. Database tables + encryption secret
+2. Credentials + key-management function
+3. Provider adapters and router/fallback/health/errors
+4. Wire text AI, voice, transcription and vision through the router
+5. Settings UI with cards, notifications, usage, priority controls
+6. Tests, regression, end-to-end verification, and a written summary of anything not implemented
