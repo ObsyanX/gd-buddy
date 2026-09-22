@@ -679,6 +679,102 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_provider_events: {
+        Row: {
+          category: string
+          correlation_id: string | null
+          created_at: string
+          dismissed: boolean
+          error_kind: string
+          fallback_model: string | null
+          fallback_provider: string | null
+          id: string
+          message: string | null
+          model: string | null
+          occurrences: number
+          provider: string
+          status: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          correlation_id?: string | null
+          created_at?: string
+          dismissed?: boolean
+          error_kind: string
+          fallback_model?: string | null
+          fallback_provider?: string | null
+          id?: string
+          message?: string | null
+          model?: string | null
+          occurrences?: number
+          provider: string
+          status?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          correlation_id?: string | null
+          created_at?: string
+          dismissed?: boolean
+          error_kind?: string
+          fallback_model?: string | null
+          fallback_provider?: string | null
+          id?: string
+          message?: string | null
+          model?: string | null
+          occurrences?: number
+          provider?: string
+          status?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_usage_events: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          input_tokens: number
+          latency_ms: number | null
+          model: string | null
+          outcome: string
+          output_tokens: number
+          provider: string
+          reported: boolean
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          latency_ms?: number | null
+          model?: string | null
+          outcome: string
+          output_tokens?: number
+          provider: string
+          reported?: boolean
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          latency_ms?: number | null
+          model?: string | null
+          outcome?: string
+          output_tokens?: number
+          provider?: string
+          reported?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       analytics_daily: {
         Row: {
           active_users: number
@@ -4033,6 +4129,42 @@ export type Database = {
           },
         ]
       }
+      user_ai_preferences: {
+        Row: {
+          created_at: string
+          platform_fallback: boolean
+          preferred_stt: string | null
+          preferred_text: string | null
+          preferred_vision: string | null
+          preferred_voice: string | null
+          priority_order: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          platform_fallback?: boolean
+          preferred_stt?: string | null
+          preferred_text?: string | null
+          preferred_vision?: string | null
+          preferred_voice?: string | null
+          priority_order?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          platform_fallback?: boolean
+          preferred_stt?: string | null
+          preferred_text?: string | null
+          preferred_vision?: string | null
+          preferred_voice?: string | null
+          priority_order?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_feedback: {
         Row: {
           ai_accuracy_rating: number | null
@@ -4088,6 +4220,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_provider_credentials: {
+        Row: {
+          category: string
+          consecutive_failures: number
+          created_at: string
+          disabled_until: string | null
+          enabled: boolean
+          encrypted_key: string
+          id: string
+          key_tail: string
+          last_used_at: string | null
+          last_validated_at: string | null
+          model: string | null
+          priority: number
+          provider: string
+          updated_at: string
+          user_id: string
+          validation_message: string | null
+          validation_status: string
+        }
+        Insert: {
+          category: string
+          consecutive_failures?: number
+          created_at?: string
+          disabled_until?: string | null
+          enabled?: boolean
+          encrypted_key: string
+          id?: string
+          key_tail: string
+          last_used_at?: string | null
+          last_validated_at?: string | null
+          model?: string | null
+          priority?: number
+          provider: string
+          updated_at?: string
+          user_id: string
+          validation_message?: string | null
+          validation_status?: string
+        }
+        Update: {
+          category?: string
+          consecutive_failures?: number
+          created_at?: string
+          disabled_until?: string | null
+          enabled?: boolean
+          encrypted_key?: string
+          id?: string
+          key_tail?: string
+          last_used_at?: string | null
+          last_validated_at?: string | null
+          model?: string | null
+          priority?: number
+          provider?: string
+          updated_at?: string
+          user_id?: string
+          validation_message?: string | null
+          validation_status?: string
+        }
+        Relationships: []
       }
       user_rankings: {
         Row: {
@@ -4327,6 +4519,7 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
+      prune_ai_byok_events: { Args: never; Returns: Json }
       prune_telemetry_data:
         | { Args: never; Returns: Json }
         | {
