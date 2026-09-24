@@ -18,6 +18,11 @@
 //   3. Returns the OpenAI-format JSON response so existing parsing logic works.
 //   4. Throws if both providers fail.
 
+import { installRequestContext, currentUserId } from "./ai/request-user.ts";
+import { routeUserText } from "./ai/router.ts";
+import { ERROR_LABELS } from "./ai/errors.ts";
+installRequestContext();
+
 const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions";
