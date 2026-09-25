@@ -290,6 +290,29 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
   const CEREBRAS_API_KEY = Deno.env.get("CEREBRAS_API_KEY");
   const fnName = inferFunctionName();
 
+  // --- 0. Personal keys (BYOK): user's own providers first, in their order ---
+  const byokUser = await currentUserId().catch(() => null);
+  if (byokUser) {
+    const routed = await routeUserText(byokUser, body as unknown as Record<string, unknown>).catch(() => null);
+    if (routed?.response) {
+      const json = routed.response.json as Record<string, unknown>;
+      json._provider = routed.response.provider;
+      json._model = routed.response.model;
+      json._byok = true;
+      return json as unknown as AIResponse;
+    }
+    if (routed && !routed.platformFallback && routed.attempted.length) {
+      const label = routed.lastError ? (ERROR_LABELS as Record<string, string>)[routed.lastError.kind] ?? routed.lastError.kind : "failed";
+      throw new Error(
+        `Your AI providers (${routed.attempted.join(", ")}) could not serve this request: ${label}. Platform fallback is turned off in Settings → AI Providers.`,
+      );
+    }
+    if (routed?.attempted.length) {
+      console.warn(`[byok] user providers failed (${routed.attempted.join(",")}); using platform fallback`);
+    }
+  }
+
+
   let lovableStatus = 0;
   let lovableErrorText = "";
   let lovableThrew = false;
