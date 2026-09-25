@@ -1,5 +1,50 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { userIdFromAuth } from "../_shared/ai/request-user.ts";
+import { getUserKeys, noteKeyOutcome, platformFallbackAllowed } from "../_shared/ai/router.ts";
+import { classifyStatus, classifyThrown } from "../_shared/ai/errors.ts";
+
+function toBase64(bytes: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 8192) {
+    s += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + 8192)));
+  }
+  return btoa(s);
+}
+
+const OPENAI_VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+
+// Calls one of the user's own voice providers. Always returns MP3 audio on success.
+async function callPersonalVoice(provider: string, key: string, model: string, text: string, voice: string | undefined, elevenVoiceId: string): Promise<Response> {
+  if (provider === 'elevenlabs') {
+    return fetch(`https://api.elevenlabs.io/v1/text-to-speech/${elevenVoiceId}`, {
+      method: 'POST',
+      headers: { 'Accept': 'audio/mpeg', 'Content-Type': 'application/json', 'xi-api-key': key },
+      body: JSON.stringify({ text, model_id: model || 'eleven_turbo_v2_5', voice_settings: { stability: 0.5, similarity_boost: 0.75 } }),
+    });
+  }
+  if (provider === 'openai_tts') {
+    const v = OPENAI_VOICES.includes((voice || '').toLowerCase()) ? voice!.toLowerCase() : 'alloy';
+    return fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: model || 'gpt-4o-mini-tts', voice: v, input: text, response_format: 'mp3' }),
+    });
+  }
+  if (provider === 'google_tts') {
+    const name = model || 'en-US-Neural2-F';
+    const r = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: { text }, voice: { languageCode: name.split('-').slice(0, 2).join('-'), name }, audioConfig: { audioEncoding: 'MP3' } }),
+    });
+    if (!r.ok) return r;
+    const j = await r.json();
+    const bin = Uint8Array.from(atob(j.audioContent ?? ''), (c) => c.charCodeAt(0));
+    return new Response(bin, { status: 200 });
+  }
+  return new Response('Unsupported voice provider', { status: 400 });
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -120,15 +165,11 @@ serve(async (req) => {
 
 
   try {
-    // Get both API keys for failover
+    // Platform ElevenLabs keys (optional — personal keys and backups may serve instead)
     const apiKeys = [
       Deno.env.get('ELEVENLABS_API_KEY'),
       Deno.env.get('ELEVENLABS_API_KEY_1'),
     ].filter(Boolean) as string[];
-
-    if (apiKeys.length === 0) {
-      throw new Error('No ElevenLabs API keys configured');
-    }
 
     // Validate input
     const rawBody = await req.json();
@@ -146,6 +187,35 @@ serve(async (req) => {
 
     // Get voice ID from mapping or use Sarah as default
     const voiceId = VOICE_MAP[voice?.toLowerCase() || ''] || VOICE_MAP['sarah'];
+
+    // --- Personal voice keys (BYOK) first ---
+    const uid = await userIdFromAuth(authHeader).catch(() => null);
+    if (uid) {
+      const personal = await getUserKeys(uid, 'voice').catch(() => []);
+      for (const p of personal) {
+        const started = Date.now();
+        try {
+          const r = await callPersonalVoice(p.cred.provider, p.key, p.model, text, voice, voiceId);
+          if (r.ok) {
+            const buf = new Uint8Array(await r.arrayBuffer());
+            await noteKeyOutcome(uid, p.cred, 'voice', null);
+            return new Response(
+              JSON.stringify({ audioContent: toBase64(buf), audioFormat: 'mp3', provider: p.cred.provider, model: p.model, byok: true, latencyMs: Date.now() - started }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+            );
+          }
+          await noteKeyOutcome(uid, p.cred, 'voice', classifyStatus(r.status, await r.text(), r.headers));
+        } catch (e) {
+          await noteKeyOutcome(uid, p.cred, 'voice', classifyThrown(e));
+        }
+      }
+      if (personal.length && !(await platformFallbackAllowed(uid))) {
+        return new Response(
+          JSON.stringify({ fallback: true, message: 'Your voice providers failed and platform fallback is off', provider_failed: personal.map((p) => p.cred.provider) }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+    }
 
     console.log(`Generating speech with ElevenLabs for: "${text.substring(0, 50)}..." with voice: ${voice || 'sarah'} (${voiceId})`);
 

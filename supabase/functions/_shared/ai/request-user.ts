@@ -33,8 +33,12 @@ export function installRequestContext(): void {
 const cache = new Map<string, { uid: string | null; exp: number }>();
 
 /** Verified user id of the current request, or null (service calls, anon). */
-export async function currentUserId(): Promise<string | null> {
-  const auth = store.getStore()?.auth;
+export function currentUserId(): Promise<string | null> {
+  return userIdFromAuth(store.getStore()?.auth ?? null);
+}
+
+/** Verify an Authorization header and return the signed-in user id, or null. */
+export async function userIdFromAuth(auth: string | null): Promise<string | null> {
   if (!auth?.startsWith("Bearer ")) return null;
   const token = auth.slice(7);
   const hit = cache.get(token);
