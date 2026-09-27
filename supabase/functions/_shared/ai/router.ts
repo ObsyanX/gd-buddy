@@ -109,15 +109,15 @@ export async function routeUserText(
       };
     }
 
-    lastError = out.err;
+    lastError = (out as { err: ClassifiedError }).err;
     await Promise.all([
-      markFailure(cred, out.err),
+      markFailure(cred, (out as { err: ClassifiedError }).err),
       recordProviderEvent({
         userId,
         provider: cred.provider,
         category: "text",
         model: cred.model,
-        err: out.err,
+        err: (out as { err: ClassifiedError }).err,
       }),
       recordUserUsage({
         userId,
@@ -129,8 +129,8 @@ export async function routeUserText(
       }),
     ]);
     // Safety refusals are never routed around.
-    if (out.err.kind === "safety_refusal") {
-      return { platformFallback: false, lastError: out.err, attempted };
+    if ((out as { err: ClassifiedError }).err.kind === "safety_refusal") {
+      return { platformFallback: false, lastError: (out as { err: ClassifiedError }).err, attempted };
     }
   }
 
@@ -219,13 +219,13 @@ export async function routeUserVision(
       ]);
       return { response: { json: out.json, provider: cred.provider, model: out.model }, platformFallback: prefs.platform_fallback, attempted };
     }
-    lastError = out.err;
+    lastError = (out as { err: ClassifiedError }).err;
     await Promise.all([
-      markFailure(cred, out.err),
-      recordProviderEvent({ userId, provider: cred.provider, category: "vision", model: cred.model, err: out.err }),
+      markFailure(cred, (out as { err: ClassifiedError }).err),
+      recordProviderEvent({ userId, provider: cred.provider, category: "vision", model: cred.model, err: (out as { err: ClassifiedError }).err }),
       recordUserUsage({ userId, provider: cred.provider, category: "vision", model: cred.model, outcome: "error", latencyMs: Date.now() - started }),
     ]);
-    if (out.err.kind === "safety_refusal") break;
+    if ((out as { err: ClassifiedError }).err.kind === "safety_refusal") break;
   }
   return { platformFallback: prefs.platform_fallback, lastError, attempted };
 }
