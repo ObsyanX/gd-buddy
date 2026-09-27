@@ -181,3 +181,51 @@ export async function noteKeyOutcome(
     recordUserUsage({ userId, provider: cred.provider, category, model: cred.model, outcome: "error" }),
   ]);
 }
+
+/**
+ * Try the user's own vision providers (OpenAI Vision, Gemini Vision) in their
+ * configured order. `body` is an OpenAI-compatible chat body whose messages may
+ * include `image_url` parts. Never falls back to a platform key: GD Buddy has no
+ * platform vision model, so an empty result means "no personal vision served it".
+ */
+export async function routeUserVision(
+  userId: string,
+  body: Record<string, unknown>,
+): Promise<UserRouteResult> {
+  const prefs = await loadPrefs(userId).catch(() => null);
+  if (!prefs) return { platformFallback: true, attempted: [] };
+  const creds = await loadCredentials(userId, "vision", prefs);
+  const attempted: string[] = [];
+  let lastError: ClassifiedError | undefined;
+
+  for (const cred of creds) {
+    const key = await decryptCredential(cred);
+    if (!key) continue;
+    attempted.push(cred.provider);
+    const started = Date.now();
+    const out = await attemptText(cred, key, body);
+    if (out.ok) {
+      const usage = (out.json.usage ?? {}) as Record<string, number>;
+      await Promise.all([
+        markSuccess(cred),
+        recordUserUsage({
+          userId, provider: cred.provider, category: "vision", model: out.model,
+          outcome: "success",
+          inputTokens: usage.prompt_tokens ?? 0,
+          outputTokens: usage.completion_tokens ?? 0,
+          reported: true,
+          latencyMs: Date.now() - started,
+        }),
+      ]);
+      return { response: { json: out.json, provider: cred.provider, model: out.model }, platformFallback: prefs.platform_fallback, attempted };
+    }
+    lastError = out.err;
+    await Promise.all([
+      markFailure(cred, out.err),
+      recordProviderEvent({ userId, provider: cred.provider, category: "vision", model: cred.model, err: out.err }),
+      recordUserUsage({ userId, provider: cred.provider, category: "vision", model: cred.model, outcome: "error", latencyMs: Date.now() - started }),
+    ]);
+    if (out.err.kind === "safety_refusal") break;
+  }
+  return { platformFallback: prefs.platform_fallback, lastError, attempted };
+}
