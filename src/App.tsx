@@ -77,6 +77,7 @@ const MultiplayerSetup = lazy(() => import("./pages/MultiplayerSetup"), "Multipl
 const SkillDrills = lazy(() => import("./pages/SkillDrills"), "SkillDrills");
 const Profile = lazy(() => import("./pages/Profile"), "Profile");
 const Settings = lazy(() => import("./pages/Settings"), "Settings");
+const AiProviders = lazy(() => import("./pages/settings/AiProviders"), "AiProviders");
 const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"), "InstructorDashboard");
 const Admin = lazy(() => import("./pages/Admin"), "Admin");
 const Governance = lazy(() => import("./pages/Governance"), "Governance");
@@ -285,6 +286,7 @@ const App = () => (
                 <Route path="drills" element={<RouteBoundary title="Drills Error"><Suspense fallback={<DrillsSkeleton />}><PageTransition><SkillDrills /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="profile" element={<RouteBoundary><Suspense fallback={<ProfileSkeleton />}><PageTransition><Profile /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="settings" element={<RouteBoundary><Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="settings/ai-providers" element={<RouteBoundary><Suspense fallback={<SettingsSkeleton />}><PageTransition><AiProviders /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="instructor" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><PageTransition><InstructorDashboard /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="admin" element={<AdminGuard><Suspense fallback={<DashboardSkeleton />}><AdminShell /></Suspense></AdminGuard>}>
                   <Route index element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><Admin /></Suspense></RouteBoundary>} />
