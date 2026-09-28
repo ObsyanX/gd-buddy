@@ -39,10 +39,9 @@ export function classifyStatus(
 
   if (/safety|content[_ ]policy|blocked by|refus/i.test(text) && status < 500) {
     kind = "safety_refusal";
-  } else if (status === 401) kind = "invalid_key";
-  else if (status === 402 || /insufficient|quota_exceeded|no credits|0 credits|billing/.test(text)) {
+  } else if (status === 402 || /insufficient|quota_exceeded|no credits|0 credits|billing/.test(text)) {
     kind = "quota_exhausted";
-  } else if (status === 429) {
+  } else if (status === 401) kind = "invalid_key"; else if (status === 429) {
     kind = /quota|billing|insufficient/.test(text) ? "quota_exhausted" : "rate_limited";
   } else if (status === 403) kind = "permission";
   else if (status === 404 || /model_not_found|does not exist|decommissioned|unknown model/.test(text)) {

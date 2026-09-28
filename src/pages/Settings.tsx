@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -128,6 +129,13 @@ const Settings = () => {
 
       <main className="container mx-auto p-8">
         <div className="max-w-2xl mx-auto space-y-6">
+          <Card className="p-6 border-4 border-border flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold">AI PROVIDERS &amp; API KEYS</h2>
+              <p className="text-sm text-muted-foreground">Use your own AI accounts for discussions, voices and transcription.</p>
+            </div>
+            <Button asChild><Link to="/home/settings/ai-providers">Manage</Link></Button>
+          </Card>
           {/* Voice Settings */}
           <Card className="p-6 border-4 border-border space-y-6">
             <div className="flex items-center gap-2">
