@@ -38,7 +38,7 @@ describe("BYOK error classification", () => {
     const cases: Array<[number, string, string, boolean]> = [
       [401, "unauthorized", "invalid_key", false],
       [402, "", "quota_exhausted", false],
-      [401, "quota_exceeded: You have 0 credits remaining", "invalid_key", false],
+      [401, "quota_exceeded: You have 0 credits remaining", "quota_exhausted", false],
       [429, "slow down", "rate_limited", true],
       [429, "insufficient_quota", "quota_exhausted", false],
       [403, "forbidden", "permission", false],
