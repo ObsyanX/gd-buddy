@@ -51,8 +51,7 @@ export function classifyStatus(
   } else if (status >= 500) kind = "server_error";
   else if (status >= 400) kind = "bad_request";
 
-  const retryable = kind === "rate_limited" || kind === "server_error" ||
-    kind === "timeout" || kind === "network";
+  const retryable = (["rate_limited", "server_error", "timeout", "network"] as ErrorKind[]).includes(kind);
 
   return {
     kind,

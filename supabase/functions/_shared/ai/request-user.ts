@@ -2,6 +2,7 @@
 // user's own keys without every function passing the user id explicitly.
 // Wraps Deno.serve once at import time; the JWT is verified before use.
 import { AsyncLocalStorage } from "node:async_hooks";
+// @ts-ignore Deno npm specifier, resolved at deploy time
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const store = new AsyncLocalStorage<{ auth: string | null }>();
