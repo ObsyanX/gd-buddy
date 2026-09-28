@@ -40,7 +40,7 @@ const CATEGORY_LABEL: Record<Category, string> = { text: 'Text AI', voice: 'Voic
 const STATUS_LABEL: Record<string, string> = {
   not_configured: 'Not configured', validating: 'Validating', connected: 'Connected', invalid_key: 'Invalid key',
   rate_limited: 'Rate limited', quota_exhausted: 'Quota exhausted', server_error: 'Unavailable', timeout: 'Unavailable',
-  network: 'Unavailable', unsupported_model: 'Unsupported model', bad_request: 'Request rejected', permission_denied: 'Permission denied',
+  network: 'Unavailable', unsupported_model: 'Unsupported model', bad_request: 'Request rejected', permission: 'Permission denied', unknown: 'Unavailable',
   missing_credentials: 'Not configured', bad_audio: 'Audio rejected', safety_refusal: 'Refused by provider', disabled: 'Disabled',
   fallback_active: 'Fallback active',
 };
