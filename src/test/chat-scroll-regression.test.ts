@@ -66,7 +66,7 @@ describe("Chat touch-scroll regression guard", () => {
     expect(layout).toMatch(/isDiscussionSession[\s\S]*lg:h-dvh lg:overflow-hidden/);
     expect(layout).toMatch(/isDiscussionSession[\s\S]*lg:min-h-0 lg:overflow-hidden/);
     expect(transition).toMatch(/isDiscussionSession[\s\S]*lg:h-full lg:min-h-0 lg:overflow-hidden/);
-    expect(room).toMatch(/h-full min-h-0[^"]*overflow-hidden/);
+    expect(room).toMatch(/lg:h-full lg:min-h-0 lg:overflow-hidden/);
     expect(room).toMatch(/hidden sm:block lg:hidden shrink-0/);
     expect(room).toMatch(/useOnboardingTutorial\(\{ autoOpen: false \}\)/);
     expect(room).toMatch(/min-h-0[^"]*overflow-hidden/);
