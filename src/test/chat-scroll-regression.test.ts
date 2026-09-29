@@ -62,10 +62,10 @@ describe("Chat touch-scroll regression guard", () => {
     const room = read("src/components/DiscussionRoom.tsx");
     const bottomNav = read("src/components/BottomNav.tsx");
 
-    expect(layout).toMatch(/isDiscussionSession[\s\S]*h-dvh overflow-hidden/);
-    expect(layout).toMatch(/discussion-scroll-lock/);
-    expect(layout).toMatch(/isDiscussionSession[\s\S]*min-h-0 overflow-hidden/);
-    expect(transition).toMatch(/isDiscussionSession[\s\S]*h-full min-h-0 overflow-hidden/);
+    // Desktop locks the page; phones keep natural page scroll (mobile scroll fix).
+    expect(layout).toMatch(/isDiscussionSession[\s\S]*lg:h-dvh lg:overflow-hidden/);
+    expect(layout).toMatch(/isDiscussionSession[\s\S]*lg:min-h-0 lg:overflow-hidden/);
+    expect(transition).toMatch(/isDiscussionSession[\s\S]*lg:h-full lg:min-h-0 lg:overflow-hidden/);
     expect(room).toMatch(/h-full min-h-0[^"]*overflow-hidden/);
     expect(room).toMatch(/hidden sm:block lg:hidden shrink-0/);
     expect(room).toMatch(/useOnboardingTutorial\(\{ autoOpen: false \}\)/);
