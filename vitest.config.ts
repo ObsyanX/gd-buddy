@@ -12,6 +12,10 @@ export default defineConfig({
     exclude: ["node_modules", "e2e/**", "playwright/**"],
   },
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: [
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      // Deno-style npm specifiers used by backend functions under test
+      { find: /^npm:(@?[^@]+)(@[^/]+)?(\/.*)?$/, replacement: "$1$3" },
+    ],
   },
 });
