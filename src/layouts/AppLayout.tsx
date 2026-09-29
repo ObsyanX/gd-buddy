@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -58,8 +59,18 @@ const AppLayout = () => {
 
   const showInstall = !installed && (canInstall || isIOS);
 
+  useEffect(() => {
+    if (!isDiscussionSession) return;
+    document.documentElement.classList.add("discussion-scroll-lock");
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.documentElement.classList.remove("discussion-scroll-lock");
+      document.body.style.overflow = "";
+    };
+  }, [isDiscussionSession]);
+
   return (
-    <div className="min-h-dvh flex flex-col relative">
+    <div className={cn("flex flex-col relative", isDiscussionSession ? "h-dvh overflow-hidden" : "min-h-dvh")}>
       <SkipLink />
       <Announcer />
       {/* Ambient orbs shared across the app */}
@@ -182,7 +193,7 @@ const AppLayout = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 relative z-10 focus:outline-none"
+        className={cn("flex-1 relative z-10 focus:outline-none", isDiscussionSession && "min-h-0 overflow-hidden")}
         role="main"
       >
         <Outlet />

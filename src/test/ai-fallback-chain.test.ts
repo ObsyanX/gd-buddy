@@ -1,6 +1,13 @@
 // Verifies the AI provider fallback chain: Lovable → Groq → Mistral → Cerebras.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
+// No signed-in user in these tests: personal keys are skipped, platform chain runs.
+vi.mock("../../supabase/functions/_shared/ai/request-user.ts", () => ({
+  installRequestContext: () => {},
+  currentUserId: async () => null,
+  userIdFromAuth: async () => null,
+}));
+
 const ENV: Record<string, string> = {
   LOVABLE_API_KEY: "test-lovable",
   GROQ_API_KEY: "test-groq",
