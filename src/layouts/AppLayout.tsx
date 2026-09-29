@@ -59,7 +59,7 @@ const AppLayout = () => {
   const showInstall = !installed && (canInstall || isIOS);
 
   return (
-    <div className="min-h-dvh flex flex-col relative">
+    <div className={cn("flex flex-col relative", isDiscussionSession ? "min-h-dvh lg:h-dvh lg:overflow-hidden" : "min-h-dvh")}>
       <SkipLink />
       <Announcer />
       {/* Ambient orbs shared across the app */}
@@ -182,7 +182,7 @@ const AppLayout = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 relative z-10 focus:outline-none"
+        className={cn("flex-1 relative z-10 focus:outline-none", isDiscussionSession && "lg:min-h-0 lg:overflow-hidden")}
         role="main"
       >
         <Outlet />
