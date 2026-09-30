@@ -55,7 +55,10 @@ function report(
   if (action === "recovered") console.info(line, details);
   else console.warn(line, details);
 
-  if (action === "retry") return; // keep noise out of the incident feed
+  // "retry", "recovered" and "reload" are expected after a new deploy (old
+  // tab asks for old file names) and self-heal — keep them out of the
+  // incident feed. Only a real, unrecovered failure is reported.
+  if (action !== "gave_up") return;
   try {
     errorMonitor.capture({
       error_message: `Dynamic import ${action} for "${chunk}": ${String(details.message ?? "")}`.slice(0, 500),
