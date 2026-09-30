@@ -44,7 +44,7 @@ async function fakeFetch(input: any, init?: RequestInit): Promise<Response> {
     const method = init?.method ?? "GET";
     if (method === "GET") return new Response(JSON.stringify(applyFilters(rows, url.searchParams)));
     if (method === "POST") {
-      rows.push({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...JSON.parse(String(init!.body)) });
+      rows.push({ id: crypto.randomUUID(), created_at: new Date().toISOString(), dismissed: false, occurrences: 1, ...JSON.parse(String(init!.body)) });
       return new Response("", { status: 201 });
     }
     if (method === "PATCH") {
