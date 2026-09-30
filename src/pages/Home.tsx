@@ -54,6 +54,21 @@ const Home = () => {
             </div>
           </section>
 
+          <section aria-label="Use your own AI keys">
+            <Card className="p-6 border-4 border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold">BRING YOUR OWN AI KEYS <span className="text-sm font-normal text-muted-foreground">(optional)</span></h2>
+                <p className="text-muted-foreground">
+                  Add your own OpenAI, Gemini, Groq, ElevenLabs or other provider key so AI replies, voices, transcription and camera
+                  analysis keep working even when shared limits run out. Keys are encrypted and used only for you.
+                </p>
+              </div>
+              <Button asChild variant="outline" className="shrink-0">
+                <Link to="/home/settings/ai-providers">Manage AI keys</Link>
+              </Button>
+            </Card>
+          </section>
+
           <section className="flex justify-center gap-4 flex-wrap" aria-label="Get started">
             <Button size="lg" className="text-xl px-12 py-8 border-4 border-border shadow-md hover:shadow-lg" onClick={() => navigate('/home/practice')} aria-label="Start a solo practice session">
               START SOLO SESSION
