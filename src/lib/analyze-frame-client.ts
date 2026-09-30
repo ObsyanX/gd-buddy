@@ -73,6 +73,62 @@ export class AnalyzeFrameClient {
   private static readonly MAX_STALE_TIME_MS = 3000; // Hard cap metrics after 3s of no data
   private static readonly MIN_METRIC_VALUE = 0; // Floor for metrics
 
+  // Personal vision-key fallback (only when the main analysis service is down).
+  private static readonly VISION_INTERVAL_MS = 8_000; // matches server throttle
+  private static readonly VISION_MAX_FAILS = 3; // stop for this session after repeated key failures
+  private visionDisabled = false; // no personal vision key, or key keeps failing
+  private visionInFlight = false;
+  private lastVisionAt = 0;
+  private visionFails = 0;
+
+  private async tryPersonalVision(video: HTMLVideoElement, now: number): Promise<FrameResponse | null> {
+    if (this.visionDisabled || this.visionInFlight) return null;
+    if (now - this.lastVisionAt < AnalyzeFrameClient.VISION_INTERVAL_MS) return null;
+    this.lastVisionAt = now;
+    const image = captureFrameAsBase64(video, 0.5); // small low-quality JPEG = fewer tokens
+    if (!image) return null;
+    this.visionInFlight = true;
+    try {
+      const { data, error } = await supabase.functions.invoke("vision-frame", { body: { image } });
+      if (error || !data) return null;
+      if (data.status === "no_keys") { this.visionDisabled = true; return null; }
+      if (data.status === "failed") {
+        if (++this.visionFails >= AnalyzeFrameClient.VISION_MAX_FAILS) this.visionDisabled = true;
+        return null;
+      }
+      if (data.status !== "ok" || !data.metrics) return null;
+      this.visionFails = 0;
+      const m = data.metrics;
+      if (!m.face_visible) return null; // nothing measurable — let normal decay run
+      const metrics: AnalysisMetrics = {
+        attention_percent: m.eye_contact_score,
+        head_movement_normalized: null,
+        shoulder_tilt_deg: null,
+        hand_activity_normalized: null,
+        hands_detected_count: m.hands_detected_count ?? 0,
+        posture_score: m.posture_score,
+        eye_contact_score: m.eye_contact_score,
+        expression_score: m.expression_score,
+      };
+      const tips = m.tip ? [m.tip] : [];
+      this.lastValidMetrics = metrics;
+      this.lastSuccessfulAnalysisTime = now;
+      this.consecutiveFailures = 0;
+      this.accumulateMetrics(metrics, tips);
+      return {
+        metrics,
+        frame_confidence: 0.6,
+        explanations: { mode: "personal_vision_key", provider: String(data.provider), model: String(data.model) },
+        warnings: tips,
+        next_state: this.previousState || { face_landmarks: null, hand_landmarks: null, pose_landmarks: null, timestamp: now },
+      };
+    } catch {
+      return null;
+    } finally {
+      this.visionInFlight = false;
+    }
+  }
+
   /**
    * Analyze a frame using external backend (direct call, non-blocking)
    */
@@ -108,6 +164,10 @@ export class AnalyzeFrameClient {
         return this.createEmptyResponse(now, 'throttled');
       }
       
+      // Main service down → try the user's own vision key (throttled, never shared keys).
+      const personal = await this.tryPersonalVision(video, now);
+      if (personal) return personal;
+
       this.consecutiveFailures++;
       return this.handleAnalysisFailure(now, reason, false);
     }

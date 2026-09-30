@@ -47,6 +47,26 @@ const LandingBelow = () => {
         </motion.div>
       </section>
 
+      {/* Bring your own AI keys */}
+      <section className="container mx-auto px-4 md:px-6 pb-16" aria-label="Use your own AI keys">
+        <div className="glass rounded-[2rem] p-6 md:p-10 flex flex-col md:flex-row md:items-center gap-6 justify-between">
+          <div className="max-w-2xl space-y-2">
+            <p className="text-micro text-primary-glow">New · Optional</p>
+            <h2 className="text-h2 font-display">
+              Bring your own <span className="italic-accent copper-text">AI keys</span>
+            </h2>
+            <p className="text-muted-foreground">
+              Add your own OpenAI, Gemini, Groq, Mistral, Anthropic, ElevenLabs, Deepgram or AssemblyAI key to keep
+              practising when shared AI limits are reached. Keys are encrypted, only ever used for your sessions, and
+              you choose the order and whether GD Buddy's built-in AI steps in as backup.
+            </p>
+          </div>
+          <Button variant="glass" size="lg" onClick={() => navigate("/home/settings/ai-providers")} className="shrink-0 gap-2">
+            Add your keys <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          </Button>
+        </div>
+      </section>
+
       {/* Editorial process strip */}
       <section
         className="container mx-auto px-4 md:px-6 py-16"
