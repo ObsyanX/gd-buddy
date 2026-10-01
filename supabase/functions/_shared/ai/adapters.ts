@@ -137,6 +137,22 @@ export const ADAPTERS: Record<string, ProviderAdapter> = {
     dashboardUrl: "https://console.cloud.google.com/billing",
     reportsQuota: false,
   },
+  sarvam_tts: {
+    id: "sarvam_tts",
+    label: "Sarvam AI (Indian voices)",
+    category: "voice",
+    models: ["bulbul:v2"],
+    headers: (k) => ({ "api-subscription-key": k, "Content-Type": "application/json" }),
+    // Sarvam has no free "whoami" endpoint, so validate with a 2-character synthesis.
+    validate: (k) =>
+      fetch("https://api.sarvam.ai/text-to-speech", {
+        method: "POST",
+        headers: { "api-subscription-key": k, "Content-Type": "application/json" },
+        body: JSON.stringify({ text: "Hi", target_language_code: "en-IN", speaker: "anushka", model: "bulbul:v2" }),
+      }),
+    dashboardUrl: "https://dashboard.sarvam.ai",
+    reportsQuota: false,
+  },
 
   // ---------- Speech-to-text ----------
   groq_whisper: {

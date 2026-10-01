@@ -56,7 +56,7 @@ const LandingBelow = () => {
               Bring your own <span className="italic-accent copper-text">AI keys</span>
             </h2>
             <p className="text-muted-foreground">
-              Add your own OpenAI, Gemini, Groq, Mistral, Anthropic, ElevenLabs, Deepgram or AssemblyAI key to keep
+              Add your own OpenAI, Gemini, Groq, Mistral, Anthropic, ElevenLabs, Sarvam AI, Deepgram or AssemblyAI key to keep
               practising when shared AI limits are reached. Keys are encrypted, only ever used for your sessions, and
               you choose the order and whether GD Buddy's built-in AI steps in as backup.
             </p>
