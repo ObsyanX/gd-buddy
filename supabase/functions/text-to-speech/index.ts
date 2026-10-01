@@ -274,7 +274,7 @@ serve(async (req) => {
             const buf = new Uint8Array(await r.arrayBuffer());
             await noteKeyOutcome(uid, p.cred, 'voice', null);
             return new Response(
-              JSON.stringify({ audioContent: toBase64(buf), audioFormat: 'mp3', provider: p.cred.provider, model: p.model, byok: true, latencyMs: Date.now() - started }),
+              JSON.stringify({ audioContent: toBase64(buf), audioFormat: r.headers.get('x-audio-format') || 'mp3', provider: p.cred.provider, model: p.model, byok: true, latencyMs: Date.now() - started }),
               { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
             );
           }
