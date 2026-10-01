@@ -43,7 +43,81 @@ async function callPersonalVoice(provider: string, key: string, model: string, t
     const bin = Uint8Array.from(atob(j.audioContent ?? ''), (c) => c.charCodeAt(0));
     return new Response(bin, { status: 200 });
   }
+  if (provider === 'sarvam_tts') {
+    return callSarvam(key, model || 'bulbul:v2', text, voice);
+  }
   return new Response('Unsupported voice provider', { status: 400 });
+}
+
+// Sarvam bulbul:v2 speakers. Female: anushka, manisha, vidya, arya. Male: abhilash, karun, hitesh.
+const SARVAM_MALE = new Set(['echo', 'onyx', 'fable', 'roger', 'george', 'callum', 'liam', 'will', 'eric', 'chris', 'brian', 'daniel', 'bill', 'charlie', 'river']);
+const SARVAM_MALE_SPEAKERS = ['abhilash', 'karun', 'hitesh'];
+const SARVAM_FEMALE_SPEAKERS = ['anushka', 'manisha', 'vidya', 'arya'];
+function sarvamSpeaker(voice?: string): string {
+  const v = (voice || '').toLowerCase();
+  const pool = SARVAM_MALE.has(v) ? SARVAM_MALE_SPEAKERS : SARVAM_FEMALE_SPEAKERS;
+  let h = 0;
+  for (const c of v) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return pool[h % pool.length];
+}
+
+// Split at sentence boundaries into chunks Sarvam accepts (max 1500 chars per request).
+function chunkText(text: string, max = 1400): string[] {
+  const parts = text.match(/[^.!?।]+[.!?।]*\s*/g) ?? [text];
+  const out: string[] = [];
+  let cur = '';
+  for (const p of parts) {
+    if ((cur + p).length > max && cur) { out.push(cur.trim()); cur = ''; }
+    cur += p.length > max ? p.slice(0, max) : p;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
+// Joins WAV files with identical formats: keeps the first header, appends the raw sample data.
+function concatWav(wavs: Uint8Array[]): Uint8Array {
+  if (wavs.length === 1) return wavs[0];
+  const dataOf = (w: Uint8Array) => {
+    const dv = new DataView(w.buffer, w.byteOffset, w.byteLength);
+    let off = 12;
+    while (off + 8 <= w.length) {
+      const id = String.fromCharCode(w[off], w[off + 1], w[off + 2], w[off + 3]);
+      const size = dv.getUint32(off + 4, true);
+      if (id === 'data') return { start: off + 8, header: w.subarray(0, off + 8), size: Math.min(size, w.length - off - 8) };
+      off += 8 + size;
+    }
+    return { start: 44, header: w.subarray(0, 44), size: w.length - 44 };
+  };
+  const first = dataOf(wavs[0]);
+  const chunks = wavs.map((w) => { const d = dataOf(w); return w.subarray(d.start, d.start + d.size); });
+  const total = chunks.reduce((n, c) => n + c.length, 0);
+  const out = new Uint8Array(first.header.length + total);
+  out.set(first.header, 0);
+  let pos = first.header.length;
+  for (const c of chunks) { out.set(c, pos); pos += c.length; }
+  const dv = new DataView(out.buffer);
+  dv.setUint32(4, out.length - 8, true);
+  dv.setUint32(first.header.length - 4, total, true);
+  return out;
+}
+
+async function callSarvam(key: string, model: string, text: string, voice?: string): Promise<Response> {
+  const speaker = sarvamSpeaker(voice);
+  const lang = /[\u0900-\u097F]/.test(text) ? 'hi-IN' : 'en-IN';
+  const wavs: Uint8Array[] = [];
+  for (const piece of chunkText(text)) {
+    const r = await fetch('https://api.sarvam.ai/text-to-speech', {
+      method: 'POST',
+      headers: { 'api-subscription-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: piece, target_language_code: lang, speaker, model, enable_preprocessing: true }),
+    });
+    if (!r.ok) return r;
+    const j = await r.json();
+    const b64 = j?.audios?.[0];
+    if (!b64) return new Response('Sarvam returned no audio', { status: 502 });
+    wavs.push(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
+  }
+  return new Response(concatWav(wavs), { status: 200, headers: { 'x-audio-format': 'wav' } });
 }
 
 const corsHeaders = {
