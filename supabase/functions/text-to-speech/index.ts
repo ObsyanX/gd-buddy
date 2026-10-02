@@ -44,7 +44,7 @@ async function callPersonalVoice(provider: string, key: string, model: string, t
     return new Response(bin, { status: 200 });
   }
   if (provider === 'sarvam_tts') {
-    return callSarvam(key, model || 'bulbul:v2', text, voice);
+    return callSarvam(key, model || '', text, voice);
   }
   return new Response('Unsupported voice provider', { status: 400 });
 }
@@ -101,15 +101,36 @@ function concatWav(wavs: Uint8Array[]): Uint8Array {
   return out;
 }
 
-async function callSarvam(key: string, model: string, text: string, voice?: string): Promise<Response> {
-  const speaker = sarvamSpeaker(voice);
+// Speaking styles map to bulbul:v2's pitch (-0.75..0.75), pace (0.5..2) and loudness (0.3..3).
+const SARVAM_STYLES: Record<string, { pitch: number; pace: number; loudness: number }> = {
+  natural: { pitch: 0, pace: 1.0, loudness: 1.0 },
+  calm: { pitch: -0.1, pace: 0.88, loudness: 0.9 },
+  energetic: { pitch: 0.15, pace: 1.15, loudness: 1.2 },
+  formal: { pitch: -0.05, pace: 0.95, loudness: 1.05 },
+  fast: { pitch: 0, pace: 1.3, loudness: 1.0 },
+};
+const ALL_SARVAM = new Set([...SARVAM_MALE_SPEAKERS, ...SARVAM_FEMALE_SPEAKERS]);
+
+/** Saved choice looks like "Anushka (female) · Calm" or "Auto voices · Natural" (old value "bulbul:v2" = auto + natural). */
+function parseSarvamChoice(choice: string): { speaker: string | null; style: string } {
+  const [who = '', st = ''] = choice.split('·').map((s) => s.trim().toLowerCase());
+  const name = who.split(/\s+/)[0];
+  return { speaker: ALL_SARVAM.has(name) ? name : null, style: SARVAM_STYLES[st] ? st : 'natural' };
+}
+
+async function callSarvam(key: string, choice: string, text: string, voice?: string): Promise<Response> {
+  const model = 'bulbul:v2';
+  const parsed = parseSarvamChoice(choice);
+  // A fixed speaker applies to every voice; "Auto" keeps a distinct Sarvam voice per AI participant.
+  const speaker = parsed.speaker ?? sarvamSpeaker(voice);
+  const { pitch, pace, loudness } = SARVAM_STYLES[parsed.style];
   const lang = /[\u0900-\u097F]/.test(text) ? 'hi-IN' : 'en-IN';
   const wavs: Uint8Array[] = [];
   for (const piece of chunkText(text)) {
     const r = await fetch('https://api.sarvam.ai/text-to-speech', {
       method: 'POST',
       headers: { 'api-subscription-key': key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: piece, target_language_code: lang, speaker, model, enable_preprocessing: true }),
+      body: JSON.stringify({ text: piece, target_language_code: lang, speaker, model, pitch, pace, loudness, enable_preprocessing: true }),
     });
     if (!r.ok) return r;
     const j = await r.json();
