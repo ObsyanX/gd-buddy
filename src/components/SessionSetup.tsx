@@ -71,7 +71,7 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
       .from('user_provider_credentials')
       .select('id')
       .eq('user_id', user.id)
-      .eq('is_enabled', true)
+      .eq('enabled', true)
       .limit(1);
     setHasPersonalKey(Boolean(data && data.length > 0));
     }
