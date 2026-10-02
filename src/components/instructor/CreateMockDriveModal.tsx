@@ -227,7 +227,7 @@ export const CreateMockDriveModal: React.FC<CreateMockDriveModalProps> = ({
         const { data: existingDrive, error: lookupError } = await supabase
           .from('gd_sessions')
           .select('id')
-          .eq('share_token', code)
+          .eq('room_code', code)
           .maybeSingle();
 
         if (lookupError) {
@@ -273,7 +273,7 @@ export const CreateMockDriveModal: React.FC<CreateMockDriveModalProps> = ({
         topic: topic.trim(),
         status: 'active',
         is_public: true,
-        share_token: code,
+        room_code: code,
         config,
       } as any);
 
