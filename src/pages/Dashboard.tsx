@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AiCostEstimate } from "@/components/AiCostEstimate";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -182,6 +183,7 @@ const Dashboard = () => {
           <div className="space-y-6">
             <PracticeStreakWidget />
             <Leaderboard />
+            <AiCostEstimate compact />
           </div>
         </div>
 
