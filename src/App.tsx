@@ -284,6 +284,7 @@ const App = () => (
                 <Route path="multiplayer" element={<RouteBoundary><Suspense fallback={<PageSkeleton />}><PageTransition><Multiplayer /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="multiplayer/topic" element={<RouteBoundary><Suspense fallback={<PageSkeleton />}><PageTransition><MultiplayerTopic /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="multiplayer/setup" element={<RouteBoundary><Suspense fallback={<SessionSkeleton />}><PageTransition><MultiplayerSetup /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="bootcamp" element={<RouteBoundary title="Bootcamp Error"><Suspense fallback={<DashboardSkeleton />}><PageTransition><Bootcamp /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="drills" element={<RouteBoundary title="Drills Error"><Suspense fallback={<DrillsSkeleton />}><PageTransition><SkillDrills /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="profile" element={<RouteBoundary><Suspense fallback={<ProfileSkeleton />}><PageTransition><Profile /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="settings" element={<RouteBoundary><Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense></RouteBoundary>} />
