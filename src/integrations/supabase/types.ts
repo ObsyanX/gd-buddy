@@ -2485,6 +2485,65 @@ export type Database = {
           },
         ]
       }
+      instructor_cohort_members: {
+        Row: {
+          cohort_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          cohort_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          cohort_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_cohort_members_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instructor_cohorts: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          instructor_id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          instructor_id: string
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          instructor_id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       knowledge_edges: {
         Row: {
           created_at: string
@@ -2617,6 +2676,62 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      mock_drives: {
+        Row: {
+          cohort_id: string
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          instructor_id: string
+          max_participants: number | null
+          scheduled_at: string | null
+          status: string
+          title: string
+          topic: string
+          track: string | null
+          updated_at: string
+        }
+        Insert: {
+          cohort_id: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          instructor_id: string
+          max_participants?: number | null
+          scheduled_at?: string | null
+          status?: string
+          title: string
+          topic: string
+          track?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cohort_id?: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          instructor_id?: string
+          max_participants?: number | null
+          scheduled_at?: string | null
+          status?: string
+          title?: string
+          topic?: string
+          track?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mock_drives_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       moderation_policies: {
         Row: {
