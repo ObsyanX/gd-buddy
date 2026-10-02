@@ -413,6 +413,7 @@ useEffect(() => {
   // Streaming transcription for real-time voice input (like Google Keyboard)
   const { 
     isListening, 
+    isMicInitializing,
     isSupported: isSpeechSupported, 
     isCorrecting,
     displayText: streamingText,
@@ -1359,6 +1360,13 @@ useEffect(() => {
             isPracticing={isPracticing}
             isCorrecting={isCorrecting}
             isPaused={isPaused}
+            floorLocked={floorLocked || isSpeaking || isWaitingForSpeech}
+            isMicInitializing={isMicInitializing}
+            activeSpeakerName={
+              isSpeaking
+              ? currentSpeaker || "AI participant"
+              : undefined
+            }
             isBusy={isWaitingForSpeech || isSpeaking || floorLocked}
             autoSendEnabled={autoSendEnabled}
             autoSkipEnabled={autoSkipEnabled}
