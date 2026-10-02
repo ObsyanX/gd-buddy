@@ -17,6 +17,8 @@ import { invokeWithAuth } from "@/lib/supabase-auth";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area } from 'recharts';
 import { ShareButton } from "@/components/ShareButton";
 import { buildDeepLink } from "@/lib/share";
+import PlacementBenchmarkCard from "@/components/report/PlacementBenchmarkCard";
+
 
 interface SessionReportProps {
   sessionId: string;
@@ -803,7 +805,16 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       </header>
 
       <div className="container mx-auto pt-4 px-6 max-w-5xl">
-        <ReportActions sessionId={sessionId} />
+        <ReportActions sessionId={sessionId} 
+          reportData={{
+    overallScore: avgScore,
+    fluencyScore: metrics?.fluency_score,
+    contentScore: metrics?.content_score,
+    structureScore: metrics?.structure_score,
+    voiceScore: metrics?.voice_score,
+    track: session?.track,
+    topic: session?.topic
+  }}/>
       </div>
 
       <main id="report-print" className="container mx-auto py-8 px-6 max-w-5xl space-y-8">
@@ -836,7 +847,17 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             </>
           }
         </Card>
-
+                {/* Placement Benchmark */}
+        {hasRealScores && (
+          <PlacementBenchmarkCard
+            fluencyScore={metrics?.fluency_score}
+            contentScore={metrics?.content_score}
+            structureScore={metrics?.structure_score}
+            voiceScore={metrics?.voice_score}
+            overallScore={avgScore}
+            track={session?.track}
+          />
+        )}
         {/* Score Breakdown & Key Metrics */}
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-6 border-4 border-border space-y-4">
