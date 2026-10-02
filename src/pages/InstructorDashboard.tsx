@@ -463,7 +463,7 @@ const InstructorDashboard = () => {
          */
 
         const heatmapRows: StudentMetricRow[] =
-          memberRows.map((member) => {
+          enrichedMembers.map((member) => {
             const userMetrics =
               metricsByUser.get(member.user_id) || [];
 
