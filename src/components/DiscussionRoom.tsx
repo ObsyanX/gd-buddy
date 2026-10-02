@@ -108,6 +108,44 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   /** Protocol snapshot handed to gd-conductor on every request. */
   const protocolContextRef = useRef<Record<string, unknown> | null>(null);
+  
+  const handleInterject = useCallback(
+  (interruptionPhrase: string) => {
+    try {
+      // Stop AI audio immediately
+      stopSpeaking();
+      roomMixer.stopAll();
+
+      // Cancel speculative AI generation / backchannels
+      clearSpeculation();
+      clearBackchannels();
+    } catch (err) {
+      console.warn("Error cutting audio on interruption:", err);
+    }
+
+    const prefixedInput = `${interruptionPhrase} `;
+
+    // Immediately show the interruption phrase
+    setUserInput(prefixedInput);
+
+    // Start microphone with the phrase as the transcript prefix.
+    // startListening() already supports existingText.
+    setTimeout(() => {
+      startListening(prefixedInput);
+    }, 0);
+
+    toast({
+      title: "Floor Claimed",
+      description: `You interjected: "${interruptionPhrase}"`,
+      duration: 2500,
+    });
+  },
+  [
+    stopSpeaking,
+    startListening,
+    toast,
+  ]
+);
 
   // 30-second first-turn icebreaker.
 // Only runs during the active discussion stage, after the reading window,
@@ -351,6 +389,7 @@ useEffect(() => {
   
   // Phase B — live refs so speculative generation (fired from an interim
   // transcript, inside a callback created at mount) always sees fresh state.
+  
   const sessionRef = useRef<any>(null);
   const isPausedRef = useRef(false);
   useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
@@ -364,6 +403,7 @@ useEffect(() => {
   const buildConductorBody = (latestText: string) => {
     const sess = sessionRef.current;
     const parts = participantsRef.current || [];
+    const savedTrack =  localStorage.getItem(`gd-track-${sessionId}`) || "bschool";
     return {
       session_id: sessionId,
       topic: sess?.topic,
@@ -403,9 +443,10 @@ useEffect(() => {
         max_reply_words: 55,
         interruption_mode: 'light',
         invigilator_mode: 'coaching',
-        moderator_mode: localStorage.getItem(`gd-moderator-${sessionId}`) === 'true',
-        citation_mode: localStorage.getItem(`gd-citation-${sessionId}`) === 'true',
+        moderator_mode: localStorage.getItem(`gd-moderator-${sessionId}`) === "true",
+        citation_mode: localStorage.getItem(`gd-citation-${sessionId}`) === "true",
         originality_mode: 'strict',
+        track: savedTrack,
       },
       protocol: protocolContextRef.current,
       request: 'generate_responses',
@@ -1410,6 +1451,7 @@ useEffect(() => {
             onOpenMobileMetrics={() => setIsMobileMetricsOpen(true)}
             onToggleAutoSend={() => setAutoSendEnabled(prev => !prev)}
             onToggleAutoSkip={() => setAutoSkipEnabled(prev => !prev)}
+            onInterject={handleInterject}
           />
          </>
           )}
