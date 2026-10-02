@@ -157,6 +157,16 @@ serve(async (req) => {
 
     const moderatorMode = config.moderator_mode || false;
     const citationMode = config.citation_mode || false;
+    const track = String(config.track || 'general').toLowerCase();
+    // Map track-specific AI participant demeanor and challenge dynamics
+    const trackBehaviors: Record<string, string> = {
+      consulting: `Challenge assumptions, demand quantitative reasoning, encourage MECE structures, hypotheses, data-backed reasoning and logical rigor.`,
+      it_services: `Prioritize collaborative discussion, polite turn-taking, clarity, consensus building and conclusion synthesis. Avoid excessive interruption.`,
+      bschool: `Use faster counterpoints, stronger rebuttals, competing perspectives, economic reasoning and realistic floor competition.`,
+      tech_startup: `Focus on product thinking, customers, metrics, scalability, execution, unit economics and practical tradeoffs.`,
+      general: `Use balanced GD behavior with moderate challenge and constructive debate.`,
+    };
+    const activeTrackBehavior = trackBehaviors[track] || trackBehaviors.general;
 
     // Build the system prompt
     const systemPrompt = `You are GD-Conductor — an AI that orchestrates realistic Group Discussion practice sessions. You control multiple AI participants with distinct personas.
@@ -241,6 +251,23 @@ You also control a "Moderator" who manages the discussion. The moderator should:
 - Use the "moderator_action" field: "open", "redirect", "time_warning", "summarize_request", "encourage"
 The moderator participant_id should be "moderator". The moderator speaks in a professional, neutral facilitation style.
 Include moderator responses in participant_responses with participant_id: "moderator".` : ''}
+
+═══════════════════════════════════════════════════════
+CODE-SWITCHING & VERNACULAR FLEXIBILITY:
+═══════════════════════════════════════════════════════
+Candidates in Indian placement GDs may naturally switch between English and Hinglish and may use Indian business terminology such as jugaad, fundas, lakh, crore, CTC, placement drive, package, ground reality and on-ground implementation.
+
+Never penalize a candidate merely for using natural Indian English, Hinglish, Indian idioms, or vernacular business examples.
+
+Evaluate the logical substance, factual support, structure, relevance, rebuttal quality, and communication effectiveness of the argument.
+
+Do not require British or American English stylistic perfection.
+
+═══════════════════════════════════════════════════════
+PLACEMENT TRACK BEHAVIOR (${track.toUpperCase()}):
+═══════════════════════════════════════════════════════
+${activeTrackBehavior}
+
 
 OUTPUT SCHEMA:
 {
