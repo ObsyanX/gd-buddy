@@ -14,6 +14,12 @@ const json = (b: unknown, status = 200) =>
 const inputSchema = z.object({
   audio: z.string().min(1, 'Audio data required').max(14000000, 'Audio too large (max ~10MB)'),
 });
+const HINGLISH_BIAS_PROMPT =
+  "Group discussion in Indian English and Hinglish: " +
+  "yaar, funda, jugaad, placement drive, package, CTC, " +
+  "ROI, tier 1, tier 2, start-up, policy, lakh, crore, " +
+  "perspective, point of view, rebuttal, consensus, " +
+  "agree with point, socio-economic, ground reality.";
 
 function decodeBase64(b64: string): Uint8Array {
   const bin = atob(b64);
@@ -28,6 +34,7 @@ async function whisperStyle(url: string, key: string, model: string, audio: Uint
   const fd = new FormData();
   fd.append('file', new Blob([audio], { type: 'audio/webm' }), 'audio.webm');
   fd.append('model', model);
+  fd.append('prompt', HINGLISH_BIAS_PROMPT);
   const res = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: fd });
   if (!res.ok) return { ok: false, err: classifyStatus(res.status, await res.text(), res.headers) };
   const j = await res.json();
