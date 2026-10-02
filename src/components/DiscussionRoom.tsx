@@ -63,6 +63,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [liveVoiceMetrics, setLiveVoiceMetrics] = useState<VoiceSessionMetrics | null>(null);
   const [autoPlayTTS, setAutoPlayTTS] = useState(true);
   const [hasSentFirstMessage, setHasSentFirstMessage] = useState(false);
+  const icebreakerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [autoMicEnabled, setAutoMicEnabled] = useState(false);
   const [autoMicSetting, setAutoMicSetting] = useState(true);
   const [videoMetricsRef, setVideoMetricsRef] = useState<VideoMetrics | null>(null);
@@ -100,10 +101,86 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const activeSlot = isClosingRound ? activeClosingSlot(nowMs, closingSlots) : null;
   const isUserClosingSlot = !!activeSlot?.isUser;
   const floorLocked = isReadingWindow || (isClosingRound && !isUserClosingSlot);
+  
   const gdFormat = getFormat(session?.gd_format);
 
   /** Protocol snapshot handed to gd-conductor on every request. */
   const protocolContextRef = useRef<Record<string, unknown> | null>(null);
+
+  // 30-second first-turn icebreaker.
+// Only runs during the active discussion stage, after the reading window,
+// when the candidate has not spoken yet.
+useEffect(() => {
+  // Clear any existing timer whenever the conditions are no longer valid.
+  if (
+    !session ||
+    clock?.stage !== "discussion" ||
+    floorLocked ||
+    hasSentFirstMessage ||
+    messages.some((m) => m.gd_participants?.is_user)
+  ) {
+    if (icebreakerTimerRef.current) {
+      clearTimeout(icebreakerTimerRef.current);
+      icebreakerTimerRef.current = null;
+    }
+    return;
+  }
+
+  // Prevent accidentally creating multiple timers.
+  if (icebreakerTimerRef.current) {
+    clearTimeout(icebreakerTimerRef.current);
+  }
+
+  icebreakerTimerRef.current = setTimeout(async () => {
+    // Re-check the conditions when the timer actually fires.
+    if (
+      !session ||
+      isPaused ||
+      floorLocked ||
+      hasSentFirstMessage ||
+      messagesRef.current.some((m) => m.gd_participants?.is_user)
+    ) {
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const candidateName =
+      user?.user_metadata?.full_name?.split(" ")[0] || "Candidate";
+
+    const topicTitle = session.topic || "this topic";
+
+    const icebreakerText =
+      `${candidateName}, to get our discussion rolling on "${topicTitle}", ` +
+      `what is your opening perspective on this issue?`;
+
+    await postModeratorLine(icebreakerText);
+
+    toast({
+      title: "Floor offered to you",
+      description:
+        "The moderator asked for your initial thoughts. Tap the mic or type to respond.",
+    });
+
+    icebreakerTimerRef.current = null;
+  }, 30_000);
+
+  return () => {
+    if (icebreakerTimerRef.current) {
+      clearTimeout(icebreakerTimerRef.current);
+      icebreakerTimerRef.current = null;
+    }
+  };
+}, [
+  session,
+  clock?.stage,
+  floorLocked,
+  hasSentFirstMessage,
+  messages,
+  isPaused,
+  toast,
+]);
+  
   useEffect(() => {
     if (!clock) { protocolContextRef.current = null; return; }
     protocolContextRef.current = {
