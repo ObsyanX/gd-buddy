@@ -15,6 +15,7 @@ import { useVoiceStore } from '@/stores/useVoiceStore';
 import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
 import { AccessibilityCenter } from '@/components/AccessibilityCenter';
 import PrivacyPanel from '@/components/settings/PrivacyPanel';
+import { AiCostEstimate } from '@/components/AiCostEstimate';
 
 const VOICE_OPTIONS = [
   { value: 'sarah', label: 'Sarah', description: 'Clear female voice' },
@@ -136,6 +137,7 @@ const Settings = () => {
             </div>
             <Button asChild><Link to="/home/settings/ai-providers">Manage</Link></Button>
           </Card>
+          <AiCostEstimate />
           {/* Voice Settings */}
           <Card className="p-6 border-4 border-border space-y-6">
             <div className="flex items-center gap-2">
