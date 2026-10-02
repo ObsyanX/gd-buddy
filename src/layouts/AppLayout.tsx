@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquare, LayoutDashboard, Dumbbell, User,
-  Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2,
+  Settings as SettingsIcon, LogOut, GraduationCap, Shield, Home as HomeIcon, Download, Share2, Compass
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import gdLogo from "@/assets/gd-buddy-logo.png";
@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { label: "Home", icon: HomeIcon, path: "/home" },
   { label: "Dashboard", icon: LayoutDashboard, path: "/home/dashboard" },
   { label: "Profile", icon: User, path: "/home/profile" },
+  { label: "Bootcamp", icon: Compass, path: "/home/bootcamp" },
   { label: "Drills", icon: Dumbbell, path: "/home/drills" },
   { label: "Instructor", icon: GraduationCap, path: "/home/instructor" },
   { label: "Settings", icon: SettingsIcon, path: "/home/settings" },
