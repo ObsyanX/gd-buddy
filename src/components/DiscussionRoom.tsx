@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -109,45 +109,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   /** Protocol snapshot handed to gd-conductor on every request. */
   const protocolContextRef = useRef<Record<string, unknown> | null>(null);
   
-  const handleInterject = useCallback(
-  (interruptionPhrase: string) => {
-    try {
-      // Stop AI audio immediately
-      stopSpeaking();
-      roomMixer.stopAll();
-
-      // Cancel speculative AI generation / backchannels
-      clearSpeculation();
-      clearBackchannels();
-    } catch (err) {
-      console.warn("Error cutting audio on interruption:", err);
-    }
-
-    const prefixedInput = `${interruptionPhrase} `;
-
-    // Immediately show the interruption phrase
-    setUserInput(prefixedInput);
-
-    // Start microphone with the phrase as the transcript prefix.
-    // startListening() already supports existingText.
-    setTimeout(() => {
-      startListening(prefixedInput);
-    }, 0);
-
-    toast({
-      title: "Floor Claimed",
-      description: `You interjected: "${interruptionPhrase}"`,
-      duration: 2500,
-    });
-  },
-  [
-    stopSpeaking,
-    startListening,
-    toast,
-  ]
-);
-
-  // 30-second first-turn icebreaker.
+// 30-second first-turn icebreaker.
 // Only runs during the active discussion stage, after the reading window,
 // when the candidate has not spoken yet.
 useEffect(() => {
@@ -497,7 +459,43 @@ useEffect(() => {
   });
   
   const { isSpeaking, currentSpeaker, usingFallbackTTS, speak, stop: stopSpeaking } = useTextToSpeech();
+  const handleInterject = useCallback(
+  (interruptionPhrase: string) => {
+    try {
+      // Stop AI audio immediately
+      stopSpeaking();
+      roomMixer.stopAll();
 
+      // Cancel speculative AI generation / backchannels
+      clearSpeculation();
+      clearBackchannels();
+    } catch (err) {
+      console.warn("Error cutting audio on interruption:", err);
+    }
+
+    const prefixedInput = `${interruptionPhrase} `;
+
+    // Immediately show the interruption phrase
+    setUserInput(prefixedInput);
+
+    // Start microphone with the phrase as the transcript prefix.
+    // startListening() already supports existingText.
+    setTimeout(() => {
+      startListening(prefixedInput);
+    }, 0);
+
+    toast({
+      title: "Floor Claimed",
+      description: `You interjected: "${interruptionPhrase}"`,
+      duration: 2500,
+    });
+  },
+  [
+    stopSpeaking,
+    startListening,
+    toast,
+  ]
+);
   const isSpeakingRef = useRef(false);
   useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
 
