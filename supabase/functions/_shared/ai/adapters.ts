@@ -141,7 +141,12 @@ export const ADAPTERS: Record<string, ProviderAdapter> = {
     id: "sarvam_tts",
     label: "Sarvam AI (Indian voices)",
     category: "voice",
-    models: ["bulbul:v2"],
+    // Voice + speaking style. "Auto" gives each AI participant its own Sarvam voice.
+    models: [
+      "Auto voices · Natural", "Auto voices · Calm", "Auto voices · Energetic", "Auto voices · Formal", "Auto voices · Fast",
+      ...["Anushka (female)", "Manisha (female)", "Vidya (female)", "Arya (female)", "Abhilash (male)", "Karun (male)", "Hitesh (male)"]
+        .flatMap((s) => ["Natural", "Calm", "Energetic", "Formal", "Fast"].map((st) => `${s} · ${st}`)),
+    ],
     headers: (k) => ({ "api-subscription-key": k, "Content-Type": "application/json" }),
     // Sarvam has no free "whoami" endpoint, so validate with a 2-character synthesis.
     validate: (k) =>
