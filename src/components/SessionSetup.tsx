@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { COMPANY_TRACKS, CompanyTrack } from '@/config/company-tracks';
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +58,7 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
   const [moderatorEnabled, setModeratorEnabled] = useState(false);
   const [citationEnabled, setCitationEnabled] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('recommended');
+  const [selectedTrack, setSelectedTrack] = useState<string>('bschool');
   const { user } = useAuth();
   const { toast } = useToast();
   // Check if user has personal credentials configured
@@ -114,7 +117,7 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
       setSelectedPersonas(['aditya', 'priya']);
     }
   }, [recommendedIds]);
-
+  
   // Combined persona list for display
   const allPersonas = useMemo(() => {
     const customAsTemplates: PersonaTemplate[] = customPersonas.map(cp => ({
@@ -202,6 +205,13 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
       description: "Custom AI participant has been removed",
     });
   };
+  const handleTrackChange = (trackId: string) => {
+  setSelectedTrack(trackId);
+  const track = COMPANY_TRACKS[trackId];
+  if (track && track.recommendedPersonas) {
+    setSelectedPersonas(track.recommendedPersonas);
+  }
+};
 
   const applyRecommendation = () => {
     if (recommendedIds.length > 0) {
@@ -323,6 +333,7 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
       if (citationEnabled) {
         localStorage.setItem(`gd-citation-${session.id}`, 'true');
       }
+      localStorage.setItem(`gd-track-${session.id}`, selectedTrack);
 
       toast({
         title: "Session created",
@@ -438,6 +449,71 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
           </Card>
         )}
 
+        {/* Company / Placement Track */}
+<Card className="p-4 sm:p-5 border-4 border-border">
+  <div className="space-y-4">
+    <div>
+      <h3 className="text-lg font-bold">
+        PLACEMENT & COMPANY TRACK
+      </h3>
+
+      <p className="text-xs text-muted-foreground mt-1">
+        Tailor AI participant aggression, topic lenses, and discussion
+        style to your target placement.
+      </p>
+    </div>
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {Object.values(COMPANY_TRACKS)
+        .filter((track) => track.id !== "general")
+        .map((track) => {
+          const isSelected = selectedTrack === track.id;
+
+          return (
+            <button
+              key={track.id}
+              type="button"
+              onClick={() => handleTrackChange(track.id)}
+              aria-pressed={isSelected}
+              className={`p-4 rounded-xl border-2 text-left transition-all ${
+                isSelected
+                  ? "border-primary bg-primary/5 ring-1 ring-primary"
+                  : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                  {track.name}
+                </span>
+              </div>
+
+              <p className="text-[11px] font-medium text-muted-foreground mb-2">
+                {track.badge}
+              </p>
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {track.description}
+              </p>
+
+              {isSelected && (
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {track.evaluationFocus.slice(0, 3).map((focus) => (
+                    <Badge
+                      key={focus}
+                      variant="secondary"
+                      className="text-[10px]"
+                    >
+                      {focus}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </button>
+          );
+        })}
+    </div>
+  </div>
+</Card>
         <div className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
