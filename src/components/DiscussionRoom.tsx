@@ -64,6 +64,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [autoPlayTTS, setAutoPlayTTS] = useState(true);
   const [hasSentFirstMessage, setHasSentFirstMessage] = useState(false);
   const icebreakerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Around line 65:
+  const [isQuotaExhausted, setIsQuotaExhausted] = useState(false);
   const [autoMicEnabled, setAutoMicEnabled] = useState(false);
   const [autoMicSetting, setAutoMicSetting] = useState(true);
   const [videoMetricsRef, setVideoMetricsRef] = useState<VideoMetrics | null>(null);
@@ -875,6 +877,9 @@ useEffect(() => {
       // AI providers unavailable (credits/quota): the room keeps running without
       // AI voices instead of throwing and blanking the screen.
       if (aiResponse?.degraded) {
+        if (aiResponse.error === 'payment_required' || aiResponse.error === 'rate_limit') {
+          setIsQuotaExhausted(true);
+        }
         toast({
           title: aiResponse.error === 'payment_required' ? 'AI participants paused' : 'AI participants unavailable',
           description: aiResponse.message || 'Your speech is still being recorded and scored.',
@@ -1353,6 +1358,26 @@ useEffect(() => {
               onSkip={() => setReadingSkipped(true)}
             />
           ) : (
+          <>
+    {isQuotaExhausted && (
+      <div className="mx-4 mb-2 p-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 flex items-center justify-between text-xs">
+        <div className="text-amber-600 dark:text-amber-400">
+          <strong>Shared AI pool is capped for today.</strong>{" "}
+          Connect your own free personal key to continue uninterrupted.
+        </div>
+
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20"
+          onClick={() =>
+            window.open("/home/settings/ai-providers", "_blank")
+          }
+        >
+          Add Free Key
+        </Button>
+      </div>
+    )}
           <MessageInput
             userInput={userInput}
             isListening={isListening}
