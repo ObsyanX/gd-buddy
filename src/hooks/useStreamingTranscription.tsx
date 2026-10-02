@@ -117,7 +117,26 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
       console.error('Speech recognition not supported');
       return;
     }
+      const VERNACULAR_NORMALIZERS: [RegExp, string][] = [
+  [/\b(lacs?)\b/gi, "lakhs"],
+  [/\b(cror?es?)\b/gi, "crores"],
+  [/\b(p\s*o\s*v)\b/gi, "POV"],
+  [/\b(c\s*t\s*c)\b/gi, "CTC"],
+  [/\b(g\s*d)\b/gi, "GD"],
+  [/\b(i\s*i\s*m)\b/gi, "IIM"],
+  [/\b(jugaad?)\b/gi, "jugaad"],
+  [/\b(funda?s?)\b/gi, "fundas"],
+];
 
+function normalizeVernacular(text: string): string {
+  let normalized = text;
+
+  for (const [pattern, replacement] of VERNACULAR_NORMALIZERS) {
+    normalized = normalized.replace(pattern, replacement);
+  }
+
+  return normalized;
+}
     // Create new recognition instance
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
@@ -171,7 +190,9 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
       setInterimText(latestInterim);
       
       // Callback with complete text (typed prefix + final + current interim)
-      const displayText = (prefixRef.current + fullFinal + latestInterim).trim();
+      const displayText = normalizeVernacular(
+          (prefixRef.current + fullFinal + latestInterim).trim()
+      );
       onInterimResult?.(displayText);
     };
 
