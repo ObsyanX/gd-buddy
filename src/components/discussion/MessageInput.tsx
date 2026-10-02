@@ -34,6 +34,7 @@ interface MessageInputProps {
   onOpenMobileMetrics: () => void;
   onToggleAutoSend: () => void;
   onToggleAutoSkip: () => void;
+  onInterject?: (phrase: string) => void;
 }
 
 const AUTO_SEND_DELAY = 7;
@@ -48,7 +49,7 @@ const MessageInput = ({
   autoSendEnabled, autoSkipEnabled,
   onInputChange, onSendMessage, onSendWithVoice, onVoiceInput,
   onStartPractice, onSkipTurn, onOpenMobileMetrics,
-  onToggleAutoSend, onToggleAutoSkip,
+  onToggleAutoSend, onToggleAutoSkip,onInterject,
 }: MessageInputProps) => {
   const turnState: TurnState = floorLocked
   ? "floor_locked"
@@ -183,17 +184,53 @@ return (
         ========================================================= */}
     <div className="flex items-center justify-between px-3 py-1.5 rounded-lg border text-xs font-medium mb-1 transition-all">
 
-      {/* FLOOR LOCKED */}
-      {turnState === "floor_locked" && (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+      {/* FLOOR LOCKED — INTERACTIVE FLOOR STEALING */}
+{turnState === "floor_locked" && (
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2 py-0.5">
+    <div className="flex items-center gap-2 text-muted-foreground text-xs min-w-0">
+      <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
 
-          <span>
-            Floor Locked —{" "}
-            {activeSpeakerName || "AI participant speaking"}
-          </span>
-        </div>
-      )}
+      <span className="truncate">
+        <strong className="text-foreground">
+          {activeSpeakerName || "AI participant"}
+        </strong>{" "}
+        is speaking...
+      </span>
+    </div>
+
+    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider hidden sm:inline">
+        Interject:
+      </span>
+
+      {[
+        "Pardon the interruption, but...",
+        `Adding to ${activeSpeakerName || "that"} point...`,
+        "Respectfully disagreeing here...",
+      ].map((phrase, idx) => (
+        <button
+          key={idx}
+          type="button"
+          onClick={() => onInterject?.(phrase)}
+          className="px-2 py-1 rounded-md text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 whitespace-nowrap transition-colors"
+        >
+          {phrase}
+        </button>
+      ))}
+
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-6 px-2 text-[11px] border-amber-500 text-amber-600 hover:bg-amber-500/15"
+        onClick={() =>
+          onInterject?.("Excuse me, if I could interject...")
+        }
+      >
+        Steal Floor
+      </Button>
+    </div>
+  </div>
+)}
 
       {/* FLOOR OPEN */}
       {turnState === "floor_open" && (
