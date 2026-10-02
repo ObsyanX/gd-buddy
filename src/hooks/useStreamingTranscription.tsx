@@ -55,6 +55,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
   } = options;
   
   const [isListening, setIsListening] = useState(false);
+  const [isMicInitializing, setIsMicInitializing] = useState(false);
   const [interimText, setInterimText] = useState('');
   const [finalText, setFinalText] = useState('');
   const [isSupported, setIsSupported] = useState(true);
@@ -104,6 +105,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
   }, [context, enableAICorrection, onCorrectionStart, onCorrectionEnd]);
 
   const startListening = useCallback((existingText?: string) => {
+    setIsMicInitializing(true);
     // Anything the user already typed is preserved and prepended to whatever
     // the recogniser hears, so switching the mic on never wipes typed text.
     prefixRef.current = existingText && existingText.trim() ? existingText.trim() + ' ' : '';
@@ -111,6 +113,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
     
     
     if (!SpeechRecognition) {
+      setIsMicInitializing(false);
       console.error('Speech recognition not supported');
       return;
     }
@@ -129,6 +132,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
 
     recognition.onstart = () => {
       if (!isMountedRef.current) return;
+      setIsMicInitializing(false);
       setIsListening(true);
       finalTextRef.current = '';
       setFinalText(prefixRef.current);
@@ -248,6 +252,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
     } catch (error) {
       console.warn('Speech recognition start failed:', error);
       recognitionRef.current = null;
+      setIsMicInitializing(false);
       setIsListening(false);
     }
   }, [onInterimResult, onFinalResult, correctTranscription, autoSend, onAutoSend]);
@@ -302,6 +307,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
 
   return {
     isListening,
+    isMicInitializing,
     isSupported,
     isCorrecting,
     interimText,
