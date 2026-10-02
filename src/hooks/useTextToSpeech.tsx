@@ -148,11 +148,8 @@ export const useTextToSpeech = () => {
 
         source.onended = async () => {
           if (settled) return;
-
           settled = true;
-
           await cleanup();
-
           if (playbackId === playbackIdRef.current) {
             setIsSpeaking(false);
             setCurrentSpeaker(null);
@@ -168,9 +165,9 @@ export const useTextToSpeech = () => {
 
           settled = true;
 
-          await cleanup();
+          
 
-          reject(error);
+          cleanup().catch(() => {}).finally(() => reject(error));
         }
       });
     },
