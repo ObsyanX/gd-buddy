@@ -10,6 +10,8 @@ import { ArrowLeft, Users, Sparkles, Lightbulb, Trash2, ShieldCheck, BookOpen } 
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+// At the top of src/components/SessionSetup.tsx, add:
+import { AudioSoundcheckModal } from "@/components/AudioSoundcheckModal";
 import { 
   PERSONA_TEMPLATES, 
   TOPIC_CATEGORY_INFO,
@@ -42,17 +44,36 @@ interface CustomPersona {
 
 type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
 
-const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) => {
+  const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) => {
   const [gdFormat, setGdFormat] = useState<GdFormat>('free_form');
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
   const [selectedCustomPersonas, setSelectedCustomPersonas] = useState<string[]>([]);
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  // Inside the SessionSetup component (around line 53), add state:
+  const [showSoundcheck, setShowSoundcheck] = useState(false);
+  const [createdSessionId, setCreatedSessionId] = useState<string | null>(null);
   const [moderatorEnabled, setModeratorEnabled] = useState(false);
   const [citationEnabled, setCitationEnabled] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('recommended');
   const { user } = useAuth();
   const { toast } = useToast();
+  // Check if user has personal credentials configured
+  const [hasPersonalKey, setHasPersonalKey] = useState<boolean | null>(null);
+
+  useEffect(() => {
+  async function checkPersonalKey() {
+    if (!user) return;
+    const { data } = await supabase
+      .from('user_provider_credentials')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_enabled', true)
+      .limit(1);
+    setHasPersonalKey(Boolean(data && data.length > 0));
+    }
+    checkPersonalKey();
+  }, [user]);
 
   // Fetch custom personas
   const fetchCustomPersonas = useCallback(async () => {
@@ -308,12 +329,14 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
         description: "Ready to start your practice discussion",
       });
 
-      onSessionCreated(session.id);
+      //onSessionCreated(session.id);
+      setCreatedSessionId(session.id);
+      setShowSoundcheck(true);
     } catch (error: any) {
       console.error('Error creating session:', error);
       toast({
         title: "Failed to create session",
-        description: error.message || "Please try again",
+        description: error.message || "Failed to initialize discussion",
         variant: "destructive",
       });
     } finally {
@@ -563,8 +586,27 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
           </div>
         </Card>
 
-
-        <div className="flex justify-end gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+          <div className="text-xs text-muted-foreground flex items-center gap-2">
+            {hasPersonalKey ? (
+              <span className="text-emerald-500 font-medium flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" /> Personal AI Key Active (Dedicated Quota)
+              </span>
+            ) : (
+              <span className="text-muted-foreground flex items-center gap-1.5">
+                <span>Shared Server Quota</span>
+                <a
+                  href="/home/settings/ai-providers"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-foreground ml-1"
+                >
+                  (Add free Groq key for 0 wait)
+                </a>
+              </span>
+            )}
+          </div>
+        <div className="flex gap-4">
           <Button 
             variant="outline" 
             onClick={onBack}
@@ -581,7 +623,24 @@ const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) =>
             {isCreating ? "CREATING..." : "START DISCUSSION"}
           </Button>
         </div>
+        </div>
       </div>
+      {/* Pre-Flight Audio Soundcheck Modal */}
+      {createdSessionId && (
+        <AudioSoundcheckModal
+          isOpen={showSoundcheck}
+          onReady={(audioEnabled) => {
+            setShowSoundcheck(false);
+            if (createdSessionId) {
+              // Store audio preference if user opted for text-only
+              if (!audioEnabled) {
+                localStorage.setItem(`gd-audio-disabled-${createdSessionId}`, 'true');
+              }
+              onSessionCreated(createdSessionId);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
