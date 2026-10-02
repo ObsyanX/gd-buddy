@@ -78,6 +78,7 @@ const SkillDrills = lazy(() => import("./pages/SkillDrills"), "SkillDrills");
 const Profile = lazy(() => import("./pages/Profile"), "Profile");
 const Settings = lazy(() => import("./pages/Settings"), "Settings");
 const AiProviders = lazy(() => import("./pages/settings/AiProviders"), "AiProviders");
+const Bootcamp = lazy(() => import("./pages/Bootcamp"), "Bootcamp");
 const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"), "InstructorDashboard");
 const Admin = lazy(() => import("./pages/Admin"), "Admin");
 const Governance = lazy(() => import("./pages/Governance"), "Governance");
