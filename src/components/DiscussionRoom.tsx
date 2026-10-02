@@ -1411,6 +1411,7 @@ useEffect(() => {
             onToggleAutoSend={() => setAutoSendEnabled(prev => !prev)}
             onToggleAutoSkip={() => setAutoSkipEnabled(prev => !prev)}
           />
+         </>
           )}
         </div>
 
