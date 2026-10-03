@@ -27,6 +27,35 @@ const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions";
 const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+// Free OpenRouter models, best first. The live catalogue is fetched and cached so
+// retired models drop out and new free ones are picked up automatically.
+const OPENROUTER_PREFERRED = [
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "qwen/qwen3.8-27b:free",
+  "google/gemma-4-31b-it:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "thinkingmachines/inkling:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "nvidia/nemotron-3.5-lightning:free",
+];
+let orCache: { at: number; all: string[]; tools: Set<string> } | null = null;
+async function openRouterFreeModels(needTools: boolean): Promise<string[]> {
+  if (!orCache || Date.now() - orCache.at > 3600_000) {
+    try {
+      const r = await fetch("https://openrouter.ai/api/v1/models");
+      const d = (await r.json()).data as Array<{ id: string; supported_parameters?: string[] }>;
+      const free = d.filter((m) => m.id.endsWith(":free") && !/safety|code/.test(m.id));
+      orCache = { at: Date.now(), all: free.map((m) => m.id), tools: new Set(free.filter((m) => m.supported_parameters?.includes("tools")).map((m) => m.id)) };
+    } catch {
+      orCache = { at: Date.now() - 3000_000, all: OPENROUTER_PREFERRED, tools: new Set(OPENROUTER_PREFERRED) };
+    }
+  }
+  const ok = (id: string) => orCache!.all.includes(id) && (!needTools || orCache!.tools.has(id));
+  const ordered = [...OPENROUTER_PREFERRED.filter(ok), ...orCache.all.filter((id) => ok(id) && !OPENROUTER_PREFERRED.includes(id))];
+  return ordered.slice(0, 5);
+}
 
 // "gemini" contains the substring "mini" — strip the vendor prefix before
 // doing tier detection so balanced models aren't downgraded.
@@ -88,7 +117,7 @@ function extractFailedGeneration(errText: string): string | null {
   }
 }
 
-export type Provider = "lovable" | "groq" | "mistral" | "cerebras";
+export type Provider = "lovable" | "openrouter" | "groq" | "mistral" | "cerebras";
 
 export interface AIRequestBody {
   model?: string;
@@ -274,6 +303,7 @@ async function callProvider(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      ...(url.includes("openrouter.ai") ? { "HTTP-Referer": "https://gdbuddy.lovable.app", "X-Title": "GD Buddy" } : {}),
     },
     body: JSON.stringify({ ...body, model }),
   });
@@ -288,6 +318,8 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
   const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
   const MISTRAL_API_KEY = Deno.env.get("MISTRALAI_API_KEY");
   const CEREBRAS_API_KEY = Deno.env.get("CEREBRAS_API_KEY");
+  const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+  const orModels = OPENROUTER_API_KEY ? await openRouterFreeModels(!!body.tools) : [];
   const fnName = inferFunctionName();
 
   // --- 0. Personal keys (BYOK): user's own providers first, in their order ---
@@ -380,6 +412,7 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
     url: string;
     map: (m: string) => string[];
   }> = [
+    { name: "openrouter", key: OPENROUTER_API_KEY, url: OPENROUTER_URL, map: () => orModels },
     { name: "groq", key: GROQ_API_KEY, url: GROQ_URL, map: mapToGroqModel },
     { name: "mistral", key: MISTRAL_API_KEY, url: MISTRAL_URL, map: mapToMistralModel },
     { name: "cerebras", key: CEREBRAS_API_KEY, url: CEREBRAS_URL, map: mapToCerebrasModel },
@@ -476,7 +509,7 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
         // Only retry the same provider when the *model* is the problem.
         const modelMissing = response.status === 404 ||
           /model_not_found|does not exist|decommissioned|unknown model/i.test(errText);
-        if (!modelMissing) break;
+        if (!modelMissing && !(provider.name === "openrouter" && response.status === 429)) break;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         failures.push(`${provider.name}(threw)`);

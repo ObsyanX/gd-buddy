@@ -14,6 +14,7 @@ import {
   LogIn,
   Download,
   Share2,
+  Compass,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -76,6 +77,7 @@ const BottomNav = () => {
   }
 
   const secondary = [
+    { label: "Bootcamp", icon: Compass, onClick: () => go("/home/bootcamp") },
     { label: "Drills", icon: Dumbbell, onClick: () => go("/home/drills") },
     { label: "Instructor", icon: GraduationCap, onClick: () => go("/home/instructor") },
     ...(isAdmin ? [{ label: "Admin", icon: Shield, onClick: () => go("/home/admin") }] : []),
