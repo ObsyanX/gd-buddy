@@ -7,6 +7,8 @@
 - [ ] Improve AI member switching in the discussion room (proactive AI floor requests, silence watchdog, moderator interventions) — plan drafted in `.lovable/plan.md`, awaiting go-ahead.
 
 ## Done
+- [x] OpenRouter free models added to AI backups; all server functions published
+- [x] Bootcamp in phone/tablet menu; always-visible chat scrollbar; Sarvam voice styles live
 - [x] End-to-end audit of the discussion room (solo + group), focused on mic + speech-to-text.
 - [x] Stop the mic before auto-send and auto-skip fire
 - [x] Disable/close the mic while an AI is speaking (stop feedback capture)
