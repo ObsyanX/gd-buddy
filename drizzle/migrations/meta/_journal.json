@@ -8,6 +8,13 @@
       "when": 1790043616755,
       "tag": "0000_byok_provider_credentials",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791084643444,
+      "tag": "0001_room_test_events_and_fair_turns",
+      "breakpoints": true
     }
   ]
 }
