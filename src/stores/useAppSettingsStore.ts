@@ -1,9 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export type CaptionLanguage = 'en-IN' | 'hi-IN' | 'en-US';
+
 interface AppSettingsState {
   autoMicEnabled: boolean;
   setAutoMicEnabled: (enabled: boolean) => void;
+  captionLanguage: CaptionLanguage;
+  setCaptionLanguage: (lang: string) => void;
 }
 
 export const useAppSettingsStore = create<AppSettingsState>()(
@@ -11,6 +15,9 @@ export const useAppSettingsStore = create<AppSettingsState>()(
     (set) => ({
       autoMicEnabled: true,
       setAutoMicEnabled: (autoMicEnabled) => set({ autoMicEnabled }),
+      captionLanguage: 'en-IN',
+      setCaptionLanguage: (lang) =>
+        set({ captionLanguage: (['en-IN', 'hi-IN', 'en-US'].includes(lang) ? lang : 'en-IN') as CaptionLanguage }),
     }),
     {
       name: 'appSettings',

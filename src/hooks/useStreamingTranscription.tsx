@@ -146,8 +146,8 @@ function normalizeVernacular(text: string): string {
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     
-    // Support multiple languages including Hinglish/Benglish
-    recognition.lang = 'en-IN'; // Indian English handles code-switching better
+    // Language chosen in Settings (default Indian English, best for Hinglish)
+    recognition.lang = useAppSettingsStore.getState().captionLanguage || 'en-IN';
 
     recognition.onstart = () => {
       if (!isMountedRef.current) return;

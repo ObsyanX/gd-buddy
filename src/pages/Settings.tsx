@@ -42,7 +42,7 @@ const VOICE_OPTIONS = [
 const Settings = () => {
   const { toast } = useToast();
   const { voice, speed, setVoice, setSpeed } = useVoiceStore();
-  const { autoMicEnabled, setAutoMicEnabled } = useAppSettingsStore();
+  const { autoMicEnabled, setAutoMicEnabled, captionLanguage, setCaptionLanguage } = useAppSettingsStore();
   const [isTesting, setIsTesting] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -226,6 +226,21 @@ const Settings = () => {
                     "✗ You'll need to manually click the mic button for each response"
                   }
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="captionLang" className="text-base">Speaking language</Label>
+                <p className="text-sm text-muted-foreground">
+                  Pick how you speak so live captions understand you. Indian English handles Hindi-English mixing best.
+                </p>
+                <Select value={captionLanguage} onValueChange={setCaptionLanguage}>
+                  <SelectTrigger id="captionLang" className="w-full sm:w-72"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en-IN">Indian English (Hinglish OK)</SelectItem>
+                    <SelectItem value="hi-IN">Hindi</SelectItem>
+                    <SelectItem value="en-US">US English</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </Card>
