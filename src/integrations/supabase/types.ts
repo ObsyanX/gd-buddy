@@ -2683,9 +2683,11 @@ export type Database = {
           created_at: string
           description: string | null
           duration_minutes: number
+          group_size: number
           id: string
           instructor_id: string
           max_participants: number | null
+          room_codes: string[]
           scheduled_at: string | null
           status: string
           title: string
@@ -2698,9 +2700,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_minutes?: number
+          group_size?: number
           id?: string
           instructor_id: string
           max_participants?: number | null
+          room_codes?: string[]
           scheduled_at?: string | null
           status?: string
           title: string
@@ -2713,9 +2717,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_minutes?: number
+          group_size?: number
           id?: string
           instructor_id?: string
           max_participants?: number | null
+          room_codes?: string[]
           scheduled_at?: string | null
           status?: string
           title?: string
@@ -3586,6 +3592,50 @@ export type Database = {
           ttl_seconds?: number
         }
         Relationships: []
+      }
+      room_test_events: {
+        Row: {
+          created_at: string
+          id: string
+          is_drive: boolean
+          is_group: boolean
+          kind: string
+          ok: boolean
+          payload: Json
+          session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_drive?: boolean
+          is_group?: boolean
+          kind: string
+          ok?: boolean
+          payload?: Json
+          session_id?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_drive?: boolean
+          is_group?: boolean
+          kind?: string
+          ok?: boolean
+          payload?: Json
+          session_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_test_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gd_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rum_sampling_checks: {
         Row: {
