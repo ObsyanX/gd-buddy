@@ -25,8 +25,8 @@ import { toast } from "@/hooks/use-toast";
 const PRIMARY = [
   { label: "Home", icon: HomeIcon, path: "/home" },
   { label: "Dashboard", icon: LayoutDashboard, path: "/home/dashboard" },
+  { label: "Bootcamp", icon: Compass, path: "/home/bootcamp" },
   { label: "Profile", icon: User, path: "/home/profile" },
-  { label: "Settings", icon: SettingsIcon, path: "/home/settings" },
 ];
 
 /**
@@ -77,7 +77,7 @@ const BottomNav = () => {
   }
 
   const secondary = [
-    { label: "Bootcamp", icon: Compass, onClick: () => go("/home/bootcamp") },
+    { label: "Settings", icon: SettingsIcon, onClick: () => go("/home/settings") },
     { label: "Drills", icon: Dumbbell, onClick: () => go("/home/drills") },
     { label: "Instructor", icon: GraduationCap, onClick: () => go("/home/instructor") },
     ...(isAdmin ? [{ label: "Admin", icon: Shield, onClick: () => go("/home/admin") }] : []),

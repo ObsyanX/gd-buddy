@@ -334,8 +334,8 @@ const MessageInput = ({
 
   const { isSpeaking: isVADSpeaking } = useClientVAD({
     stream: vadStream,
-    volumeThreshold: 0.025,
-    silenceHangoverMs: 1200,
+    volumeThreshold: 0.02,
+    silenceHangoverMs: 1400,
     onSpeechStart: handleSpeechStart,
     onSpeechEnd: handleSpeechEnd,
   });
