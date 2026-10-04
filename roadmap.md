@@ -1,12 +1,15 @@
 # Roadmap
 
 ## Open
-- [ ] Broadcast speaking/typing state in group mode (needs product decision on indicator UX)
 - [ ] Remove or wire up the unused transcription pipelines (`useAudioRecorder` + `speech-to-text` edge function are dead code today)
-- [ ] Language handling: allow mixed Hindi/English instead of forcing `en-IN`
 - [ ] Improve AI member switching in the discussion room (proactive AI floor requests, silence watchdog, moderator interventions) — plan drafted in `.lovable/plan.md`, awaiting go-ahead.
 
 ## Done
+- [x] Mock drive rooms saved as real group rooms (host + code join)
+- [x] Voice detection: noise calibration, 1.4s release, no restarts
+- [x] Typing indicator shared in group rooms
+- [x] Speaking language choice in Settings (Indian English / Hindi / US English)
+- [x] Bootcamp on the main phone bar
 - [x] OpenRouter free models added to AI backups; all server functions published
 - [x] Bootcamp in phone/tablet menu; always-visible chat scrollbar; Sarvam voice styles live
 - [x] End-to-end audit of the discussion room (solo + group), focused on mic + speech-to-text.
