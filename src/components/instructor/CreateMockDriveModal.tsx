@@ -269,17 +269,42 @@ export const CreateMockDriveModal: React.FC<CreateMockDriveModalProps> = ({
        * mock_drives can later be used as an instructor scheduling/
        * management layer without replacing this live-room creation.
        */
-      const { error } = await supabase.from('gd_sessions').insert({
-        topic: topic.trim(),
-        status: 'active',
-        is_public: true,
-        room_code: code,
-        config,
-      } as any);
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData.user?.id;
+      if (!uid) throw new Error('Please sign in again to create a drive.');
+
+      // Save exactly like a normal group room so students can join by code.
+      const { data: room, error } = await supabase
+        .from('gd_sessions')
+        .insert({
+          user_id: uid,
+          host_user_id: uid,
+          topic: topic.trim(),
+          topic_category: 'Mock Drive',
+          topic_difficulty: 'medium',
+          is_multiplayer: true,
+          room_code: code,
+          status: 'setup',
+          config,
+        } as any)
+        .select('id')
+        .single();
 
       if (error) {
         throw error;
       }
+
+      const { error: hostErr } = await supabase.from('gd_participants').insert({
+        session_id: room.id,
+        is_user: true,
+        real_user_id: uid,
+        order_index: 0,
+        persona_name: 'Instructor (Host)',
+        persona_tone: 'neutral',
+        persona_verbosity: 'moderate',
+        persona_vocab_level: 'intermediate',
+      });
+      if (hostErr) throw hostErr;
 
       setDriveCode(code);
       setCreatedAt(new Date().toISOString());

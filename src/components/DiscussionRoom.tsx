@@ -527,6 +527,15 @@ useEffect(() => {
     setSpeaking(isListening && !isSpeaking);
   }, [isListening, isSpeaking, setSpeaking]);
 
+  // Share "is typing" with the room; clears after 3s without keystrokes.
+  useEffect(() => {
+    const typing = !isListening && userInput.trim().length > 0;
+    setTyping(typing);
+    if (!typing) return;
+    const t = window.setTimeout(() => setTyping(false), 3000);
+    return () => window.clearTimeout(t);
+  }, [userInput, isListening, setTyping]);
+
   const {
     isPracticing,
     isRecordingPractice,
