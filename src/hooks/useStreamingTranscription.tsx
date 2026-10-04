@@ -1,3 +1,4 @@
+import { useAppSettingsStore } from "@/stores/useAppSettingsStore";
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { invokeWithAuth } from '@/lib/supabase-auth';
 import { supabase } from '@/integrations/supabase/client';
