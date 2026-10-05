@@ -30,6 +30,7 @@ import SessionSidebar, { FeedbackGrid } from "@/components/discussion/SessionSid
 import { updatePracticeStreak } from "@/lib/streak-updater";
 import { safeCloseAudioContext, safeDisconnectAudioNode, safeStopMediaStream } from "@/lib/audio-utils";
 import { roomMixer } from "@/lib/audio/room-mixer";
+import { logRoomEvent, setRoomContext, flushRoomLog } from "@/lib/room-log";
 import { primeBackchannels, playBackchannel, clearBackchannels } from "@/lib/audio/backchannels";
 import { parseProsody } from "@/lib/audio/prosody";
 import { speculate, claimSpeculation, clearSpeculation } from "@/lib/discussion/speculative";
@@ -157,6 +158,7 @@ useEffect(() => {
       `what is your opening perspective on this issue?`;
 
     await postModeratorLine(icebreakerText);
+    logRoomEvent('icebreaker', true, { after_s: 30 });
 
     toast({
       title: "Floor offered to you",
@@ -286,6 +288,15 @@ useEffect(() => {
     // Centralized cleanup: audio, streams, timers, realtime channels
     runCentralizedCleanup();
   };
+
+  useEffect(() => {
+    if (!session) return;
+    const isDrive = (session.topic_category === 'Mock Drive') || /^DRIVE-/i.test(session.room_code ?? '');
+    setRoomContext({ sessionId, isDrive, isGroup: !!session.is_multiplayer });
+    logRoomEvent('room_open', true, { status: session.status });
+    return () => { logRoomEvent('room_close', true); void flushRoomLog(); setRoomContext({ sessionId: null }); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, !!session]);
 
   const resetIdleTimer = () => {
     if (isInactiveRef.current) return;
@@ -473,6 +484,7 @@ useEffect(() => {
       console.warn("Error cutting audio on interruption:", err);
     }
 
+    logRoomEvent('interjection', true, { phrase: interruptionPhrase });
     const prefixedInput = `${interruptionPhrase} `;
 
     // Immediately show the interruption phrase
@@ -917,6 +929,7 @@ useEffect(() => {
 
       if (aiError) {
         console.error('AI Error:', aiError);
+        logRoomEvent('ai_reply', false, { source: 'failed', message: String(aiError.message || aiError).slice(0, 200) });
         throw aiError;
       }
 
@@ -924,6 +937,10 @@ useEffect(() => {
 
       // AI providers unavailable (credits/quota): the room keeps running without
       // AI voices instead of throwing and blanking the screen.
+      logRoomEvent('ai_reply', !aiResponse?.degraded, {
+        source: aiResponse?.degraded ? `degraded:${aiResponse?.error ?? 'unknown'}` : (aiResponse?.provider ?? 'main'),
+        speakers: Array.isArray(aiResponse?.participant_responses) ? aiResponse.participant_responses.length : 0,
+      });
       if (aiResponse?.degraded) {
         if (aiResponse.error === 'payment_required' || aiResponse.error === 'rate_limit') {
           setIsQuotaExhausted(true);
