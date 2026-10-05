@@ -100,6 +100,7 @@ export const AudioSoundcheckModal: React.FC<AudioSoundcheckModalProps> = ({ isOp
 
   const handleFinish = (enableAudio: boolean) => {
     cleanup();
+    try { localStorage.setItem('gd-last-soundcheck', JSON.stringify({ audio: enableAudio, mic: micState, at: Date.now() })); } catch { /* ignore */ }
     onReady(enableAudio);
   };
 
