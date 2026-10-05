@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logRoomEvent } from '@/lib/room-log';
 
 type TurnRow = {
   id: string;
@@ -78,8 +79,12 @@ export function useTurnQueue(sessionId: string | null) {
       _kind: 'human',
       _source: 'mic_press',
     });
+    logRoomEvent('floor_request', !error, { kind: 'human' });
     if (error) return { status: 'error', message: error.message };
     const result = data as MicRequestResult;
+    if (result.status === 'granted') logRoomEvent('floor_grant', true, { slot_seconds: (result as any).slot_seconds });
+    else if (result.status === 'queued') logRoomEvent('floor_queue', true, { position: result.position });
+    else logRoomEvent('floor_request', false, { status: result.status });
     if (result.status === 'granted' || result.status === 'queued') {
       setSelfTurnId(result.turn_id);
     }
@@ -88,7 +93,8 @@ export function useTurnQueue(sessionId: string | null) {
 
   const release = useCallback(async () => {
     if (!sessionId) return;
-    await supabase.rpc('release_mic', { _session_id: sessionId });
+    const { error } = await supabase.rpc('release_mic', { _session_id: sessionId });
+    logRoomEvent('floor_release', !error);
     setSelfTurnId(null);
   }, [sessionId]);
 
