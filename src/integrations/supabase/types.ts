@@ -4671,6 +4671,22 @@ export type Database = {
       increment_article_like: { Args: { _slug: string }; Returns: undefined }
       increment_article_share: { Args: { _slug: string }; Returns: undefined }
       increment_article_view: { Args: { _slug: string }; Returns: undefined }
+      is_cohort_member: {
+        Args: { _cohort_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_cohort_owner: {
+        Args: { _cohort_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_instructor_cohort_member: {
+        Args: { _cohort_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_instructor_cohort_owner: {
+        Args: { _cohort_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_joinable_session: { Args: { _session_id: string }; Returns: boolean }
       log_login_event: {
         Args: { _reason?: string; _success: boolean; _user_agent?: string }
