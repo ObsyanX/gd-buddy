@@ -294,6 +294,16 @@ useEffect(() => {
     const isDrive = (session.topic_category === 'Mock Drive') || /^DRIVE-/i.test(session.room_code ?? '');
     setRoomContext({ sessionId, isDrive, isGroup: !!session.is_multiplayer });
     logRoomEvent('room_open', true, { status: session.status });
+    try {
+      const sc = JSON.parse(localStorage.getItem('gd-last-soundcheck') || 'null');
+      if (sc && Date.now() - sc.at < 10 * 60_000) {
+        logRoomEvent('soundcheck', !!sc.audio, { mic: sc.mic, audio: sc.audio });
+        localStorage.removeItem('gd-last-soundcheck');
+      }
+    } catch { /* ignore */ }
+    navigator.permissions?.query({ name: 'microphone' as PermissionName })
+      .then((p) => logRoomEvent('mic_permission', p.state !== 'denied', { state: p.state }))
+      .catch(() => {});
     return () => { logRoomEvent('room_close', true); void flushRoomLog(); setRoomContext({ sessionId: null }); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, !!session]);

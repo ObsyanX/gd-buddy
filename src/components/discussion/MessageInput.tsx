@@ -14,6 +14,7 @@ import {
   Lock,
 } from "lucide-react";
 import { useClientVAD } from "@/hooks/useClientVAD";
+import { logRoomEvent } from "@/lib/room-log";
 
 export type TurnState =
   | "floor_locked"
@@ -336,8 +337,8 @@ const MessageInput = ({
     stream: vadStream,
     volumeThreshold: 0.02,
     silenceHangoverMs: 1400,
-    onSpeechStart: handleSpeechStart,
-    onSpeechEnd: handleSpeechEnd,
+    onSpeechStart: () => { logRoomEvent('vad_start'); handleSpeechStart(); },
+    onSpeechEnd: () => { logRoomEvent('vad_release', true, { hangover_ms: 1400 }); handleSpeechEnd(); },
   });
 
   // ------------------------------------------------------------
@@ -386,6 +387,7 @@ const MessageInput = ({
     let remaining = AUTO_SEND_DELAY;
 
     setCountdown(remaining);
+    logRoomEvent('autosend_start', true, { seconds: AUTO_SEND_DELAY });
 
     sendCountdownRef.current = setInterval(() => {
       remaining -= 1;
@@ -396,6 +398,7 @@ const MessageInput = ({
     }, 1000);
 
     autoSendTimer.current = setTimeout(() => {
+      logRoomEvent('autosend_fire');
       if (sendCountdownRef.current) {
         clearInterval(sendCountdownRef.current);
         sendCountdownRef.current = null;
