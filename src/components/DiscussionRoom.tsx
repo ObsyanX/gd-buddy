@@ -31,6 +31,8 @@ import { updatePracticeStreak } from "@/lib/streak-updater";
 import { safeCloseAudioContext, safeDisconnectAudioNode, safeStopMediaStream } from "@/lib/audio-utils";
 import { roomMixer } from "@/lib/audio/room-mixer";
 import { logRoomEvent, setRoomContext, flushRoomLog } from "@/lib/room-log";
+import { acquireAiFloor, releaseAiFloor, fitToSlot, TURN_SLOT_SECONDS } from "@/lib/floor";
+import { useTurnQueue } from "@/hooks/useTurnQueue";
 import { primeBackchannels, playBackchannel, clearBackchannels } from "@/lib/audio/backchannels";
 import { parseProsody } from "@/lib/audio/prosody";
 import { speculate, claimSpeculation, clearSpeculation } from "@/lib/discussion/speculative";
@@ -196,6 +198,7 @@ useEffect(() => {
       seconds_remaining: clock.secondsRemaining,
       mic_locked: clock.micLocked,
       closing_speaker: activeSlot?.name ?? null,
+      turn_slot_seconds: TURN_SLOT_SECONDS,
       airtime: airtimeReport(participants as any[], messages as any[]).rows.map((r) => ({
         name: r.name,
         share: Number(r.share.toFixed(3)),
@@ -839,6 +842,45 @@ useEffect(() => {
     }
   };
 
+  // ---- Fair turns: the human joins the same queue as AI members ----
+  const turnQueue = useTurnQueue(sessionId);
+  const turnHolderRef = useRef(false);
+  useEffect(() => { turnHolderRef.current = turnQueue.isHolder; }, [turnQueue.isHolder]);
+  useEffect(() => {
+    if (!sessionId || isPaused) return;
+    if (isListening && !isSpeaking) {
+      void turnQueue.request();
+    } else if (!isListening && (turnHolderRef.current || turnQueue.selfPosition >= 0)) {
+      void turnQueue.release();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isListening]);
+
+  // ---- 8s of open floor → moderator invites the quietest person by name ----
+  const lastQuietInviteRef = useRef(0);
+  useEffect(() => {
+    if (
+      !session || isPaused || clock?.stage !== 'discussion' || floorLocked ||
+      isSpeaking || isListening || isProcessing || turnQueue.active ||
+      !(hasSentFirstMessage || messages.some((m) => m.gd_participants?.is_user))
+    ) return;
+    const t = window.setTimeout(async () => {
+      if (Date.now() - lastQuietInviteRef.current < 60_000) return;
+      if (isSpeakingRef.current) return;
+      const rows = airtimeReport(participantsRef.current as any[], messagesRef.current as any[]).rows;
+      const humans = rows.filter((r) => r.isUser);
+      const pool = humans.length ? humans : rows;
+      const quiet = [...pool].sort((a, b) => a.words - b.words)[0];
+      if (!quiet) return;
+      lastQuietInviteRef.current = Date.now();
+      const name = quiet.name === 'You' ? (currentUserName || 'you') : quiet.name;
+      await postModeratorLine(`${name}, the floor is open — we'd like to hear your view. You have ${TURN_SLOT_SECONDS} seconds.`);
+      logRoomEvent('icebreaker', true, { after_s: 8, kind: 'quiet_invite', target: quiet.participantId });
+    }, 8_000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.id, isPaused, clock?.stage, floorLocked, isSpeaking, isListening, isProcessing, turnQueue.active?.id, messages.length, hasSentFirstMessage]);
+
   const handleSendMessageDirect = async (textToSend: string) => {
     if (!textToSend.trim() || isProcessing || isPaused) return;
     if (floorLocked) {
@@ -1028,6 +1070,13 @@ useEffect(() => {
             continue;
           }
 
+          // Fair turns: AI members wait in the same queue as humans.
+          const gotFloor = await acquireAiFloor(sessionId, response.participant_id, {
+            isCancelled: () => isInactiveRef.current,
+          });
+          if (!gotFloor) continue;
+          response.text = fitToSlot(String(response.text || ''));
+          try {
           const { data: aiMsg, error: aiMsgError } = await supabase
             .from('gd_messages')
             .insert({
@@ -1051,6 +1100,9 @@ useEffect(() => {
             processedMessagesRef.current.add(aiMsg.id);
             setMessages(prev => [...prev, aiMsg]);
             await playClip(response.participant_id);
+          }
+          } finally {
+            await releaseAiFloor(sessionId, response.participant_id);
           }
         }
       }

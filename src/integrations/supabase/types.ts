@@ -1416,6 +1416,7 @@ export type Database = {
       }
       cohorts: {
         Row: {
+          archived_at: string | null
           created_at: string
           description: string | null
           id: string
@@ -1426,6 +1427,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1436,6 +1438,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -2729,15 +2732,7 @@ export type Database = {
           track?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "mock_drives_cohort_id_fkey"
-            columns: ["cohort_id"]
-            isOneToOne: false
-            referencedRelation: "instructor_cohorts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       moderation_policies: {
         Row: {
@@ -4034,6 +4029,7 @@ export type Database = {
           released_at: string | null
           requested_at: string
           session_id: string
+          slot_seconds: number
           source: string
           status: string
           user_id: string | null
@@ -4049,6 +4045,7 @@ export type Database = {
           released_at?: string | null
           requested_at?: string
           session_id: string
+          slot_seconds?: number
           source?: string
           status?: string
           user_id?: string | null
@@ -4064,6 +4061,7 @@ export type Database = {
           released_at?: string | null
           requested_at?: string
           session_id?: string
+          slot_seconds?: number
           source?: string
           status?: string
           user_id?: string | null
@@ -4610,6 +4608,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _promote_next_turn: {
+        Args: { _last_holder: string; _session_id: string }
+        Returns: string
+      }
       admin_profile_emails: {
         Args: { _ids: string[] }
         Returns: {
@@ -4671,6 +4673,30 @@ export type Database = {
       increment_article_like: { Args: { _slug: string }; Returns: undefined }
       increment_article_share: { Args: { _slug: string }; Returns: undefined }
       increment_article_view: { Args: { _slug: string }; Returns: undefined }
+      instructor_add_member_by_email: {
+        Args: { _cohort_id: string; _email: string }
+        Returns: Json
+      }
+      instructor_cohort_results: {
+        Args: { _cohort_id: string }
+        Returns: {
+          content_score: number
+          created_at: string
+          filler_count: number
+          fluency_score: number
+          is_multiplayer: boolean
+          leadership_score: number
+          session_id: string
+          status: string
+          structure_score: number
+          teamwork_score: number
+          topic: string
+          total_words: number
+          user_id: string
+          voice_score: number
+          words_per_min: number
+        }[]
+      }
       is_cohort_member: {
         Args: { _cohort_id: string; _user_id: string }
         Returns: boolean
@@ -4688,6 +4714,7 @@ export type Database = {
         Returns: boolean
       }
       is_joinable_session: { Args: { _session_id: string }; Returns: boolean }
+      join_cohort_by_code: { Args: { _code: string }; Returns: Json }
       log_login_event: {
         Args: { _reason?: string; _success: boolean; _user_agent?: string }
         Returns: undefined
@@ -4743,9 +4770,18 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      release_mic: { Args: { _session_id: string }; Returns: Json }
+      release_mic: {
+        Args: { _participant_id?: string; _session_id: string }
+        Returns: Json
+      }
       request_mic: {
-        Args: { _kind?: string; _session_id: string; _source?: string }
+        Args: {
+          _kind?: string
+          _participant_id?: string
+          _session_id: string
+          _slot_seconds?: number
+          _source?: string
+        }
         Returns: Json
       }
       run_rum_sampling_check: {
