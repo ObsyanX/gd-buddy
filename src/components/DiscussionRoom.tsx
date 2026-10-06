@@ -873,7 +873,9 @@ useEffect(() => {
       const quiet = [...pool].sort((a, b) => a.words - b.words)[0];
       if (!quiet) return;
       lastQuietInviteRef.current = Date.now();
-      const name = quiet.name === 'You' ? (currentUserName || 'you') : quiet.name;
+      const { data: { user: me } } = await supabase.auth.getUser();
+      const myName = me?.user_metadata?.full_name?.split(' ')[0] || 'you';
+      const name = quiet.name === 'You' ? myName : quiet.name;
       await postModeratorLine(`${name}, the floor is open — we'd like to hear your view. You have ${TURN_SLOT_SECONDS} seconds.`);
       logRoomEvent('icebreaker', true, { after_s: 8, kind: 'quiet_invite', target: quiet.participantId });
     }, 8_000);
