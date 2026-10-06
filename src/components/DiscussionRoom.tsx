@@ -31,6 +31,8 @@ import { updatePracticeStreak } from "@/lib/streak-updater";
 import { safeCloseAudioContext, safeDisconnectAudioNode, safeStopMediaStream } from "@/lib/audio-utils";
 import { roomMixer } from "@/lib/audio/room-mixer";
 import { logRoomEvent, setRoomContext, flushRoomLog } from "@/lib/room-log";
+import { acquireAiFloor, releaseAiFloor, fitToSlot, TURN_SLOT_SECONDS } from "@/lib/floor";
+import { useTurnQueue } from "@/hooks/useTurnQueue";
 import { primeBackchannels, playBackchannel, clearBackchannels } from "@/lib/audio/backchannels";
 import { parseProsody } from "@/lib/audio/prosody";
 import { speculate, claimSpeculation, clearSpeculation } from "@/lib/discussion/speculative";
@@ -1028,6 +1030,13 @@ useEffect(() => {
             continue;
           }
 
+          // Fair turns: AI members wait in the same queue as humans.
+          const gotFloor = await acquireAiFloor(sessionId, response.participant_id, {
+            isCancelled: () => isInactiveRef.current,
+          });
+          if (!gotFloor) continue;
+          response.text = fitToSlot(String(response.text || ''));
+          try {
           const { data: aiMsg, error: aiMsgError } = await supabase
             .from('gd_messages')
             .insert({
@@ -1051,6 +1060,9 @@ useEffect(() => {
             processedMessagesRef.current.add(aiMsg.id);
             setMessages(prev => [...prev, aiMsg]);
             await playClip(response.participant_id);
+          }
+          } finally {
+            await releaseAiFloor(sessionId, response.participant_id);
           }
         }
       }
