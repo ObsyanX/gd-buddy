@@ -20,6 +20,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
 import CreateMockDriveModal from '@/components/instructor/CreateMockDriveModal';
+import BatchManager from '@/components/instructor/BatchManager';
+import RoomHealthPanel from '@/components/room/RoomHealthPanel';
 import {
   CohortPerformanceHeatmap,
   type StudentMetricRow,
@@ -1490,6 +1492,11 @@ const InstructorDashboard = () => {
           onClose={() => setShowMockDrive(false)}
         />
       )}
+
+      <div className="container mx-auto px-4 sm:px-6 py-6 space-y-6">
+        <BatchManager />
+        <RoomHealthPanel title="Room health (your drive rooms)" />
+      </div>
     </div>
   );
 };

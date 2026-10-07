@@ -117,6 +117,7 @@ const AdminIncidents = lazy(() => import("./pages/admin/AdminIncidents"), "Admin
 const AdminAuthErrors = lazy(() => import("./pages/admin/AdminAuthErrors"), "AdminAuthErrors");
 const AdminPerformance = lazy(() => import("./pages/admin/AdminPerformance"), "AdminPerformance");
 const AdminTelemetry = lazy(() => import("./pages/admin/AdminTelemetry"), "AdminTelemetry");
+const AdminRoomHealth = lazy(() => import("./pages/admin/AdminRoomHealth"), "AdminRoomHealth");
 const AdminShareAnalytics = lazy(() => import("./pages/admin/AdminShareAnalytics"), "AdminShareAnalytics");
 const AdminShareDrilldown = lazy(() => import("./pages/admin/AdminShareDrilldown"), "AdminShareDrilldown");
 
@@ -320,6 +321,7 @@ const App = () => (
                   <Route path="auth-errors" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminAuthErrors /></Suspense></RouteBoundary>} />
                   <Route path="performance" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminPerformance /></Suspense></RouteBoundary>} />
                   <Route path="telemetry" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminTelemetry /></Suspense></RouteBoundary>} />
+                  <Route path="room-health" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminRoomHealth /></Suspense></RouteBoundary>} />
 
                   <Route path="shares" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminShareAnalytics /></Suspense></RouteBoundary>} />
                   <Route path="shares/:target" element={<RouteBoundary><Suspense fallback={<DashboardSkeleton />}><AdminShareDrilldown /></Suspense></RouteBoundary>} />
