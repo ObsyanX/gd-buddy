@@ -285,7 +285,6 @@ export const CreateMockDriveModal: React.FC<CreateMockDriveModalProps> = ({
           is_multiplayer: true,
           room_code: code,
           status: 'setup',
-          config,
         } as any)
         .select('id')
         .single();
