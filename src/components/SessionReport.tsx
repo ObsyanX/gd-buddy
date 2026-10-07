@@ -18,6 +18,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { ShareButton } from "@/components/ShareButton";
 import { buildDeepLink } from "@/lib/share";
 import PlacementBenchmarkCard from "@/components/report/PlacementBenchmarkCard";
+import { RoomTimeline } from "@/components/room/RoomHealthPanel";
 
 
 interface SessionReportProps {
@@ -847,6 +848,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             </>
           }
         </Card>
+        <RoomTimeline sessionId={sessionId} />
                 {/* Placement Benchmark */}
         {hasRealScores && (
           <PlacementBenchmarkCard
