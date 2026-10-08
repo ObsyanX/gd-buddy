@@ -31,14 +31,16 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 // Free OpenRouter models, best first. The live catalogue is fetched and cached so
 // retired models drop out and new free ones are picked up automatically.
+// Ordered for live-room latency: fast instruction models first; the very large
+// reasoning model is slow on the free tier (often >30s) so it goes last.
 const OPENROUTER_PREFERRED = [
-  "nvidia/nemotron-3-ultra-550b-a55b:free",
-  "qwen/qwen3.8-27b:free",
   "google/gemma-4-31b-it:free",
+  "qwen/qwen3.8-27b:free",
   "nvidia/nemotron-3-super-120b-a12b:free",
-  "thinkingmachines/inkling:free",
   "google/gemma-4-26b-a4b-it:free",
   "nvidia/nemotron-3.5-lightning:free",
+  "thinkingmachines/inkling:free",
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
 ];
 let orCache: { at: number; all: string[]; tools: Set<string> } | null = null;
 async function openRouterFreeModels(needTools: boolean): Promise<string[]> {
@@ -154,8 +156,11 @@ export interface AIResponse {
 // stack so existing call sites need no changes.
 function inferFunctionName(): string {
   const stack = new Error().stack ?? "";
-  const m = stack.match(/functions\/([a-z0-9-_]+)\/[a-z0-9-_.]+\.ts/i);
-  return m?.[1] ?? "unknown";
+  // Skip shared helpers (_shared/...) so usage is attributed to the caller.
+  for (const m of stack.matchAll(/functions\/([a-z0-9-_]+)\/[a-z0-9-_./]+\.ts/gi)) {
+    if (!m[1].startsWith("_")) return m[1];
+  }
+  return "unknown";
 }
 
 // Rough per-million-token pricing used only for dashboard estimates.
@@ -288,7 +293,19 @@ async function callLovable(body: AIRequestBody, apiKey: string): Promise<Respons
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(LOVABLE_TIMEOUT_MS),
   });
+}
+
+// Free fallback models can stall for minutes; cap each attempt so the chain
+// moves on and the discussion room gets a reply (or a clean "paused" notice).
+const LOVABLE_TIMEOUT_MS = 40_000;
+const FALLBACK_TIMEOUT_MS = 20_000;
+
+/** A 200 with no text and no tool call is useless (some free models do this). */
+function hasUsableOutput(json: AIResponse): boolean {
+  const msg = json?.choices?.[0]?.message;
+  return !!(msg && ((typeof msg.content === "string" && msg.content.trim()) || msg.tool_calls?.length));
 }
 
 
@@ -306,6 +323,7 @@ async function callProvider(
       ...(url.includes("openrouter.ai") ? { "HTTP-Referer": "https://gdbuddy.lovable.app", "X-Title": "GD Buddy" } : {}),
     },
     body: JSON.stringify({ ...body, model }),
+    signal: AbortSignal.timeout(FALLBACK_TIMEOUT_MS),
   });
 }
 
@@ -481,6 +499,20 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
 
         if (response.ok) {
           const json = await response.json();
+          if (!hasUsableOutput(json as AIResponse)) {
+            // Empty reply: try the next model instead of handing back nothing.
+            failures.push(`${provider.name}(empty)`);
+            console.warn(`[ai-fallback] ${provider.name}/${mappedModel} returned an empty reply — trying next`);
+            await recordAiError({
+              provider: provider.name,
+              status: 200,
+              message: `Empty reply from ${mappedModel}`,
+              model: mappedModel,
+              functionName: fnName,
+              fallbackUsed: true,
+            });
+            continue;
+          }
           json._provider = provider.name;
           await recordUsage(json as AIResponse, mappedModel, provider.name, fnName);
           return json as AIResponse;
@@ -522,6 +554,8 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
           functionName: fnName,
           fallbackUsed: true,
         });
+        // On a timeout, move to the next provider (faster) rather than queueing
+        // behind another slow free model.
         break;
       }
     }

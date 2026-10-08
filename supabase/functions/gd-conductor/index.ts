@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { callAI, AIProviderError } from "../_shared/ai-with-fallback.ts";
+import { logEdgeError } from "../_shared/log-edge-error.ts";
 
 // Robustly extract a JSON object from an LLM reply. Some providers (Mistral,
 // Groq) occasionally emit malformed JSON — unquoted keys, stray parentheses,
@@ -158,6 +159,7 @@ serve(async (req) => {
     const moderatorMode = config.moderator_mode || false;
     const citationMode = config.citation_mode || false;
     const track = String(config.track || 'general').toLowerCase();
+    const slotSeconds = Math.min(180, Math.max(15, Number(config.turn_slot_seconds ?? (body as any).protocol?.turn_slot_seconds) || 45));
     // Map track-specific AI participant demeanor and challenge dynamics
     const trackBehaviors: Record<string, string> = {
       consulting: `Challenge assumptions, demand quantitative reasoning, encourage MECE structures, hypotheses, data-backed reasoning and logical rigor.`,
@@ -313,6 +315,7 @@ RULES:
 5. Mark interruptions based on persona.interrupt_level and config.interruption_mode.
 6. Generate valid SSML for TTS.
 7. Provide helpful invigilator feedback for the user.
+8. FAIR TURNS: every speaker (human or AI) gets a ${slotSeconds}-second speaking slot. Each AI reply must be speakable within its slot (about ${Math.floor(slotSeconds * 2.3)} words max) — never longer. Prefer the AI member who has spoken least; never pick the same AI twice in a row when another AI is waiting.
 8. Be interview-realistic: real GD participants COMPETE for airtime by adding value, not by agreeing.
 9. If a draft reply would violate the HARD BANS, rewrite it before emitting.
 10. SPEECH REALISM — write spoken language, not written prose:
@@ -441,9 +444,18 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
       if (e instanceof AIProviderError) {
         console.error('AI providers failed:', e.provider, e.status, e.body);
         if (e.status === 429) {
+          // Busy everywhere: keep the room alive (200) and let the client show the notice.
           return new Response(
-            JSON.stringify({ error: 'rate_limit', message: 'AI rate limit exceeded. Please wait a moment.' }),
-            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({
+              error: 'rate_limit',
+              degraded: true,
+              message: 'AI members are busy right now. Please wait a moment.',
+              participant_responses: [],
+              invigilator_note: 'AI members are busy for a moment. Keep speaking — your session is still recorded and scored.',
+              invigilator_signals: { live_hint: 'AI members are busy — they will rejoin shortly.' },
+              session_updates: {},
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
         if (e.status === 402) {
@@ -479,14 +491,40 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      throw e;
-
+      // Personal-key failures with platform fallback off, network errors, etc.
+      console.error('AI call failed:', e);
+      await logEdgeError(e, { function_name: 'gd-conductor', status: 200, extra: { session_id, degraded: true } });
+      const msg = e instanceof Error ? e.message : 'AI unavailable';
+      return new Response(
+        JSON.stringify({
+          error: 'ai_unavailable',
+          degraded: true,
+          message: msg.startsWith('Your AI providers') ? msg : 'AI participants are temporarily unavailable.',
+          participant_responses: [],
+          invigilator_note: 'AI participants are temporarily unavailable. Continue the discussion — your speech is still being recorded and scored.',
+          invigilator_signals: { live_hint: 'AI participants are temporarily unavailable.' },
+          session_updates: {},
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const content = aiResponse.choices?.[0]?.message?.content;
 
     if (!content) {
-      throw new Error('No content in AI response');
+      // Empty answer from the provider — degrade instead of a 500.
+      await logEdgeError(new Error('Empty AI response'), { function_name: 'gd-conductor', status: 200, extra: { session_id, provider: aiResponse._provider } });
+      return new Response(
+        JSON.stringify({
+          error: 'ai_unavailable',
+          degraded: true,
+          message: 'AI participants did not answer this turn.',
+          participant_responses: [],
+          invigilator_signals: { live_hint: 'AI members skipped this turn — keep going.' },
+          session_updates: {},
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`AI Response (provider=${aiResponse._provider}):`, content);
@@ -573,6 +611,7 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
     }
 
 
+    parsedResponse.provider = aiResponse._provider ?? null;
     return new Response(
       JSON.stringify(parsedResponse),
       { 
