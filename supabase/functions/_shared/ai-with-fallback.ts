@@ -293,13 +293,11 @@ async function callLovable(body: AIRequestBody, apiKey: string): Promise<Respons
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(LOVABLE_TIMEOUT_MS),
   });
 }
 
-// Free fallback models can stall for minutes; cap each attempt so the chain
+// Lovable AI Gateway calls are never timed out. Free third-party fallback models can stall for minutes; cap each attempt so the chain
 // moves on and the discussion room gets a reply (or a clean "paused" notice).
-const LOVABLE_TIMEOUT_MS = 40_000;
 const FALLBACK_TIMEOUT_MS = 20_000;
 
 /** A 200 with no text and no tool call is useless (some free models do this). */
