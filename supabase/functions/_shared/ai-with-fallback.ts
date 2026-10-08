@@ -31,14 +31,16 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 // Free OpenRouter models, best first. The live catalogue is fetched and cached so
 // retired models drop out and new free ones are picked up automatically.
+// Ordered for live-room latency: fast instruction models first; the very large
+// reasoning model is slow on the free tier (often >30s) so it goes last.
 const OPENROUTER_PREFERRED = [
-  "nvidia/nemotron-3-ultra-550b-a55b:free",
-  "qwen/qwen3.8-27b:free",
   "google/gemma-4-31b-it:free",
+  "qwen/qwen3.8-27b:free",
   "nvidia/nemotron-3-super-120b-a12b:free",
-  "thinkingmachines/inkling:free",
   "google/gemma-4-26b-a4b-it:free",
   "nvidia/nemotron-3.5-lightning:free",
+  "thinkingmachines/inkling:free",
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
 ];
 let orCache: { at: number; all: string[]; tools: Set<string> } | null = null;
 async function openRouterFreeModels(needTools: boolean): Promise<string[]> {
@@ -298,7 +300,7 @@ async function callLovable(body: AIRequestBody, apiKey: string): Promise<Respons
 // Free fallback models can stall for minutes; cap each attempt so the chain
 // moves on and the discussion room gets a reply (or a clean "paused" notice).
 const LOVABLE_TIMEOUT_MS = 40_000;
-const FALLBACK_TIMEOUT_MS = 30_000;
+const FALLBACK_TIMEOUT_MS = 20_000;
 
 /** A 200 with no text and no tool call is useless (some free models do this). */
 function hasUsableOutput(json: AIResponse): boolean {
@@ -552,8 +554,8 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
           functionName: fnName,
           fallbackUsed: true,
         });
-        // A slow/timed-out free model says nothing about the next one.
-        if (provider.name === "openrouter" && /timeout|aborted/i.test(msg)) continue;
+        // On a timeout, move to the next provider (faster) rather than queueing
+        // behind another slow free model.
         break;
       }
     }
