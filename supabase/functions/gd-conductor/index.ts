@@ -159,7 +159,7 @@ serve(async (req) => {
     const moderatorMode = config.moderator_mode || false;
     const citationMode = config.citation_mode || false;
     const track = String(config.track || 'general').toLowerCase();
-    const slotSeconds = Math.min(180, Math.max(15, Number(config.turn_slot_seconds) || 45));
+    const slotSeconds = Math.min(180, Math.max(15, Number(config.turn_slot_seconds ?? (body as any).protocol?.turn_slot_seconds) || 45));
     // Map track-specific AI participant demeanor and challenge dynamics
     const trackBehaviors: Record<string, string> = {
       consulting: `Challenge assumptions, demand quantitative reasoning, encourage MECE structures, hypotheses, data-backed reasoning and logical rigor.`,
