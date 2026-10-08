@@ -611,6 +611,7 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
     }
 
 
+    parsedResponse.provider = aiResponse._provider ?? null;
     return new Response(
       JSON.stringify(parsedResponse),
       { 

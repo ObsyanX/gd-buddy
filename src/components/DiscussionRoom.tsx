@@ -983,7 +983,17 @@ useEffect(() => {
 
       if (aiError) {
         console.error('AI Error:', aiError);
-        logRoomEvent('ai_reply', false, { source: 'failed', message: String(aiError.message || aiError).slice(0, 200) });
+        // Record the real status + server message so Room health shows the cause.
+        let status: number | undefined;
+        let detail = '';
+        try {
+          const ctx = (aiError as any)?.context;
+          if (ctx && typeof ctx.status === 'number') {
+            status = ctx.status;
+            detail = (await ctx.clone().text()).slice(0, 300);
+          }
+        } catch { /* ignore */ }
+        logRoomEvent('ai_reply', false, { source: 'failed', status, detail, message: String(aiError.message || aiError).slice(0, 200) });
         throw aiError;
       }
 
