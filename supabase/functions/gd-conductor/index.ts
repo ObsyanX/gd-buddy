@@ -441,9 +441,18 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
       if (e instanceof AIProviderError) {
         console.error('AI providers failed:', e.provider, e.status, e.body);
         if (e.status === 429) {
+          // Busy everywhere: keep the room alive (200) and let the client show the notice.
           return new Response(
-            JSON.stringify({ error: 'rate_limit', message: 'AI rate limit exceeded. Please wait a moment.' }),
-            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({
+              error: 'rate_limit',
+              degraded: true,
+              message: 'AI members are busy right now. Please wait a moment.',
+              participant_responses: [],
+              invigilator_note: 'AI members are busy for a moment. Keep speaking — your session is still recorded and scored.',
+              invigilator_signals: { live_hint: 'AI members are busy — they will rejoin shortly.' },
+              session_updates: {},
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
         if (e.status === 402) {
@@ -479,14 +488,40 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      throw e;
-
+      // Personal-key failures with platform fallback off, network errors, etc.
+      console.error('AI call failed:', e);
+      await logEdgeError(e, { function_name: 'gd-conductor', status: 200, extra: { session_id, degraded: true } });
+      const msg = e instanceof Error ? e.message : 'AI unavailable';
+      return new Response(
+        JSON.stringify({
+          error: 'ai_unavailable',
+          degraded: true,
+          message: msg.startsWith('Your AI providers') ? msg : 'AI participants are temporarily unavailable.',
+          participant_responses: [],
+          invigilator_note: 'AI participants are temporarily unavailable. Continue the discussion — your speech is still being recorded and scored.',
+          invigilator_signals: { live_hint: 'AI participants are temporarily unavailable.' },
+          session_updates: {},
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const content = aiResponse.choices?.[0]?.message?.content;
 
     if (!content) {
-      throw new Error('No content in AI response');
+      // Empty answer from the provider — degrade instead of a 500.
+      await logEdgeError(new Error('Empty AI response'), { function_name: 'gd-conductor', status: 200, extra: { session_id, provider: aiResponse._provider } });
+      return new Response(
+        JSON.stringify({
+          error: 'ai_unavailable',
+          degraded: true,
+          message: 'AI participants did not answer this turn.',
+          participant_responses: [],
+          invigilator_signals: { live_hint: 'AI members skipped this turn — keep going.' },
+          session_updates: {},
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`AI Response (provider=${aiResponse._provider}):`, content);
