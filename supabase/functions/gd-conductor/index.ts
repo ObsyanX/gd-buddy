@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { callAI, AIProviderError } from "../_shared/ai-with-fallback.ts";
+import { logEdgeError } from "../_shared/log-edge-error.ts";
 
 // Robustly extract a JSON object from an LLM reply. Some providers (Mistral,
 // Groq) occasionally emit malformed JSON — unquoted keys, stray parentheses,
@@ -158,6 +159,7 @@ serve(async (req) => {
     const moderatorMode = config.moderator_mode || false;
     const citationMode = config.citation_mode || false;
     const track = String(config.track || 'general').toLowerCase();
+    const slotSeconds = Math.min(180, Math.max(15, Number(config.turn_slot_seconds) || 45));
     // Map track-specific AI participant demeanor and challenge dynamics
     const trackBehaviors: Record<string, string> = {
       consulting: `Challenge assumptions, demand quantitative reasoning, encourage MECE structures, hypotheses, data-backed reasoning and logical rigor.`,
@@ -313,6 +315,7 @@ RULES:
 5. Mark interruptions based on persona.interrupt_level and config.interruption_mode.
 6. Generate valid SSML for TTS.
 7. Provide helpful invigilator feedback for the user.
+8. FAIR TURNS: every speaker (human or AI) gets a ${slotSeconds}-second speaking slot. Each AI reply must be speakable within its slot (about ${Math.floor(slotSeconds * 2.3)} words max) — never longer. Prefer the AI member who has spoken least; never pick the same AI twice in a row when another AI is waiting.
 8. Be interview-realistic: real GD participants COMPETE for airtime by adding value, not by agreeing.
 9. If a draft reply would violate the HARD BANS, rewrite it before emitting.
 10. SPEECH REALISM — write spoken language, not written prose:
