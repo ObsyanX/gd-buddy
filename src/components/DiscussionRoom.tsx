@@ -1,3 +1,4 @@
+import { SpeakerCountdown, useSlotRemaining } from '@/components/room/SpeakerCountdown';
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -856,6 +857,29 @@ useEffect(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isListening]);
 
+  // ---- Slot timer: 10s warning, then auto-release so the floor passes on ----
+  const activeTurn: any = turnQueue.active;
+  const slotSeconds = Number(activeTurn?.slot_seconds) || 45;
+  const slotRemaining = useSlotRemaining(activeTurn?.granted_at, slotSeconds);
+  const slotWarnedRef = useRef<string | null>(null);
+  const slotEndedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!turnQueue.isHolder || slotRemaining === null || !activeTurn?.id) return;
+    if (slotRemaining <= 10 && slotRemaining > 0 && slotWarnedRef.current !== activeTurn.id) {
+      slotWarnedRef.current = activeTurn.id;
+      logRoomEvent('slot_warning', true, { remaining: slotRemaining });
+      toast({ title: '10 seconds left', description: 'Wrap up your point — the floor passes on soon.' });
+    }
+    if (slotRemaining === 0 && slotEndedRef.current !== activeTurn.id) {
+      slotEndedRef.current = activeTurn.id;
+      logRoomEvent('slot_expired', true, { slot_seconds: slotSeconds });
+      if (isListening) stopListening();
+      void turnQueue.release();
+      toast({ title: 'Time is up', description: 'Your slot ended — the floor has passed to the next speaker.' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slotRemaining, turnQueue.isHolder, activeTurn?.id]);
+
   // ---- 8s of open floor → moderator invites the quietest person by name ----
   const lastQuietInviteRef = useRef(0);
   useEffect(() => {
@@ -1517,6 +1541,14 @@ useEffect(() => {
         </Button>
       </div>
     )}
+          {activeTurn?.granted_at && (
+            <SpeakerCountdown
+              grantedAt={activeTurn.granted_at}
+              slotSeconds={slotSeconds}
+              isSelf={turnQueue.isHolder}
+              speakerLabel={activeTurn.participant_kind === 'ai' ? 'AI member' : 'Another participant'}
+            />
+          )}
           <MessageInput
             userInput={userInput}
             isListening={isListening}
