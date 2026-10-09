@@ -2,7 +2,8 @@
 
 ## Open
 - [ ] Remove or wire up the unused transcription pipelines (`useAudioRecorder` + `speech-to-text` edge function are dead code today)
-- [ ] Improve AI member switching in the discussion room (proactive AI floor requests, silence watchdog, moderator interventions) — plan drafted in `.lovable/plan.md`, awaiting go-ahead.
+- [x] Fair AI turns: queue, slot countdown, 10s warning, auto-handover, quiet invite
+- [ ] Typed 6-account drive test (needs test accounts)
 
 ## Done
 - [x] Mock drive rooms saved as real group rooms (host + code join)
