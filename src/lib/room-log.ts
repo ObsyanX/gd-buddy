@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type RoomEventKind =
   | "room_open" | "room_close" | "mic_permission" | "soundcheck"
   | "vad_start" | "vad_release" | "autosend_start" | "autosend_cancel" | "autosend_fire"
-  | "floor_request" | "floor_grant" | "floor_queue" | "floor_release"
+  | "floor_request" | "floor_grant" | "floor_queue" | "floor_release" | "slot_warning" | "slot_expired"
   | "interjection" | "icebreaker" | "ai_reply" | "tts_play" | "stt_result"
   | "participant_join" | "participant_leave" | "drive_join";
 
