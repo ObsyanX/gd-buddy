@@ -24,21 +24,22 @@ const MessageList = ({ messages, currentUserId, isSpeaking, currentSpeaker }: Me
   // Resolve the Radix ScrollArea viewport once
   const getViewport = useCallback(() => {
     if (!viewportRef.current && rootRef.current) {
-      viewportRef.current = rootRef.current.querySelector(
-        "[data-radix-scroll-area-viewport]"
-      ) as HTMLDivElement | null;
+      viewportRef.current = rootRef.current.querySelector("[data-radix-scroll-area-viewport]") as HTMLDivElement | null;
     }
     return viewportRef.current;
   }, []);
 
-  const scrollToBottom = useCallback((smooth = true) => {
-    const vp = getViewport();
-    if (!vp) return;
-    vp.scrollTo({ top: vp.scrollHeight, behavior: smooth ? "smooth" : "auto" });
-    isNearBottomRef.current = true;
-    setShowJump(false);
-    setUnread(0);
-  }, [getViewport]);
+  const scrollToBottom = useCallback(
+    (smooth = true) => {
+      const vp = getViewport();
+      if (!vp) return;
+      vp.scrollTo({ top: vp.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+      isNearBottomRef.current = true;
+      setShowJump(false);
+      setUnread(0);
+    },
+    [getViewport],
+  );
 
   // Track scroll position within viewport only (never touches window)
   useEffect(() => {
@@ -72,13 +73,14 @@ const MessageList = ({ messages, currentUserId, isSpeaking, currentSpeaker }: Me
   }, [messages, getViewport]);
 
   return (
-    <Card className="relative border-2 sm:border-3 lg:border-4 border-border h-[50dvh] min-h-[50dvh] flex-none sm:h-auto sm:flex-1 sm:min-h-0 overflow-hidden flex flex-col">
+    <Card className="relative border-2 sm:border-3 lg:border-4 border-border h-[45dvh] min-h-[45dvh] sm:h-auto sm:flex-1 sm:min-h-0 overflow-hidden flex flex-col">
       <div ref={rootRef} className="flex-1 min-h-0 flex flex-col">
         <ScrollArea type="always" className="chat-scroll-panel flex-1 min-h-0">
           <div className="space-y-2 sm:space-y-3 lg:space-y-4 p-2 sm:p-3 lg:p-4 pr-3 sm:pr-4 lg:pr-5">
             {messages.map((message, index) => {
               const messageParticipant = message.gd_participants;
-              const isFromCurrentUser = messageParticipant?.is_user &&
+              const isFromCurrentUser =
+                messageParticipant?.is_user &&
                 messageParticipant?.real_user_id &&
                 currentUserId &&
                 messageParticipant.real_user_id === currentUserId;
@@ -89,10 +91,12 @@ const MessageList = ({ messages, currentUserId, isSpeaking, currentSpeaker }: Me
               return (
                 <div
                   key={index}
-                  className={`flex gap-1.5 sm:gap-2 lg:gap-3 ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
+                  className={`flex gap-1.5 sm:gap-2 lg:gap-3 ${isFromCurrentUser ? "justify-end" : "justify-start"}`}
                 >
                   {!isFromCurrentUser && (
-                    <div className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded border sm:border-2 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1 ${isCurrentlySpeaking ? 'border-primary bg-primary/20 animate-pulse' : 'border-border'}`}>
+                    <div
+                      className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded border sm:border-2 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1 ${isCurrentlySpeaking ? "border-primary bg-primary/20 animate-pulse" : "border-border"}`}
+                    >
                       {isCurrentlySpeaking ? (
                         <Volume2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 text-primary animate-pulse" />
                       ) : isAI ? (
@@ -102,13 +106,19 @@ const MessageList = ({ messages, currentUserId, isSpeaking, currentSpeaker }: Me
                       )}
                     </div>
                   )}
-                  <div className={`max-w-[88%] sm:max-w-[85%] lg:max-w-[80%] space-y-0.5 sm:space-y-1 ${isFromCurrentUser ? 'text-right' : ''}`}>
-                    <p className={`text-[9px] sm:text-[10px] lg:text-xs font-bold ${isCurrentlySpeaking ? 'text-primary' : 'text-muted-foreground'}`}>
-                      {isFromCurrentUser ? 'You' : messageParticipant?.persona_name}
+                  <div
+                    className={`max-w-[88%] sm:max-w-[85%] lg:max-w-[80%] space-y-0.5 sm:space-y-1 ${isFromCurrentUser ? "text-right" : ""}`}
+                  >
+                    <p
+                      className={`text-[9px] sm:text-[10px] lg:text-xs font-bold ${isCurrentlySpeaking ? "text-primary" : "text-muted-foreground"}`}
+                    >
+                      {isFromCurrentUser ? "You" : messageParticipant?.persona_name}
                       {isOtherHuman && <span className="ml-1 text-muted-foreground">(Player)</span>}
                       {isCurrentlySpeaking && <span className="ml-1 sm:ml-2 animate-pulse">🔊</span>}
                     </p>
-                    <div className={`p-1.5 sm:p-2 lg:p-4 border sm:border-2 rounded-sm sm:rounded ${isFromCurrentUser ? 'bg-primary text-primary-foreground border-primary' : isCurrentlySpeaking ? 'bg-primary/10 border-primary' : 'bg-card border-border'}`}>
+                    <div
+                      className={`p-1.5 sm:p-2 lg:p-4 border sm:border-2 rounded-sm sm:rounded ${isFromCurrentUser ? "bg-primary text-primary-foreground border-primary" : isCurrentlySpeaking ? "bg-primary/10 border-primary" : "bg-card border-border"}`}
+                    >
                       <p className="text-[11px] sm:text-xs lg:text-sm leading-relaxed">{message.text}</p>
                       {isAI && message.citation && (
                         <p className="mt-1.5 text-[10px] sm:text-[11px] italic text-muted-foreground border-l-2 border-primary/40 pl-2">
