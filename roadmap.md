@@ -3,7 +3,7 @@
 ## Open
 - [ ] Remove or wire up the unused transcription pipelines (`useAudioRecorder` + `speech-to-text` edge function are dead code today)
 - [x] Fair AI turns: queue, slot countdown, 10s warning, auto-handover, quiet invite
-- [ ] Typed 6-account drive test (needs test accounts)
+- [x] Typed 6-account drive test + instructor batch tools test (test accounts gdbuddy.drivetest1-6@example.com)
 
 ## Done
 - [x] Mock drive rooms saved as real group rooms (host + code join)
