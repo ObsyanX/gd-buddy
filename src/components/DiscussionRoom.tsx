@@ -1106,6 +1106,17 @@ useEffect(() => {
             continue;
           }
 
+          // The AI sometimes names a member ("pooja") instead of its id — map it back.
+          const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!UUID_RE.test(String(response.participant_id || ''))) {
+            const key = String(response.participant_id || '').trim().toLowerCase();
+            const aiMembers = participants.filter((p: any) => !p.is_user);
+            const match = aiMembers.find((p: any) => String(p.persona_name || '').toLowerCase() === key)
+              ?? aiMembers.find((p: any) => { const n = String(p.persona_name || '').toLowerCase(); return !!key && (n.startsWith(key) || n.split(/\s+/)[0] === key); });
+            if (!match) { console.warn('Unknown AI speaker', response.participant_id); continue; }
+            response.participant_id = match.id;
+          }
+
           // Fair turns: AI members wait in the same queue as humans.
           const gotFloor = await acquireAiFloor(sessionId, response.participant_id, {
             isCancelled: () => isInactiveRef.current,
