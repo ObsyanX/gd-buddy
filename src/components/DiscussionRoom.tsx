@@ -1,9 +1,16 @@
-import { SpeakerCountdown, useSlotRemaining } from '@/components/room/SpeakerCountdown';
+import { SpeakerCountdown, useSlotRemaining } from "@/components/room/SpeakerCountdown";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Mic, Info, Play, RefreshCw, Check, X, Loader2, SkipForward, User, Square, Pause } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -76,7 +83,9 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pendingSendRef = useRef(false);
   const userInputRef = useRef("");
-  useEffect(() => { userInputRef.current = userInput; }, [userInput]);
+  useEffect(() => {
+    userInputRef.current = userInput;
+  }, [userInput]);
   const skipWaitRef = useRef<(() => void) | null>(null);
   const [isWaitingForSpeech, setIsWaitingForSpeech] = useState(false);
   const [isMobileMetricsOpen, setIsMobileMetricsOpen] = useState(false);
@@ -98,8 +107,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   }, [session?.start_time, session?.gd_format, participants.length]);
 
   const clock: ClockState | null = protocolWindows ? clockState(nowMs, protocolWindows) : null;
-  const isReadingWindow = !!clock && clock.stage === 'reading' && !readingSkipped;
-  const isClosingRound = !!clock && clock.stage === 'closing';
+  const isReadingWindow = !!clock && clock.stage === "reading" && !readingSkipped;
+  const isClosingRound = !!clock && clock.stage === "closing";
   const closingSlots = useMemo(
     () => (protocolWindows ? closingOrder(participants as any[], protocolWindows) : []),
     [participants, protocolWindows],
@@ -107,89 +116,84 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const activeSlot = isClosingRound ? activeClosingSlot(nowMs, closingSlots) : null;
   const isUserClosingSlot = !!activeSlot?.isUser;
   const floorLocked = isReadingWindow || (isClosingRound && !isUserClosingSlot);
-  
+
   const gdFormat = getFormat(session?.gd_format);
 
   /** Protocol snapshot handed to gd-conductor on every request. */
   const protocolContextRef = useRef<Record<string, unknown> | null>(null);
-  
-// 30-second first-turn icebreaker.
-// Only runs during the active discussion stage, after the reading window,
-// when the candidate has not spoken yet.
-useEffect(() => {
-  // Clear any existing timer whenever the conditions are no longer valid.
-  if (
-    !session ||
-    clock?.stage !== "discussion" ||
-    floorLocked ||
-    hasSentFirstMessage ||
-    messages.some((m) => m.gd_participants?.is_user)
-  ) {
-    if (icebreakerTimerRef.current) {
-      clearTimeout(icebreakerTimerRef.current);
-      icebreakerTimerRef.current = null;
-    }
-    return;
-  }
 
-  // Prevent accidentally creating multiple timers.
-  if (icebreakerTimerRef.current) {
-    clearTimeout(icebreakerTimerRef.current);
-  }
-
-  icebreakerTimerRef.current = setTimeout(async () => {
-    // Re-check the conditions when the timer actually fires.
+  // 30-second first-turn icebreaker.
+  // Only runs during the active discussion stage, after the reading window,
+  // when the candidate has not spoken yet.
+  useEffect(() => {
+    // Clear any existing timer whenever the conditions are no longer valid.
     if (
       !session ||
-      isPaused ||
+      clock?.stage !== "discussion" ||
       floorLocked ||
       hasSentFirstMessage ||
-      messagesRef.current.some((m) => m.gd_participants?.is_user)
+      messages.some((m) => m.gd_participants?.is_user)
     ) {
+      if (icebreakerTimerRef.current) {
+        clearTimeout(icebreakerTimerRef.current);
+        icebreakerTimerRef.current = null;
+      }
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-
-    const candidateName =
-      user?.user_metadata?.full_name?.split(" ")[0] || "Candidate";
-
-    const topicTitle = session.topic || "this topic";
-
-    const icebreakerText =
-      `${candidateName}, to get our discussion rolling on "${topicTitle}", ` +
-      `what is your opening perspective on this issue?`;
-
-    await postModeratorLine(icebreakerText);
-    logRoomEvent('icebreaker', true, { after_s: 30 });
-
-    toast({
-      title: "Floor offered to you",
-      description:
-        "The moderator asked for your initial thoughts. Tap the mic or type to respond.",
-    });
-
-    icebreakerTimerRef.current = null;
-  }, 30_000);
-
-  return () => {
+    // Prevent accidentally creating multiple timers.
     if (icebreakerTimerRef.current) {
       clearTimeout(icebreakerTimerRef.current);
-      icebreakerTimerRef.current = null;
     }
-  };
-}, [
-  session,
-  clock?.stage,
-  floorLocked,
-  hasSentFirstMessage,
-  messages,
-  isPaused,
-  toast,
-]);
-  
+
+    icebreakerTimerRef.current = setTimeout(async () => {
+      // Re-check the conditions when the timer actually fires.
+      if (
+        !session ||
+        isPaused ||
+        floorLocked ||
+        hasSentFirstMessage ||
+        messagesRef.current.some((m) => m.gd_participants?.is_user)
+      ) {
+        return;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const candidateName = user?.user_metadata?.full_name?.split(" ")[0] || "Candidate";
+
+      const topicTitle = session.topic || "this topic";
+
+      const icebreakerText =
+        `${candidateName}, to get our discussion rolling on "${topicTitle}", ` +
+        `what is your opening perspective on this issue?`;
+
+      await postModeratorLine(icebreakerText);
+      logRoomEvent("icebreaker", true, { after_s: 30 });
+
+      toast({
+        title: "Floor offered to you",
+        description: "The moderator asked for your initial thoughts. Tap the mic or type to respond.",
+      });
+
+      icebreakerTimerRef.current = null;
+    }, 30_000);
+
+    return () => {
+      if (icebreakerTimerRef.current) {
+        clearTimeout(icebreakerTimerRef.current);
+        icebreakerTimerRef.current = null;
+      }
+    };
+  }, [session, clock?.stage, floorLocked, hasSentFirstMessage, messages, isPaused, toast]);
+
   useEffect(() => {
-    if (!clock) { protocolContextRef.current = null; return; }
+    if (!clock) {
+      protocolContextRef.current = null;
+      return;
+    }
     protocolContextRef.current = {
       format: gdFormat.id,
       format_label: gdFormat.label,
@@ -215,8 +219,6 @@ useEffect(() => {
     return () => clearInterval(id);
   }, [protocolWindows, isPaused]);
 
-
-  
   // Load auto-mic setting from Zustand store
   useEffect(() => {
     const setting = useAppSettingsStore.getState().autoMicEnabled;
@@ -254,7 +256,9 @@ useEffect(() => {
     pendingTimersRef.current.forEach((id) => clearTimeout(id));
     pendingTimersRef.current.clear();
     if (skipWaitRef.current) {
-      try { skipWaitRef.current(); } catch {}
+      try {
+        skipWaitRef.current();
+      } catch {}
       skipWaitRef.current = null;
     }
     // Stop heartbeat
@@ -269,7 +273,11 @@ useEffect(() => {
     }
     // Run all registered cleanups (audio contexts, media streams, TTS, etc.)
     for (const cb of [...cleanupCallbacksRef.current]) {
-      try { cb(); } catch (e) { console.warn('[Cleanup] callback failed', e); }
+      try {
+        cb();
+      } catch (e) {
+        console.warn("[Cleanup] callback failed", e);
+      }
     }
   };
 
@@ -278,16 +286,13 @@ useEffect(() => {
     isInactiveRef.current = true;
     setIsPaused(true);
     try {
-      await supabase
-        .from('gd_sessions')
-        .update({ status: 'paused' })
-        .eq('id', sessionId);
+      await supabase.from("gd_sessions").update({ status: "paused" }).eq("id", sessionId);
       toast({
-        title: 'Session inactive',
-        description: 'Session paused after 15 minutes of inactivity.',
+        title: "Session inactive",
+        description: "Session paused after 15 minutes of inactivity.",
       });
     } catch (e) {
-      console.warn('[Idle] Failed to mark session inactive', e);
+      console.warn("[Idle] Failed to mark session inactive", e);
     }
     // Centralized cleanup: audio, streams, timers, realtime channels
     runCentralizedCleanup();
@@ -295,20 +300,27 @@ useEffect(() => {
 
   useEffect(() => {
     if (!session) return;
-    const isDrive = (session.topic_category === 'Mock Drive') || /^DRIVE-/i.test(session.room_code ?? '');
+    const isDrive = session.topic_category === "Mock Drive" || /^DRIVE-/i.test(session.room_code ?? "");
     setRoomContext({ sessionId, isDrive, isGroup: !!session.is_multiplayer });
-    logRoomEvent('room_open', true, { status: session.status });
+    logRoomEvent("room_open", true, { status: session.status });
     try {
-      const sc = JSON.parse(localStorage.getItem('gd-last-soundcheck') || 'null');
+      const sc = JSON.parse(localStorage.getItem("gd-last-soundcheck") || "null");
       if (sc && Date.now() - sc.at < 10 * 60_000) {
-        logRoomEvent('soundcheck', !!sc.audio, { mic: sc.mic, audio: sc.audio });
-        localStorage.removeItem('gd-last-soundcheck');
+        logRoomEvent("soundcheck", !!sc.audio, { mic: sc.mic, audio: sc.audio });
+        localStorage.removeItem("gd-last-soundcheck");
       }
-    } catch { /* ignore */ }
-    navigator.permissions?.query({ name: 'microphone' as PermissionName })
-      .then((p) => logRoomEvent('mic_permission', p.state !== 'denied', { state: p.state }))
+    } catch {
+      /* ignore */
+    }
+    navigator.permissions
+      ?.query({ name: "microphone" as PermissionName })
+      .then((p) => logRoomEvent("mic_permission", p.state !== "denied", { state: p.state }))
       .catch(() => {});
-    return () => { logRoomEvent('room_close', true); void flushRoomLog(); setRoomContext({ sessionId: null }); };
+    return () => {
+      logRoomEvent("room_close", true);
+      void flushRoomLog();
+      setRoomContext({ sessionId: null });
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, !!session]);
 
@@ -320,11 +332,11 @@ useEffect(() => {
 
   useEffect(() => {
     resetIdleTimer();
-    const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'click', 'touchstart'];
-    events.forEach(ev => window.addEventListener(ev, resetIdleTimer, { passive: true } as any));
+    const events: (keyof WindowEventMap)[] = ["mousemove", "keydown", "click", "touchstart"];
+    events.forEach((ev) => window.addEventListener(ev, resetIdleTimer, { passive: true } as any));
     return () => {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-      events.forEach(ev => window.removeEventListener(ev, resetIdleTimer));
+      events.forEach((ev) => window.removeEventListener(ev, resetIdleTimer));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
@@ -340,11 +352,11 @@ useEffect(() => {
     }
     const ping = () => {
       supabase
-        .from('gd_sessions')
+        .from("gd_sessions")
         .update({ updated_at: new Date().toISOString(), last_activity_at: new Date().toISOString() })
-        .eq('id', sessionId)
+        .eq("id", sessionId)
         .then(({ error }) => {
-          if (error) console.warn('[Heartbeat] failed', error.message);
+          if (error) console.warn("[Heartbeat] failed", error.message);
         });
     };
     ping();
@@ -358,7 +370,8 @@ useEffect(() => {
   }, [sessionId, isPaused]);
 
   // Any new message or transcription counts as activity
-  useEffect(() => { resetIdleTimer(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    resetIdleTimer(); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, userInput]);
 
   // Ensure central cleanup on unmount
@@ -371,26 +384,31 @@ useEffect(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-
-  
   // Phase B — live refs so speculative generation (fired from an interim
   // transcript, inside a callback created at mount) always sees fresh state.
-  
+
   const sessionRef = useRef<any>(null);
   const isPausedRef = useRef(false);
-  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
   const participantsRef = useRef<any[]>([]);
   const messagesRef = useRef<any[]>([]);
-  useEffect(() => { sessionRef.current = session; }, [session]);
-  useEffect(() => { participantsRef.current = participants; }, [participants]);
-  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+  useEffect(() => {
+    participantsRef.current = participants;
+  }, [participants]);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   /** Single source of truth for the gd-conductor payload (speculative + real). */
   const buildConductorBody = (latestText: string) => {
     const sess = sessionRef.current;
     const parts = participantsRef.current || [];
-    const savedTrack =  localStorage.getItem(`gd-track-${sessionId}`) || "bschool";
+    const savedTrack = localStorage.getItem(`gd-track-${sessionId}`) || "bschool";
     return {
       session_id: sessionId,
       topic: sess?.topic,
@@ -420,7 +438,7 @@ useEffect(() => {
         order_index: p.order_index,
       })),
       conversation_history: (messagesRef.current || []).map((m: any) => ({
-        who: m.gd_participants?.persona_name || 'Unknown',
+        who: m.gd_participants?.persona_name || "Unknown",
         text: m.text,
         start_ts: m.start_ts,
         end_ts: m.end_ts,
@@ -428,28 +446,28 @@ useEffect(() => {
       latest_user_utterance: latestText,
       config: {
         max_reply_words: 55,
-        interruption_mode: 'light',
-        invigilator_mode: 'coaching',
+        interruption_mode: "light",
+        invigilator_mode: "coaching",
         moderator_mode: localStorage.getItem(`gd-moderator-${sessionId}`) === "true",
         citation_mode: localStorage.getItem(`gd-citation-${sessionId}`) === "true",
-        originality_mode: 'strict',
+        originality_mode: "strict",
         track: savedTrack,
       },
       protocol: protocolContextRef.current,
-      request: 'generate_responses',
+      request: "generate_responses",
     } as Record<string, unknown>;
   };
 
   // Streaming transcription for real-time voice input (like Google Keyboard)
-  const { 
-    isListening, 
+  const {
+    isListening,
     isMicInitializing,
-    isSupported: isSpeechSupported, 
+    isSupported: isSpeechSupported,
     isCorrecting,
     displayText: streamingText,
-    startListening, 
+    startListening,
     stopListening,
-    clearTranscription
+    clearTranscription,
   } = useStreamingTranscription({
     context: session?.topic,
     onInterimResult: (text) => {
@@ -458,7 +476,7 @@ useEffect(() => {
       if (!isPausedRef.current && !isInactiveRef.current) {
         speculate(text, {
           body: buildConductorBody(text),
-          invoke: (body) => invokeWithAuth('gd-conductor', { body }) as any,
+          invoke: (body) => invokeWithAuth("gd-conductor", { body }) as any,
         });
       }
     },
@@ -482,48 +500,46 @@ useEffect(() => {
       // Correction complete
     },
   });
-  
+
   const { isSpeaking, currentSpeaker, usingFallbackTTS, speak, stop: stopSpeaking } = useTextToSpeech();
   const handleInterject = useCallback(
-  (interruptionPhrase: string) => {
-    try {
-      // Stop AI audio immediately
-      stopSpeaking();
-      roomMixer.stopAll();
+    (interruptionPhrase: string) => {
+      try {
+        // Stop AI audio immediately
+        stopSpeaking();
+        roomMixer.stopAll();
 
-      // Cancel speculative AI generation / backchannels
-      clearSpeculation();
-      clearBackchannels();
-    } catch (err) {
-      console.warn("Error cutting audio on interruption:", err);
-    }
+        // Cancel speculative AI generation / backchannels
+        clearSpeculation();
+        clearBackchannels();
+      } catch (err) {
+        console.warn("Error cutting audio on interruption:", err);
+      }
 
-    logRoomEvent('interjection', true, { phrase: interruptionPhrase });
-    const prefixedInput = `${interruptionPhrase} `;
+      logRoomEvent("interjection", true, { phrase: interruptionPhrase });
+      const prefixedInput = `${interruptionPhrase} `;
 
-    // Immediately show the interruption phrase
-    setUserInput(prefixedInput);
+      // Immediately show the interruption phrase
+      setUserInput(prefixedInput);
 
-    // Start microphone with the phrase as the transcript prefix.
-    // startListening() already supports existingText.
-    setTimeout(() => {
-      startListening(prefixedInput);
-    }, 0);
+      // Start microphone with the phrase as the transcript prefix.
+      // startListening() already supports existingText.
+      setTimeout(() => {
+        startListening(prefixedInput);
+      }, 0);
 
-    toast({
-      title: "Floor Claimed",
-      description: `You interjected: "${interruptionPhrase}"`,
-      duration: 2500,
-    });
-  },
-  [
-    stopSpeaking,
-    startListening,
-    toast,
-  ]
-);
+      toast({
+        title: "Floor Claimed",
+        description: `You interjected: "${interruptionPhrase}"`,
+        duration: 2500,
+      });
+    },
+    [stopSpeaking, startListening, toast],
+  );
   const isSpeakingRef = useRef(false);
-  useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
+  useEffect(() => {
+    isSpeakingRef.current = isSpeaking;
+  }, [isSpeaking]);
 
   // Never leave the mic open while an AI participant is talking — otherwise the
   // recogniser transcribes the AI's own voice back into the user's input.
@@ -537,11 +553,17 @@ useEffect(() => {
 
   // Register TTS stop with centralized cleanup so idle/unmount stops any playback
   useEffect(() => {
-    return registerCleanup(() => { try { stopSpeaking(); roomMixer.stopAll(); clearSpeculation(); clearBackchannels(); } catch {} });
+    return registerCleanup(() => {
+      try {
+        stopSpeaking();
+        roomMixer.stopAll();
+        clearSpeculation();
+        clearBackchannels();
+      } catch {}
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  
   // Multiplayer presence
   const { presenceState, typingParticipants, speakingParticipants, setTyping, setSpeaking } = useMultiplayerPresence({
     sessionId,
@@ -588,49 +610,51 @@ useEffect(() => {
 
   // Track which messages we've already processed for TTS to avoid duplicates
   const processedMessagesRef = useRef<Set<string>>(new Set());
-  
+
   // Get current user ID for multiplayer identification
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  
+
   useEffect(() => {
     const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
     };
     getCurrentUser();
   }, []);
-  
+
   // Realtime subscription for multiplayer participants sync (update when new participants join)
   useEffect(() => {
     if (!session?.is_multiplayer || isPaused) return;
 
-    console.log('[Multiplayer] Setting up realtime subscription for participants:', sessionId);
+    console.log("[Multiplayer] Setting up realtime subscription for participants:", sessionId);
 
     const participantsChannel = supabase
       .channel(`gd_participants_${sessionId}_${Math.random().toString(36).slice(2)}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'gd_participants',
-          filter: `session_id=eq.${sessionId}`
+          event: "INSERT",
+          schema: "public",
+          table: "gd_participants",
+          filter: `session_id=eq.${sessionId}`,
         },
         async (payload) => {
-          console.log('[Multiplayer] New participant joined:', payload.new);
+          console.log("[Multiplayer] New participant joined:", payload.new);
           // Add the new participant to the list
-          setParticipants(prev => {
-            if (prev.find(p => p.id === payload.new.id)) return prev;
+          setParticipants((prev) => {
+            if (prev.find((p) => p.id === payload.new.id)) return prev;
             return [...prev, payload.new].sort((a, b) => a.order_index - b.order_index);
           });
-        }
+        },
       )
       .subscribe((status) => {
-        console.log('[Multiplayer] Participants subscription status:', status);
+        console.log("[Multiplayer] Participants subscription status:", status);
       });
 
     return () => {
-      console.log('[Multiplayer] Cleaning up participants subscription');
+      console.log("[Multiplayer] Cleaning up participants subscription");
       supabase.removeChannel(participantsChannel);
     };
   }, [sessionId, session?.is_multiplayer, isPaused]);
@@ -639,86 +663,100 @@ useEffect(() => {
   useEffect(() => {
     if (!session?.is_multiplayer || isPaused) return;
 
-    console.log('[Multiplayer] Setting up realtime subscription for session:', sessionId);
+    console.log("[Multiplayer] Setting up realtime subscription for session:", sessionId);
 
     const channel = supabase
       .channel(`gd_messages_${sessionId}_${Math.random().toString(36).slice(2)}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'gd_messages',
-          filter: `session_id=eq.${sessionId}`
+          event: "INSERT",
+          schema: "public",
+          table: "gd_messages",
+          filter: `session_id=eq.${sessionId}`,
         },
         async (payload) => {
-          console.log('[Multiplayer] Received new message via realtime:', payload.new);
-          
+          console.log("[Multiplayer] Received new message via realtime:", payload.new);
+
           // Skip if we've already processed this message
           if (processedMessagesRef.current.has(payload.new.id)) {
-            console.log('[Multiplayer] Message already processed, skipping:', payload.new.id);
+            console.log("[Multiplayer] Message already processed, skipping:", payload.new.id);
             return;
           }
 
           // Fetch the complete message with participant info
           const { data: newMessage, error: fetchError } = await supabase
-            .from('gd_messages')
-            .select('*, gd_participants(*)')
-            .eq('id', payload.new.id)
+            .from("gd_messages")
+            .select("*, gd_participants(*)")
+            .eq("id", payload.new.id)
             .single();
 
           if (fetchError) {
-            console.error('[Multiplayer] Error fetching message details:', fetchError);
+            console.error("[Multiplayer] Error fetching message details:", fetchError);
             return;
           }
 
           if (newMessage) {
-            console.log('[Multiplayer] Fetched message with participant:', newMessage);
-            
+            console.log("[Multiplayer] Fetched message with participant:", newMessage);
+
             // Check if this message was sent by the current authenticated user
             // Use real_user_id to properly identify messages in multiplayer (multiple humans)
             const messageParticipant = newMessage.gd_participants;
             const isOwnMessage = messageParticipant?.real_user_id === currentUserId;
-            
-            console.log('[Multiplayer] Current user:', currentUserId, 'Message from real_user_id:', messageParticipant?.real_user_id, 'Is own:', isOwnMessage);
-            
+
+            console.log(
+              "[Multiplayer] Current user:",
+              currentUserId,
+              "Message from real_user_id:",
+              messageParticipant?.real_user_id,
+              "Is own:",
+              isOwnMessage,
+            );
+
             // Mark as processed
             processedMessagesRef.current.add(newMessage.id);
-            
-            setMessages(prev => {
+
+            setMessages((prev) => {
               // Avoid duplicates in state
-              if (prev.find(m => m.id === newMessage.id)) return prev;
+              if (prev.find((m) => m.id === newMessage.id)) return prev;
               return [...prev, newMessage];
             });
 
             // Play TTS for messages from other participants (not our own messages)
             // This includes messages from other human players AND AI participants triggered by them
             if (!isOwnMessage && autoPlayTTS && messageParticipant) {
-              console.log('[Multiplayer TTS] Playing message from:', messageParticipant.persona_name, 'Voice:', messageParticipant.voice_name);
+              console.log(
+                "[Multiplayer TTS] Playing message from:",
+                messageParticipant.persona_name,
+                "Voice:",
+                messageParticipant.voice_name,
+              );
               try {
                 await speak(newMessage.text, messageParticipant.persona_name, messageParticipant.voice_name);
-                console.log('[Multiplayer TTS] Finished speaking message from:', messageParticipant.persona_name);
-                
+                console.log("[Multiplayer TTS] Finished speaking message from:", messageParticipant.persona_name);
+
                 // If this was a human participant's message (is_user=true), add delay before AI responds
                 // This ensures the receiving client waits for human speech to finish before AI TTS plays
                 if (messageParticipant.is_user) {
                   const speechDelay = Math.min(Math.max(newMessage.text.length * 80, 2000), 10000);
-                  console.log(`[Multiplayer TTS] Human participant message - adding ${speechDelay}ms buffer for speech sync`);
-                  await new Promise(resolve => setTimeout(resolve, speechDelay));
+                  console.log(
+                    `[Multiplayer TTS] Human participant message - adding ${speechDelay}ms buffer for speech sync`,
+                  );
+                  await new Promise((resolve) => setTimeout(resolve, speechDelay));
                 }
               } catch (e) {
-                console.error('[Multiplayer TTS] Error:', e);
+                console.error("[Multiplayer TTS] Error:", e);
               }
             }
           }
-        }
+        },
       )
       .subscribe((status) => {
-        console.log('[Multiplayer] Subscription status:', status);
+        console.log("[Multiplayer] Subscription status:", status);
       });
 
     return () => {
-      console.log('[Multiplayer] Cleaning up realtime subscription');
+      console.log("[Multiplayer] Cleaning up realtime subscription");
       supabase.removeChannel(channel);
     };
   }, [sessionId, session?.is_multiplayer, currentUserId, autoPlayTTS, speak, isPaused]);
@@ -737,21 +775,21 @@ useEffect(() => {
     source.connect(analyser);
     let stopped = false;
     let animationId: number | null = null;
-    
+
     analyser.fftSize = 256;
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
     const checkLevel = () => {
-      if (!isRecordingPractice || stopped || audioContext.state === 'closed') return;
-      
+      if (!isRecordingPractice || stopped || audioContext.state === "closed") return;
+
       analyser.getByteFrequencyData(dataArray);
       const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
       const normalizedLevel = average / 255;
       updateFromAudioLevel(normalizedLevel);
-      
+
       animationId = requestAnimationFrame(checkLevel);
     };
-    
+
     checkLevel();
     resetWordCount();
 
@@ -771,32 +809,31 @@ useEffect(() => {
       unregister();
       cleanupAudio();
     };
-
   }, [isRecordingPractice, practiceStream]);
 
   const loadSession = async () => {
     try {
       const { data: sessionData, error: sessionError } = await supabase
-        .from('gd_sessions')
-        .select('*')
-        .eq('id', sessionId)
+        .from("gd_sessions")
+        .select("*")
+        .eq("id", sessionId)
         .single();
 
       if (sessionError) throw sessionError;
 
       const { data: participantsData, error: participantsError } = await supabase
-        .from('gd_participants')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('order_index');
+        .from("gd_participants")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("order_index");
 
       if (participantsError) throw participantsError;
 
       const { data: messagesData, error: messagesError } = await supabase
-        .from('gd_messages')
-        .select('*, gd_participants(*)')
-        .eq('session_id', sessionId)
-        .order('start_ts');
+        .from("gd_messages")
+        .select("*, gd_participants(*)")
+        .eq("session_id", sessionId)
+        .order("start_ts");
 
       if (messagesError) throw messagesError;
 
@@ -804,20 +841,18 @@ useEffect(() => {
       setParticipants(participantsData);
       // Pre-synthesise short reactions once per AI voice so the room can react
       // within ~300ms of the user finishing, without a per-turn TTS call.
-      void primeBackchannels(
-        (participantsData || []).filter((p: any) => !p.is_user).map((p: any) => p.voice_name),
-      );
+      void primeBackchannels((participantsData || []).filter((p: any) => !p.is_user).map((p: any) => p.voice_name));
       setMessages(messagesData || []);
 
       // Update session status to active
-      if (sessionData.status === 'setup') {
+      if (sessionData.status === "setup") {
         await supabase
-          .from('gd_sessions')
-          .update({ status: 'active', start_time: new Date().toISOString() })
-          .eq('id', sessionId);
+          .from("gd_sessions")
+          .update({ status: "active", start_time: new Date().toISOString() })
+          .eq("id", sessionId);
       }
     } catch (error: any) {
-      console.error('Error loading session:', error);
+      console.error("Error loading session:", error);
       toast({
         title: "Error loading session",
         description: error.message,
@@ -832,21 +867,27 @@ useEffect(() => {
     const msg = {
       id: `moderator-${Date.now()}`,
       session_id: sessionId,
-      participant_id: 'moderator',
+      participant_id: "moderator",
       text,
       created_at: new Date().toISOString(),
-      gd_participants: { persona_name: 'Moderator', is_user: false },
+      gd_participants: { persona_name: "Moderator", is_user: false },
     };
     setMessages((prev) => [...prev, msg]);
     if (autoPlayTTS) {
-      try { await speak(text, 'Moderator', 'alloy'); } catch { /* TTS is best-effort */ }
+      try {
+        await speak(text, "Moderator", "alloy");
+      } catch {
+        /* TTS is best-effort */
+      }
     }
   };
 
   // ---- Fair turns: the human joins the same queue as AI members ----
   const turnQueue = useTurnQueue(sessionId);
   const turnHolderRef = useRef(false);
-  useEffect(() => { turnHolderRef.current = turnQueue.isHolder; }, [turnQueue.isHolder]);
+  useEffect(() => {
+    turnHolderRef.current = turnQueue.isHolder;
+  }, [turnQueue.isHolder]);
   useEffect(() => {
     if (!sessionId || isPaused) return;
     if (isListening && !isSpeaking) {
@@ -867,15 +908,15 @@ useEffect(() => {
     if (!turnQueue.isHolder || slotRemaining === null || !activeTurn?.id) return;
     if (slotRemaining <= 10 && slotRemaining > 0 && slotWarnedRef.current !== activeTurn.id) {
       slotWarnedRef.current = activeTurn.id;
-      logRoomEvent('slot_warning', true, { remaining: slotRemaining });
-      toast({ title: '10 seconds left', description: 'Wrap up your point — the floor passes on soon.' });
+      logRoomEvent("slot_warning", true, { remaining: slotRemaining });
+      toast({ title: "10 seconds left", description: "Wrap up your point — the floor passes on soon." });
     }
     if (slotRemaining === 0 && slotEndedRef.current !== activeTurn.id) {
       slotEndedRef.current = activeTurn.id;
-      logRoomEvent('slot_expired', true, { slot_seconds: slotSeconds });
+      logRoomEvent("slot_expired", true, { slot_seconds: slotSeconds });
       if (isListening) stopListening();
       void turnQueue.release();
-      toast({ title: 'Time is up', description: 'Your slot ended — the floor has passed to the next speaker.' });
+      toast({ title: "Time is up", description: "Your slot ended — the floor has passed to the next speaker." });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slotRemaining, turnQueue.isHolder, activeTurn?.id]);
@@ -884,10 +925,17 @@ useEffect(() => {
   const lastQuietInviteRef = useRef(0);
   useEffect(() => {
     if (
-      !session || isPaused || clock?.stage !== 'discussion' || floorLocked ||
-      isSpeaking || isListening || isProcessing || turnQueue.active ||
+      !session ||
+      isPaused ||
+      clock?.stage !== "discussion" ||
+      floorLocked ||
+      isSpeaking ||
+      isListening ||
+      isProcessing ||
+      turnQueue.active ||
       !(hasSentFirstMessage || messages.some((m) => m.gd_participants?.is_user))
-    ) return;
+    )
+      return;
     const t = window.setTimeout(async () => {
       if (Date.now() - lastQuietInviteRef.current < 60_000) return;
       if (isSpeakingRef.current) return;
@@ -897,53 +945,67 @@ useEffect(() => {
       const quiet = [...pool].sort((a, b) => a.words - b.words)[0];
       if (!quiet) return;
       lastQuietInviteRef.current = Date.now();
-      const { data: { user: me } } = await supabase.auth.getUser();
-      const myName = me?.user_metadata?.full_name?.split(' ')[0] || 'you';
-      const name = quiet.name === 'You' ? myName : quiet.name;
-      await postModeratorLine(`${name}, the floor is open — we'd like to hear your view. You have ${TURN_SLOT_SECONDS} seconds.`);
-      logRoomEvent('icebreaker', true, { after_s: 8, kind: 'quiet_invite', target: quiet.participantId });
+      const {
+        data: { user: me },
+      } = await supabase.auth.getUser();
+      const myName = me?.user_metadata?.full_name?.split(" ")[0] || "you";
+      const name = quiet.name === "You" ? myName : quiet.name;
+      await postModeratorLine(
+        `${name}, the floor is open — we'd like to hear your view. You have ${TURN_SLOT_SECONDS} seconds.`,
+      );
+      logRoomEvent("icebreaker", true, { after_s: 8, kind: "quiet_invite", target: quiet.participantId });
     }, 8_000);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.id, isPaused, clock?.stage, floorLocked, isSpeaking, isListening, isProcessing, turnQueue.active?.id, messages.length, hasSentFirstMessage]);
+  }, [
+    session?.id,
+    isPaused,
+    clock?.stage,
+    floorLocked,
+    isSpeaking,
+    isListening,
+    isProcessing,
+    turnQueue.active?.id,
+    messages.length,
+    hasSentFirstMessage,
+  ]);
 
   const handleSendMessageDirect = async (textToSend: string) => {
     if (!textToSend.trim() || isProcessing || isPaused) return;
     if (floorLocked) {
       toast({
-        title: isReadingWindow ? 'Mic locked — topic reading' : 'Not your closing slot',
+        title: isReadingWindow ? "Mic locked — topic reading" : "Not your closing slot",
         description: isReadingWindow
-          ? 'The floor opens when the reading window ends.'
-          : `Wait for your turn in the closing round${activeSlot ? ` — ${activeSlot.name} is summarising.` : '.'}`,
+          ? "The floor opens when the reading window ends."
+          : `Wait for your turn in the closing round${activeSlot ? ` — ${activeSlot.name} is summarising.` : "."}`,
       });
       return;
     }
 
-
     setIsProcessing(true);
     // Find the participant that matches the current authenticated user
     // In multiplayer, multiple participants have is_user=true, so match by real_user_id
-    const userParticipant = participants.find(p => p.is_user && p.real_user_id === currentUserId) 
-      || participants.find(p => p.is_user); // Fallback for solo mode
+    const userParticipant =
+      participants.find((p) => p.is_user && p.real_user_id === currentUserId) || participants.find((p) => p.is_user); // Fallback for solo mode
     const messageText = textToSend.trim();
 
     try {
       // Save user message
       const { data: userMessage, error: messageError } = await supabase
-        .from('gd_messages')
+        .from("gd_messages")
         .insert({
           session_id: sessionId,
           participant_id: userParticipant.id,
           text: messageText,
           intent: null,
-          interruption: false
+          interruption: false,
         })
-        .select('*, gd_participants(*)')
+        .select("*, gd_participants(*)")
         .single();
 
       if (messageError) throw messageError;
 
-      setMessages(prev => [...prev, userMessage]);
+      setMessages((prev) => [...prev, userMessage]);
       processedMessagesRef.current.add(userMessage.id); // Prevent realtime handler from re-playing TTS
 
       // Phase B — immediate room reaction ("mm-hm", "right") from a random AI
@@ -963,7 +1025,7 @@ useEffect(() => {
       }
       setUserInput("");
       clearTranscription();
-      
+
       // Mark first message sent
       if (!hasSentFirstMessage) {
         setHasSentFirstMessage(true);
@@ -975,15 +1037,17 @@ useEffect(() => {
       const baseDelay = session?.is_multiplayer ? 2000 : 1000;
       const charDelay = messageText.length * 80; // ~80ms per character for TTS playback
       const humanSpeechDelay = Math.min(Math.max(baseDelay + charDelay, 2000), 15000);
-      console.log(`[AI Response Delay] Message length: ${messageText.length} chars, waiting ${humanSpeechDelay}ms for speech to complete...`);
-      
+      console.log(
+        `[AI Response Delay] Message length: ${messageText.length} chars, waiting ${humanSpeechDelay}ms for speech to complete...`,
+      );
+
       setIsWaitingForSpeech(true);
-      await new Promise<void>(resolve => {
+      await new Promise<void>((resolve) => {
         const timeoutId = scheduleSessionTimeout(() => {
           skipWaitRef.current = null;
           resolve();
         }, humanSpeechDelay);
-        
+
         // Allow skipping the wait
         skipWaitRef.current = () => {
           clearTimeout(timeoutId);
@@ -993,49 +1057,55 @@ useEffect(() => {
       });
       setIsWaitingForSpeech(false);
       if (isInactiveRef.current || isPaused) return;
-      console.log('[AI Response Delay] Proceeding with AI response generation');
+      console.log("[AI Response Delay] Proceeding with AI response generation");
 
       // Get AI responses
-
 
       // Reuse an in-flight speculative request when the final utterance matches
       // what we already started generating from the interim transcript.
       const speculated = claimSpeculation(messageText);
       const { data: aiResponse, error: aiError } = speculated
         ? await speculated
-        : await invokeWithAuth('gd-conductor', { body: buildConductorBody(messageText) });
+        : await invokeWithAuth("gd-conductor", { body: buildConductorBody(messageText) });
 
       if (aiError) {
-        console.error('AI Error:', aiError);
+        console.error("AI Error:", aiError);
         // Record the real status + server message so Room health shows the cause.
         let status: number | undefined;
-        let detail = '';
+        let detail = "";
         try {
           const ctx = (aiError as any)?.context;
-          if (ctx && typeof ctx.status === 'number') {
+          if (ctx && typeof ctx.status === "number") {
             status = ctx.status;
             detail = (await ctx.clone().text()).slice(0, 300);
           }
-        } catch { /* ignore */ }
-        logRoomEvent('ai_reply', false, { source: 'failed', status, detail, message: String(aiError.message || aiError).slice(0, 200) });
+        } catch {
+          /* ignore */
+        }
+        logRoomEvent("ai_reply", false, {
+          source: "failed",
+          status,
+          detail,
+          message: String(aiError.message || aiError).slice(0, 200),
+        });
         throw aiError;
       }
 
-      console.log('AI Response:', aiResponse);
+      console.log("AI Response:", aiResponse);
 
       // AI providers unavailable (credits/quota): the room keeps running without
       // AI voices instead of throwing and blanking the screen.
-      logRoomEvent('ai_reply', !aiResponse?.degraded, {
-        source: aiResponse?.degraded ? `degraded:${aiResponse?.error ?? 'unknown'}` : (aiResponse?.provider ?? 'main'),
+      logRoomEvent("ai_reply", !aiResponse?.degraded, {
+        source: aiResponse?.degraded ? `degraded:${aiResponse?.error ?? "unknown"}` : (aiResponse?.provider ?? "main"),
         speakers: Array.isArray(aiResponse?.participant_responses) ? aiResponse.participant_responses.length : 0,
       });
       if (aiResponse?.degraded) {
-        if (aiResponse.error === 'payment_required' || aiResponse.error === 'rate_limit') {
+        if (aiResponse.error === "payment_required" || aiResponse.error === "rate_limit") {
           setIsQuotaExhausted(true);
         }
         toast({
-          title: aiResponse.error === 'payment_required' ? 'AI participants paused' : 'AI participants unavailable',
-          description: aiResponse.message || 'Your speech is still being recorded and scored.',
+          title: aiResponse.error === "payment_required" ? "AI participants paused" : "AI participants unavailable",
+          description: aiResponse.message || "Your speech is still being recorded and scored.",
         });
       }
 
@@ -1050,14 +1120,17 @@ useEffect(() => {
         const clipPromises = autoPlayTTS
           ? responses.map((r) => {
               const p = participants.find((x) => x.id === r.participant_id);
-              const voice = r.participant_id === 'moderator' ? 'alloy' : p?.voice_name;
+              const voice = r.participant_id === "moderator" ? "alloy" : p?.voice_name;
               return roomMixer.prepare(r.text, voice);
             })
           : [];
 
         for (let i = 0; i < responses.length; i++) {
           const response = responses[i];
-          const seatIndex = Math.max(0, participants.findIndex((p) => p.id === response.participant_id));
+          const seatIndex = Math.max(
+            0,
+            participants.findIndex((p) => p.id === response.participant_id),
+          );
           const seat = participants.length > 1 ? seatIndex / (participants.length - 1) : 0.5;
           const overlap = response.interruption ? Math.min(Number(response.overlap_seconds) || 1.2, 2.5) : 0;
 
@@ -1076,44 +1149,53 @@ useEffect(() => {
                 rate: prosody.rate,
                 detune: prosody.detune,
                 speakerId,
-                speaker: response.participant_id === 'moderator' ? 'Moderator' : undefined,
-                seat: response.participant_id === 'moderator' ? 0.5 : seat,
+                speaker: response.participant_id === "moderator" ? "Moderator" : undefined,
+                seat: response.participant_id === "moderator" ? 0.5 : seat,
                 overlapSeconds: overlap,
                 interruption: !!response.interruption,
               });
             } catch (e) {
-              console.error('TTS error:', e);
+              console.error("TTS error:", e);
             }
           };
 
           // Handle moderator messages (no real participant_id in DB)
-          if (response.participant_id === 'moderator') {
+          if (response.participant_id === "moderator") {
             const moderatorMsg = {
               id: `moderator-${Date.now()}`,
               session_id: sessionId,
-              participant_id: 'moderator',
+              participant_id: "moderator",
               text: response.text,
               intent: response.intent,
               start_ts: new Date().toISOString(),
               gd_participants: {
-                persona_name: 'Moderator',
+                persona_name: "Moderator",
                 is_user: false,
-                voice_name: 'alloy',
+                voice_name: "alloy",
               },
             };
-            setMessages(prev => [...prev, moderatorMsg]);
-            await playClip('moderator');
+            setMessages((prev) => [...prev, moderatorMsg]);
+            await playClip("moderator");
             continue;
           }
 
           // The AI sometimes names a member ("pooja") instead of its id — map it back.
           const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          if (!UUID_RE.test(String(response.participant_id || ''))) {
-            const key = String(response.participant_id || '').trim().toLowerCase();
+          if (!UUID_RE.test(String(response.participant_id || ""))) {
+            const key = String(response.participant_id || "")
+              .trim()
+              .toLowerCase();
             const aiMembers = participants.filter((p: any) => !p.is_user);
-            const match = aiMembers.find((p: any) => String(p.persona_name || '').toLowerCase() === key)
-              ?? aiMembers.find((p: any) => { const n = String(p.persona_name || '').toLowerCase(); return !!key && (n.startsWith(key) || n.split(/\s+/)[0] === key); });
-            if (!match) { console.warn('Unknown AI speaker', response.participant_id); continue; }
+            const match =
+              aiMembers.find((p: any) => String(p.persona_name || "").toLowerCase() === key) ??
+              aiMembers.find((p: any) => {
+                const n = String(p.persona_name || "").toLowerCase();
+                return !!key && (n.startsWith(key) || n.split(/\s+/)[0] === key);
+              });
+            if (!match) {
+              console.warn("Unknown AI speaker", response.participant_id);
+              continue;
+            }
             response.participant_id = match.id;
           }
 
@@ -1122,42 +1204,43 @@ useEffect(() => {
             isCancelled: () => isInactiveRef.current,
           });
           if (!gotFloor) continue;
-          response.text = fitToSlot(String(response.text || ''));
+          response.text = fitToSlot(String(response.text || ""));
           try {
-          const { data: aiMsg, error: aiMsgError } = await supabase
-            .from('gd_messages')
-            .insert({
-              session_id: sessionId,
-              participant_id: response.participant_id,
-              text: response.text,
-              intent: response.intent,
-              interruption: response.interruption,
-              overlap_seconds: response.overlap_seconds,
-              tts_ssml: response.tts_ssml,
-              confidence_estimate: response.confidence_estimate,
-              novelty_note: response.novelty_note || null,
-              lens: response.lens || null,
-              citation: response.citation || null,
-            } as any)
-            .select('*, gd_participants(*)')
-            .single();
+            const { data: aiMsg, error: aiMsgError } = await supabase
+              .from("gd_messages")
+              .insert({
+                session_id: sessionId,
+                participant_id: response.participant_id,
+                text: response.text,
+                intent: response.intent,
+                interruption: response.interruption,
+                overlap_seconds: response.overlap_seconds,
+                tts_ssml: response.tts_ssml,
+                confidence_estimate: response.confidence_estimate,
+                novelty_note: response.novelty_note || null,
+                lens: response.lens || null,
+                citation: response.citation || null,
+              } as any)
+              .select("*, gd_participants(*)")
+              .single();
 
-          if (!aiMsgError && aiMsg) {
-            // Mark as processed BEFORE adding to state to prevent realtime handler duplication
-            processedMessagesRef.current.add(aiMsg.id);
-            setMessages(prev => [...prev, aiMsg]);
-            await playClip(response.participant_id);
-          }
+            if (!aiMsgError && aiMsg) {
+              // Mark as processed BEFORE adding to state to prevent realtime handler duplication
+              processedMessagesRef.current.add(aiMsg.id);
+              setMessages((prev) => [...prev, aiMsg]);
+              await playClip(response.participant_id);
+            }
           } finally {
             await releaseAiFloor(sessionId, response.participant_id);
           }
         }
       }
 
-
       // Phase D — airtime enforcement: nudge the floor back into balance.
       if (!isClosingRound && Date.now() - lastInterjectionAtRef.current > 90_000) {
-        const line = moderatorInterjection(airtimeReport(participantsRef.current as any[], messagesRef.current as any[]));
+        const line = moderatorInterjection(
+          airtimeReport(participantsRef.current as any[], messagesRef.current as any[]),
+        );
         if (line) {
           lastInterjectionAtRef.current = Date.now();
           await postModeratorLine(line);
@@ -1166,7 +1249,9 @@ useEffect(() => {
 
       // Mark the user's closing slot as delivered once they summarise.
       if (isClosingRound && activeSlot?.isUser) {
-        setClosingDoneIds((prev) => (prev.includes(activeSlot.participantId) ? prev : [...prev, activeSlot.participantId]));
+        setClosingDoneIds((prev) =>
+          prev.includes(activeSlot.participantId) ? prev : [...prev, activeSlot.participantId],
+        );
       }
 
       // Update feedback
@@ -1180,9 +1265,8 @@ useEffect(() => {
           if (!isSpeakingRef.current) startListening(userInputRef.current);
         }, 500);
       }
-
     } catch (error: any) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
       toast({
         title: "Error processing message",
         description: error.message || "Please try again",
@@ -1215,71 +1299,71 @@ useEffect(() => {
     if (newPaused) {
       // Pause: stop mic, TTS, update DB status
       stopListening();
-      stopSpeaking(); roomMixer.stopAll();
+      stopSpeaking();
+      roomMixer.stopAll();
       cancelPractice();
       runCentralizedCleanup();
-      await supabase
-        .from('gd_sessions')
-        .update({ status: 'paused' })
-        .eq('id', sessionId);
+      await supabase.from("gd_sessions").update({ status: "paused" }).eq("id", sessionId);
     } else {
       isInactiveRef.current = false;
       resetIdleTimer();
       // Resume: update DB status back to active
-      await supabase
-        .from('gd_sessions')
-        .update({ status: 'active' })
-        .eq('id', sessionId);
+      await supabase.from("gd_sessions").update({ status: "active" }).eq("id", sessionId);
     }
   };
 
   const handleEndSession = async () => {
     try {
       // Stop all ongoing audio/speech activities
-      stopSpeaking(); roomMixer.stopAll();
+      stopSpeaking();
+      roomMixer.stopAll();
       stopListening();
       cancelPractice();
       runCentralizedCleanup();
-      
+
       // Get video metrics if available
       const getVideoMetrics = (window as any).__getVideoSessionMetrics;
       let videoSessionMetrics = null;
       if (getVideoMetrics) {
         videoSessionMetrics = getVideoMetrics();
-        console.log('[EndSession] Video metrics retrieved:', {
+        console.log("[EndSession] Video metrics retrieved:", {
           posture: videoSessionMetrics?.avgPostureScore,
           eyeContact: videoSessionMetrics?.avgEyeContactScore,
           expression: videoSessionMetrics?.avgExpressionScore,
-          totalFrames: videoSessionMetrics?.faceDetectionRate
+          totalFrames: videoSessionMetrics?.faceDetectionRate,
         });
       }
 
       // Save video metrics to database
       // CRITICAL: Check for !== null, not just truthy (0 is valid score, but false in JS)
-      const hasPosture = videoSessionMetrics?.avgPostureScore !== null && videoSessionMetrics?.avgPostureScore !== undefined;
-      const hasEyeContact = videoSessionMetrics?.avgEyeContactScore !== null && videoSessionMetrics?.avgEyeContactScore !== undefined;
-      const hasExpression = videoSessionMetrics?.avgExpressionScore !== null && videoSessionMetrics?.avgExpressionScore !== undefined;
-      
+      const hasPosture =
+        videoSessionMetrics?.avgPostureScore !== null && videoSessionMetrics?.avgPostureScore !== undefined;
+      const hasEyeContact =
+        videoSessionMetrics?.avgEyeContactScore !== null && videoSessionMetrics?.avgEyeContactScore !== undefined;
+      const hasExpression =
+        videoSessionMetrics?.avgExpressionScore !== null && videoSessionMetrics?.avgExpressionScore !== undefined;
+
       if (videoSessionMetrics && (hasPosture || hasEyeContact || hasExpression)) {
-        console.log('[EndSession] Saving video metrics to database...');
-        const { error: metricsError } = await supabase
-          .from('gd_metrics')
-          .upsert({
+        console.log("[EndSession] Saving video metrics to database...");
+        const { error: metricsError } = await supabase.from("gd_metrics").upsert(
+          {
             session_id: sessionId,
             posture_score: hasPosture ? videoSessionMetrics.avgPostureScore : null,
             eye_contact_score: hasEyeContact ? videoSessionMetrics.avgEyeContactScore : null,
             expression_score: hasExpression ? videoSessionMetrics.avgExpressionScore : null,
             video_tips: videoSessionMetrics.tips,
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'session_id', ignoreDuplicates: false });
-        
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "session_id", ignoreDuplicates: false },
+        );
+
         if (metricsError) {
-          console.error('[EndSession] Failed to save video metrics:', metricsError);
+          console.error("[EndSession] Failed to save video metrics:", metricsError);
         } else {
-          console.log('[EndSession] Video metrics saved successfully');
+          console.log("[EndSession] Video metrics saved successfully");
         }
       } else {
-        console.log('[EndSession] No valid video metrics to save');
+        console.log("[EndSession] No valid video metrics to save");
       }
 
       // Save voice metrics from VoiceMetricsPanel to database
@@ -1291,51 +1375,49 @@ useEffect(() => {
           total_words: liveVoiceMetrics.totalWords,
           words_per_min: cappedWpm,
           filler_count: liveVoiceMetrics.fillerCount,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         };
 
-        console.log('[EndSession] Saving voice metrics:', {
+        console.log("[EndSession] Saving voice metrics:", {
           totalWords: voiceData.total_words,
           wpm: voiceData.words_per_min,
           fillers: voiceData.filler_count,
-          speakingTime: liveVoiceMetrics.speakingTimeSeconds
+          speakingTime: liveVoiceMetrics.speakingTimeSeconds,
         });
 
         const { error: voiceMetricsError } = await supabase
-          .from('gd_metrics')
-          .upsert(voiceData, { onConflict: 'session_id', ignoreDuplicates: false });
+          .from("gd_metrics")
+          .upsert(voiceData, { onConflict: "session_id", ignoreDuplicates: false });
 
         if (voiceMetricsError) {
-          console.error('[EndSession] Failed to save voice metrics:', voiceMetricsError);
+          console.error("[EndSession] Failed to save voice metrics:", voiceMetricsError);
         } else {
-          console.log('[EndSession] Voice metrics saved successfully');
+          console.log("[EndSession] Voice metrics saved successfully");
         }
       }
 
       await supabase
-        .from('gd_sessions')
-        .update({ status: 'completed', end_time: new Date().toISOString() })
-        .eq('id', sessionId);
+        .from("gd_sessions")
+        .update({ status: "completed", end_time: new Date().toISOString() })
+        .eq("id", sessionId);
 
       // Enqueue background jobs for training data aggregation
       try {
-        const { enqueueTrainingDataAggregation } = await import('@/lib/job-queue');
+        const { enqueueTrainingDataAggregation } = await import("@/lib/job-queue");
         await enqueueTrainingDataAggregation(sessionId);
       } catch (e) {
-        console.warn('[EndSession] Failed to enqueue background job:', e);
+        console.warn("[EndSession] Failed to enqueue background job:", e);
       }
 
       // Update practice streak
       if (currentUserId && session?.start_time) {
-        const durationMin = Math.max(1, Math.round(
-          (Date.now() - new Date(session.start_time).getTime()) / 60000
-        ));
+        const durationMin = Math.max(1, Math.round((Date.now() - new Date(session.start_time).getTime()) / 60000));
         await updatePracticeStreak(currentUserId, durationMin);
       }
 
       onComplete();
     } catch (error: any) {
-      console.error('Error ending session:', error);
+      console.error("Error ending session:", error);
       toast({
         title: "Error ending session",
         description: error.message,
@@ -1358,9 +1440,7 @@ useEffect(() => {
     if (!audioUrl) return;
 
     // Calculate WPM based on estimated word count and duration
-    const wpm = currentRecordingDuration > 0 
-      ? Math.round((estimatedWordCount / currentRecordingDuration) * 60)
-      : null;
+    const wpm = currentRecordingDuration > 0 ? Math.round((estimatedWordCount / currentRecordingDuration) * 60) : null;
 
     // Accept practice with WPM - transcription already in input from streaming
     acceptPractice(userInput || null, wpm);
@@ -1388,7 +1468,8 @@ useEffect(() => {
     },
     onStopTTS: () => {
       if (isSpeaking) {
-        stopSpeaking(); roomMixer.stopAll();
+        stopSpeaking();
+        roomMixer.stopAll();
       } else if (isPlayingPractice) {
         stopPracticePlayback();
       }
@@ -1400,23 +1481,25 @@ useEffect(() => {
     if (!protocolWindows || !session?.id) return;
     if (session.hard_stop_at) return;
     void supabase
-      .from('gd_sessions')
+      .from("gd_sessions")
       .update({
         reading_ends_at: new Date(protocolWindows.readingEndsMs).toISOString(),
         closing_starts_at: new Date(protocolWindows.closingStartsMs).toISOString(),
         hard_stop_at: new Date(protocolWindows.hardStopMs).toISOString(),
       } as any)
-      .eq('id', session.id)
-      .then(({ error }) => { if (error) console.error('[protocol] persist windows failed', error); });
+      .eq("id", session.id)
+      .then(({ error }) => {
+        if (error) console.error("[protocol] persist windows failed", error);
+      });
   }, [protocolWindows, session?.id, session?.hard_stop_at]);
 
   // Stage announcements: T-2min, T-30s, closing round start.
   useEffect(() => {
     if (!clock || isPaused) return;
     const announce: Record<string, string> = {
-      warning_2m: 'Two minutes left in the open discussion. Start converging.',
-      warning_30s: 'Thirty seconds — begin wrapping up your point.',
-      closing: 'Open discussion is over. We move to the closing round — one summary each.',
+      warning_2m: "Two minutes left in the open discussion. Start converging.",
+      warning_30s: "Thirty seconds — begin wrapping up your point.",
+      closing: "Open discussion is over. We move to the closing round — one summary each.",
     };
     const line = announce[clock.stage];
     if (!line || warnedStagesRef.current.has(clock.stage)) return;
@@ -1426,24 +1509,23 @@ useEffect(() => {
 
   // Hard stop — the panel ends the GD on time.
   useEffect(() => {
-    if (!clock || clock.stage !== 'over' || hardStopFiredRef.current) return;
+    if (!clock || clock.stage !== "over" || hardStopFiredRef.current) return;
     hardStopFiredRef.current = true;
-    toast({ title: "Time's up", description: 'The discussion has ended — generating your report.' });
+    toast({ title: "Time's up", description: "The discussion has ended — generating your report." });
     void handleEndSession();
   }, [clock?.stage]);
 
   if (!session) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-      <p className="text-xl font-mono">LOADING SESSION...</p>
-    </div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-xl font-mono">LOADING SESSION...</p>
+      </div>
+    );
   }
-
 
   return (
     <div className="min-h-full bg-background flex flex-col overflow-visible lg:h-full lg:min-h-0 lg:overflow-hidden">
-      {showTutorial && (
-        <OnboardingTutorial onComplete={() => setShowTutorial(false)} />
-      )}
+      {showTutorial && <OnboardingTutorial onComplete={() => setShowTutorial(false)} />}
 
       <SessionHeader
         session={session}
@@ -1478,7 +1560,8 @@ useEffect(() => {
         </div>
 
         {/* Main Chat Area */}
-        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-1.5 sm:gap-3 lg:gap-4 min-w-0 min-h-[50dvh] sm:min-h-0 flex-1 shrink-0 lg:shrink overflow-visible lg:overflow-hidden">
+        {/* Main Chat Area */}
+        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-1.5 sm:gap-3 lg:gap-4 min-w-0 flex-1 min-h-0 overflow-hidden">
           <MessageList
             messages={messages}
             currentUserId={currentUserId}
@@ -1504,8 +1587,13 @@ useEffect(() => {
               <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-muted-foreground" />
               <span className="text-xs sm:text-sm text-muted-foreground">Waiting for speech...</span>
               <Button
-                variant="outline" size="sm"
-                onClick={() => { if (skipWaitRef.current) { skipWaitRef.current(); } }}
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (skipWaitRef.current) {
+                    skipWaitRef.current();
+                  }
+                }}
                 className="h-6 sm:h-7 px-2 text-[10px] sm:text-xs"
               >
                 <SkipForward className="w-3 h-3 mr-1" />
@@ -1532,69 +1620,67 @@ useEffect(() => {
               onSkip={() => setReadingSkipped(true)}
             />
           ) : (
-          <>
-    {isQuotaExhausted && (
-      <div className="mx-4 mb-2 p-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 flex items-center justify-between text-xs">
-        <div className="text-amber-600 dark:text-amber-400">
-          <strong>Shared AI pool is capped for today.</strong>{" "}
-          Connect your own free personal key to continue uninterrupted.
-        </div>
+            <>
+              {isQuotaExhausted && (
+                <div className="mx-4 mb-2 p-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 flex items-center justify-between text-xs">
+                  <div className="text-amber-600 dark:text-amber-400">
+                    <strong>Shared AI pool is capped for today.</strong> Connect your own free personal key to continue
+                    uninterrupted.
+                  </div>
 
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20"
-          onClick={() =>
-            window.open("/home/settings/ai-providers", "_blank")
-          }
-        >
-          Add Free Key
-        </Button>
-      </div>
-    )}
-          {activeTurn?.granted_at && (
-            <SpeakerCountdown
-              grantedAt={activeTurn.granted_at}
-              slotSeconds={slotSeconds}
-              isSelf={turnQueue.isHolder}
-              speakerLabel={activeTurn.participant_kind === 'ai' ? 'AI member' : 'Another participant'}
-            />
-          )}
-          <MessageInput
-            userInput={userInput}
-            isListening={isListening}
-            isProcessing={isProcessing}
-            isPracticing={isPracticing}
-            isCorrecting={isCorrecting}
-            isPaused={isPaused}
-            floorLocked={floorLocked || isSpeaking || isWaitingForSpeech}
-            isMicInitializing={isMicInitializing}
-            activeSpeakerName={
-              isSpeaking
-              ? currentSpeaker || "AI participant"
-              : undefined
-            }
-            isBusy={isWaitingForSpeech || isSpeaking || floorLocked}
-            autoSendEnabled={autoSendEnabled}
-            autoSkipEnabled={autoSkipEnabled}
-            onInputChange={setUserInput}
-            onSendMessage={handleSendMessage}
-            onSendWithVoice={handleSendWithVoice}
-            onVoiceInput={handleVoiceInput}
-            onStartPractice={startPracticeRecording}
-            onSkipTurn={() => {
-              // Close the mic first so a skip never captures room audio.
-              if (isListening) stopListening();
-              const lastUserMsg = [...messages].reverse().find(m => m.gd_participants?.is_user && m.gd_participants?.real_user_id === currentUserId);
-              if (lastUserMsg?.text === "[Skipped turn]" && isProcessing) return;
-              handleSendMessageDirect("[Skipped turn]");
-            }}
-            onOpenMobileMetrics={() => setIsMobileMetricsOpen(true)}
-            onToggleAutoSend={() => setAutoSendEnabled(prev => !prev)}
-            onToggleAutoSkip={() => setAutoSkipEnabled(prev => !prev)}
-            onInterject={handleInterject}
-          />
-         </>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20"
+                    onClick={() => window.open("/home/settings/ai-providers", "_blank")}
+                  >
+                    Add Free Key
+                  </Button>
+                </div>
+              )}
+              {activeTurn?.granted_at && (
+                <SpeakerCountdown
+                  grantedAt={activeTurn.granted_at}
+                  slotSeconds={slotSeconds}
+                  isSelf={turnQueue.isHolder}
+                  speakerLabel={activeTurn.participant_kind === "ai" ? "AI member" : "Another participant"}
+                />
+              )}
+              <div className="shrink-0">
+                <MessageInput
+                  userInput={userInput}
+                  isListening={isListening}
+                  isProcessing={isProcessing}
+                  isPracticing={isPracticing}
+                  isCorrecting={isCorrecting}
+                  isPaused={isPaused}
+                  floorLocked={floorLocked || isSpeaking || isWaitingForSpeech}
+                  isMicInitializing={isMicInitializing}
+                  activeSpeakerName={isSpeaking ? currentSpeaker || "AI participant" : undefined}
+                  isBusy={isWaitingForSpeech || isSpeaking || floorLocked}
+                  autoSendEnabled={autoSendEnabled}
+                  autoSkipEnabled={autoSkipEnabled}
+                  onInputChange={setUserInput}
+                  onSendMessage={handleSendMessage}
+                  onSendWithVoice={handleSendWithVoice}
+                  onVoiceInput={handleVoiceInput}
+                  onStartPractice={startPracticeRecording}
+                  onSkipTurn={() => {
+                    // Close the mic first so a skip never captures room audio.
+                    if (isListening) stopListening();
+                    const lastUserMsg = [...messages]
+                      .reverse()
+                      .find((m) => m.gd_participants?.is_user && m.gd_participants?.real_user_id === currentUserId);
+                    if (lastUserMsg?.text === "[Skipped turn]" && isProcessing) return;
+                    handleSendMessageDirect("[Skipped turn]");
+                  }}
+                  onOpenMobileMetrics={() => setIsMobileMetricsOpen(true)}
+                  onToggleAutoSend={() => setAutoSendEnabled((prev) => !prev)}
+                  onToggleAutoSkip={() => setAutoSkipEnabled((prev) => !prev)}
+                  onInterject={handleInterject}
+                />
+              </div>
+            </>
           )}
         </div>
 
@@ -1637,7 +1723,9 @@ useEffect(() => {
               <h3 className="font-bold text-sm mb-2 flex items-center gap-2">
                 <User className="w-4 h-4" />
                 PARTICIPANTS
-                <Badge variant="secondary" className="ml-auto text-xs">{participants.length}</Badge>
+                <Badge variant="secondary" className="ml-auto text-xs">
+                  {participants.length}
+                </Badge>
               </h3>
               <ParticipantPresence
                 participants={participants}
@@ -1681,11 +1769,21 @@ useEffect(() => {
             />
             {practiceAudioUrl && (
               <div className="flex gap-2 justify-center">
-                <Button onClick={playPracticeRecording} disabled={isPlayingPractice} variant="outline" className="border-2">
+                <Button
+                  onClick={playPracticeRecording}
+                  disabled={isPlayingPractice}
+                  variant="outline"
+                  className="border-2"
+                >
                   <Play className="w-4 h-4 mr-2" />
-                  {isPlayingPractice ? 'PLAYING...' : 'PLAY'}
+                  {isPlayingPractice ? "PLAYING..." : "PLAY"}
                 </Button>
-                <Button onClick={stopPracticeRecording} disabled={!isRecordingPractice} variant="outline" className="border-2">
+                <Button
+                  onClick={stopPracticeRecording}
+                  disabled={!isRecordingPractice}
+                  variant="outline"
+                  className="border-2"
+                >
                   <Square className="w-4 h-4 mr-2" />
                   STOP
                 </Button>
@@ -1707,7 +1805,14 @@ useEffect(() => {
               </Button>
             )}
             {practiceAudioUrl && !isRecordingPractice && (
-              <Button onClick={() => { cancelPractice(); startPracticeRecording(); }} variant="outline" className="border-2">
+              <Button
+                onClick={() => {
+                  cancelPractice();
+                  startPracticeRecording();
+                }}
+                variant="outline"
+                className="border-2"
+              >
                 <RefreshCw className="w-4 h-4 mr-2" /> RE-RECORD
               </Button>
             )}
