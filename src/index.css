@@ -498,14 +498,13 @@
     .chat-scroll-panel,
     .chat-scroll-panel [data-radix-scroll-area-viewport] {
       min-height: 0;
-      touch-action: pan-y !important;
-      -webkit-overflow-scrolling: touch;
+      
       overscroll-behavior: contain;
-      pointer-events: auto;
     }
 
     .chat-scroll-panel [data-radix-scroll-area-viewport] {
       overflow-y: scroll !important;
+      scrollbar-width: thin;
     }
 
     /* Keep the visual scrollbar bar visible on touch/mobile without blocking swipes */
@@ -513,11 +512,18 @@
       pointer-events: none;
       opacity: 1 !important;
       display: flex !important;
+      visibility: visible !important;
     }
 
     .chat-scroll-panel [data-radix-scroll-area-thumb] {
       background-color: hsl(var(--primary) / 0.8) !important;
+      border-radius: 9999px;
     }
+    @media (min-width: 1024px) {
+    .chat-scroll-panel [data-radix-scroll-area-scrollbar] {
+      pointer-events: auto !important;
+      width: 8px !important;
+  }
   }
 }
 
