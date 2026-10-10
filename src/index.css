@@ -518,9 +518,10 @@
       border-radius: 9999px;
     }
     @media (min-width: 1024px) {
-    .chat-scroll-panel [data-radix-scroll-area-scrollbar] {
-      pointer-events: auto !important;
-      width: 8px !important;
+      .chat-scroll-panel [data-radix-scroll-area-scrollbar] {
+        pointer-events: auto !important;
+        width: 8px !important;
+      }
     }
   }
 }
