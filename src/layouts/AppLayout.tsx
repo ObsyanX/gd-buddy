@@ -33,7 +33,10 @@ const AppLayout = () => {
   const { isAdmin } = useIsAdmin();
   const { canInstall, installed, isIOS, install } = usePWAInstall();
   const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
-  const isDiscussionSession = location.pathname.startsWith("/home/session/");
+  // Live discussion rooms lock the page scroll on desktop; the session report
+  // (/home/session/:id/report) is a long document and must scroll normally.
+  const isDiscussionSession =
+    location.pathname.startsWith("/home/session/") && !location.pathname.endsWith("/report");
 
   const handleSignOut = async () => {
     await signOut();
