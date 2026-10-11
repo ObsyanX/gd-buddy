@@ -29,8 +29,8 @@ const ScrollBar = React.forwardRef<
     // Keep it visual on mobile; restore pointer dragging on large screens.
     className={cn(
       "flex select-none touch-none pointer-events-none lg:pointer-events-auto transition-opacity z-20",
-      orientation === "vertical" && "h-full w-2.5 border-l border-border/40 bg-secondary/40 p-0.5 ",
-      orientation === "horizontal" && "h-2.5 flex-col border-t border-border/60 bg-secondary/40 p-0/5 ",
+      orientation === "vertical" && "h-full w-3.5 border-l border-border/60 bg-secondary/40 p-0.5",
+      orientation === "horizontal" && "h-2.5 flex-col border-t border-border/60 bg-secondary/40 p-0.5",
       className,
     )}
     {...props}
