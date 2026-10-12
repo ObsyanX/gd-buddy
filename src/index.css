@@ -477,6 +477,27 @@
       pointer-events: auto !important;
       width: 10px !important;
     }
+    /* Let the wheel continue to the chat column once the transcript ends,
+       so the mic controls below stay reachable on short screens. */
+    .chat-scroll-panel [data-radix-scroll-area-viewport] {
+      overscroll-behavior: auto;
+    }
+
+    /* Live discussion room: bound every wrapper between <main> and the room
+       to the viewport so the room's own columns scroll instead of being
+       clipped by the locked page. */
+    .discussion-main {
+      display: flex;
+      flex-direction: column;
+    }
+    .discussion-main > *,
+    .discussion-main > * > *,
+    .discussion-main > * > * > * {
+      flex: 1 1 0%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
   }
 
   @media (max-width: 1023px) {
