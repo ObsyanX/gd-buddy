@@ -186,7 +186,7 @@ const AppLayout = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className={cn("flex-1 relative z-10 focus:outline-none", isDiscussionSession && "lg:min-h-0 lg:overflow-hidden")}
+        className={cn("flex-1 relative z-10 focus:outline-none", isDiscussionSession && "discussion-main lg:min-h-0 lg:overflow-hidden")}
         role="main"
       >
         <Outlet />
