@@ -73,7 +73,7 @@ const MessageList = ({ messages, currentUserId, isSpeaking, currentSpeaker }: Me
   }, [messages, getViewport]);
 
   return (
-    <Card className="relative border-2 sm:border-3 lg:border-4 border-border h-[45dvh] min-h-[45dvh] sm:h-auto sm:flex-1 sm:min-h-0 overflow-hidden flex flex-col">
+    <Card className="relative border-2 sm:border-3 lg:border-4 border-border h-[45dvh] min-h-[45dvh] sm:h-auto sm:flex-1 sm:min-h-[240px] overflow-hidden flex flex-col">
       <div ref={rootRef} className="flex-1 min-h-0 flex flex-col">
         <ScrollArea type="always" className="chat-scroll-panel flex-1 min-h-0 h-full w-full">
           <div className="space-y-2 sm:space-y-3 lg:space-y-4 p-2 sm:p-3 lg:p-4 pr-4 sm:pr-5 lg:pr-6">

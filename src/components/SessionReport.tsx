@@ -93,7 +93,8 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   const [aiFeedback, setAiFeedback] = useState<any>(null);
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
   const [feedbackError, setFeedbackError] = useState<{ message: string; credits: boolean } | null>(null);
-  const [showFeedbackModal, setShowFeedbackModal] = useState(true);
+  // Don't auto-open: an open dialog locks page scroll behind it.
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [chartData, setChartData] = useState<{
     timeline: any[];
     performance: any[];
