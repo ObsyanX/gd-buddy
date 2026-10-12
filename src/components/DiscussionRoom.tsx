@@ -1561,7 +1561,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
         {/* Main Chat Area */}
         {/* Main Chat Area */}
-        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-1.5 sm:gap-3 lg:gap-4 min-w-0 flex-1 min-h-0 overflow-hidden">
+        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-1.5 sm:gap-3 lg:gap-4 min-w-0 flex-1 min-h-0 overflow-visible lg:overflow-y-auto lg:pr-1 [&>*:not(:first-child)]:shrink-0">
           <MessageList
             messages={messages}
             currentUserId={currentUserId}

@@ -134,7 +134,7 @@ export function lazyRetry<T extends ComponentType<unknown>>(
       } catch {
         /* best effort */
       }
-      window.location.reload();
+      hardReloadFresh();
       // Never resolves — the page is going away.
       return new Promise<{ default: T }>(() => {});
     }
