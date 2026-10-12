@@ -32,6 +32,13 @@ function shouldHardReload(): boolean {
   }
 }
 
+/** Reload with a cache-busting query param so a fresh index.html is fetched. */
+export function hardReloadFresh() {
+  const url = new URL(window.location.href);
+  url.searchParams.set("v", String(Date.now()));
+  window.location.replace(url.toString());
+}
+
 function isChunkLoadError(err: unknown): boolean {
   const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
   return /dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk|Failed to fetch/i.test(

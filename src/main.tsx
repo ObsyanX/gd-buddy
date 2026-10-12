@@ -38,6 +38,19 @@ if (!health.ok) {
 const diagnostics = `React ${health.reactVersion} · env ${import.meta.env.MODE}` +
   (health.ok ? "" : `\n${health.reason}: ${health.detail}`);
 
+// Stale chunk after a deploy → reload once with a cache-busting param.
+window.addEventListener("vite:preloadError", (event) => {
+  event.preventDefault();
+  try {
+    const last = Number(sessionStorage.getItem("chunk-reload-at") || 0);
+    if (Date.now() - last < 30_000) return;
+    sessionStorage.setItem("chunk-reload-at", String(Date.now()));
+  } catch { /* ignore */ }
+  const url = new URL(window.location.href);
+  url.searchParams.set("v", String(Date.now()));
+  window.location.replace(url.toString());
+});
+
 createRoot(document.getElementById("root")!).render(
   <RootDiagnosticsBoundary diagnostics={diagnostics}>
     <HelmetProvider>
