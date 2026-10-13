@@ -189,6 +189,12 @@ import { useTracker } from "@/hooks/useTracker";
 
 const RouteTracker = () => { useTracker(); return null; };
 
+// Authenticated pages reserve consent space inside their own layout.
+const PublicCookieConsent = () => {
+  const { pathname } = useLocation();
+  return pathname === "/home" || pathname.startsWith("/home/") ? null : <CookieConsent />;
+};
+
 /**
  * Safety net: a dialog/sheet that unmounts mid-transition can leave the body
  * scroll-locked (overflow:hidden / position:fixed / pointer-events:none),
@@ -232,7 +238,7 @@ const App = () => (
           <Sonner />
           <OfflineBanner />
           <PWAInstallBanner />
-          <CookieConsent />
+          <PublicCookieConsent />
           <A11yBootstrap />
           <ErrorBoundary fallbackTitle="Application Error">
           <Suspense fallback={<Loading />}>
