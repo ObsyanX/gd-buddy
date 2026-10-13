@@ -24,10 +24,10 @@ export function CookieConsent() {
 
   return (
     <div
-      role="dialog"
+      role="region"
       aria-live="polite"
       aria-label="Cookie consent"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md p-4 shadow-[0_-4px_24px_rgba(0,0,0,0.15)]"
+      className="relative z-10 shrink-0 max-h-[30dvh] overflow-y-auto border-y border-border bg-card p-3 sm:p-4"
     >
       <div className="mx-auto max-w-6xl flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1 text-sm">
@@ -49,10 +49,10 @@ export function CookieConsent() {
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="sm" onClick={() => choose("denied")}>
+          <Button variant="outline" size="sm" className="min-h-11" onClick={() => choose("denied")}>
             Decline
           </Button>
-          <Button size="sm" onClick={() => choose("granted")}>
+          <Button size="sm" className="min-h-11" onClick={() => choose("granted")}>
             Allow cookies
           </Button>
         </div>

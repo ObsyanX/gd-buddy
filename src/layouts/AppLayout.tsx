@@ -15,6 +15,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { toast } from "@/hooks/use-toast";
 import { SkipLink, Announcer } from "@/components/a11y";
+import { CookieConsent } from "@/components/ads/CookieConsent";
 
 const NAV_ITEMS = [
   { label: "Home", icon: HomeIcon, path: "/home" },
@@ -181,7 +182,7 @@ const AppLayout = () => {
 
         </div>
       </header>
-
+      <CookieConsent />
 
       <main
         id="main-content"
