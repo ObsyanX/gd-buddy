@@ -1,7 +1,8 @@
 # Roadmap
 
 ## Open
-- [ ] Bootcamp plan Phase 1: expand all 14 days with curated topics, framework breakdowns, example scripts, pitfalls, and simulation presets
+- [x] Bootcamp plan Phase 1: expand all 14 days with curated topics, framework breakdowns, example scripts, pitfalls, and simulation presets
+- [ ] Bootcamp Phase 2: dedicated day page at /home/bootcamp/day/:dayNumber using the lesson content
 - [ ] Keep cookie consent in page flow so it never overlays discussion controls; verify desktop and phone
 - [ ] Remove or wire up the unused transcription pipelines (`useAudioRecorder` + `speech-to-text` edge function are dead code today)
 - [x] Fair AI turns: queue, slot countdown, 10s warning, auto-handover, quiet invite
