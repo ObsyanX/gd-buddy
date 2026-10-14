@@ -10,7 +10,7 @@ import {
   Compass, CheckCircle2, Lock, Play, Award, Sparkles,
   Target, Clock, ShieldCheck, ChevronRight, BookOpen, Flame
 } from "lucide-react";
-import { BOOTCAMP_DAYS, BOOTCAMP_PHASES, BootcampDay } from "@/data/bootcamp-curriculum";
+import { BOOTCAMP_DAYS, BOOTCAMP_PHASES, BootcampDay, toPracticeTopic } from "@/data/bootcamp-curriculum";
 
 const STORAGE_KEY = "gd_bootcamp_progress_v1";
 
@@ -58,7 +58,7 @@ const Bootcamp = () => {
       description: `Target Track: ${dayItem.targetTrack.toUpperCase()} | Framework: ${dayItem.framework}`
     });
 
-    navigate(`/home/practice/setup?topic=${encodeURIComponent(dayItem.suggestedTopic)}&track=${dayItem.targetTrack}`);
+    navigate('/home/practice/setup', { state: { topic: toPracticeTopic(dayItem) } });
   };
 
   const handleMarkCompleted = (dayNumber: number) => {
