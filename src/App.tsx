@@ -79,6 +79,7 @@ const Profile = lazy(() => import("./pages/Profile"), "Profile");
 const Settings = lazy(() => import("./pages/Settings"), "Settings");
 const AiProviders = lazy(() => import("./pages/settings/AiProviders"), "AiProviders");
 const Bootcamp = lazy(() => import("./pages/Bootcamp"), "Bootcamp");
+const BootcampDayPage = lazy(() => import("./pages/BootcampDayPage"), "BootcampDayPage");
 const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"), "InstructorDashboard");
 const Admin = lazy(() => import("./pages/Admin"), "Admin");
 const Governance = lazy(() => import("./pages/Governance"), "Governance");
@@ -292,6 +293,7 @@ const App = () => (
                 <Route path="multiplayer/topic" element={<RouteBoundary><Suspense fallback={<PageSkeleton />}><PageTransition><MultiplayerTopic /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="multiplayer/setup" element={<RouteBoundary><Suspense fallback={<SessionSkeleton />}><PageTransition><MultiplayerSetup /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="bootcamp" element={<RouteBoundary title="Bootcamp Error"><Suspense fallback={<DashboardSkeleton />}><PageTransition><Bootcamp /></PageTransition></Suspense></RouteBoundary>} />
+                <Route path="bootcamp/day/:dayNumber" element={<RouteBoundary title="Bootcamp Error"><Suspense fallback={<DashboardSkeleton />}><PageTransition><BootcampDayPage /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="drills" element={<RouteBoundary title="Drills Error"><Suspense fallback={<DrillsSkeleton />}><PageTransition><SkillDrills /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="profile" element={<RouteBoundary><Suspense fallback={<ProfileSkeleton />}><PageTransition><Profile /></PageTransition></Suspense></RouteBoundary>} />
                 <Route path="settings" element={<RouteBoundary><Suspense fallback={<SettingsSkeleton />}><PageTransition><Settings /></PageTransition></Suspense></RouteBoundary>} />
