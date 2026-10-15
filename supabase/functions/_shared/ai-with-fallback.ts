@@ -36,10 +36,10 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_PREFERRED = [
   "google/gemma-4-31b-it:free",
   "qwen/qwen3.8-27b:free",
-  "nvidia/nemotron-3-super-120b-a12b:free",
   "google/gemma-4-26b-a4b-it:free",
   "nvidia/nemotron-3.5-lightning:free",
   "thinkingmachines/inkling:free",
+  "nvidia/nemotron-3-super-120b-a12b:free", // reasoning model: often spends its budget thinking and returns empty text
   "nvidia/nemotron-3-ultra-550b-a55b:free",
 ];
 let orCache: { at: number; all: string[]; tools: Set<string> } | null = null;
@@ -501,14 +501,8 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
             // Empty reply: try the next model instead of handing back nothing.
             failures.push(`${provider.name}(empty)`);
             console.warn(`[ai-fallback] ${provider.name}/${mappedModel} returned an empty reply — trying next`);
-            await recordAiError({
-              provider: provider.name,
-              status: 200,
-              message: `Empty reply from ${mappedModel}`,
-              model: mappedModel,
-              functionName: fnName,
-              fallbackUsed: true,
-            });
+            // Handled by falling through to the next model, so it is a breadcrumb,
+            // not an error: only report it if every model ends up failing.
             continue;
           }
           json._provider = provider.name;
