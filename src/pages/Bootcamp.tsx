@@ -48,6 +48,10 @@ const Bootcamp = () => {
   const isDayUnlocked = (day: number) => day === 1 || progress.completedDays.includes(day - 1) || progress.completedDays.includes(day);
 
   const handleStartDay = (dayItem: BootcampDay) => {
+    navigate(`/home/bootcamp/day/${dayItem.day}`);
+  };
+
+  const _legacyStartDay = (dayItem: BootcampDay) => {
     // Save chosen topic and track into localStorage so SessionSetup / Discussion picks it up
     localStorage.setItem("gd-bootcamp-active-day", JSON.stringify(dayItem));
     localStorage.setItem("gd-prefilled-topic", dayItem.suggestedTopic);

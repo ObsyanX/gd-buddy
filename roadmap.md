@@ -2,9 +2,9 @@
 
 ## Open
 - [x] Bootcamp plan Phase 1: expand all 14 days with curated topics, framework breakdowns, example scripts, pitfalls, and simulation presets
-- [ ] Bootcamp Phase 2: dedicated day page at /home/bootcamp/day/:dayNumber using the lesson content
-- [ ] Keep cookie consent in page flow so it never overlays discussion controls; verify desktop and phone
-- [ ] Remove or wire up the unused transcription pipelines (`useAudioRecorder` + `speech-to-text` edge function are dead code today)
+- [x] Bootcamp Phase 2: dedicated day page at /home/bootcamp/day/:dayNumber using the lesson content
+- [x] Keep cookie consent in page flow so it never overlays discussion controls; verify desktop and phone
+- [x] Transcription pipelines: `useAudioRecorder` already gone; `speech-to-text` is used for personal STT keys
 - [x] Fair AI turns: queue, slot countdown, 10s warning, auto-handover, quiet invite
 - [x] Typed 6-account drive test + instructor batch tools test (test accounts gdbuddy.drivetest1-6@example.com)
 
