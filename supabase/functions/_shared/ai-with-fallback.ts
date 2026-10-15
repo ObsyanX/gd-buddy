@@ -501,7 +501,7 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
             // Empty reply: try the next model instead of handing back nothing.
             failures.push(`${provider.name}(empty)`);
             console.warn(`[ai-fallback] ${provider.name}/${mappedModel} returned an empty reply — trying next`);
-// Handled by falling through to the next model, so it is a breadcrumb,
+            // Handled by falling through to the next model, so it is a breadcrumb,
             // not an error: only report it if every model ends up failing.
             continue;
           }
