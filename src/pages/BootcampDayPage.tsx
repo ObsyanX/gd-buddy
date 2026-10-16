@@ -137,13 +137,13 @@ const BootcampDayPage = () => {
       </Card>
 
       <div className="flex flex-col sm:flex-row gap-3 justify-between">
-        <Button variant="outline" className="min-h-11" disabled={n === 1} onClick={() => navigate(`/home/bootcamp/day/${n - 1}`)}>
+        <Button variant="outline" className="min-h-11" disabled={dayNum === 1} onClick={() => navigate(`/home/bootcamp/day/${dayNum - 1}`)}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Previous day
         </Button>
         <Button variant="secondary" className="min-h-11" onClick={markComplete}>
           <CheckCircle2 className="h-4 w-4 mr-2" /> {completed ? "Completed — next" : "Mark day complete"}
         </Button>
-        <Button variant="outline" className="min-h-11" disabled={n === 14 || !(completed || progress.completedDays.includes(n))} onClick={() => navigate(`/home/bootcamp/day/${n + 1}`)}>
+        <Button variant="outline" className="min-h-11" disabled={dayNum === 14 || !(completed || progress.completedDays.includes(dayNum))} onClick={() => navigate(`/home/bootcamp/day/${dayNum + 1}`)}>
           Next day <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </div>
