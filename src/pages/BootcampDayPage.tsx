@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Play, CheckCircle2, AlertTriangle, Settings2, Lock } from "lucide-react";
 import { BOOTCAMP_DAYS, getBootcampLesson, toPracticeTopic, BootcampTopic } from "@/data/bootcamp-curriculum";
+import { useStickyRouteValue } from "@/hooks/useStickyRouteValue";
 
 const STORAGE_KEY = "gd_bootcamp_progress_v1";
 
@@ -19,9 +20,13 @@ const BootcampDayPage = () => {
   const { dayNumber } = useParams();
   const navigate = useNavigate();
   const n = Number(dayNumber);
-  const day = BOOTCAMP_DAYS.find((d) => d.day === n);
-  const lesson = getBootcampLesson(n);
+  // Sticky: while the next lazy route resolves, this page stays mounted for one
+  // commit with params already pointing at the NEW url — a naive guard would
+  // bounce the user back to /home/bootcamp mid-navigation.
+  const day = useStickyRouteValue(BOOTCAMP_DAYS.find((d) => d.day === n));
+  const lesson = useStickyRouteValue(getBootcampLesson(n));
   if (!day || !lesson) return <Navigate to="/home/bootcamp" replace />;
+  const dayNum = day.day;
 
   const progress = readProgress();
   const unlocked = n === 1 || progress.completedDays.includes(n - 1) || progress.completedDays.includes(n);
