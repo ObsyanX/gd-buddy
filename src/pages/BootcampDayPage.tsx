@@ -29,8 +29,8 @@ const BootcampDayPage = () => {
   const dayNum = day.day;
 
   const progress = readProgress();
-  const unlocked = n === 1 || progress.completedDays.includes(n - 1) || progress.completedDays.includes(n);
-  const completed = progress.completedDays.includes(n);
+  const unlocked = dayNum === 1 || progress.completedDays.includes(dayNum - 1) || progress.completedDays.includes(dayNum);
+  const completed = progress.completedDays.includes(dayNum);
   const preset = lesson.simulationPreset;
 
   const launch = (topic: BootcampTopic) => {
@@ -40,23 +40,23 @@ const BootcampDayPage = () => {
 
   const markComplete = () => {
     const p = readProgress();
-    if (!p.completedDays.includes(n)) {
-      p.completedDays = [...p.completedDays, n].sort((a, b) => a - b);
+    if (!p.completedDays.includes(dayNum)) {
+      p.completedDays = [...p.completedDays, dayNum].sort((a, b) => a - b);
       p.streak = (p.streak || 0) + 1;
     }
-    p.currentDay = Math.min(14, Math.max(p.currentDay || 1, n + 1));
+    p.currentDay = Math.min(14, Math.max(p.currentDay || 1, dayNum + 1));
     p.lastCompletedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
-    navigate(n < 14 ? `/home/bootcamp/day/${n + 1}` : "/home/bootcamp");
+    navigate(dayNum < 14 ? `/home/bootcamp/day/${dayNum + 1}` : "/home/bootcamp");
   };
 
   if (!unlocked) {
     return (
       <div className="container mx-auto max-w-3xl px-4 py-16 text-center space-y-4">
         <Lock className="mx-auto h-8 w-8 text-muted-foreground" />
-        <h1 className="text-2xl font-bold">Day {n} is locked</h1>
-        <p className="text-muted-foreground">Finish Day {n - 1} first to open this lesson.</p>
-        <Button className="min-h-11" onClick={() => navigate(`/home/bootcamp/day/${n - 1}`)}>Go to Day {n - 1}</Button>
+        <h1 className="text-2xl font-bold">Day {dayNum} is locked</h1>
+        <p className="text-muted-foreground">Finish Day {dayNum - 1} first to open this lesson.</p>
+        <Button className="min-h-11" onClick={() => navigate(`/home/bootcamp/day/${dayNum - 1}`)}>Go to Day {dayNum - 1}</Button>
       </div>
     );
   }
