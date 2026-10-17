@@ -49,7 +49,8 @@ async function openRouterFreeModels(needTools: boolean): Promise<string[]> {
     try {
       const r = await fetch("https://openrouter.ai/api/v1/models");
       const d = (await r.json()).data as Array<{ id: string; supported_parameters?: string[] }>;
-      const free = d.filter((m) => m.id.endsWith(":free") && !/safety|code/.test(m.id));
+      // Exclude inkling: OpenRouter gates it to agentic harnesses (403 for plain API callers).
+      const free = d.filter((m) => m.id.endsWith(":free") && !/safety|code|inkling/.test(m.id));
       orCache = { at: Date.now(), all: free.map((m) => m.id), tools: new Set(free.filter((m) => m.supported_parameters?.includes("tools")).map((m) => m.id)) };
     } catch {
       orCache = { at: Date.now() - 3000_000, all: OPENROUTER_PREFERRED, tools: new Set(OPENROUTER_PREFERRED) };
