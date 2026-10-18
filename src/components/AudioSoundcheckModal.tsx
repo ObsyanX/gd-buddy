@@ -111,7 +111,7 @@ export const AudioSoundcheckModal: React.FC<AudioSoundcheckModalProps> = ({ isOp
 
   return (
     <Dialog open={isOpen} onOpenChange={() => handleFinish(false)}>
-      <DialogContent className="sm:max-w-md border-2">
+      <DialogContent className="sm:max-w-md border-2 max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Mic className="w-5 h-5 text-primary" /> Audio & Mic Soundcheck
