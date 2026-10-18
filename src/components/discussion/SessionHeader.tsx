@@ -101,7 +101,7 @@ const SessionHeader = ({
             )}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="border-2 h-8 w-8 p-0">
+                <Button variant="outline" size="sm" className="border-2 h-11 w-11 p-0" aria-label="Open session controls">
                   <Menu className="w-4 h-4" />
                 </Button>
               </SheetTrigger>

@@ -98,8 +98,10 @@ export function useTurnQueue(sessionId: string | null) {
     setSelfTurnId(null);
   }, [sessionId]);
 
-  const isHolder = !!(uid && active && active.user_id === uid);
-  const selfPosition = uid ? queue.findIndex((q) => q.user_id === uid) : -1;
+  // Ownership must match participant_kind too: AI turns are inserted with the
+  // requesting user's id, so a user-only check would show an AI slot as "yours".
+  const isHolder = !!(uid && active && active.user_id === uid && active.participant_kind === 'human');
+  const selfPosition = uid ? queue.findIndex((q) => q.user_id === uid && q.participant_kind === 'human') : -1;
 
   return { active, queue, isHolder, selfPosition, request, release, refresh };
 }

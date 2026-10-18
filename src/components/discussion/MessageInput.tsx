@@ -283,6 +283,7 @@ const MessageInput = ({
 
     if (
       !isListening ||
+      !autoSendEnabled ||
       isProcessing ||
       isCorrecting ||
       isPaused ||
@@ -317,6 +318,7 @@ const MessageInput = ({
     }, 1500);
   }, [
     isListening,
+    autoSendEnabled,
     isProcessing,
     isCorrecting,
     isPaused,
@@ -459,6 +461,7 @@ const MessageInput = ({
 
     const canAutoSkip =
       autoSkipEnabled &&
+      !isListening &&
       !isPaused &&
       !isBusy &&
       !floorLocked &&
@@ -500,6 +503,7 @@ const MessageInput = ({
         !isCorrecting &&
         !isPaused &&
         !isBusy &&
+        !isListening &&
         !floorLocked &&
         !isVADSpeaking &&
         !userInput.trim()
@@ -529,6 +533,7 @@ const MessageInput = ({
     isMicInitializing,
     isPaused,
     isBusy,
+    isListening,
     isVADSpeaking,
   ]);
 
@@ -713,6 +718,7 @@ const MessageInput = ({
         {/* TEXT INPUT */}
 
         <Input
+          aria-label="Your message"
           placeholder={
             isPaused
               ? "Discussion paused..."
@@ -727,6 +733,7 @@ const MessageInput = ({
           onKeyDown={(e) => {
             if (
               e.key === "Enter" &&
+              !e.nativeEvent.isComposing &&
               !e.shiftKey &&
               !e.ctrlKey &&
               !isListening &&
@@ -761,8 +768,9 @@ const MessageInput = ({
 
           <Button
             variant="outline"
-            className="border-2 h-10 w-10 p-0 sm:hidden"
+            className="border-2 h-10 w-10 p-0 lg:hidden"
             title="View Metrics"
+            aria-label="View metrics"
             onClick={onOpenMobileMetrics}
           >
             <BarChart3 className="w-4 h-4" />
