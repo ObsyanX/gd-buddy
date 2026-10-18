@@ -914,7 +914,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     if (slotRemaining === 0 && slotEndedRef.current !== activeTurn.id) {
       slotEndedRef.current = activeTurn.id;
       logRoomEvent("slot_expired", true, { slot_seconds: slotSeconds });
-      if (isListening) stopListening();
+      if (isListening) {
+        // Submit what was said so the turn is not lost when the slot ends.
+        pendingSendRef.current = true;
+        stopListening();
+      }
       void turnQueue.release();
       toast({ title: "Time is up", description: "Your slot ended — the floor has passed to the next speaker." });
     }
