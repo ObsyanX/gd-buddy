@@ -1305,6 +1305,41 @@ export type Database = {
         }
         Relationships: []
       }
+      bootcamp_progress: {
+        Row: {
+          completed_at: string
+          day: number
+          id: string
+          score: number | null
+          session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          day: number
+          id?: string
+          score?: number | null
+          session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          day?: number
+          id?: string
+          score?: number | null
+          session_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bootcamp_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calibration_bins: {
         Row: {
           action: string
