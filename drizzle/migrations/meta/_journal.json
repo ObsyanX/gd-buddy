@@ -29,6 +29,13 @@
       "when": 1791256424231,
       "tag": "0003_fair_turns_ai_queue_and_tpo_tools",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792369713407,
+      "tag": "0004_create_bootcamp_progress",
+      "breakpoints": true
     }
   ]
 }
