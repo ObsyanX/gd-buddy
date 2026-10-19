@@ -199,7 +199,12 @@ function normalizeVernacular(text: string): string {
 
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
-      if (isMountedRef.current && event.error !== 'no-speech' && event.error !== 'aborted') {
+      if (!isMountedRef.current) return;
+      // An error before `onstart` (network, not-allowed, service-not-allowed)
+      // means initialisation failed — always release the initializing state so
+      // the mic button is never stuck disabled.
+      setIsMicInitializing(false);
+      if (event.error !== 'no-speech' && event.error !== 'aborted') {
         setIsListening(false);
       }
     };
@@ -227,6 +232,7 @@ function normalizeVernacular(text: string): string {
 
     recognition.onend = async () => {
       if (!isMountedRef.current) return;
+      setIsMicInitializing(false);
       setIsListening(false);
       setInterimText('');
 
@@ -271,6 +277,21 @@ function normalizeVernacular(text: string): string {
 
     try {
       recognition.start();
+      // Safety net: if neither onstart nor onerror fires within 8s (speech
+      // service unreachable), release the UI so the mic button recovers.
+      const started = recognition;
+      window.setTimeout(() => {
+        if (recognitionRef.current === started && isMountedRef.current) {
+          setIsMicInitializing((prev) => {
+            if (prev) {
+              console.warn('Speech recognition start timed out — releasing mic UI');
+              try { started.abort?.(); } catch { /* ignore */ }
+              recognitionRef.current = null;
+            }
+            return false;
+          });
+        }
+      }, 8000);
     } catch (error) {
       console.warn('Speech recognition start failed:', error);
       recognitionRef.current = null;
