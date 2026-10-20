@@ -16,6 +16,7 @@ import { Mic, Info, Play, RefreshCw, Check, X, Loader2, SkipForward, User, Squar
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
+import { getSessionBootcamp } from "@/lib/bootcamp-progress";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { usePracticeMode } from "@/hooks/usePracticeMode";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
