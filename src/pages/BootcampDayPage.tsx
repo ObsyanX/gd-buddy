@@ -5,16 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Play, CheckCircle2, AlertTriangle, Settings2, Lock } from "lucide-react";
 import { BOOTCAMP_DAYS, getBootcampLesson, toPracticeTopic, BootcampTopic } from "@/data/bootcamp-curriculum";
 import { useStickyRouteValue } from "@/hooks/useStickyRouteValue";
-
-const STORAGE_KEY = "gd_bootcamp_progress_v1";
-
-const readProgress = () => {
-  try {
-    const s = localStorage.getItem(STORAGE_KEY);
-    if (s) return JSON.parse(s) as { completedDays: number[]; currentDay: number; streak: number; lastCompletedAt?: string };
-  } catch {}
-  return { completedDays: [] as number[], currentDay: 1, streak: 0 };
-};
+import { readLocalProgress as readProgress, completeBootcampDay } from "@/lib/bootcamp-progress";
 
 const BootcampDayPage = () => {
   const { dayNumber } = useParams();
@@ -35,18 +26,11 @@ const BootcampDayPage = () => {
 
   const launch = (topic: BootcampTopic) => {
     localStorage.setItem("gd-bootcamp-active-day", JSON.stringify(day));
-    navigate("/home/practice/setup", { state: { topic: toPracticeTopic(day, topic), bootcampPreset: preset } });
+    navigate("/home/practice/setup", { state: { topic: toPracticeTopic(day, topic), bootcampPreset: preset, bootcampDay: dayNum } });
   };
 
-  const markComplete = () => {
-    const p = readProgress();
-    if (!p.completedDays.includes(dayNum)) {
-      p.completedDays = [...p.completedDays, dayNum].sort((a, b) => a - b);
-      p.streak = (p.streak || 0) + 1;
-    }
-    p.currentDay = Math.min(14, Math.max(p.currentDay || 1, dayNum + 1));
-    p.lastCompletedAt = new Date().toISOString();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+  const markComplete = async () => {
+    await completeBootcampDay(dayNum);
     navigate(dayNum < 14 ? `/home/bootcamp/day/${dayNum + 1}` : "/home/bootcamp");
   };
 
