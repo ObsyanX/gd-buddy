@@ -101,10 +101,19 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const warnedStagesRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
 
+  // Bootcamp day rooms carry their own time limit, which overrides the
+  // format's default discussion length.
+  const bootcampInfo = useMemo(() => getSessionBootcamp(sessionId), [sessionId]);
+
   const protocolWindows: ProtocolWindows | null = useMemo(() => {
     if (!session?.start_time) return null;
-    return computeWindows(session.start_time, session.gd_format, participants.length || 1);
-  }, [session?.start_time, session?.gd_format, participants.length]);
+    return computeWindows(
+      session.start_time,
+      session.gd_format,
+      participants.length || 1,
+      bootcampInfo?.durationMinutes ? bootcampInfo.durationMinutes * 60 : undefined,
+    );
+  }, [session?.start_time, session?.gd_format, participants.length, bootcampInfo]);
 
   const clock: ClockState | null = protocolWindows ? clockState(nowMs, protocolWindows) : null;
   const isReadingWindow = !!clock && clock.stage === "reading" && !readingSkipped;
