@@ -23,11 +23,16 @@ import {
 } from "@/config/personas";
 import CustomPersonaForm from "./CustomPersonaForm";
 import { GD_FORMATS, type GdFormat } from "@/lib/discussion/gd-protocol";
+import type { SimulationPreset } from "@/data/bootcamp-curriculum";
+import { setSessionBootcamp } from "@/lib/bootcamp-progress";
 
 interface SessionSetupProps {
   topic: any;
   onSessionCreated: (sessionId: string) => void;
   onBack: () => void;
+  /** When launched from a Bootcamp day, the day's tuned room settings. */
+  bootcampPreset?: SimulationPreset;
+  bootcampDay?: number;
 }
 
 interface CustomPersona {
@@ -46,7 +51,7 @@ interface CustomPersona {
 
 type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
 
-  const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) => {
+  const SessionSetup = ({ topic, onSessionCreated, onBack, bootcampPreset, bootcampDay }: SessionSetupProps) => {
   const [gdFormat, setGdFormat] = useState<GdFormat>('free_form');
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
   const [selectedCustomPersonas, setSelectedCustomPersonas] = useState<string[]>([]);
