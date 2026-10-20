@@ -8,6 +8,8 @@ const PracticeSetup = () => {
   const location = useLocation();
   // Sticky: router state briefly reads as null while the next route loads.
   const topic = useStickyRouteValue(location.state?.topic);
+  const bootcampPreset = useStickyRouteValue(location.state?.bootcampPreset);
+  const bootcampDay = useStickyRouteValue(location.state?.bootcampDay);
 
   useEffect(() => {
     if (!topic) {
@@ -32,6 +34,8 @@ const PracticeSetup = () => {
       topic={topic}
       onSessionCreated={handleSessionCreated}
       onBack={handleBack}
+      bootcampPreset={bootcampPreset}
+      bootcampDay={bootcampDay}
     />
   );
 };
