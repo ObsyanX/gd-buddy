@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { getSessionBootcamp, completeBootcampDay } from "@/lib/bootcamp-progress";
 import { Button } from "@/components/ui/button";
 import SessionReplay from "@/components/SessionReplay";
 import SessionNotes from "@/components/SessionNotes";
@@ -750,6 +752,17 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   Math.round((metrics.fluency_score + metrics.content_score + metrics.structure_score + metrics.voice_score) / 4) :
   null;
   const wpmStatus = metrics.words_per_min > 0 ? getBenchmarkComparison('wpm', metrics.words_per_min) : null;
+
+  // Bootcamp day result: a score at or above the day's pass mark completes
+  // the day and unlocks the next one automatically.
+  const bootcampInfo = getSessionBootcamp(sessionId);
+  const bootcampPassed = !!bootcampInfo && avgScore !== null && avgScore >= bootcampInfo.passScore;
+  const bootcampRecordedRef = useRef(false);
+  useEffect(() => {
+    if (!bootcampPassed || !bootcampInfo || bootcampRecordedRef.current) return;
+    bootcampRecordedRef.current = true;
+    completeBootcampDay(bootcampInfo.day, { score: avgScore, sessionId });
+  }, [bootcampPassed, bootcampInfo, avgScore, sessionId]);
 
   return (
     <div className="min-h-screen bg-background">
