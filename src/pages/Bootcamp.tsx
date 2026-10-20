@@ -11,27 +11,27 @@ import {
   Target, Clock, ShieldCheck, ChevronRight, BookOpen, Flame
 } from "lucide-react";
 import { BOOTCAMP_DAYS, BOOTCAMP_PHASES, BootcampDay, toPracticeTopic } from "@/data/bootcamp-curriculum";
-
-const STORAGE_KEY = "gd_bootcamp_progress_v1";
-
-interface BootcampProgress {
-  completedDays: number[];
-  currentDay: number;
-  lastCompletedAt?: string;
-  streak: number;
-}
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  BootcampProgress,
+  readLocalProgress,
+  writeLocalProgress,
+  syncProgressFromAccount,
+  completeBootcampDay,
+} from "@/lib/bootcamp-progress";
 
 const Bootcamp = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const [progress, setProgress] = useState<BootcampProgress>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return { completedDays: [], currentDay: 1, streak: 0 };
-  });
+  const [progress, setProgress] = useState<BootcampProgress>(() => readLocalProgress());
+
+  // Pull account-saved progress so completed days survive sign-out / new devices.
+  useEffect(() => {
+    if (!user) return;
+    syncProgressFromAccount(user.id).then(setProgress);
+  }, [user]);
 
   const [selectedDay, setSelectedDay] = useState<BootcampDay>(() => {
     const cur = BOOTCAMP_DAYS.find(d => d.day === (progress.currentDay || 1));
