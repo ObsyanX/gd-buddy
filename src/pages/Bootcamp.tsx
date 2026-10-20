@@ -11,27 +11,27 @@ import {
   Target, Clock, ShieldCheck, ChevronRight, BookOpen, Flame
 } from "lucide-react";
 import { BOOTCAMP_DAYS, BOOTCAMP_PHASES, BootcampDay, toPracticeTopic } from "@/data/bootcamp-curriculum";
-
-const STORAGE_KEY = "gd_bootcamp_progress_v1";
-
-interface BootcampProgress {
-  completedDays: number[];
-  currentDay: number;
-  lastCompletedAt?: string;
-  streak: number;
-}
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  BootcampProgress,
+  readLocalProgress,
+  writeLocalProgress,
+  syncProgressFromAccount,
+  completeBootcampDay,
+} from "@/lib/bootcamp-progress";
 
 const Bootcamp = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const [progress, setProgress] = useState<BootcampProgress>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return { completedDays: [], currentDay: 1, streak: 0 };
-  });
+  const [progress, setProgress] = useState<BootcampProgress>(() => readLocalProgress());
+
+  // Pull account-saved progress so completed days survive sign-out / new devices.
+  useEffect(() => {
+    if (!user) return;
+    syncProgressFromAccount(user.id).then(setProgress);
+  }, [user]);
 
   const [selectedDay, setSelectedDay] = useState<BootcampDay>(() => {
     const cur = BOOTCAMP_DAYS.find(d => d.day === (progress.currentDay || 1));
@@ -41,7 +41,7 @@ const Bootcamp = () => {
   const [activePhaseTab, setActivePhaseTab] = useState<string>("1");
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    writeLocalProgress(progress);
   }, [progress]);
 
   const isDayCompleted = (day: number) => progress.completedDays.includes(day);
@@ -66,18 +66,7 @@ const Bootcamp = () => {
   };
 
   const handleMarkCompleted = (dayNumber: number) => {
-    setProgress(prev => {
-      const already = prev.completedDays.includes(dayNumber);
-      const newCompleted = already ? prev.completedDays : [...prev.completedDays, dayNumber].sort((a, b) => a - b);
-      const nextDay = Math.min(14, Math.max(prev.currentDay, dayNumber + 1));
-      return {
-        ...prev,
-        completedDays: newCompleted,
-        currentDay: nextDay,
-        lastCompletedAt: new Date().toISOString(),
-        streak: prev.streak + (already ? 0 : 1)
-      };
-    });
+    completeBootcampDay(dayNumber).then(setProgress);
 
     toast({
       title: `Day ${dayNumber} Marked Complete! 🎉`,

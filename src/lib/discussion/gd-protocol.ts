@@ -82,8 +82,12 @@ export function computeWindows(
   startedAt: string | number | Date,
   formatId: unknown,
   participantCount: number,
+  discussionSecondsOverride?: number,
 ): ProtocolWindows {
-  const format = getFormat(formatId);
+  const base = getFormat(formatId);
+  const format: GdFormatSpec = discussionSecondsOverride && discussionSecondsOverride > 0
+    ? { ...base, discussionSeconds: discussionSecondsOverride }
+    : base;
   const startMs = new Date(startedAt as any).getTime();
   const n = Math.max(1, participantCount || 1);
   const readingEndsMs = startMs + format.readingSeconds * 1000;

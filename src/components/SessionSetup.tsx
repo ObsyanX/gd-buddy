@@ -23,11 +23,16 @@ import {
 } from "@/config/personas";
 import CustomPersonaForm from "./CustomPersonaForm";
 import { GD_FORMATS, type GdFormat } from "@/lib/discussion/gd-protocol";
+import type { SimulationPreset } from "@/data/bootcamp-curriculum";
+import { setSessionBootcamp } from "@/lib/bootcamp-progress";
 
 interface SessionSetupProps {
   topic: any;
   onSessionCreated: (sessionId: string) => void;
   onBack: () => void;
+  /** When launched from a Bootcamp day, the day's tuned room settings. */
+  bootcampPreset?: SimulationPreset;
+  bootcampDay?: number;
 }
 
 interface CustomPersona {
@@ -46,7 +51,7 @@ interface CustomPersona {
 
 type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
 
-  const SessionSetup = ({ topic, onSessionCreated, onBack }: SessionSetupProps) => {
+  const SessionSetup = ({ topic, onSessionCreated, onBack, bootcampPreset, bootcampDay }: SessionSetupProps) => {
   const [gdFormat, setGdFormat] = useState<GdFormat>('free_form');
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
   const [selectedCustomPersonas, setSelectedCustomPersonas] = useState<string[]>([]);
@@ -109,14 +114,28 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
     return getRecommendedPersonaIds(detectedCategory);
   }, [detectedCategory]);
 
-  // Auto-select recommended personas on mount
+  // Auto-select recommended personas on mount — skipped when a Bootcamp day
+  // preset supplies its own participant roster.
   useEffect(() => {
+    if (bootcampPreset) return;
     if (recommendedIds.length > 0) {
       setSelectedPersonas(recommendedIds.slice(0, 5));
     } else {
       setSelectedPersonas(['aditya', 'priya']);
     }
-  }, [recommendedIds]);
+  }, [recommendedIds, bootcampPreset]);
+
+  // Bootcamp day preset: apply the day's AI roster, track and aggressiveness.
+  useEffect(() => {
+    if (!bootcampPreset) return;
+    const validIds = bootcampPreset.personaIds
+      .filter((id) => PERSONA_TEMPLATES.some((p) => p.id === id))
+      .slice(0, 5);
+    if (validIds.length > 0) setSelectedPersonas(validIds);
+    if (bootcampPreset.track && COMPANY_TRACKS[bootcampPreset.track]) {
+      setSelectedTrack(bootcampPreset.track);
+    }
+  }, [bootcampPreset]);
   
   // Combined persona list for display
   const allPersonas = useMemo(() => {
@@ -334,6 +353,14 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
         localStorage.setItem(`gd-citation-${session.id}`, 'true');
       }
       localStorage.setItem(`gd-track-${session.id}`, selectedTrack);
+      if (bootcampPreset && bootcampDay) {
+        setSessionBootcamp(session.id, {
+          day: bootcampDay,
+          passScore: bootcampPreset.passScore,
+          durationMinutes: bootcampPreset.durationMinutes,
+          aggressiveness: bootcampPreset.aiAggressiveness,
+        });
+      }
 
       toast({
         title: "Session created",
@@ -381,6 +408,21 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
             </div>
           </div>
         </Card>
+
+        {bootcampPreset && bootcampDay && (
+          <Card className="p-4 border-4 border-primary/40 bg-primary/5">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+              <Badge variant="outline" className="border-primary text-primary font-mono">BOOTCAMP · DAY {bootcampDay}</Badge>
+              <span>{bootcampPreset.aiParticipants} AI participants</span>
+              <span className="capitalize">{bootcampPreset.aiAggressiveness} style</span>
+              <span>{bootcampPreset.durationMinutes} min</span>
+              <span>Pass score: {bootcampPreset.passScore}%</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              This room is pre-tuned for today's lesson. Score at or above the pass mark to unlock the next day automatically.
+            </p>
+          </Card>
+        )}
 
         <Card className="p-4 sm:p-6 border-4 border-border space-y-3">
           <div>

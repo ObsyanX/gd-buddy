@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { getSessionBootcamp, completeBootcampDay } from "@/lib/bootcamp-progress";
 import { Button } from "@/components/ui/button";
 import SessionReplay from "@/components/SessionReplay";
 import SessionNotes from "@/components/SessionNotes";
@@ -102,6 +104,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     comparison: any[];
   }>({ timeline: [], performance: [], fillersByType: [], comparison: [] });
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadSessionData();
@@ -113,6 +116,22 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
       loadAiFeedback();
     }
   }, [session, calculatedStats]);
+
+  // Bootcamp auto-unlock: when this room was launched from a Bootcamp day and
+  // the overall score meets the day's pass mark, record the day as complete
+  // (locally + on the account) exactly once.
+  const bootcampRecordedRef = useRef(false);
+  useEffect(() => {
+    if (!metrics || bootcampRecordedRef.current) return;
+    const info = getSessionBootcamp(sessionId);
+    if (!info) return;
+    const scores = [metrics.fluency_score, metrics.content_score, metrics.structure_score, metrics.voice_score];
+    if (!metrics.has_real_data || scores.some((s) => s === null || s === undefined)) return;
+    const overall = Math.round(scores.reduce((a, b) => a + b, 0) / 4);
+    if (overall < info.passScore) return;
+    bootcampRecordedRef.current = true;
+    completeBootcampDay(info.day, { score: overall, sessionId });
+  }, [metrics, sessionId]);
 
   const loadSessionData = async () => {
     try {
@@ -751,6 +770,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   null;
   const wpmStatus = metrics.words_per_min > 0 ? getBenchmarkComparison('wpm', metrics.words_per_min) : null;
 
+  // Bootcamp day result: a score at or above the day's pass mark completes
+  // the day and unlocks the next one automatically.
+  const bootcampInfo = getSessionBootcamp(sessionId);
+  const bootcampPassed = !!bootcampInfo && avgScore !== null && avgScore >= bootcampInfo.passScore;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b-4 border-border p-6">
@@ -849,6 +873,41 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             </>
           }
         </Card>
+
+        {/* Bootcamp day result */}
+        {bootcampInfo && hasRealScores && (
+          <Card className={`p-6 border-4 ${bootcampPassed ? 'border-emerald-500/60 bg-emerald-500/5' : 'border-amber-500/60 bg-amber-500/5'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                {bootcampPassed ? (
+                  <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0 mt-0.5" />
+                ) : (
+                  <Target className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <h3 className="text-lg font-bold">
+                    {bootcampPassed
+                      ? `Day ${bootcampInfo.day} complete — ${bootcampInfo.day < 14 ? `Day ${bootcampInfo.day + 1} unlocked!` : 'Bootcamp finished!'}`
+                      : `Day ${bootcampInfo.day}: not passed yet`}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {bootcampPassed
+                      ? `You scored ${avgScore}% — at or above the ${bootcampInfo.passScore}% pass mark. Your progress is saved to your account.`
+                      : `You scored ${avgScore}%. Reach ${bootcampInfo.passScore}% to unlock Day ${Math.min(14, bootcampInfo.day + 1)}.`}
+                  </p>
+                </div>
+              </div>
+              <Button
+                className="min-h-11 shrink-0"
+                variant={bootcampPassed ? 'default' : 'outline'}
+                onClick={() => navigate(bootcampPassed && bootcampInfo.day < 14 ? `/home/bootcamp/day/${bootcampInfo.day + 1}` : `/home/bootcamp/day/${bootcampInfo.day}`)}
+              >
+                {bootcampPassed ? (bootcampInfo.day < 14 ? `Open Day ${bootcampInfo.day + 1}` : 'Back to Bootcamp') : `Retry Day ${bootcampInfo.day}`}
+              </Button>
+            </div>
+          </Card>
+        )}
+
         <RoomTimeline sessionId={sessionId} />
                 {/* Placement Benchmark */}
         {hasRealScores && (
