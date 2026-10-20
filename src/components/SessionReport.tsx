@@ -116,6 +116,22 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     }
   }, [session, calculatedStats]);
 
+  // Bootcamp auto-unlock: when this room was launched from a Bootcamp day and
+  // the overall score meets the day's pass mark, record the day as complete
+  // (locally + on the account) exactly once.
+  const bootcampRecordedRef = useRef(false);
+  useEffect(() => {
+    if (!metrics || bootcampRecordedRef.current) return;
+    const info = getSessionBootcamp(sessionId);
+    if (!info) return;
+    const scores = [metrics.fluency_score, metrics.content_score, metrics.structure_score, metrics.voice_score];
+    if (!metrics.has_real_data || scores.some((s) => s === null || s === undefined)) return;
+    const overall = Math.round(scores.reduce((a, b) => a + b, 0) / 4);
+    if (overall < info.passScore) return;
+    bootcampRecordedRef.current = true;
+    completeBootcampDay(info.day, { score: overall, sessionId });
+  }, [metrics, sessionId]);
+
   const loadSessionData = async () => {
     try {
       // Get current authenticated user
@@ -757,12 +773,6 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
   // the day and unlocks the next one automatically.
   const bootcampInfo = getSessionBootcamp(sessionId);
   const bootcampPassed = !!bootcampInfo && avgScore !== null && avgScore >= bootcampInfo.passScore;
-  const bootcampRecordedRef = useRef(false);
-  useEffect(() => {
-    if (!bootcampPassed || !bootcampInfo || bootcampRecordedRef.current) return;
-    bootcampRecordedRef.current = true;
-    completeBootcampDay(bootcampInfo.day, { score: avgScore, sessionId });
-  }, [bootcampPassed, bootcampInfo, avgScore, sessionId]);
 
   return (
     <div className="min-h-screen bg-background">
