@@ -41,7 +41,7 @@ const Bootcamp = () => {
   const [activePhaseTab, setActivePhaseTab] = useState<string>("1");
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    writeLocalProgress(progress);
   }, [progress]);
 
   const isDayCompleted = (day: number) => progress.completedDays.includes(day);
@@ -66,18 +66,7 @@ const Bootcamp = () => {
   };
 
   const handleMarkCompleted = (dayNumber: number) => {
-    setProgress(prev => {
-      const already = prev.completedDays.includes(dayNumber);
-      const newCompleted = already ? prev.completedDays : [...prev.completedDays, dayNumber].sort((a, b) => a - b);
-      const nextDay = Math.min(14, Math.max(prev.currentDay, dayNumber + 1));
-      return {
-        ...prev,
-        completedDays: newCompleted,
-        currentDay: nextDay,
-        lastCompletedAt: new Date().toISOString(),
-        streak: prev.streak + (already ? 0 : 1)
-      };
-    });
+    completeBootcampDay(dayNumber).then(setProgress);
 
     toast({
       title: `Day ${dayNumber} Marked Complete! 🎉`,
