@@ -409,6 +409,21 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
           </div>
         </Card>
 
+        {bootcampPreset && bootcampDay && (
+          <Card className="p-4 border-4 border-primary/40 bg-primary/5">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+              <Badge variant="outline" className="border-primary text-primary font-mono">BOOTCAMP · DAY {bootcampDay}</Badge>
+              <span>{bootcampPreset.aiParticipants} AI participants</span>
+              <span className="capitalize">{bootcampPreset.aiAggressiveness} style</span>
+              <span>{bootcampPreset.durationMinutes} min</span>
+              <span>Pass score: {bootcampPreset.passScore}%</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              This room is pre-tuned for today's lesson. Score at or above the pass mark to unlock the next day automatically.
+            </p>
+          </Card>
+        )}
+
         <Card className="p-4 sm:p-6 border-4 border-border space-y-3">
           <div>
             <label className="text-sm font-bold text-muted-foreground">GD FORMAT</label>
