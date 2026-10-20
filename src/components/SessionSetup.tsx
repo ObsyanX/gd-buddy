@@ -114,14 +114,28 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
     return getRecommendedPersonaIds(detectedCategory);
   }, [detectedCategory]);
 
-  // Auto-select recommended personas on mount
+  // Auto-select recommended personas on mount — skipped when a Bootcamp day
+  // preset supplies its own participant roster.
   useEffect(() => {
+    if (bootcampPreset) return;
     if (recommendedIds.length > 0) {
       setSelectedPersonas(recommendedIds.slice(0, 5));
     } else {
       setSelectedPersonas(['aditya', 'priya']);
     }
-  }, [recommendedIds]);
+  }, [recommendedIds, bootcampPreset]);
+
+  // Bootcamp day preset: apply the day's AI roster, track and aggressiveness.
+  useEffect(() => {
+    if (!bootcampPreset) return;
+    const validIds = bootcampPreset.personaIds
+      .filter((id) => PERSONA_TEMPLATES.some((p) => p.id === id))
+      .slice(0, 5);
+    if (validIds.length > 0) setSelectedPersonas(validIds);
+    if (bootcampPreset.track && COMPANY_TRACKS[bootcampPreset.track]) {
+      setSelectedTrack(bootcampPreset.track);
+    }
+  }, [bootcampPreset]);
   
   // Combined persona list for display
   const allPersonas = useMemo(() => {
@@ -339,6 +353,14 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
         localStorage.setItem(`gd-citation-${session.id}`, 'true');
       }
       localStorage.setItem(`gd-track-${session.id}`, selectedTrack);
+      if (bootcampPreset && bootcampDay) {
+        setSessionBootcamp(session.id, {
+          day: bootcampDay,
+          passScore: bootcampPreset.passScore,
+          durationMinutes: bootcampPreset.durationMinutes,
+          aggressiveness: bootcampPreset.aiAggressiveness,
+        });
+      }
 
       toast({
         title: "Session created",
