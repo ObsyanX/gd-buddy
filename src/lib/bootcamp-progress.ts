@@ -120,3 +120,41 @@ export async function completeBootcampDay(
   }
   return p;
 }
+
+// ---------------------------------------------------------------------------
+// Bootcamp AI pushiness
+//
+// The moderator AI reads each AI participant's interrupt level and
+// agreeability, so a bootcamp day's style is applied by tuning those two
+// values when the room's AI participants are created.
+// ---------------------------------------------------------------------------
+
+export type BootcampAggressiveness = "gentle" | "balanced" | "aggressive";
+
+export const PUSHINESS_LIMITS = {
+  gentle: { maxInterrupt: 0.15, minAgreeability: 0.3 },
+  aggressive: { minInterrupt: 0.6, maxAgreeability: -0.1 },
+} as const;
+
+export const applyBootcampPushiness = <
+  T extends { interrupt_level: number; agreeability: number },
+>(
+  persona: T,
+  level: string | undefined,
+): T => {
+  if (level === "gentle") {
+    return {
+      ...persona,
+      interrupt_level: Math.min(persona.interrupt_level, PUSHINESS_LIMITS.gentle.maxInterrupt),
+      agreeability: Math.max(persona.agreeability, PUSHINESS_LIMITS.gentle.minAgreeability),
+    };
+  }
+  if (level === "aggressive") {
+    return {
+      ...persona,
+      interrupt_level: Math.max(persona.interrupt_level, PUSHINESS_LIMITS.aggressive.minInterrupt),
+      agreeability: Math.min(persona.agreeability, PUSHINESS_LIMITS.aggressive.maxAgreeability),
+    };
+  }
+  return persona;
+};
