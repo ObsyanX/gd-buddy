@@ -57,3 +57,22 @@ describe("bootcamp progress", () => {
     expect(getSessionBootcamp("other")).toBeNull();
   });
 });
+
+import { applyBootcampPushiness } from "./bootcamp-progress";
+
+describe("bootcamp AI pushiness", () => {
+  const polite = { interrupt_level: 0.1, agreeability: 0.6 };
+  const pushy = { interrupt_level: 0.5, agreeability: -0.4 };
+
+  it("aggressive days make every AI participant interrupt more and agree less", () => {
+    expect(applyBootcampPushiness(polite, "aggressive")).toEqual({ interrupt_level: 0.6, agreeability: -0.1 });
+  });
+
+  it("gentle days calm down pushy AI participants", () => {
+    expect(applyBootcampPushiness(pushy, "gentle")).toEqual({ interrupt_level: 0.15, agreeability: 0.3 });
+  });
+
+  it("balanced days keep each AI participant's own style", () => {
+    expect(applyBootcampPushiness(pushy, "balanced")).toEqual(pushy);
+  });
+});

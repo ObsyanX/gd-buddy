@@ -24,7 +24,7 @@ import {
 import CustomPersonaForm from "./CustomPersonaForm";
 import { GD_FORMATS, type GdFormat } from "@/lib/discussion/gd-protocol";
 import type { SimulationPreset } from "@/data/bootcamp-curriculum";
-import { setSessionBootcamp } from "@/lib/bootcamp-progress";
+import { setSessionBootcamp, applyBootcampPushiness } from "@/lib/bootcamp-progress";
 
 interface SessionSetupProps {
   topic: any;
@@ -288,8 +288,10 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
       if (userError) throw userError;
 
       // Create AI participants from default templates
+      // Bootcamp days tune every AI participant to the day's pushiness.
+      const dayStyle = bootcampPreset?.aiAggressiveness;
       const defaultAiParticipants = selectedPersonas.map((personaId, index) => {
-        const persona = PERSONA_TEMPLATES.find(p => p.id === personaId)!;
+        const persona = applyBootcampPushiness(PERSONA_TEMPLATES.find(p => p.id === personaId)!, dayStyle);
         return {
           session_id: session.id,
           is_user: false,
@@ -308,7 +310,7 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
       // Create AI participants from custom personas
       const customAiParticipants = selectedCustomPersonas.map((personaId, index) => {
         const actualId = personaId.replace('custom-', '');
-        const persona = customPersonas.find(p => p.id === actualId)!;
+        const persona = applyBootcampPushiness(customPersonas.find(p => p.id === actualId)!, dayStyle);
         return {
           session_id: session.id,
           is_user: false,
