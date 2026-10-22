@@ -121,11 +121,6 @@ const MessageInput = ({
   const vadStreamRef = useRef<MediaStream | null>(null);
   const [vadStream, setVadStream] = useState<MediaStream | null>(null);
 
-  /**
-   * Prevents VAD + another automatic mechanism from submitting
-   * the same turn twice within a very short period.
-   */
-  const vadSendLockRef = useRef(false);
 
   // ------------------------------------------------------------
   // KEEP CALLBACK REFS FRESH
@@ -265,74 +260,18 @@ const MessageInput = ({
   }, []);
 
   // ------------------------------------------------------------
-  // SPEECH END
-  // ------------------------------------------------------------
-
-  const handleSpeechEnd = useCallback(() => {
-    /*
-     * IMPORTANT:
-     *
-     * Do not manually construct/send the text here.
-     *
-     * onSendWithVoice is the existing voice-aware path and should
-     * be responsible for stopping the microphone and allowing the
-     * transcription pipeline to finish.
-     *
-     * This avoids duplicating the existing send architecture.
-     */
-
-    if (
-      !isListening ||
-      !autoSendEnabled ||
-      isProcessing ||
-      isCorrecting ||
-      isPaused ||
-      isBusy ||
-      isPracticing ||
-      floorLocked
-    ) {
-      return;
-    }
-
-    if (vadSendLockRef.current) {
-      return;
-    }
-
-    vadSendLockRef.current = true;
-
-    try {
-      onSendMessageRef.current();
-    } catch (error) {
-      console.warn(
-        "Automatic VAD send failed:",
-        error
-      );
-    }
-
-    /*
-     * Give the existing voice-send lifecycle time to settle
-     * before allowing another VAD submission.
-     */
-    window.setTimeout(() => {
-      vadSendLockRef.current = false;
-    }, 1500);
-  }, [
-    isListening,
-    autoSendEnabled,
-    isProcessing,
-    isCorrecting,
-    isPaused,
-    isBusy,
-    isPracticing,
-    floorLocked,
-  ]);
-
-  // ------------------------------------------------------------
   // CLIENT VAD
   //
   // IMPORTANT:
   // This must be declared BEFORE the effects below that use
   // isVADSpeaking.
+  //
+  // VAD only tracks whether the candidate is currently speaking.
+  // It must NEVER submit the answer on its own: a ~1.4s breath or
+  // thinking pause would otherwise end the turn mid-sentence.
+  // Submission is left to the AUTO SEND countdown below, which only
+  // starts once the candidate has gone quiet and is cancelled the
+  // moment they resume speaking.
   // ------------------------------------------------------------
 
   const { isSpeaking: isVADSpeaking } = useClientVAD({
@@ -340,7 +279,7 @@ const MessageInput = ({
     volumeThreshold: 0.02,
     silenceHangoverMs: 1400,
     onSpeechStart: () => { logRoomEvent('vad_start'); handleSpeechStart(); },
-    onSpeechEnd: () => { logRoomEvent('vad_release', true, { hangover_ms: 1400 }); handleSpeechEnd(); },
+    onSpeechEnd: () => { logRoomEvent('vad_release', true, { hangover_ms: 1400 }); },
   });
 
   // ------------------------------------------------------------
