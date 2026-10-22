@@ -265,6 +265,8 @@ export interface SimulationPreset {
   track: BootcampDay['targetTrack'];
   aiParticipants: number;
   aiAggressiveness: 'gentle' | 'balanced' | 'aggressive';
+  /** How often AI participants cut in. Defaults from aiAggressiveness. */
+  interruptionLevel: 'low' | 'medium' | 'high';
   durationMinutes: number;
   personaIds: string[];
   focusSkills: string[];
@@ -282,9 +284,12 @@ export interface BootcampLesson {
 const preset = (
   day: number, aiParticipants: number, aiAggressiveness: SimulationPreset['aiAggressiveness'],
   personaIds: string[], focusSkills: string[],
+  interruptionLevel?: SimulationPreset['interruptionLevel'],
 ): SimulationPreset => {
   const d = BOOTCAMP_DAYS.find(x => x.day === day)!;
-  return { track: d.targetTrack, aiParticipants, aiAggressiveness, durationMinutes: d.estimatedMinutes, personaIds, focusSkills, passScore: d.minScoreToPass };
+  const level = interruptionLevel
+    ?? (aiAggressiveness === 'gentle' ? 'low' : aiAggressiveness === 'aggressive' ? 'high' : 'medium');
+  return { track: d.targetTrack, aiParticipants, aiAggressiveness, interruptionLevel: level, durationMinutes: d.estimatedMinutes, personaIds, focusSkills, passScore: d.minScoreToPass };
 };
 
 export const BOOTCAMP_LESSONS: Record<number, BootcampLesson> = {
@@ -437,7 +442,9 @@ export const BOOTCAMP_LESSONS: Record<number, BootcampLesson> = {
     ],
     exemplarScript: "Both values protect citizens, so the question is how much of one we give up for the other. Blanket surveillance may stop threats short term but erodes trust and can be misused. A middle path is targeted access with court approval, time limits and an independent audit.",
     commonPitfalls: ["Picking one side absolutely", "Vague 'balance is needed' with no mechanism", "Ignoring the legitimate concerns of the other side", "Over-relying on one country's example"],
-    simulationPreset: preset(10, 4, "balanced", ["rohan", "meera", "aditya", "vikram"], ["Trade-off Analysis", "Nuance", "Solutions"]),
+    // Balanced tone, but AI participants cut in often so the candidate
+    // practises holding a nuanced trade-off under pressure.
+    simulationPreset: preset(10, 4, "balanced", ["rohan", "meera", "aditya", "vikram"], ["Trade-off Analysis", "Nuance", "Solutions"], "high"),
   },
   11: {
     curatedTopics: [
