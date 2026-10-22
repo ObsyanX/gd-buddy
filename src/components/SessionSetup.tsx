@@ -24,7 +24,12 @@ import {
 import CustomPersonaForm from "./CustomPersonaForm";
 import { GD_FORMATS, type GdFormat } from "@/lib/discussion/gd-protocol";
 import type { SimulationPreset } from "@/data/bootcamp-curriculum";
-import { setSessionBootcamp, applyBootcampPushiness } from "@/lib/bootcamp-progress";
+import {
+  setSessionBootcamp,
+  applyBootcampPushiness,
+  defaultInterruptionFor,
+  INTERRUPTION_LABELS,
+} from "@/lib/bootcamp-progress";
 
 interface SessionSetupProps {
   topic: any;
@@ -288,10 +293,12 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
       if (userError) throw userError;
 
       // Create AI participants from default templates
-      // Bootcamp days tune every AI participant to the day's pushiness.
+      // Bootcamp days tune every AI participant to the day's pushiness
+      // and interruption level.
       const dayStyle = bootcampPreset?.aiAggressiveness;
+      const dayInterruption = bootcampPreset?.interruptionLevel ?? defaultInterruptionFor(dayStyle);
       const defaultAiParticipants = selectedPersonas.map((personaId, index) => {
-        const persona = applyBootcampPushiness(PERSONA_TEMPLATES.find(p => p.id === personaId)!, dayStyle);
+        const persona = applyBootcampPushiness(PERSONA_TEMPLATES.find(p => p.id === personaId)!, dayStyle, dayInterruption);
         return {
           session_id: session.id,
           is_user: false,
@@ -310,7 +317,7 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
       // Create AI participants from custom personas
       const customAiParticipants = selectedCustomPersonas.map((personaId, index) => {
         const actualId = personaId.replace('custom-', '');
-        const persona = applyBootcampPushiness(customPersonas.find(p => p.id === actualId)!, dayStyle);
+        const persona = applyBootcampPushiness(customPersonas.find(p => p.id === actualId)!, dayStyle, dayInterruption);
         return {
           session_id: session.id,
           is_user: false,
@@ -361,6 +368,7 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
           passScore: bootcampPreset.passScore,
           durationMinutes: bootcampPreset.durationMinutes,
           aggressiveness: bootcampPreset.aiAggressiveness,
+          interruptionLevel: dayInterruption,
         });
       }
 
@@ -411,20 +419,40 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
           </div>
         </Card>
 
-        {bootcampPreset && bootcampDay && (
+        {bootcampPreset && bootcampDay && (() => {
+          const level = bootcampPreset.interruptionLevel ?? defaultInterruptionFor(bootcampPreset.aiAggressiveness);
+          return (
           <Card className="p-4 border-4 border-primary/40 bg-primary/5">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
               <Badge variant="outline" className="border-primary text-primary font-mono">BOOTCAMP · DAY {bootcampDay}</Badge>
               <span>{bootcampPreset.aiParticipants} AI participants</span>
               <span className="capitalize">{bootcampPreset.aiAggressiveness} style</span>
+              <span
+                data-testid="bootcamp-interruption-level"
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${
+                  level === "high"
+                    ? "border-destructive/50 bg-destructive/10 text-destructive"
+                    : level === "medium"
+                    ? "border-primary/40 bg-primary/10 text-primary"
+                    : "border-border bg-muted/40 text-muted-foreground"
+                }`}
+              >
+                Interruptions: {INTERRUPTION_LABELS[level]}
+              </span>
               <span>{bootcampPreset.durationMinutes} min</span>
               <span>Pass score: {bootcampPreset.passScore}%</span>
             </div>
+            {level === "high" && (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Expect AI participants to cut in often today — hold your point calmly and finish your thought.
+              </p>
+            )}
             <p className="text-xs text-muted-foreground mt-1.5">
               This room is pre-tuned for today's lesson. Score at or above the pass mark to unlock the next day automatically.
             </p>
           </Card>
-        )}
+          );
+        })()}
 
         <Card className="p-4 sm:p-6 border-4 border-border space-y-3">
           <div>

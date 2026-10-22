@@ -111,9 +111,10 @@ const BootcampDayPage = () => {
 
       <Card className="p-4 space-y-2">
         <h2 className="font-semibold flex items-center gap-2"><Settings2 className="h-4 w-4" /> Practice room settings</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm">
           <div><p className="text-muted-foreground text-xs">AI participants</p><p className="font-medium">{preset.aiParticipants}</p></div>
           <div><p className="text-muted-foreground text-xs">AI style</p><p className="font-medium capitalize">{preset.aiAggressiveness}</p></div>
+          <div><p className="text-muted-foreground text-xs">Interruptions</p><p className="font-medium capitalize">{preset.interruptionLevel}</p></div>
           <div><p className="text-muted-foreground text-xs">Length</p><p className="font-medium">{preset.durationMinutes} min</p></div>
           <div><p className="text-muted-foreground text-xs">Pass score</p><p className="font-medium">{preset.passScore}%</p></div>
         </div>

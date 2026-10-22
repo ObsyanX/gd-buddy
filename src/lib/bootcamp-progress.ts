@@ -20,6 +20,8 @@ export interface SessionBootcampInfo {
   passScore: number;
   durationMinutes: number;
   aggressiveness: string;
+  /** "low" | "medium" | "high"; older sessions may not have it. */
+  interruptionLevel?: string;
 }
 
 const EMPTY: BootcampProgress = { completedDays: [], currentDay: 1, streak: 0 };
@@ -126,35 +128,50 @@ export async function completeBootcampDay(
 //
 // The moderator AI reads each AI participant's interrupt level and
 // agreeability, so a bootcamp day's style is applied by tuning those two
-// values when the room's AI participants are created.
+// values when the room's AI participants are created. The day's
+// interruption level is tuned separately from its style so a day can be
+// "balanced" in tone yet still have AI participants who cut in often.
 // ---------------------------------------------------------------------------
 
 export type BootcampAggressiveness = "gentle" | "balanced" | "aggressive";
+export type BootcampInterruptionLevel = "low" | "medium" | "high";
 
 export const PUSHINESS_LIMITS = {
   gentle: { maxInterrupt: 0.15, minAgreeability: 0.3 },
   aggressive: { minInterrupt: 0.6, maxAgreeability: -0.1 },
 } as const;
 
+/** Interruption level a style implies when a day does not set its own. */
+export const defaultInterruptionFor = (style: string | undefined): BootcampInterruptionLevel =>
+  style === "gentle" ? "low" : style === "aggressive" ? "high" : "medium";
+
+/** The interruption mode sent to the moderator AI for each level. */
+export const interruptionModeFor = (
+  level: string | undefined,
+): "light" | "moderate" | "frequent" =>
+  level === "high" ? "frequent" : level === "medium" ? "moderate" : "light";
+
+export const INTERRUPTION_LABELS: Record<BootcampInterruptionLevel, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+};
+
 export const applyBootcampPushiness = <
   T extends { interrupt_level: number; agreeability: number },
 >(
   persona: T,
   level: string | undefined,
+  interruption: BootcampInterruptionLevel = defaultInterruptionFor(level),
 ): T => {
-  if (level === "gentle") {
-    return {
-      ...persona,
-      interrupt_level: Math.min(persona.interrupt_level, PUSHINESS_LIMITS.gentle.maxInterrupt),
-      agreeability: Math.max(persona.agreeability, PUSHINESS_LIMITS.gentle.minAgreeability),
-    };
-  }
-  if (level === "aggressive") {
-    return {
-      ...persona,
-      interrupt_level: Math.max(persona.interrupt_level, PUSHINESS_LIMITS.aggressive.minInterrupt),
-      agreeability: Math.min(persona.agreeability, PUSHINESS_LIMITS.aggressive.maxAgreeability),
-    };
-  }
-  return persona;
+  let agreeability = persona.agreeability;
+  if (level === "gentle") agreeability = Math.max(agreeability, PUSHINESS_LIMITS.gentle.minAgreeability);
+  if (level === "aggressive") agreeability = Math.min(agreeability, PUSHINESS_LIMITS.aggressive.maxAgreeability);
+
+  let interrupt_level = persona.interrupt_level;
+  if (interruption === "low") interrupt_level = Math.min(interrupt_level, PUSHINESS_LIMITS.gentle.maxInterrupt);
+  if (interruption === "high") interrupt_level = Math.max(interrupt_level, PUSHINESS_LIMITS.aggressive.minInterrupt);
+
+  if (agreeability === persona.agreeability && interrupt_level === persona.interrupt_level) return persona;
+  return { ...persona, interrupt_level, agreeability };
 };
