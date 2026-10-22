@@ -451,7 +451,8 @@ type CategoryFilter = 'all' | 'core' | 'extended' | 'recommended' | 'custom';
               This room is pre-tuned for today's lesson. Score at or above the pass mark to unlock the next day automatically.
             </p>
           </Card>
-        )}
+          );
+        })()}
 
         <Card className="p-4 sm:p-6 border-4 border-border space-y-3">
           <div>
