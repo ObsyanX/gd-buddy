@@ -626,7 +626,9 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
           const p = (participants as any[]).find((x) => x.id === id);
           return Number(p?.persona?.interrupt_level ?? 0);
         };
-        const candidates = replies.filter((r) => r.participant_id !== 'moderator');
+        // Prefer a later reply so it audibly barges in on the one before it.
+        const aiReplies = replies.filter((r) => r.participant_id !== 'moderator');
+        const candidates = aiReplies.length > 1 ? aiReplies.slice(1) : aiReplies;
         if (candidates.length) {
           const pick = candidates.reduce((a, b) => (interruptOf(b.participant_id) > interruptOf(a.participant_id) ? b : a));
           pick.interruption = true;

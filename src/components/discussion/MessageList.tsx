@@ -132,6 +132,15 @@ const MessageList = ({ messages, currentUserId, isSpeaking, currentSpeaker }: Me
                           {message.intent}
                         </Badge>
                       )}
+                      {isAI && message.interruption && (
+                        <Badge
+                          variant="outline"
+                          className="text-[8px] sm:text-[10px] lg:text-xs h-4 sm:h-5 border-destructive/50 text-destructive bg-destructive/10"
+                          title="This participant cut in before the previous speaker finished"
+                        >
+                          Cut in
+                        </Badge>
+                      )}
                       {isAI && message.lens && (
                         <Badge variant="secondary" className="text-[8px] sm:text-[10px] lg:text-xs h-4 sm:h-5">
                           {message.lens}
