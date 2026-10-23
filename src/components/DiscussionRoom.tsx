@@ -16,7 +16,7 @@ import { Mic, Info, Play, RefreshCw, Check, X, Loader2, SkipForward, User, Squar
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
-import { getSessionBootcamp } from "@/lib/bootcamp-progress";
+import { getSessionBootcamp, interruptionModeFor, defaultInterruptionFor } from "@/lib/bootcamp-progress";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { usePracticeMode } from "@/hooks/usePracticeMode";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -137,10 +137,14 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   // when the candidate has not spoken yet.
   useEffect(() => {
     // Clear any existing timer whenever the conditions are no longer valid.
+    // Never prompt while the candidate's mic is open: they are already
+    // answering (perhaps pausing to think), and the moderator's voice would
+    // switch their mic off mid-answer.
     if (
       !session ||
       clock?.stage !== "discussion" ||
       floorLocked ||
+      isListening ||
       hasSentFirstMessage ||
       messages.some((m) => m.gd_participants?.is_user)
     ) {
@@ -162,6 +166,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         !session ||
         isPaused ||
         floorLocked ||
+        isListeningRef.current ||
         hasSentFirstMessage ||
         messagesRef.current.some((m) => m.gd_participants?.is_user)
       ) {
@@ -456,7 +461,10 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       latest_user_utterance: latestText,
       config: {
         max_reply_words: 55,
-        interruption_mode: "light",
+        // Bootcamp rooms use the day's interruption level; other rooms stay light.
+        interruption_mode: bootcampInfo
+          ? interruptionModeFor(bootcampInfo.interruptionLevel ?? defaultInterruptionFor(bootcampInfo.aggressiveness))
+          : "light",
         invigilator_mode: "coaching",
         moderator_mode: localStorage.getItem(`gd-moderator-${sessionId}`) === "true",
         citation_mode: localStorage.getItem(`gd-citation-${sessionId}`) === "true",
