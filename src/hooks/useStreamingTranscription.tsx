@@ -32,6 +32,9 @@ async function transcribeWithOwnKey(blob: Blob): Promise<string | null> {
   return data.text.trim();
 }
 
+/** Consecutive browser-initiated restarts allowed without hearing anything. */
+export const MAX_AUTO_RESTARTS = 5;
+
 interface UseStreamingTranscriptionOptions {
   onInterimResult?: (text: string) => void;
   onFinalResult?: (text: string) => void;
@@ -68,6 +71,12 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
   const finalTextRef = useRef('');
   const hasSpokenRef = useRef(false);
   const isMountedRef = useRef(true);
+  // Browsers (Android Chrome especially) may end a recognition session on
+  // their own during a thinking pause. Until the user taps Done, we quietly
+  // restart it so the answer stays open and nothing heard so far is lost.
+  const autoRestartsRef = useRef(0);
+  const fatalErrorRef = useRef(false);
+  const lastInterimRef = useRef('');
 
   // Check browser support
   useEffect(() => {
@@ -107,6 +116,9 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
 
   const startListening = useCallback((existingText?: string) => {
     setIsMicInitializing(true);
+    autoRestartsRef.current = 0;
+    fatalErrorRef.current = false;
+    lastInterimRef.current = '';
     // Anything the user already typed is preserved and prepended to whatever
     // the recogniser hears, so switching the mic on never wipes typed text.
     prefixRef.current = existingText && existingText.trim() ? existingText.trim() + ' ' : '';
@@ -157,7 +169,7 @@ function normalizeVernacular(text: string): string {
       finalTextRef.current = '';
       setFinalText(prefixRef.current);
       setInterimText('');
-      hasSpokenRef.current = false;
+      if (autoRestartsRef.current === 0) hasSpokenRef.current = false;
       console.log('Speech recognition started');
     };
 
@@ -183,6 +195,9 @@ function normalizeVernacular(text: string): string {
         }
       }
 
+      autoRestartsRef.current = 0;
+      lastInterimRef.current = latestInterim;
+
       // Update final text reference with complete final transcript
       finalTextRef.current = prefixRef.current + fullFinal;
       setFinalText(finalTextRef.current);
@@ -205,6 +220,8 @@ function normalizeVernacular(text: string): string {
       // the mic button is never stuck disabled.
       setIsMicInitializing(false);
       if (event.error !== 'no-speech' && event.error !== 'aborted') {
+        // Permission, device or network problems: do not auto-restart.
+        fatalErrorRef.current = true;
         setIsListening(false);
       }
     };
@@ -232,6 +249,27 @@ function normalizeVernacular(text: string): string {
 
     recognition.onend = async () => {
       if (!isMountedRef.current) return;
+
+      // Ended by the browser (not by stopListening): keep the turn open.
+      if (
+        recognitionRef.current === recognition &&
+        !fatalErrorRef.current &&
+        autoRestartsRef.current < MAX_AUTO_RESTARTS
+      ) {
+        autoRestartsRef.current += 1;
+        const heardFinal = finalTextRef.current.trim() || prefixRef.current.trim();
+        const heard = [heardFinal, lastInterimRef.current.trim()].filter(Boolean).join(' ');
+        prefixRef.current = heard ? heard + ' ' : '';
+        lastInterimRef.current = '';
+        try {
+          recognition.start();
+          console.log(`Speech recognition paused by the browser — resumed (${autoRestartsRef.current}/${MAX_AUTO_RESTARTS})`);
+          return;
+        } catch (err) {
+          console.warn('Could not resume speech recognition:', err);
+        }
+      }
+
       setIsMicInitializing(false);
       setIsListening(false);
       setInterimText('');
