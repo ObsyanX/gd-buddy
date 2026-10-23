@@ -76,3 +76,36 @@ describe("bootcamp AI pushiness", () => {
     expect(applyBootcampPushiness(pushy, "balanced")).toEqual(pushy);
   });
 });
+
+import { BOOTCAMP_LESSONS } from "@/data/bootcamp-curriculum";
+import { PERSONA_TEMPLATES } from "@/config/personas";
+import { interruptionModeFor, defaultInterruptionFor } from "./bootcamp-progress";
+
+describe("bootcamp interruption level", () => {
+  it("Day 10 has a high interruption level", () => {
+    expect(BOOTCAMP_LESSONS[10].simulationPreset.interruptionLevel).toBe("high");
+  });
+
+  it("Day 10 makes every AI participant interrupt at least 0.6 while keeping a balanced tone", () => {
+    const p = BOOTCAMP_LESSONS[10].simulationPreset;
+    for (const id of p.personaIds) {
+      const base = PERSONA_TEMPLATES.find((t) => t.id === id)!;
+      const tuned = applyBootcampPushiness(base, p.aiAggressiveness, p.interruptionLevel);
+      expect(tuned.interrupt_level).toBeGreaterThanOrEqual(0.6);
+      expect(tuned.agreeability).toBe(base.agreeability);
+    }
+  });
+
+  it("high interruption tells the moderator AI to use frequent interruptions", () => {
+    expect(interruptionModeFor("high")).toBe("frequent");
+    expect(interruptionModeFor("medium")).toBe("moderate");
+    expect(interruptionModeFor("low")).toBe("light");
+  });
+
+  it("days without their own level follow their style", () => {
+    expect(defaultInterruptionFor("gentle")).toBe("low");
+    expect(defaultInterruptionFor("balanced")).toBe("medium");
+    expect(defaultInterruptionFor("aggressive")).toBe("high");
+    expect(BOOTCAMP_LESSONS[1].simulationPreset.interruptionLevel).toBe("low");
+  });
+});

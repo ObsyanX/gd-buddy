@@ -9,6 +9,10 @@
 - [x] Typed 6-account drive test + instructor batch tools test (test accounts gdbuddy.drivetest1-6@example.com)
 
 ## Done
+- [x] Day 10 bootcamp room: high interruptions + interruption level in setup banner
+- [x] Human-style 3-second pause test (desktop-Chrome and Android-style mic behaviour)
+- [x] Keep the mic open if the browser ends speech recognition during a pause
+- [x] First-turn moderator prompt no longer talks over an open mic
 - [x] Mock drive rooms saved as real group rooms (host + code join)
 - [x] Voice detection: noise calibration, 1.4s release, no restarts
 - [x] Typing indicator shared in group rooms

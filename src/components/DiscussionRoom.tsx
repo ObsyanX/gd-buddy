@@ -16,7 +16,7 @@ import { Mic, Info, Play, RefreshCw, Check, X, Loader2, SkipForward, User, Squar
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithAuth } from "@/lib/supabase-auth";
-import { getSessionBootcamp } from "@/lib/bootcamp-progress";
+import { getSessionBootcamp, interruptionModeFor, defaultInterruptionFor } from "@/lib/bootcamp-progress";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { usePracticeMode } from "@/hooks/usePracticeMode";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -132,72 +132,6 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   /** Protocol snapshot handed to gd-conductor on every request. */
   const protocolContextRef = useRef<Record<string, unknown> | null>(null);
 
-  // 30-second first-turn icebreaker.
-  // Only runs during the active discussion stage, after the reading window,
-  // when the candidate has not spoken yet.
-  useEffect(() => {
-    // Clear any existing timer whenever the conditions are no longer valid.
-    if (
-      !session ||
-      clock?.stage !== "discussion" ||
-      floorLocked ||
-      hasSentFirstMessage ||
-      messages.some((m) => m.gd_participants?.is_user)
-    ) {
-      if (icebreakerTimerRef.current) {
-        clearTimeout(icebreakerTimerRef.current);
-        icebreakerTimerRef.current = null;
-      }
-      return;
-    }
-
-    // Prevent accidentally creating multiple timers.
-    if (icebreakerTimerRef.current) {
-      clearTimeout(icebreakerTimerRef.current);
-    }
-
-    icebreakerTimerRef.current = setTimeout(async () => {
-      // Re-check the conditions when the timer actually fires.
-      if (
-        !session ||
-        isPaused ||
-        floorLocked ||
-        hasSentFirstMessage ||
-        messagesRef.current.some((m) => m.gd_participants?.is_user)
-      ) {
-        return;
-      }
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      const candidateName = user?.user_metadata?.full_name?.split(" ")[0] || "Candidate";
-
-      const topicTitle = session.topic || "this topic";
-
-      const icebreakerText =
-        `${candidateName}, to get our discussion rolling on "${topicTitle}", ` +
-        `what is your opening perspective on this issue?`;
-
-      await postModeratorLine(icebreakerText);
-      logRoomEvent("icebreaker", true, { after_s: 30 });
-
-      toast({
-        title: "Floor offered to you",
-        description: "The moderator asked for your initial thoughts. Tap the mic or type to respond.",
-      });
-
-      icebreakerTimerRef.current = null;
-    }, 30_000);
-
-    return () => {
-      if (icebreakerTimerRef.current) {
-        clearTimeout(icebreakerTimerRef.current);
-        icebreakerTimerRef.current = null;
-      }
-    };
-  }, [session, clock?.stage, floorLocked, hasSentFirstMessage, messages, isPaused, toast]);
 
   useEffect(() => {
     if (!clock) {
@@ -456,7 +390,10 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       latest_user_utterance: latestText,
       config: {
         max_reply_words: 55,
-        interruption_mode: "light",
+        // Bootcamp rooms use the day's interruption level; other rooms stay light.
+        interruption_mode: bootcampInfo
+          ? interruptionModeFor(bootcampInfo.interruptionLevel ?? defaultInterruptionFor(bootcampInfo.aggressiveness))
+          : "light",
         invigilator_mode: "coaching",
         moderator_mode: localStorage.getItem(`gd-moderator-${sessionId}`) === "true",
         citation_mode: localStorage.getItem(`gd-citation-${sessionId}`) === "true",
@@ -558,6 +495,82 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       stopListening();
     }
   }, [isSpeaking, isListening, stopListening]);
+  const isListeningRef = useRef(false);
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
+
+  // 30-second first-turn icebreaker.
+  // Only runs during the active discussion stage, after the reading window,
+  // when the candidate has not spoken yet.
+  useEffect(() => {
+    // Clear any existing timer whenever the conditions are no longer valid.
+    // Never prompt while the candidate's mic is open: they are already
+    // answering (perhaps pausing to think), and the moderator's voice would
+    // switch their mic off mid-answer.
+    if (
+      !session ||
+      clock?.stage !== "discussion" ||
+      floorLocked ||
+      isListening ||
+      hasSentFirstMessage ||
+      messages.some((m) => m.gd_participants?.is_user)
+    ) {
+      if (icebreakerTimerRef.current) {
+        clearTimeout(icebreakerTimerRef.current);
+        icebreakerTimerRef.current = null;
+      }
+      return;
+    }
+
+    // Prevent accidentally creating multiple timers.
+    if (icebreakerTimerRef.current) {
+      clearTimeout(icebreakerTimerRef.current);
+    }
+
+    icebreakerTimerRef.current = setTimeout(async () => {
+      // Re-check the conditions when the timer actually fires.
+      if (
+        !session ||
+        isPaused ||
+        floorLocked ||
+        isListeningRef.current ||
+        hasSentFirstMessage ||
+        messagesRef.current.some((m) => m.gd_participants?.is_user)
+      ) {
+        return;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const candidateName = user?.user_metadata?.full_name?.split(" ")[0] || "Candidate";
+
+      const topicTitle = session.topic || "this topic";
+
+      const icebreakerText =
+        `${candidateName}, to get our discussion rolling on "${topicTitle}", ` +
+        `what is your opening perspective on this issue?`;
+
+      await postModeratorLine(icebreakerText);
+      logRoomEvent("icebreaker", true, { after_s: 30 });
+
+      toast({
+        title: "Floor offered to you",
+        description: "The moderator asked for your initial thoughts. Tap the mic or type to respond.",
+      });
+
+      icebreakerTimerRef.current = null;
+    }, 30_000);
+
+    return () => {
+      if (icebreakerTimerRef.current) {
+        clearTimeout(icebreakerTimerRef.current);
+        icebreakerTimerRef.current = null;
+      }
+    };
+  }, [session, clock?.stage, floorLocked, isListening, hasSentFirstMessage, messages, isPaused, toast]);
   const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial({ autoOpen: false });
   const { estimatedWordCount, updateFromAudioLevel, reset: resetWordCount } = useWordCountEstimator();
 
