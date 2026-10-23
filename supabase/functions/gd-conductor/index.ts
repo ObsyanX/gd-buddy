@@ -613,7 +613,28 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
         return true;
       });
       parsedResponse.originality_report = originalityReport;
+
+      // FREQUENT interruption rooms: guarantee at least one AI cut-in per
+      // response even when the model forgets to mark one.
+      const replies = parsedResponse.participant_responses as any[];
+      if (
+        String(config.interruption_mode) === 'frequent' &&
+        replies.length > 0 &&
+        !replies.some((r) => r.interruption === true)
+      ) {
+        const interruptOf = (id: string) => {
+          const p = (participants as any[]).find((x) => x.id === id);
+          return Number(p?.persona?.interrupt_level ?? 0);
+        };
+        const candidates = replies.filter((r) => r.participant_id !== 'moderator');
+        if (candidates.length) {
+          const pick = candidates.reduce((a, b) => (interruptOf(b.participant_id) > interruptOf(a.participant_id) ? b : a));
+          pick.interruption = true;
+          pick.overlap_seconds = Math.max(0.6, Math.min(1.5, Number(pick.overlap_seconds) || 1.0));
+        }
+      }
     }
+
 
 
     parsedResponse.provider = aiResponse._provider ?? null;
