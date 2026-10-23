@@ -312,7 +312,12 @@ RULES:
 2. User participants (is_user=true) are NEVER generated.
 3. Choose at most 2 AI participants to respond${moderatorMode ? ' (plus moderator if needed)' : ''}.
 4. Match persona tone/verbosity/vocab — but never at the cost of originality.
-5. Mark interruptions based on persona.interrupt_level and config.interruption_mode.
+5. Mark interruptions based on persona.interrupt_level and config.interruption_mode (current mode: "${String(config.interruption_mode || 'light')}").
+${String(config.interruption_mode) === 'frequent'
+  ? `   INTERRUPTION MODE = FREQUENT: this room practises holding the floor under pressure. In EVERY response, at least one AI reply MUST be an interruption ("interruption": true, "overlap_seconds" between 0.6 and 1.5), given by the AI participant with the highest Interrupt value who did not interrupt last time. It must open mid-thought with a cut-in ("Sorry to cut in—", "Hold on—", "Wait, but—") and challenge the previous point directly. Keep it civil; never insult.`
+  : String(config.interruption_mode) === 'moderate'
+  ? `   INTERRUPTION MODE = MODERATE: mark roughly one response in three as containing an interruption, only from AI participants with Interrupt >= 0.3.`
+  : `   INTERRUPTION MODE = LIGHT: interruptions are rare — only when an AI participant's Interrupt value is above 0.4 and the point is clearly contestable.`}
 6. Generate valid SSML for TTS.
 7. Provide helpful invigilator feedback for the user.
 8. FAIR TURNS: every speaker (human or AI) gets a ${slotSeconds}-second speaking slot. Each AI reply must be speakable within its slot (about ${Math.floor(slotSeconds * 2.3)} words max) — never longer. Prefer the AI member who has spoken least; never pick the same AI twice in a row when another AI is waiting.
