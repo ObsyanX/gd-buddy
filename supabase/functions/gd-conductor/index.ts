@@ -314,7 +314,7 @@ RULES:
 4. Match persona tone/verbosity/vocab — but never at the cost of originality.
 5. Mark interruptions based on persona.interrupt_level and config.interruption_mode (current mode: "${String(config.interruption_mode || 'light')}").
 ${String(config.interruption_mode) === 'frequent'
-  ? `   INTERRUPTION MODE = FREQUENT: this room practises holding the floor under pressure. In EVERY response, at least one AI reply MUST be an interruption ("interruption": true, "overlap_seconds" between 0.6 and 1.5), given by the AI participant with the highest Interrupt value who did not interrupt last time. It must open mid-thought with a cut-in ("Sorry to cut in—", "Hold on—", "Wait, but—") and challenge the previous point directly. Keep it civil; never insult.`
+  ? `   INTERRUPTION MODE = FREQUENT: this room practises holding the floor under pressure. In EVERY response, give 2 AI replies, and the SECOND one MUST be an interruption ("interruption": true, "overlap_seconds" between 0.6 and 1.5), given by an AI participant with a high Interrupt value who did not interrupt last time. It must open mid-thought with a cut-in ("Sorry to cut in—", "Hold on—", "Wait, but—") and challenge the previous point directly. Keep it civil; never insult.`
   : String(config.interruption_mode) === 'moderate'
   ? `   INTERRUPTION MODE = MODERATE: mark roughly one response in three as containing an interruption, only from AI participants with Interrupt >= 0.3.`
   : `   INTERRUPTION MODE = LIGHT: interruptions are rare — only when an AI participant's Interrupt value is above 0.4 and the point is clearly contestable.`}
