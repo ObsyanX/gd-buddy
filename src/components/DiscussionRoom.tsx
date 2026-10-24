@@ -1731,6 +1731,12 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                   isBusy={isWaitingForSpeech || isSpeaking || floorLocked}
                   autoSendEnabled={autoSendEnabled}
                   autoSkipEnabled={autoSkipEnabled}
+                  holdFirstTurn={
+                    !hasSentFirstMessage &&
+                    !messages.some(
+                      (m) => m.gd_participants?.is_user && m.gd_participants?.real_user_id === currentUserId,
+                    )
+                  }
                   onInputChange={setUserInput}
                   onSendMessage={handleSendMessage}
                   onSendWithVoice={handleSendWithVoice}
