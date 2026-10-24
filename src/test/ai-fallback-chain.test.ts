@@ -1,4 +1,4 @@
-// Verifies the AI provider fallback chain: Lovable → Groq → Mistral → Cerebras.
+// Verifies the AI provider fallback chain: Lovable → Groq → (OpenRouter) → Mistral → Cerebras.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // No signed-in user in these tests: personal keys are skipped, platform chain runs.
@@ -38,14 +38,23 @@ function fail(status: number) {
  * Installs a fetch mock that fails for every host in `failing` and succeeds
  * for the first host that isn't. Records the ordered list of hosts called.
  */
-function mockFetch(failing: string[], status = 429) {
+/** Hosts in call order, with repeated calls to the same host collapsed. */
+function hostOrder(calls: Array<{ host: string }>) {
+  return calls.map((c) => c.host).filter((h, i, a) => i === 0 || a[i - 1] !== h);
+}
+/** First model tried on each host. */
+function firstModel(calls: Array<{ host: string; model?: string }>, host: string) {
+  return calls.find((c) => c.host === host)?.model;
+}
+
+function mockFetch(failing: string[], status = 429, errBody = "upstream error") {
   const calls: Array<{ host: string; model?: string }> = [];
   const spy = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const host = new URL(url).host;
     const body = init?.body ? (JSON.parse(String(init.body)) as Body) : {};
     calls.push({ host, model: body.model });
-    if (failing.some((f) => host.includes(f))) return fail(status);
+    if (failing.some((f) => host.includes(f))) return new Response(errBody, { status });
     return ok(body.model ?? "");
   });
   vi.stubGlobal("fetch", spy);
@@ -97,7 +106,7 @@ describe("callAI provider fallback chain", () => {
     const { callAI } = await loadCallAI();
     const res = await callAI(REQUEST);
     expect(res._provider).toBe("mistral");
-    expect(calls.map((c) => c.host)).toEqual([
+    expect(hostOrder(calls)).toEqual([
       "ai.gateway.lovable.dev",
       "api.groq.com",
       "api.mistral.ai",
@@ -114,7 +123,7 @@ describe("callAI provider fallback chain", () => {
     const { callAI } = await loadCallAI();
     const res = await callAI(REQUEST);
     expect(res._provider).toBe("cerebras");
-    expect(calls.map((c) => c.host)).toEqual([
+    expect(hostOrder(calls)).toEqual([
       "ai.gateway.lovable.dev",
       "api.groq.com",
       "api.mistral.ai",
@@ -131,9 +140,9 @@ describe("callAI provider fallback chain", () => {
     ]);
     const { callAI } = await loadCallAI();
     await callAI({ ...REQUEST, model: "google/gemini-2.5-flash-lite" });
-    expect(calls[1].model).toBe("openai/gpt-oss-20b");
-    expect(calls[2].model).toBe("mistral-small-latest");
-    expect(calls[3].model).toBe("gpt-oss-120b");
+    expect(firstModel(calls, "api.groq.com")).toBe("openai/gpt-oss-20b");
+    expect(firstModel(calls, "api.mistral.ai")).toBe("mistral-small-latest");
+    expect(firstModel(calls, "api.cerebras.ai")).toBe("gpt-oss-120b");
   });
 
   it("recovers when a provider throws a network error", async () => {
@@ -151,7 +160,7 @@ describe("callAI provider fallback chain", () => {
     const { callAI } = await loadCallAI();
     const res = await callAI(REQUEST);
     expect(res._provider).toBe("cerebras");
-    expect(seen).toHaveLength(4);
+    expect(seen.filter((h, i, a) => i === 0 || a[i - 1] !== h)).toHaveLength(4);
   });
 
   it("throws AIProviderError('both') when every provider fails", async () => {
@@ -188,5 +197,69 @@ describe("callAI provider fallback chain", () => {
     const { callAI, AIProviderError } = await loadCallAI();
     await expect(callAI(REQUEST)).rejects.toBeInstanceOf(AIProviderError);
     expect(calls.map((c) => c.host)).toEqual(["ai.gateway.lovable.dev"]);
+  });
+  it("tries the next Groq model when one model hits its per-minute limit", async () => {
+    const calls: Array<{ host: string; model?: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const host = new URL(String(input)).host;
+        const body = JSON.parse(String(init?.body)) as Body;
+        calls.push({ host, model: body.model });
+        if (host === "ai.gateway.lovable.dev") return fail(402);
+        if (body.model === "openai/gpt-oss-120b") {
+          return new Response("Rate limit reached for model on tokens per minute (TPM). Please try again in 10.8s.", { status: 429 });
+        }
+        return ok(body.model ?? "");
+      }),
+    );
+    const { callAI } = await loadCallAI();
+    const res = await callAI(REQUEST);
+    expect(res._provider).toBe("groq");
+    expect(calls.filter((c) => c.host === "api.groq.com").map((c) => c.model)).toEqual([
+      "openai/gpt-oss-120b",
+      "qwen/qwen3.8-27b",
+    ]);
+  });
+
+  it("skips the main AI for later replies after it reports no credits", async () => {
+    const calls = mockFetch(["ai.gateway.lovable.dev"], 402);
+    const { callAI } = await loadCallAI();
+    await callAI(REQUEST);
+    await callAI(REQUEST);
+    expect(calls.filter((c) => c.host === "ai.gateway.lovable.dev")).toHaveLength(1);
+    expect(calls.at(-1)?.host).toBe("api.groq.com");
+  });
+
+  it("skips a rate-limited model on the next reply until its retry window passes", async () => {
+    const calls: Array<{ host: string; model?: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const host = new URL(String(input)).host;
+        const body = JSON.parse(String(init?.body)) as Body;
+        calls.push({ host, model: body.model });
+        if (host === "ai.gateway.lovable.dev") return fail(402);
+        if (body.model === "openai/gpt-oss-120b") return new Response("try again in 30s", { status: 429 });
+        return ok(body.model ?? "");
+      }),
+    );
+    const { callAI } = await loadCallAI();
+    await callAI(REQUEST);
+    await callAI(REQUEST);
+    expect(calls.filter((c) => c.model === "openai/gpt-oss-120b")).toHaveLength(1);
+  });
+
+  it("reads the retry wait from a 'try again in 10.8s' message", async () => {
+    const { retryAfterMs } = await loadCallAI();
+    expect(retryAfterMs("Please try again in 10.8s.", null, 30_000)).toBe(10_800);
+    expect(retryAfterMs("busy", "5", 30_000)).toBe(5_000);
+    expect(retryAfterMs("busy", null, 30_000)).toBe(30_000);
+  });
+
+  it("recognises OpenRouter's shared free daily cap", async () => {
+    const { isOpenRouterDailyCap } = await loadCallAI();
+    expect(isOpenRouterDailyCap("Rate limit exceeded: free-models-per-day. Add 10 credits")).toBe(true);
+    expect(isOpenRouterDailyCap("google/gemma is temporarily rate-limited upstream")).toBe(false);
   });
 });
