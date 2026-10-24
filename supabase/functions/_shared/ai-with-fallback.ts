@@ -92,7 +92,7 @@ function mapToMistralModel(model: string): string[] {
   if (isLightTier(m)) {
     return ["mistral-small-latest", "ministral-8b-latest"];
   }
-  return ["mistral-medium-latest", "mistral-small-latest"];
+  return ["mistral-medium-latest", "mistral-small-latest", "ministral-8b-latest"];
 }
 
 // Map model names → Cerebras-supported model names.
@@ -302,6 +302,39 @@ async function callLovable(body: AIRequestBody, apiKey: string): Promise<Respons
 // moves on and the discussion room gets a reply (or a clean "paused" notice).
 const FALLBACK_TIMEOUT_MS = 20_000;
 
+// In-memory cool-downs (per warm function instance). A provider/model that just
+// said "no credits" or "rate limited" is skipped until its window passes, so a
+// live room reply goes straight to a backup that can actually answer instead of
+// waiting on doomed calls. Keys: "<provider>" (whole account) or "<provider>:<model>".
+const cooldownUntil = new Map<string, number>();
+function coolingDown(key: string): boolean {
+  const until = cooldownUntil.get(key);
+  if (!until) return false;
+  if (Date.now() >= until) {
+    cooldownUntil.delete(key);
+    return false;
+  }
+  return true;
+}
+function coolDown(key: string, ms: number) {
+  cooldownUntil.set(key, Date.now() + Math.max(1_000, Math.min(ms, 6 * 3600_000)));
+}
+/** Parse "try again in 10.8s" / Retry-After style hints; default when absent. */
+export function retryAfterMs(errText: string, headerValue: string | null, fallbackMs: number): number {
+  const h = headerValue ? Number(headerValue) : NaN;
+  if (Number.isFinite(h) && h > 0) return h * 1000;
+  const m = /try again in\s+([\d.]+)\s*(ms|s|m)/i.exec(errText);
+  if (m) {
+    const n = Number(m[1]);
+    return m[2] === "ms" ? n : m[2] === "m" ? n * 60_000 : n * 1000;
+  }
+  return fallbackMs;
+}
+/** OpenRouter's account-wide free daily cap — every :free model shares it. */
+export function isOpenRouterDailyCap(errText: string): boolean {
+  return /free-models-per-day|per-day/i.test(errText);
+}
+
 /** A 200 with no text and no tool call is useless (some free models do this). */
 function hasUsableOutput(json: AIResponse): boolean {
   const msg = json?.choices?.[0]?.message;
@@ -328,7 +361,8 @@ async function callProvider(
 }
 
 /**
- * Call Lovable AI with automatic fallback: Groq → Mistral → Cerebras.
+ * Call Lovable AI with automatic fallback: Groq → OpenRouter (free) → Mistral → Cerebras.
+ * Rate-limited models are parked for their retry window and the next model is tried.
  * Returns the parsed OpenAI-format response. Adds `_provider` for logging.
  */
 export async function callAI(body: AIRequestBody): Promise<AIResponse> {
@@ -368,7 +402,13 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
   let lovableThrew = false;
 
   // --- 1. Try Lovable AI ---
-  if (LOVABLE_API_KEY) {
+  // After "not enough credits" the main AI is skipped for a few minutes (one
+  // probe per window) so replies go straight to the free backups.
+  if (LOVABLE_API_KEY && coolingDown("lovable")) {
+    lovableStatus = 402;
+    lovableErrorText = "Lovable AI credits exhausted (cooling down)";
+    console.warn("[ai-fallback] Lovable AI skipped — credits exhausted recently");
+  } else if (LOVABLE_API_KEY) {
     try {
       const response = await callLovable(body, LOVABLE_API_KEY);
       lovableStatus = response.status;
@@ -401,6 +441,9 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
         fallbackUsed: isFallbackable,
       });
 
+      if (response.status === 402) coolDown("lovable", 3 * 60_000);
+      else if (response.status === 429) coolDown("lovable", retryAfterMs(lovableErrorText, response.headers.get("retry-after"), 20_000));
+
       if (!isFallbackable) {
         throw new AIProviderError("lovable", response.status, lovableErrorText);
       }
@@ -430,8 +473,8 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
     url: string;
     map: (m: string) => string[];
   }> = [
-    { name: "openrouter", key: OPENROUTER_API_KEY, url: OPENROUTER_URL, map: () => orModels },
     { name: "groq", key: GROQ_API_KEY, url: GROQ_URL, map: mapToGroqModel },
+    { name: "openrouter", key: OPENROUTER_API_KEY, url: OPENROUTER_URL, map: () => orModels },
     { name: "mistral", key: MISTRAL_API_KEY, url: MISTRAL_URL, map: mapToMistralModel },
     { name: "cerebras", key: CEREBRAS_API_KEY, url: CEREBRAS_URL, map: mapToCerebrasModel },
   ];
@@ -446,9 +489,19 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
       continue;
     }
 
+    if (coolingDown(provider.name)) {
+      failures.push(`${provider.name}(cooling down)`);
+      continue;
+    }
+
     const candidates = provider.map(body.model ?? "");
 
     for (const mappedModel of candidates) {
+      const modelKey = `${provider.name}:${mappedModel}`;
+      if (coolingDown(modelKey)) {
+        failures.push(`${modelKey}(cooling down)`);
+        continue;
+      }
       console.log(`[ai-fallback] Trying ${provider.name} with model ${mappedModel}`);
       try {
         let response = await callProvider(provider.url, provider.key, body, mappedModel);
@@ -514,28 +567,49 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
 
         lastStatus = response.status;
         failures.push(`${provider.name}(${response.status})`);
-        console.error(
-          `[ai-fallback] ${provider.name} failed ${response.status}: ${errText.slice(0, 200)}`,
-        );
-        await recordAiError({
-          provider: provider.name,
-          status: response.status,
-          message: errText || `HTTP ${response.status}`,
-          model: mappedModel,
-          functionName: fnName,
-          fallbackUsed: true,
-        });
+        const rateLimited = response.status === 429 || response.status === 413;
+        if (rateLimited) {
+          // Expected on free tiers and handled by moving on — a breadcrumb, not
+          // an alert. Only a total failure is recorded (below).
+          console.warn(`[ai-fallback] ${modelKey} rate limited: ${errText.slice(0, 160)}`);
+        } else {
+          console.error(
+            `[ai-fallback] ${provider.name} failed ${response.status}: ${errText.slice(0, 200)}`,
+          );
+          await recordAiError({
+            provider: provider.name,
+            status: response.status,
+            message: errText || `HTTP ${response.status}`,
+            model: mappedModel,
+            functionName: fnName,
+            fallbackUsed: true,
+          });
+        }
 
-        // Account-level failures (no credits / plan / bad key) apply to every
-        // model on this provider — stop hammering it and move to the next one.
+        // Account-level failures (no credits / plan / bad key / daily cap) apply
+        // to every model on this provider — skip the provider for a while.
         const accountBlocked =
           response.status === 401 || response.status === 402 || response.status === 403;
-        if (accountBlocked) break;
+        if (accountBlocked) {
+          coolDown(provider.name, response.status === 402 ? 10 * 60_000 : 5 * 60_000);
+          break;
+        }
+        if (provider.name === "openrouter" && response.status === 429 && isOpenRouterDailyCap(errText)) {
+          coolDown(provider.name, 3600_000);
+          break;
+        }
+
+        // Rate limits are per model on Groq / Mistral / OpenRouter free tiers:
+        // park this model for its retry window and try the provider's next one.
+        if (rateLimited) {
+          coolDown(modelKey, retryAfterMs(errText, response.headers.get("retry-after"), 30_000));
+          continue;
+        }
 
         // Only retry the same provider when the *model* is the problem.
         const modelMissing = response.status === 404 ||
           /model_not_found|does not exist|decommissioned|unknown model/i.test(errText);
-        if (!modelMissing && !(provider.name === "openrouter" && response.status === 429)) break;
+        if (!modelMissing) break;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         failures.push(`${provider.name}(threw)`);
