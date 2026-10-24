@@ -8,6 +8,10 @@
 - [x] Fair AI turns: queue, slot countdown, 10s warning, auto-handover, quiet invite
 - [x] Typed 6-account drive test + instructor batch tools test (test accounts gdbuddy.drivetest1-6@example.com)
 
+- [ ] Live test: 30s moderator prompt waits while I speak my first Bootcamp answer
+- [ ] AI participants keep replying via free backup models when main AI credits run out; clear room message if all fail
+- [ ] Human-style audit of solo / group / bootcamp rooms: mic, UI, scrolling at phone → desktop sizes
+
 ## Done
 - [x] Day 10 bootcamp room: high interruptions + interruption level in setup banner
 - [x] Human-style 3-second pause test (desktop-Chrome and Android-style mic behaviour)
