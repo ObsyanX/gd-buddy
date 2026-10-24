@@ -622,8 +622,9 @@ export async function callAI(body: AIRequestBody): Promise<AIResponse> {
           functionName: fnName,
           fallbackUsed: true,
         });
-        // On a timeout, move to the next provider (faster) rather than queueing
-        // behind another slow free model.
+        // On a timeout, park this model briefly and move to the next provider
+        // (faster) rather than queueing behind another slow free model.
+        coolDown(modelKey, 60_000);
         break;
       }
     }
