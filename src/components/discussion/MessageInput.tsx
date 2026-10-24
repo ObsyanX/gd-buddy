@@ -37,6 +37,11 @@ interface MessageInputProps {
 
   autoSendEnabled: boolean;
   autoSkipEnabled: boolean;
+  /**
+   * True until the user has taken their first turn. The first turn is never
+   * auto-skipped: the moderator's 30-second invitation handles a slow start.
+   */
+  holdFirstTurn?: boolean;
 
   onInputChange: (value: string) => void;
   onSendMessage: () => void;
@@ -69,6 +74,7 @@ const MessageInput = ({
 
   autoSendEnabled,
   autoSkipEnabled,
+  holdFirstTurn = false,
 
   onInputChange,
   onSendMessage,
@@ -96,6 +102,8 @@ const MessageInput = ({
 
   const autoSendTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoSkipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdFirstTurnRef = useRef(holdFirstTurn);
+  holdFirstTurnRef.current = holdFirstTurn;
 
   const sendCountdownRef =
     useRef<ReturnType<typeof setInterval> | null>(null);
@@ -400,6 +408,7 @@ const MessageInput = ({
 
     const canAutoSkip =
       autoSkipEnabled &&
+      !holdFirstTurn &&
       !isListening &&
       !isPaused &&
       !isBusy &&
@@ -445,6 +454,7 @@ const MessageInput = ({
         !isListening &&
         !floorLocked &&
         !isVADSpeaking &&
+        !holdFirstTurnRef.current &&
         !userInput.trim()
       ) {
         onSkipTurnRef.current();
@@ -468,6 +478,7 @@ const MessageInput = ({
     isPracticing,
     isCorrecting,
     autoSkipEnabled,
+    holdFirstTurn,
     floorLocked,
     isMicInitializing,
     isPaused,

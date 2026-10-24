@@ -77,7 +77,9 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   const [hasSentFirstMessage, setHasSentFirstMessage] = useState(false);
   const icebreakerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Around line 65:
-  const [isQuotaExhausted, setIsQuotaExhausted] = useState(false);
+  // Set when no AI model could reply (main credits out + every free backup busy).
+  // Shown as a clear notice in the room; cleared as soon as a reply gets through.
+  const [aiOutage, setAiOutage] = useState<null | { kind: "credits" | "busy" | "unavailable"; message: string }>(null);
   const [autoMicEnabled, setAutoMicEnabled] = useState(false);
   const [autoMicSetting, setAutoMicSetting] = useState(true);
   const [videoMetricsRef, setVideoMetricsRef] = useState<VideoMetrics | null>(null);
@@ -500,6 +502,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     isListeningRef.current = isListening;
   }, [isListening]);
 
+  const hasDraft = userInput.trim().length > 0;
   // 30-second first-turn icebreaker.
   // Only runs during the active discussion stage, after the reading window,
   // when the candidate has not spoken yet.
@@ -513,6 +516,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       clock?.stage !== "discussion" ||
       floorLocked ||
       isListening ||
+      hasDraft ||
       hasSentFirstMessage ||
       messages.some((m) => m.gd_participants?.is_user)
     ) {
@@ -553,7 +557,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         `${candidateName}, to get our discussion rolling on "${topicTitle}", ` +
         `what is your opening perspective on this issue?`;
 
-      await postModeratorLine(icebreakerText);
+      // Re-checks the mic/draft right before speaking: the user may have tapped
+      // the mic while we were looking up their name.
+      const posted = await postModeratorLine(icebreakerText, { yieldToMic: true });
+      icebreakerTimerRef.current = null;
+      if (!posted) return;
       logRoomEvent("icebreaker", true, { after_s: 30 });
 
       toast({
@@ -570,7 +578,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         icebreakerTimerRef.current = null;
       }
     };
-  }, [session, clock?.stage, floorLocked, isListening, hasSentFirstMessage, messages, isPaused, toast]);
+  }, [session, clock?.stage, floorLocked, isListening, hasDraft, hasSentFirstMessage, messages, isPaused, toast]);
   const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial({ autoOpen: false });
   const { estimatedWordCount, updateFromAudioLevel, reset: resetWordCount } = useWordCountEstimator();
 
@@ -886,7 +894,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   // Direct send with specific text (used for auto-send after voice)
   /** Insert a moderator line into the transcript (and speak it when TTS is on). */
-  const postModeratorLine = async (text: string) => {
+  /**
+   * Post (and speak) a moderator line. Prompts that are only invitations pass
+   * `yieldToMic` so they never fire while the user is answering — moderator
+   * speech closes the mic, which would cut the user off mid-answer.
+   */
+  const postModeratorLine = async (text: string, opts?: { yieldToMic?: boolean }): Promise<boolean> => {
+    if (opts?.yieldToMic && (isListeningRef.current || userInputRef.current.trim().length > 0)) {
+      return false;
+    }
     const msg = {
       id: `moderator-${Date.now()}`,
       session_id: sessionId,
@@ -903,6 +919,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         /* TTS is best-effort */
       }
     }
+    return true;
   };
 
   // ---- Fair turns: the human joins the same queue as AI members ----
@@ -965,7 +982,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       return;
     const t = window.setTimeout(async () => {
       if (Date.now() - lastQuietInviteRef.current < 60_000) return;
-      if (isSpeakingRef.current) return;
+      if (isSpeakingRef.current || isListeningRef.current) return;
       const rows = airtimeReport(participantsRef.current as any[], messagesRef.current as any[]).rows;
       const humans = rows.filter((r) => r.isUser);
       const pool = humans.length ? humans : rows;
@@ -977,9 +994,11 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
       } = await supabase.auth.getUser();
       const myName = me?.user_metadata?.full_name?.split(" ")[0] || "you";
       const name = quiet.name === "You" ? myName : quiet.name;
-      await postModeratorLine(
+      const posted = await postModeratorLine(
         `${name}, the floor is open — we'd like to hear your view. You have ${TURN_SLOT_SECONDS} seconds.`,
+        { yieldToMic: true },
       );
+      if (!posted) return;
       logRoomEvent("icebreaker", true, { after_s: 8, kind: "quiet_invite", target: quiet.participantId });
     }, 8_000);
     return () => window.clearTimeout(t);
@@ -1115,6 +1134,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           detail,
           message: String(aiError.message || aiError).slice(0, 200),
         });
+        setAiOutage({ kind: "unavailable", message: "" });
         throw aiError;
       }
 
@@ -1127,13 +1147,13 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         speakers: Array.isArray(aiResponse?.participant_responses) ? aiResponse.participant_responses.length : 0,
       });
       if (aiResponse?.degraded) {
-        if (aiResponse.error === "payment_required" || aiResponse.error === "rate_limit") {
-          setIsQuotaExhausted(true);
-        }
-        toast({
-          title: aiResponse.error === "payment_required" ? "AI participants paused" : "AI participants unavailable",
-          description: aiResponse.message || "Your speech is still being recorded and scored.",
+        setAiOutage({
+          kind:
+            aiResponse.error === "payment_required" ? "credits" : aiResponse.error === "rate_limit" ? "busy" : "unavailable",
+          message: String(aiResponse.message || ""),
         });
+      } else if (Array.isArray(aiResponse?.participant_responses) && aiResponse.participant_responses.length > 0) {
+        setAiOutage(null);
       }
 
       // Phase A — overlap-capable playback.
@@ -1648,21 +1668,45 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             />
           ) : (
             <>
-              {isQuotaExhausted && (
-                <div className="mx-4 mb-2 p-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 flex items-center justify-between text-xs">
-                  <div className="text-amber-600 dark:text-amber-400">
-                    <strong>Shared AI pool is capped for today.</strong> Connect your own free personal key to continue
-                    uninterrupted.
+              {aiOutage && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="mb-2 p-3 rounded-lg border border-amber-500/40 bg-amber-500/10 flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between text-xs"
+                >
+                  <div className="text-amber-700 dark:text-amber-300 min-w-0">
+                    <strong className="block">AI participants couldn't reply this turn.</strong>
+                    <span>
+                      {aiOutage.kind === "credits"
+                        ? "The main AI is out of credits and every free backup model is busy right now."
+                        : aiOutage.kind === "busy"
+                          ? "Every AI model is busy right now."
+                          : "None of the AI models answered."}{" "}
+                      Keep speaking — your answers are still recorded and scored, and the AI will try again after your next turn.
+                    </span>
+                    {aiOutage.message.startsWith("Your AI providers") && (
+                      <span className="block mt-1">{aiOutage.message}</span>
+                    )}
                   </div>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs border-amber-500/40 hover:bg-amber-500/20"
-                    onClick={() => window.open("/home/settings/ai-providers", "_blank")}
-                  >
-                    Add Free Key
-                  </Button>
+                  <div className="flex gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="min-h-11 text-xs border-amber-500/40 hover:bg-amber-500/20"
+                      onClick={() => window.open("/home/settings/ai-providers", "_blank")}
+                    >
+                      Add your own key
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="min-h-11 text-xs"
+                      onClick={() => setAiOutage(null)}
+                      aria-label="Dismiss AI notice"
+                    >
+                      Dismiss
+                    </Button>
+                  </div>
                 </div>
               )}
               {activeTurn?.granted_at && (
@@ -1687,6 +1731,12 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                   isBusy={isWaitingForSpeech || isSpeaking || floorLocked}
                   autoSendEnabled={autoSendEnabled}
                   autoSkipEnabled={autoSkipEnabled}
+                  holdFirstTurn={
+                    !hasSentFirstMessage &&
+                    !messages.some(
+                      (m) => m.gd_participants?.is_user && m.gd_participants?.real_user_id === currentUserId,
+                    )
+                  }
                   onInputChange={setUserInput}
                   onSendMessage={handleSendMessage}
                   onSendWithVoice={handleSendWithVoice}
