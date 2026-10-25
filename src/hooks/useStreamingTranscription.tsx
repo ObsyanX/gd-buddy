@@ -198,9 +198,11 @@ function normalizeVernacular(text: string): string {
           fullFinal += transcript + ' ';
           hasSpokenRef.current = true;
         } else {
-          // Only take the latest interim result (not accumulated)
-          latestInterim = transcript;
+          // Chrome can split the not-yet-final speech into several pieces;
+          // keep all of them, otherwise a phrase vanishes if the browser
+          // ends the session before finalising it.
           if (transcript.trim()) {
+            latestInterim = latestInterim ? `${latestInterim} ${transcript.trim()}` : transcript.trim();
             hasSpokenRef.current = true;
           }
         }
@@ -293,7 +295,9 @@ function normalizeVernacular(text: string): string {
         if (blob && blob.size > 2000) {
           const text = await transcribeWithOwnKey(blob);
           if (!isMountedRef.current) return;
-          if (text !== null) finalTextRef.current = prefixRef.current + text;
+          // The recording covers the whole turn (across browser restarts),
+          // so only the text typed before the mic opened goes in front of it.
+          if (text !== null) finalTextRef.current = typedPrefixRef.current + text;
         }
       }
       
