@@ -120,6 +120,9 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
   const clock: ClockState | null = protocolWindows ? clockState(nowMs, protocolWindows) : null;
   const isReadingWindow = !!clock && clock.stage === "reading" && !readingSkipped;
+  // Skipping the reading time opens the discussion straight away, so room
+  // prompts (30s moderator invite, quiet-member invite) start counting then.
+  const liveStage = clock?.stage === "reading" && readingSkipped ? "discussion" : clock?.stage;
   const isClosingRound = !!clock && clock.stage === "closing";
   const closingSlots = useMemo(
     () => (protocolWindows ? closingOrder(participants as any[], protocolWindows) : []),
@@ -877,10 +880,15 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
 
       // Update session status to active
       if (sessionData.status === "setup") {
+        const startTime = new Date().toISOString();
         await supabase
           .from("gd_sessions")
-          .update({ status: "active", start_time: new Date().toISOString() })
+          .update({ status: "active", start_time: startTime })
           .eq("id", sessionId);
+        // The room clock (reading window, 30s moderator prompt, closing round,
+        // time limit) runs off start_time — without this a brand-new room had
+        // no clock until the page was reloaded.
+        setSession((prev: any) => (prev && prev.id === sessionId ? { ...prev, status: "active", start_time: startTime } : prev));
       }
     } catch (error: any) {
       console.error("Error loading session:", error);
