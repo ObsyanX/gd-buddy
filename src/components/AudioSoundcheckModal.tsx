@@ -22,6 +22,8 @@ export const AudioSoundcheckModal: React.FC<AudioSoundcheckModalProps> = ({ isOp
   const recorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const animFrameRef = useRef<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
 
   const startMicTest = async () => {
     try {
@@ -61,6 +63,7 @@ export const AudioSoundcheckModal: React.FC<AudioSoundcheckModalProps> = ({ isOp
           const transcript = event.results[0]?.[0]?.transcript || '';
           if (transcript) setSttTestWord(transcript);
         };
+        recognitionRef.current = recognition;
         recognition.start();
       }
     } catch (err) {
@@ -92,6 +95,12 @@ export const AudioSoundcheckModal: React.FC<AudioSoundcheckModalProps> = ({ isOp
 
   const cleanup = () => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    // Phones allow only one speech recogniser at a time: release the test one
+    // before the room opens its own, or the room's mic can fail to start.
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort?.(); } catch { /* ignore */ }
+      recognitionRef.current = null;
+    }
     if (mediaStreamRef.current) mediaStreamRef.current.getTracks().forEach(t => t.stop());
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       audioContextRef.current.close().catch(() => {});
