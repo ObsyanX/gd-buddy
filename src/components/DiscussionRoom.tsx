@@ -516,7 +516,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     // switch their mic off mid-answer.
     if (
       !session ||
-      clock?.stage !== "discussion" ||
+      liveStage !== "discussion" ||
       floorLocked ||
       isListening ||
       hasDraft ||
@@ -581,7 +581,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         icebreakerTimerRef.current = null;
       }
     };
-  }, [session, clock?.stage, floorLocked, isListening, hasDraft, hasSentFirstMessage, messages, isPaused, toast]);
+  }, [session, liveStage, floorLocked, isListening, hasDraft, hasSentFirstMessage, messages, isPaused, toast]);
   const { showTutorial, setShowTutorial, resetTutorial } = useOnboardingTutorial({ autoOpen: false });
   const { estimatedWordCount, updateFromAudioLevel, reset: resetWordCount } = useWordCountEstimator();
 
@@ -979,7 +979,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
     if (
       !session ||
       isPaused ||
-      clock?.stage !== "discussion" ||
+      liveStage !== "discussion" ||
       floorLocked ||
       isSpeaking ||
       isListening ||
@@ -1014,7 +1014,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   }, [
     session?.id,
     isPaused,
-    clock?.stage,
+    liveStage,
     floorLocked,
     isSpeaking,
     isListening,
