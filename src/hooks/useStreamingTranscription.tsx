@@ -68,6 +68,9 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
   const recognitionRef = useRef<any>(null);
   const recorderRef = useRef<{ rec: MediaRecorder; done: Promise<Blob | null> } | null>(null);
   const prefixRef = useRef('');
+  // What was typed before the mic opened (prefixRef also grows with speech
+  // carried across browser-initiated restarts).
+  const typedPrefixRef = useRef('');
   const finalTextRef = useRef('');
   const hasSpokenRef = useRef(false);
   const isMountedRef = useRef(true);
@@ -115,6 +118,13 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
   }, [context, enableAICorrection, onCorrectionStart, onCorrectionEnd]);
 
   const startListening = useCallback((existingText?: string) => {
+    // A session is already open (e.g. the auto-mic reopen fired while the
+    // user had tapped the mic). Starting a second recogniser would end the
+    // first one and drop whatever it was still hearing.
+    if (recognitionRef.current) {
+      console.log('Speech recognition already running — start ignored');
+      return;
+    }
     setIsMicInitializing(true);
     autoRestartsRef.current = 0;
     fatalErrorRef.current = false;
@@ -122,6 +132,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
     // Anything the user already typed is preserved and prepended to whatever
     // the recogniser hears, so switching the mic on never wipes typed text.
     prefixRef.current = existingText && existingText.trim() ? existingText.trim() + ' ' : '';
+    typedPrefixRef.current = prefixRef.current;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
     
