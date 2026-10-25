@@ -24,8 +24,8 @@ class FakeRecognition {
   onerror?: (e: unknown) => void;
   constructor() { FakeRecognition.instances.push(this); }
   start() { this.starts++; this.onstart?.(); }
-  stop() { this.onend?.(); }
-  abort() { this.onend?.(); }
+  stop() { /* test fires onend itself */ }
+  abort() { /* test fires onend itself */ }
   /** pieces: [text, isFinal][] for the current browser session */
   say(pieces: Array<[string, boolean]>) {
     const results = pieces.map(([t, f]) => Object.assign([{ transcript: t }], { isFinal: f }));
