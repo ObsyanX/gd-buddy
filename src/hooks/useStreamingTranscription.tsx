@@ -68,6 +68,9 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
   const recognitionRef = useRef<any>(null);
   const recorderRef = useRef<{ rec: MediaRecorder; done: Promise<Blob | null> } | null>(null);
   const prefixRef = useRef('');
+  // What was typed before the mic opened (prefixRef also grows with speech
+  // carried across browser-initiated restarts).
+  const typedPrefixRef = useRef('');
   const finalTextRef = useRef('');
   const hasSpokenRef = useRef(false);
   const isMountedRef = useRef(true);
@@ -115,6 +118,13 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
   }, [context, enableAICorrection, onCorrectionStart, onCorrectionEnd]);
 
   const startListening = useCallback((existingText?: string) => {
+    // A session is already open (e.g. the auto-mic reopen fired while the
+    // user had tapped the mic). Starting a second recogniser would end the
+    // first one and drop whatever it was still hearing.
+    if (recognitionRef.current) {
+      console.log('Speech recognition already running — start ignored');
+      return;
+    }
     setIsMicInitializing(true);
     autoRestartsRef.current = 0;
     fatalErrorRef.current = false;
@@ -122,6 +132,7 @@ export const useStreamingTranscription = (options: UseStreamingTranscriptionOpti
     // Anything the user already typed is preserved and prepended to whatever
     // the recogniser hears, so switching the mic on never wipes typed text.
     prefixRef.current = existingText && existingText.trim() ? existingText.trim() + ' ' : '';
+    typedPrefixRef.current = prefixRef.current;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
     
@@ -187,9 +198,11 @@ function normalizeVernacular(text: string): string {
           fullFinal += transcript + ' ';
           hasSpokenRef.current = true;
         } else {
-          // Only take the latest interim result (not accumulated)
-          latestInterim = transcript;
+          // Chrome can split the not-yet-final speech into several pieces;
+          // keep all of them, otherwise a phrase vanishes if the browser
+          // ends the session before finalising it.
           if (transcript.trim()) {
+            latestInterim = latestInterim ? `${latestInterim} ${transcript.trim()}` : transcript.trim();
             hasSpokenRef.current = true;
           }
         }
@@ -282,7 +295,9 @@ function normalizeVernacular(text: string): string {
         if (blob && blob.size > 2000) {
           const text = await transcribeWithOwnKey(blob);
           if (!isMountedRef.current) return;
-          if (text !== null) finalTextRef.current = prefixRef.current + text;
+          // The recording covers the whole turn (across browser restarts),
+          // so only the text typed before the mic opened goes in front of it.
+          if (text !== null) finalTextRef.current = typedPrefixRef.current + text;
         }
       }
       
