@@ -90,9 +90,9 @@ export default function DrillHistory() {
             <History className="w-5 h-5" />
             DRILL HISTORY
           </h2>
-          <TabsList className="h-8">
-            <TabsTrigger value="history" className="text-xs px-3 h-7">History</TabsTrigger>
-            <TabsTrigger value="stats" className="text-xs px-3 h-7">Stats</TabsTrigger>
+          <TabsList className="h-auto [@media(pointer:fine)]:h-8">
+            <TabsTrigger value="history" className="text-xs px-3 min-h-11 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:h-7">History</TabsTrigger>
+            <TabsTrigger value="stats" className="text-xs px-3 min-h-11 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:h-7">Stats</TabsTrigger>
           </TabsList>
         </div>
 

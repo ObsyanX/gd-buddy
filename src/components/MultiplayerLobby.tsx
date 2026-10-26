@@ -140,9 +140,9 @@ const MultiplayerLobby = ({
         </div>
 
         <Tabs defaultValue="create" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 border-2 border-border">
-            <TabsTrigger value="create" className="font-bold">CREATE ROOM</TabsTrigger>
-            <TabsTrigger value="join" className="font-bold">JOIN ROOM</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 border-2 border-border h-auto">
+            <TabsTrigger value="create" className="font-bold min-h-11">CREATE ROOM</TabsTrigger>
+            <TabsTrigger value="join" className="font-bold min-h-11">JOIN ROOM</TabsTrigger>
           </TabsList>
           
           <TabsContent value="create" className="mt-4">
