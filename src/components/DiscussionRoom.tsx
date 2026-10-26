@@ -939,12 +939,29 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
   useEffect(() => {
     if (!sessionId || isPaused) return;
     if (isListening && !isSpeaking) {
-      void turnQueue.request();
+      void turnQueue.request().then((r) => {
+        // The mic closed while the request was in flight: hand the floor back
+        // so a "Your speaking slot" countdown never runs with the mic off.
+        if (!isListeningRef.current && (r.status === "granted" || r.status === "queued")) {
+          void turnQueue.release();
+        }
+      });
     } else if (!isListening && (turnHolderRef.current || turnQueue.selfPosition >= 0)) {
       void turnQueue.release();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isListening]);
+
+  // A human floor is only held while the mic is open. A turn left over from a
+  // closed tab, a refresh or a failed mic start is handed back after 3s.
+  useEffect(() => {
+    if (!turnQueue.isHolder || isListening || isMicInitializing) return;
+    const t = window.setTimeout(() => {
+      if (turnHolderRef.current && !isListeningRef.current) void turnQueue.release();
+    }, 3000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turnQueue.isHolder, isListening, isMicInitializing]);
 
   // ---- Slot timer: 10s warning, then auto-release so the floor passes on ----
   const activeTurn: any = turnQueue.active;
@@ -1604,8 +1621,9 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         data-session-scroll-container
         className="session-scroll-container flex-1 min-h-0 container mx-auto flex flex-col lg:grid lg:grid-cols-12 lg:grid-rows-[minmax(0,1fr)] gap-1.5 sm:gap-3 lg:gap-4 p-1.5 sm:p-3 lg:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3 lg:pb-4 overflow-visible lg:overflow-hidden"
       >
-        {/* Mobile/Tablet Video Monitor */}
-        <div className="block lg:hidden shrink-0">
+        {/* Mobile/Tablet Video Monitor — placed after the chat and mic on
+            phones/tablets so a person reaches the conversation first. */}
+        <div className="block lg:hidden shrink-0 order-last">
           <VideoMonitor
             isActive={true}
             sessionId={session?.id}
@@ -1630,7 +1648,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             <div className="flex items-center justify-center gap-3 py-3 px-4 bg-warning/10 rounded-lg border-2 border-warning/30">
               <Pause className="w-4 h-4 text-warning" />
               <span className="text-sm font-bold text-warning">Discussion Paused</span>
-              <Button variant="outline" size="sm" onClick={handleTogglePause} className="border-2 h-7 text-xs">
+              <Button variant="outline" size="sm" onClick={handleTogglePause} className="border-2 min-h-11 lg:min-h-0 lg:h-7 text-xs">
                 <Play className="w-3 h-3 mr-1" />
                 Continue
               </Button>
@@ -1649,7 +1667,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                     skipWaitRef.current();
                   }
                 }}
-                className="h-6 sm:h-7 px-2 text-[10px] sm:text-xs"
+                className="min-h-11 lg:min-h-0 lg:h-7 px-3 text-xs"
               >
                 <SkipForward className="w-3 h-3 mr-1" />
                 Skip
