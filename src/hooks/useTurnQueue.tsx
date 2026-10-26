@@ -11,7 +11,15 @@ type TurnRow = {
   requested_at: string;
   granted_at: string | null;
   released_at: string | null;
+  slot_seconds?: number | null;
 };
+
+/** An active slot whose time ran out (the server closes it on the next request). */
+export function isSlotOver(row: Pick<TurnRow, 'granted_at' | 'slot_seconds'> | null, now = Date.now()): boolean {
+  if (!row?.granted_at) return false;
+  const ends = new Date(row.granted_at).getTime() + (Number(row.slot_seconds) || 45) * 1000;
+  return now > ends + 2000;
+}
 
 export type MicRequestResult =
   | { status: 'granted'; turn_id: string; expires_at: string }
@@ -29,7 +37,8 @@ export type MicRequestResult =
  * - Debounce guards against rapid on/off toggling (Q9).
  */
 export function useTurnQueue(sessionId: string | null) {
-  const [active, setActive] = useState<TurnRow | null>(null);
+  const [activeRow, setActive] = useState<TurnRow | null>(null);
+  const [, setTick] = useState(0);
   const [queue, setQueue] = useState<TurnRow[]>([]);
   const [selfTurnId, setSelfTurnId] = useState<string | null>(null);
   const [uid, setUid] = useState<string | null>(null);
@@ -65,6 +74,16 @@ export function useTurnQueue(sessionId: string | null) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [sessionId, refresh]);
+
+  // Re-render when the current slot runs out, so an expired slot (e.g. from a
+  // closed tab) stops showing as "has the floor".
+  useEffect(() => {
+    if (!activeRow?.granted_at) return;
+    const ends = new Date(activeRow.granted_at).getTime() + (Number(activeRow.slot_seconds) || 45) * 1000 + 2100;
+    const id = window.setTimeout(() => setTick((t) => t + 1), Math.max(0, ends - Date.now()));
+    return () => window.clearTimeout(id);
+  }, [activeRow?.id, activeRow?.granted_at, activeRow?.slot_seconds]);
+  const active = activeRow && !isSlotOver(activeRow) ? activeRow : null;
 
   const request = useCallback(async (): Promise<MicRequestResult> => {
     if (!sessionId) return { status: 'error', message: 'no session' };
