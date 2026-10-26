@@ -751,8 +751,9 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
               variant="ghost"
               size="sm"
               onClick={() => setShowFaceMesh(!showFaceMesh)}
-              className="h-5 w-5 sm:h-6 sm:w-auto sm:px-2 p-0 text-[10px] sm:text-xs"
+              className="h-11 w-11 lg:h-6 lg:w-auto lg:px-2 p-0 text-[10px] sm:text-xs"
               title={showFaceMesh ? "Hide mesh" : "Show mesh"}
+              aria-label={showFaceMesh ? "Hide face mesh" : "Show face mesh"}
             >
               {showFaceMesh ? '◉' : '○'}
             </Button>
@@ -771,7 +772,8 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
               variant="ghost"
               size="sm"
               onClick={stopCamera}
-              className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-destructive"
+              aria-label="Turn camera off"
+              className="h-11 w-11 lg:h-6 lg:w-6 p-0 text-destructive"
             >
               <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </Button>
