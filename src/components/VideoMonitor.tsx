@@ -761,7 +761,8 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
             variant="ghost"
             size="sm"
             onClick={() => setIsMinimized(!isMinimized)}
-            className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-xs"
+            aria-label={isMinimized ? "Expand camera panel" : "Collapse camera panel"}
+            className="h-11 w-11 lg:h-6 lg:w-6 p-0 text-xs"
           >
             {isMinimized ? '+' : '-'}
           </Button>

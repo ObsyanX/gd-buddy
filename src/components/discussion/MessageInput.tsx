@@ -693,7 +693,7 @@ const MessageInput = ({
               onSendMessage();
             }
           }}
-          className={`border-2 text-sm sm:text-base lg:text-lg flex-1 h-10 sm:h-11 ${
+          className={`border-2 text-sm sm:text-base lg:text-lg flex-1 h-11 ${
             isListening
               ? "border-destructive bg-destructive/5"
               : ""
