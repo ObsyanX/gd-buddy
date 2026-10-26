@@ -1648,7 +1648,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
             <div className="flex items-center justify-center gap-3 py-3 px-4 bg-warning/10 rounded-lg border-2 border-warning/30">
               <Pause className="w-4 h-4 text-warning" />
               <span className="text-sm font-bold text-warning">Discussion Paused</span>
-              <Button variant="outline" size="sm" onClick={handleTogglePause} className="border-2 min-h-11 lg:min-h-0 lg:h-7 text-xs">
+              <Button variant="outline" size="sm" onClick={handleTogglePause} className="border-2 min-h-11 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:h-7 text-xs">
                 <Play className="w-3 h-3 mr-1" />
                 Continue
               </Button>
@@ -1667,7 +1667,7 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
                     skipWaitRef.current();
                   }
                 }}
-                className="min-h-11 lg:min-h-0 lg:h-7 px-3 text-xs"
+                className="min-h-11 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:h-7 px-3 text-xs"
               >
                 <SkipForward className="w-3 h-3 mr-1" />
                 Skip

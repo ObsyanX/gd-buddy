@@ -542,7 +542,7 @@ const MessageInput = ({
                   key={idx}
                   type="button"
                   onClick={() => onInterject?.(phrase)}
-                  className="min-h-11 lg:min-h-0 px-2 py-1 rounded-md text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 whitespace-nowrap transition-colors"
+                  className="min-h-11 [@media(pointer:fine)]:min-h-0 px-2 py-1 rounded-md text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 whitespace-nowrap transition-colors"
                 >
                   {phrase}
                 </button>
@@ -551,7 +551,7 @@ const MessageInput = ({
               <Button
                 size="sm"
                 variant="outline"
-                className="min-h-11 lg:min-h-0 lg:h-6 px-2 text-[11px] border-amber-500 text-amber-600 hover:bg-amber-500/15"
+                className="min-h-11 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:h-6 px-2 text-[11px] border-amber-500 text-amber-600 hover:bg-amber-500/15"
                 onClick={() =>
                   onInterject?.(
                     "Excuse me, if I could interject..."
@@ -587,7 +587,7 @@ const MessageInput = ({
             <Button
               size="sm"
               variant="default"
-              className="min-h-11 lg:min-h-0 lg:h-8 text-xs bg-emerald-600 hover:bg-emerald-700"
+              className="min-h-11 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:h-8 text-xs bg-emerald-600 hover:bg-emerald-700"
               onClick={onVoiceInput}
               disabled={
                 isProcessing ||
@@ -643,7 +643,7 @@ const MessageInput = ({
             <Button
               size="sm"
               variant="destructive"
-              className="min-h-11 lg:min-h-0 lg:h-8 text-xs"
+              className="min-h-11 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:h-8 text-xs"
               onClick={onSendWithVoice}
               disabled={
                 isProcessing ||
@@ -824,7 +824,7 @@ const MessageInput = ({
         <button
           onClick={onToggleAutoSend}
           aria-pressed={autoSendEnabled}
-          className={`flex items-center gap-1 min-h-11 lg:min-h-8 px-3 py-0.5 rounded-full text-[11px] sm:text-xs font-mono border transition-colors ${
+          className={`flex items-center gap-1 min-h-11 [@media(pointer:fine)]:min-h-8 px-3 py-0.5 rounded-full text-[11px] sm:text-xs font-mono border transition-colors ${
             autoSendEnabled
               ? "bg-primary/10 border-primary/30 text-primary"
               : "bg-muted/30 border-border text-muted-foreground"
@@ -845,7 +845,7 @@ const MessageInput = ({
         <button
           onClick={onToggleAutoSkip}
           aria-pressed={autoSkipEnabled}
-          className={`flex items-center gap-1 min-h-11 lg:min-h-8 px-3 py-0.5 rounded-full text-[11px] sm:text-xs font-mono border transition-colors ${
+          className={`flex items-center gap-1 min-h-11 [@media(pointer:fine)]:min-h-8 px-3 py-0.5 rounded-full text-[11px] sm:text-xs font-mono border transition-colors ${
             autoSkipEnabled
               ? "bg-primary/10 border-primary/30 text-primary"
               : "bg-muted/30 border-border text-muted-foreground"

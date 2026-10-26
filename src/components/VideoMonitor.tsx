@@ -751,7 +751,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
               variant="ghost"
               size="sm"
               onClick={() => setShowFaceMesh(!showFaceMesh)}
-              className="h-11 w-11 lg:h-6 lg:w-auto lg:px-2 p-0 text-[10px] sm:text-xs"
+              className="h-11 w-11 [@media(pointer:fine)]:h-6 [@media(pointer:fine)]:w-auto [@media(pointer:fine)]:px-2 p-0 text-[10px] sm:text-xs"
               title={showFaceMesh ? "Hide mesh" : "Show mesh"}
               aria-label={showFaceMesh ? "Hide face mesh" : "Show face mesh"}
             >
@@ -763,7 +763,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
             size="sm"
             onClick={() => setIsMinimized(!isMinimized)}
             aria-label={isMinimized ? "Expand camera panel" : "Collapse camera panel"}
-            className="h-11 w-11 lg:h-6 lg:w-6 p-0 text-xs"
+            className="h-11 w-11 [@media(pointer:fine)]:h-6 [@media(pointer:fine)]:w-6 p-0 text-xs"
           >
             {isMinimized ? '+' : '-'}
           </Button>
@@ -773,7 +773,7 @@ const VideoMonitor = ({ isActive, sessionId, isUserMicActive = false, onMetricsU
               size="sm"
               onClick={stopCamera}
               aria-label="Turn camera off"
-              className="h-11 w-11 lg:h-6 lg:w-6 p-0 text-destructive"
+              className="h-11 w-11 [@media(pointer:fine)]:h-6 [@media(pointer:fine)]:w-6 p-0 text-destructive"
             >
               <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </Button>
