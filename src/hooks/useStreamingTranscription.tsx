@@ -283,6 +283,11 @@ function normalizeVernacular(text: string): string {
         }
       }
 
+      // The session is over for good (fatal error, restart limit, or resume
+      // failed). Release it so the next mic tap can open a fresh session —
+      // otherwise startListening's "already running" guard ignores it.
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+
       setIsMicInitializing(false);
       setIsListening(false);
       setInterimText('');

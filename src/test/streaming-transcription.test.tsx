@@ -77,4 +77,30 @@ describe("speech input keeps the whole answer", () => {
     expect(FakeRecognition.instances).toHaveLength(1);
     expect(result.current.finalText.trim()).toBe("hello everyone");
   });
+
+  it("after a network error ends the mic, tapping the mic again starts a new session", async () => {
+    const { result } = renderHook(() => useStreamingTranscription({ enableAICorrection: false }));
+    act(() => result.current.startListening());
+    const rec = FakeRecognition.instances[0];
+    await act(async () => { rec.onerror?.({ error: "network" }); rec.onend?.(); await flush(); });
+    expect(result.current.isListening).toBe(false);
+    act(() => result.current.startListening());
+    expect(FakeRecognition.instances).toHaveLength(2);
+    expect(result.current.isListening).toBe(true);
+  });
+
+  it("after 5 silent browser restarts end the mic, tapping the mic again starts a new session", async () => {
+    const { result } = renderHook(() => useStreamingTranscription({ enableAICorrection: false }));
+    act(() => result.current.startListening());
+    const rec = FakeRecognition.instances[0];
+    // 5 restarts allowed, the 6th end closes the mic.
+    for (let i = 0; i < 6; i++) {
+      await act(async () => { rec.onend?.(); await flush(); });
+    }
+    expect(rec.starts).toBe(6);
+    expect(result.current.isListening).toBe(false);
+    act(() => result.current.startListening());
+    expect(FakeRecognition.instances).toHaveLength(2);
+    expect(result.current.isListening).toBe(true);
+  });
 });
