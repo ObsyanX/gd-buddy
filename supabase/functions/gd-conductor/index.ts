@@ -442,8 +442,6 @@ IMPORTANT: Reference the ACTUAL numbers from the metrics. Do NOT make up statist
         response_format: { type: 'json_object' },
         temperature: 0.95,
         top_p: 0.95,
-        frequency_penalty: 0.6,
-        presence_penalty: 0.6,
       });
     } catch (e) {
       if (e instanceof AIProviderError) {
