@@ -110,9 +110,11 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
     loadSessionData();
   }, [sessionId]);
 
-  // Auto-generate AI feedback once session data is loaded
+  // Auto-generate AI feedback once session data is loaded. Skipped when the
+  // participant spoke too little to score: an AI rating there would be invented.
+  const hasScorableSpeech = calculatedStats?.has_real_data === true;
   useEffect(() => {
-    if (session && calculatedStats && !aiFeedback && !isLoadingFeedback) {
+    if (session && calculatedStats && hasScorableSpeech && !aiFeedback && !isLoadingFeedback) {
       loadAiFeedback();
     }
   }, [session, calculatedStats]);
@@ -1382,7 +1384,7 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
               <Sparkles className="w-6 h-6 text-primary" />
               AI FEEDBACK
             </h3>
-            {!aiFeedback && !isLoadingFeedback && !feedbackError && (
+            {!aiFeedback && !isLoadingFeedback && !feedbackError && (hasScorableSpeech || !calculatedStats) && (
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             )}
           </div>
@@ -1464,7 +1466,13 @@ const SessionReport = ({ sessionId, onStartNew }: SessionReportProps) => {
             </div>
           )}
 
-          {!aiFeedback && !isLoadingFeedback && !feedbackError && (
+          {!aiFeedback && !isLoadingFeedback && !feedbackError && !hasScorableSpeech && calculatedStats && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No AI feedback for this session — you need to speak at least 10 words in the discussion to get a rating.
+            </p>
+          )}
+
+          {!aiFeedback && !isLoadingFeedback && !feedbackError && (hasScorableSpeech || !calculatedStats) && (
             <p className="text-sm text-muted-foreground text-center py-4">
               AI feedback will generate automatically…
             </p>
