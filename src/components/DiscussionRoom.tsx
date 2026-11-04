@@ -552,7 +552,22 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         data: { user },
       } = await supabase.auth.getUser();
 
-      const candidateName = user?.user_metadata?.full_name?.split(" ")[0] || "Candidate";
+      let profileName: string | null = null;
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("id", user.id)
+          .maybeSingle();
+        profileName = profile?.display_name?.trim() || null;
+      }
+      const fullName =
+        profileName ||
+        (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+        (user?.user_metadata?.name as string | undefined)?.trim() ||
+        user?.email?.split("@")[0] ||
+        "";
+      const candidateName = fullName.split(/\s+/)[0] || "there";
 
       const topicTitle = session.topic || "this topic";
 
