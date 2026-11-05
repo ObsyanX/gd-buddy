@@ -1629,7 +1629,18 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
         onResetTutorial={resetTutorial}
         onEndSession={handleEndSession}
         usingFallbackTTS={usingFallbackTTS}
-        clockSlot={clock ? <RoundClock clock={clock} format={gdFormat} /> : null}
+        clockSlot={
+          clock ? (
+            <RoundClock
+              clock={
+                clock.stage === "reading" && readingSkipped
+                  ? { ...clock, stage: "discussion", label: "Discussion", secondsInStage: clock.secondsRemaining }
+                  : clock
+              }
+              format={gdFormat}
+            />
+          ) : null
+        }
       />
 
       <div
