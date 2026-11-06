@@ -1633,8 +1633,8 @@ const DiscussionRoom = ({ sessionId, onComplete }: DiscussionRoomProps) => {
           clock ? (
             <RoundClock
               clock={
-                clock.stage === "reading" && readingSkipped
-                  ? { ...clock, stage: "discussion", label: "Discussion", secondsInStage: clock.secondsRemaining }
+                protocolWindows && readingSkipped
+                  ? clockState(nowMs, protocolWindows, true)
                   : clock
               }
               format={gdFormat}
