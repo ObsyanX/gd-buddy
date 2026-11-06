@@ -111,10 +111,10 @@ export interface ClockState {
 
 const clamp0 = (n: number) => (n > 0 ? Math.ceil(n) : 0);
 
-export function clockState(nowMs: number, w: ProtocolWindows): ClockState {
+export function clockState(nowMs: number, w: ProtocolWindows, readingSkipped = false): ClockState {
   const secondsRemaining = clamp0((w.hardStopMs - nowMs) / 1000);
 
-  if (nowMs < w.readingEndsMs) {
+  if (nowMs < w.readingEndsMs && !readingSkipped) {
     return {
       stage: 'reading',
       secondsInStage: clamp0((w.readingEndsMs - nowMs) / 1000),

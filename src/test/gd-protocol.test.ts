@@ -41,6 +41,29 @@ describe('clock stages', () => {
     expect(c.micLocked).toBe(false);
   });
 
+  it.each([3, 4])('excludes closing time after skipping reading with %i participants', (count) => {
+    const windows = computeWindows(START, 'free_form', count);
+    const before = clockState(windows.readingEndsMs - 1_000, windows, true);
+    const after = clockState(windows.readingEndsMs, windows, true);
+
+    expect(before.stage).toBe('discussion');
+    expect(before.micLocked).toBe(false);
+    expect(before.secondsInStage).toBe(901);
+    expect(after.secondsInStage).toBe(900);
+    expect(before.secondsInStage - after.secondsInStage).toBe(1);
+    expect(before.secondsRemaining - before.secondsInStage).toBe(count * 30);
+    expect(clockState(windows.readingEndsMs, windows)).toEqual(after);
+  });
+
+  it('preserves warnings, closing slots and hard stop after skipping reading', () => {
+    expect(clockState(w.closingStartsMs - 120_000, w, true).stage).toBe('warning_2m');
+    expect(clockState(w.closingStartsMs - 30_000, w, true).stage).toBe('warning_30s');
+    expect(clockState(w.closingStartsMs, w, true).secondsInStage).toBe(90);
+    expect(clockState(w.closingStartsMs, w, true).stage).toBe('closing');
+    expect(clockState(w.hardStopMs, w, true).stage).toBe('over');
+    expect(clockState(w.hardStopMs, w, true).secondsInStage).toBe(0);
+  });
+
   it('raises the 2-minute and 30-second warnings', () => {
     expect(clockState(w.closingStartsMs - 100_000, w).stage).toBe('warning_2m');
     expect(clockState(w.closingStartsMs - 20_000, w).stage).toBe('warning_30s');
